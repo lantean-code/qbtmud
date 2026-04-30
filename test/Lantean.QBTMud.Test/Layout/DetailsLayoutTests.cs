@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Layout
 {
@@ -19,7 +21,7 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
         private readonly TestNavigationManager _navigationManager;
         private readonly List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> _handlers;
-        private readonly IReadOnlyList<Torrent> _torrents;
+        private readonly IReadOnlyList<MudTorrent> _torrents;
 
         public DetailsLayoutTests()
         {
@@ -126,7 +128,7 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_NoTorrents_WHEN_AltArrowDownPressed_THEN_NoNavigationOccurs()
         {
             _handlers.Clear();
-            var target = RenderLayout("Hash1", Array.Empty<Torrent>());
+            var target = RenderLayout("Hash1", Array.Empty<MudTorrent>());
 
             target.WaitForAssertion(() =>
             {
@@ -233,9 +235,12 @@ namespace Lantean.QBTMud.Test.Layout
             await target.DisposeAsync();
         }
 
-        private IRenderedComponent<DetailsLayout> RenderLayout(string? selectedHash, IEnumerable<Torrent> torrents, string? absoluteUri = null)
+        private IRenderedComponent<DetailsLayout> RenderLayout(string? selectedHash, IEnumerable<MudTorrent> torrents, string? absoluteUri = null)
         {
             _navigationManager.SetUri(absoluteUri ?? (selectedHash is null ? "http://localhost/" : $"http://localhost/details/{selectedHash}"));
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            queryState.SetSortColumn("Name");
+            queryState.SetSortDirection(SortDirection.Ascending);
 
             return TestContext.Render<DetailsLayout>(parameters =>
             {
@@ -243,26 +248,25 @@ namespace Lantean.QBTMud.Test.Layout
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("DrawerOpenChanged", EventCallback.Factory.Create<bool>(this, _ => { }));
                 parameters.AddCascadingValue(torrents);
-                parameters.AddCascadingValue("SortColumn", "Name");
-                parameters.AddCascadingValue("SortDirection", SortDirection.Ascending);
             });
         }
 
         private IRenderedComponent<DetailsLayout> RenderLayoutWithoutTorrents(string absoluteUri)
         {
             _navigationManager.SetUri(absoluteUri);
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            queryState.SetSortColumn("Name");
+            queryState.SetSortDirection(SortDirection.Ascending);
 
             return TestContext.Render<DetailsLayout>(parameters =>
             {
                 parameters.Add(p => p.Body, builder => { });
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("DrawerOpenChanged", EventCallback.Factory.Create<bool>(this, _ => { }));
-                parameters.AddCascadingValue("SortColumn", "Name");
-                parameters.AddCascadingValue("SortDirection", SortDirection.Ascending);
             });
         }
 
-        private static IReadOnlyList<Torrent> CreateTorrents()
+        private static IReadOnlyList<MudTorrent> CreateTorrents()
         {
             return
             [
@@ -272,14 +276,14 @@ namespace Lantean.QBTMud.Test.Layout
             ];
         }
 
-        private static Torrent CreateTorrent(string hash, string name)
+        private static MudTorrent CreateTorrent(string hash, string name)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 0,
+                availability: 0,
                 category: "Category",
                 completed: 0,
                 completionOn: 0,
@@ -312,7 +316,7 @@ namespace Lantean.QBTMud.Test.Layout
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 0,
-                state: "State",
+                state: TorrentState.Unknown,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,
@@ -333,7 +337,7 @@ namespace Lantean.QBTMud.Test.Layout
                 downloadPath: "DownloadPath",
                 rootPath: "RootPath",
                 isPrivate: false,
-                shareLimitAction: QBitTorrentClient.Models.ShareLimitAction.Default,
+                shareLimitAction: ShareLimitAction.Default,
                 comment: "Comment");
         }
 

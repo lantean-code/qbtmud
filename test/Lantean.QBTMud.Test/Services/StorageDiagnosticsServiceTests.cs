@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
@@ -5,7 +6,6 @@ using Lantean.QBTMud.Services;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 using Moq;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -43,10 +43,11 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
-                {
-                    ["QbtMud.ClientOnly"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone()
-                });
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.ClientOnly"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone()
+                    }));
 
             var result = await _target.GetEntriesAsync(TestContext.Current.CancellationToken);
 
@@ -85,7 +86,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(ClientDataStorageResult.Success);
 
             await _target.RemoveEntryAsync(StorageType.ClientData, "QbtMud.Key", TestContext.Current.CancellationToken);
 
@@ -110,14 +111,15 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
-                {
-                    ["QbtMud.A"] = JsonDocument.Parse("1").RootElement.Clone(),
-                    ["QbtMud.B"] = JsonDocument.Parse("2").RootElement.Clone()
-                });
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.A"] = JsonDocument.Parse("1").RootElement.Clone(),
+                        ["QbtMud.B"] = JsonDocument.Parse("2").RootElement.Clone()
+                    }));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(ClientDataStorageResult.Success);
 
             var removed = await _target.ClearEntriesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -140,6 +142,29 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.GetEntriesAsync(TestContext.Current.CancellationToken);
 
             result.Should().HaveCount(1);
+            result[0].StorageType.Should().Be(StorageType.LocalStorage);
+            result[0].DisplayKey.Should().Be("LocalOnly");
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataLoadFails_WHEN_GetEntriesInvoked_THEN_ShouldReturnLocalOnly()
+        {
+            _jsRuntime
+                .Setup(runtime => runtime.InvokeAsync<BrowserStorageEntry[]?>(
+                    "qbt.getLocalStorageEntriesByPrefix",
+                    It.IsAny<CancellationToken>(),
+                    It.IsAny<object?[]?>()))
+                .ReturnsAsync([new BrowserStorageEntry("QbtMud.LocalOnly", "{}")]);
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.Failure);
+
+            var result = await _target.GetEntriesAsync(TestContext.Current.CancellationToken);
+
+            result.Should().ContainSingle();
             result[0].StorageType.Should().Be(StorageType.LocalStorage);
             result[0].DisplayKey.Should().Be("LocalOnly");
         }
@@ -231,7 +256,8 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal));
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)));
 
             var removed = await _target.ClearEntriesAsync(StorageType.ClientData, TestContext.Current.CancellationToken);
 
@@ -239,6 +265,46 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_clientDataStorageAdapter).Verify(
                 adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientStorageTypeLoadFails_WHEN_ClearEntriesInvoked_THEN_ShouldReturnZero()
+        {
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.Failure);
+
+            var removed = await _target.ClearEntriesAsync(StorageType.ClientData, TestContext.Current.CancellationToken);
+
+            removed.Should().Be(0);
+            Mock.Get(_clientDataStorageAdapter).Verify(
+                adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientStorageTypeRemoveFails_WHEN_ClearEntriesInvoked_THEN_ShouldReturnZero()
+        {
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.A"] = JsonDocument.Parse("1").RootElement.Clone()
+                    }));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure);
+
+            var removed = await _target.ClearEntriesAsync(StorageType.ClientData, TestContext.Current.CancellationToken);
+
+            removed.Should().Be(0);
         }
 
         [Fact]
@@ -255,11 +321,12 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
-                {
-                    ["QbtMud.Null"] = JsonDocument.Parse("null").RootElement.Clone(),
-                    ["QbtMud.String"] = JsonDocument.Parse("\"text\"").RootElement.Clone()
-                });
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.Null"] = JsonDocument.Parse("null").RootElement.Clone(),
+                        ["QbtMud.String"] = JsonDocument.Parse("\"text\"").RootElement.Clone()
+                    }));
 
             var result = await _target.GetEntriesAsync(TestContext.Current.CancellationToken);
 

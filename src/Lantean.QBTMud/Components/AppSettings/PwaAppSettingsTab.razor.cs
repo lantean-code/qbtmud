@@ -1,10 +1,10 @@
+using System.Diagnostics;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Diagnostics;
 
 namespace Lantean.QBTMud.Components.AppSettingsTabs
 {

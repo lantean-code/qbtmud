@@ -1,6 +1,6 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -29,6 +29,10 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ValidCredentials_WHEN_Submitted_THEN_LogsInAndNavigatesHome()
         {
+            Mock.Get(_apiClient)
+                .Setup(client => client.LoginAsync("Username", "Password"))
+                .ReturnsSuccess(Task.CompletedTask);
+
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/login");
             var target = RenderPage();
@@ -39,16 +43,16 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.Login("Username", "Password"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.LoginAsync("Username", "Password"), Times.Once);
             navigationManager.Uri.Should().Be("http://localhost/");
         }
 
         [Fact]
-        public async Task GIVEN_InvalidCredentials_WHEN_Submitted_THEN_ShowsInvalidCredentialsError()
+        public async Task GIVEN_LegacyInvalidCredentialsResponse_WHEN_Submitted_THEN_ShowsInvalidCredentialsError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.Login("Username", "Password"))
-                .ThrowsAsync(new HttpRequestException("Failure", null, HttpStatusCode.BadRequest));
+                .Setup(client => client.LoginAsync("Username", "Password"))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRejected, "Failure", HttpStatusCode.BadRequest, LoginFailureReason.InvalidCredentials);
 
             var target = RenderPage();
             await SetCredentials(target, "Username", "Password");
@@ -65,11 +69,11 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_ForbiddenResponse_WHEN_Submitted_THEN_ShowsForbiddenError()
+        public async Task GIVEN_UnauthorizedResponse_WHEN_Submitted_THEN_ShowsInvalidCredentialsError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.Login("Username", "Password"))
-                .ThrowsAsync(new HttpRequestException("Failure", null, HttpStatusCode.Forbidden));
+                .Setup(client => client.LoginAsync("Username", "Password"))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRejected, "Failure", HttpStatusCode.Unauthorized, LoginFailureReason.InvalidCredentials);
 
             var target = RenderPage();
             await SetCredentials(target, "Username", "Password");
@@ -81,7 +85,28 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var alert = FindComponentByTestId<MudAlert>(target, "LoginError");
-                GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to log in, server is probably unreachable.");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Invalid Username or Password.");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_ForbiddenResponseWithMessage_WHEN_Submitted_THEN_ShowsServerMessage()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.LoginAsync("Username", "Password"))
+                .ReturnsFailure(ApiFailureKind.AccessDenied, "Your IP address has been banned after too many failed authentication attempts.", HttpStatusCode.Forbidden, LoginFailureReason.BannedClient);
+
+            var target = RenderPage();
+            await SetCredentials(target, "Username", "Password");
+
+            var form = target.FindComponent<EditForm>();
+
+            await target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                var alert = FindComponentByTestId<MudAlert>(target, "LoginError");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Your IP address has been banned after too many failed authentication attempts.");
             });
         }
 
@@ -89,8 +114,8 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_UnexpectedFailure_WHEN_Submitted_THEN_ShowsGenericError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.Login("Username", "Password"))
-                .ThrowsAsync(new InvalidOperationException("Failure"));
+                .Setup(client => client.LoginAsync("Username", "Password"))
+                .ReturnsFailure(ApiFailureKind.UnexpectedResponse, "Failure");
 
             var target = RenderPage();
             await SetCredentials(target, "Username", "Password");
@@ -112,6 +137,16 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage();
 
             target.FindComponents<MudAlert>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_LoginPage_WHEN_Rendered_THEN_PageTitleIsLocalizedLogin()
+        {
+            var target = RenderPage();
+
+            var pageTitle = target.FindComponent<PageTitle>();
+
+            GetChildContentText(pageTitle.Instance.ChildContent).Should().Be("Login");
         }
 
         [Fact]

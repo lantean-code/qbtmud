@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
@@ -11,8 +10,9 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
-using ClientRssArticle = Lantean.QBitTorrentClient.Models.RssArticle;
-using ClientRssItem = Lantean.QBitTorrentClient.Models.RssItem;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using ClientRssArticle = QBittorrent.ApiClient.Models.RssArticle;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -32,8 +32,11 @@ namespace Lantean.QBTMud.Test.Pages
             _snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
 
             _apiClientMock
-                .Setup(client => client.GetAllRssItems(true))
-                .ReturnsAsync(CreateRssItems());
+                .Setup(client => client.GetAllRssItemsAsync(true))
+                .ReturnsSuccessAsync(CreateRssItems());
+            _apiClientMock
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
         }
 
         [Fact]
@@ -45,7 +48,7 @@ namespace Lantean.QBTMud.Test.Pages
             FindByTestId<MudList<string>>(target, "RssArticleListDesktop").Should().NotBeNull();
             FindByTestId<MudCard>(target, "RssArticleDetailsDesktop").Should().NotBeNull();
 
-            _apiClientMock.Verify(client => client.GetAllRssItems(true), Times.AtLeastOnce);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.AtLeastOnce);
         }
 
         [Fact]
@@ -146,16 +149,16 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://new-feed");
             _apiClientMock
-                .Setup(client => client.AddRssFeed("http://new-feed", null))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.AddRssFeedAsync("http://new-feed", null))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var button = FindByTestId<MudIconButton>(target, "RssNewSubscription");
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            _apiClientMock.Verify(client => client.AddRssFeed("http://new-feed", null), Times.Once);
-            _apiClientMock.Verify(client => client.GetAllRssItems(true), Times.AtLeast(2));
+            _apiClientMock.Verify(client => client.AddRssFeedAsync("http://new-feed", null), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.AtLeast(2));
         }
 
         [Fact]
@@ -170,34 +173,34 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            _apiClientMock.Verify(client => client.AddRssFeed(It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
+            _apiClientMock.Verify(client => client.AddRssFeedAsync(It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_SelectedUnreadNode_WHEN_MarkItemsReadClicked_THEN_ShouldMarkAllFeedsAsRead()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var button = FindByTestId<MudIconButton>(target, "RssMarkItemsRead");
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead("Feed1", null), Times.Once);
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(@"Folder\Feed2", null), Times.Once);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync("Feed1", null), Times.Once);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed2", null), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_NoSelectedNode_WHEN_MarkItemsReadInvoked_THEN_ShouldReturnWithoutApiCall()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
+                .ReturnsSuccess(Task.CompletedTask);
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
-                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, ClientRssItem>>()))
+                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns((RssList)null!);
 
             var target = RenderTarget();
@@ -205,36 +208,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), null), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_SelectedNodeAndDisconnected_WHEN_MarkItemsReadInvoked_THEN_ShouldReturnWithoutApiCall()
-        {
-            _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
-
-            var target = RenderTarget(disconnected: true);
-            await SelectFeedNode(target, "RssFeedNode-Feed1");
-            var button = FindByTestId<MudIconButton>(target, "RssMarkItemsRead");
-
-            await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
-
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), null), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_DisconnectedClient_WHEN_UpdateAllInvoked_THEN_ShouldReturnWithoutRefresh()
-        {
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
-
-            var target = RenderTarget(disconnected: true);
-            var button = FindByTestId<MudIconButton>(target, "RssUpdateAll");
-
-            await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
-
-            _apiClientMock.Verify(client => client.RefreshRssItem(It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null), Times.Never);
         }
 
         [Fact]
@@ -258,8 +232,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
             _apiClientMock
-                .Setup(client => client.RemoveRssItem(It.IsAny<string>()))
-                .ThrowsAsync(new HttpRequestException("Delete failed"));
+                .Setup(client => client.RemoveRssItemAsync(It.IsAny<string>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Delete failed");
 
             var target = RenderTarget();
             var node = target.Find($"[data-test-id=\"{TestIdHelper.For("RssFeedNode-Feed1")}\"] .rss-feed-list__item-content");
@@ -270,7 +244,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(client => client.RemoveRssItem("Feed1"), Times.Once);
+                _apiClientMock.Verify(client => client.RemoveRssItemAsync("Feed1"), Times.Once);
                 _snackbarMock.Verify(snackbar =>
                     snackbar.Add(It.Is<string>(message => message.Contains("Unable to remove RSS item")), Severity.Error, null, null), Times.Once);
             });
@@ -279,7 +253,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_EmptyAreaContextMenu_WHEN_UpdateAllSelected_THEN_ShouldRefreshAllFeeds()
         {
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var container = target.Find($"[data-test-id=\"{TestIdHelper.For("RssFeedListContainerDesktop")}\"]");
@@ -288,8 +262,8 @@ namespace Lantean.QBTMud.Test.Pages
             var refreshAllItem = FindPopoverByTestId<MudMenuItem>("RssContextUpdateAllFeeds");
             await target.InvokeAsync(() => refreshAllItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.RefreshRssItem("Feed1"), Times.Once);
-            _apiClientMock.Verify(client => client.RefreshRssItem(@"Folder\Feed2"), Times.Once);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync("Feed1"), Times.Once);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync(@"Folder\Feed2"), Times.Once);
         }
 
         [Fact]
@@ -308,45 +282,77 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_UnreadContextUpdate_WHEN_Clicked_THEN_ShouldRefreshAllFeeds()
         {
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
 
             await OpenFeedContextMenu(target, "RssFeedNode-__unread__");
             var updateItem = FindPopoverByTestId<MudMenuItem>("RssContextUpdate");
             await target.InvokeAsync(() => updateItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.RefreshRssItem("Feed1"), Times.Once);
-            _apiClientMock.Verify(client => client.RefreshRssItem(@"Folder\Feed2"), Times.Once);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync("Feed1"), Times.Once);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync(@"Folder\Feed2"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FolderContextUpdate_WHEN_Clicked_THEN_ShouldRefreshOnlyFolderFeeds()
         {
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
 
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
             var updateItem = FindPopoverByTestId<MudMenuItem>("RssContextUpdate");
             await target.InvokeAsync(() => updateItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.RefreshRssItem(@"Folder\Feed2"), Times.Once);
-            _apiClientMock.Verify(client => client.RefreshRssItem("Feed1"), Times.Never);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync(@"Folder\Feed2"), Times.Once);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync("Feed1"), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_FeedContextUpdateFails_WHEN_Clicked_THEN_ShouldShowFailureAndSkipRefresh()
+        {
+            _apiClientMock
+                .Setup(client => client.RefreshRssItemAsync("Feed1"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "refresh failure");
+            var target = RenderTarget();
+
+            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
+            var updateItem = FindPopoverByTestId<MudMenuItem>("RssContextUpdate");
+            await target.InvokeAsync(() => updateItem.Instance.OnClick.InvokeAsync());
+
+            _snackbarMock.Verify(snackbar => snackbar.Add("refresh failure", Severity.Error, null, null), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FeedContextMarkRead_WHEN_Clicked_THEN_ShouldMarkSingleFeedRead()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
 
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
             var markItem = FindPopoverByTestId<MudMenuItem>("RssContextMarkItemsRead");
             await target.InvokeAsync(() => markItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead("Feed1", null), Times.Once);
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(@"Folder\Feed2", null), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync("Feed1", null), Times.Once);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed2", null), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_FeedContextMarkReadFails_WHEN_Clicked_THEN_ShouldShowFailureAndSkipRefresh()
+        {
+            _apiClientMock
+                .Setup(client => client.MarkRssItemAsReadAsync("Feed1", null))
+                .ReturnsFailure(ApiFailureKind.ServerError, "mark read failure");
+            var target = RenderTarget();
+
+            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
+            var markItem = FindPopoverByTestId<MudMenuItem>("RssContextMarkItemsRead");
+            await target.InvokeAsync(() => markItem.Instance.OnClick.InvokeAsync());
+
+            _snackbarMock.Verify(snackbar => snackbar.Add("mark read failure", Severity.Error, null, null), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.Once);
         }
 
         [Fact]
@@ -355,7 +361,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please choose a folder name", "Folder name:", "Folder"))
                 .ReturnsAsync("RenamedFolder");
-            _apiClientMock.Setup(client => client.MoveRssItem("Folder", "RenamedFolder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.MoveRssItemAsync("Folder", "RenamedFolder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -363,7 +369,7 @@ namespace Lantean.QBTMud.Test.Pages
             var renameItem = FindPopoverByTestId<MudMenuItem>("RssContextRename");
             await target.InvokeAsync(() => renameItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.MoveRssItem("Folder", "RenamedFolder"), Times.Once);
+            _apiClientMock.Verify(client => client.MoveRssItemAsync("Folder", "RenamedFolder"), Times.Once);
         }
 
         [Fact]
@@ -373,8 +379,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please choose a new name for this RSS feed", "New feed name:", "Feed1"))
                 .ReturnsAsync("Feed1Renamed");
             _apiClientMock
-                .Setup(client => client.MoveRssItem("Feed1", "Feed1Renamed"))
-                .ThrowsAsync(new HttpRequestException("rename failure"));
+                .Setup(client => client.MoveRssItemAsync("Feed1", "Feed1Renamed"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "rename failure");
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -399,7 +405,7 @@ namespace Lantean.QBTMud.Test.Pages
             var renameItem = FindPopoverByTestId<MudMenuItem>("RssContextRename");
             await target.InvokeAsync(() => renameItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.MoveRssItem(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.MoveRssItemAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -415,7 +421,7 @@ namespace Lantean.QBTMud.Test.Pages
             var renameItem = FindPopoverByTestId<MudMenuItem>("RssContextRename");
             await target.InvokeAsync(() => renameItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.MoveRssItem(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.MoveRssItemAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -425,8 +431,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("Edit feed URL...", "Feed URL:", "http://feed1"))
                 .ReturnsAsync("http://changed-url");
             _apiClientMock
-                .Setup(client => client.SetRssFeedUrl("Feed1", "http://changed-url"))
-                .ThrowsAsync(new HttpRequestException("url failure"));
+                .Setup(client => client.SetRssFeedUrlAsync("Feed1", "http://changed-url"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "url failure");
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -444,7 +450,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Edit feed URL...", "Feed URL:", "http://feed1"))
                 .ReturnsAsync("http://changed-url");
-            _apiClientMock.Setup(client => client.SetRssFeedUrl("Feed1", "http://changed-url")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.SetRssFeedUrlAsync("Feed1", "http://changed-url")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -452,8 +458,8 @@ namespace Lantean.QBTMud.Test.Pages
             var editUrlItem = FindPopoverByTestId<MudMenuItem>("RssContextEditFeedUrl");
             await target.InvokeAsync(() => editUrlItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.SetRssFeedUrl("Feed1", "http://changed-url"), Times.Once);
-            _apiClientMock.Verify(client => client.GetAllRssItems(true), Times.AtLeast(2));
+            _apiClientMock.Verify(client => client.SetRssFeedUrlAsync("Feed1", "http://changed-url"), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.AtLeast(2));
         }
 
         [Fact]
@@ -469,7 +475,7 @@ namespace Lantean.QBTMud.Test.Pages
             var editUrlItem = FindPopoverByTestId<MudMenuItem>("RssContextEditFeedUrl");
             await target.InvokeAsync(() => editUrlItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.SetRssFeedUrl(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.SetRssFeedUrlAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -485,7 +491,7 @@ namespace Lantean.QBTMud.Test.Pages
             var editUrlItem = FindPopoverByTestId<MudMenuItem>("RssContextEditFeedUrl");
             await target.InvokeAsync(() => editUrlItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.SetRssFeedUrl(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.SetRssFeedUrlAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -501,7 +507,7 @@ namespace Lantean.QBTMud.Test.Pages
             var deleteItem = FindPopoverByTestId<MudMenuItem>("RssContextDelete");
             await target.InvokeAsync(() => deleteItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.RemoveRssItem(It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.RemoveRssItemAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -510,7 +516,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
-            _apiClientMock.Setup(client => client.RemoveRssItem("Feed1")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RemoveRssItemAsync("Feed1")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -518,8 +524,8 @@ namespace Lantean.QBTMud.Test.Pages
             var deleteItem = FindPopoverByTestId<MudMenuItem>("RssContextDelete");
             await target.InvokeAsync(() => deleteItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.RemoveRssItem("Feed1"), Times.Once);
-            _apiClientMock.Verify(client => client.GetAllRssItems(true), Times.AtLeast(2));
+            _apiClientMock.Verify(client => client.RemoveRssItemAsync("Feed1"), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.AtLeast(2));
         }
 
         [Fact]
@@ -528,7 +534,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please choose a folder name", "Folder name:", null))
                 .ReturnsAsync("CreatedFolder");
-            _apiClientMock.Setup(client => client.AddRssFolder(@"Folder\CreatedFolder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFolderAsync(@"Folder\CreatedFolder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -536,7 +542,7 @@ namespace Lantean.QBTMud.Test.Pages
             var newFolderItem = FindPopoverByTestId<MudMenuItem>("RssContextNewFolder");
             await target.InvokeAsync(() => newFolderItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.AddRssFolder(@"Folder\CreatedFolder"), Times.Once);
+            _apiClientMock.Verify(client => client.AddRssFolderAsync(@"Folder\CreatedFolder"), Times.Once);
         }
 
         [Fact]
@@ -552,7 +558,7 @@ namespace Lantean.QBTMud.Test.Pages
             var newFolderItem = FindPopoverByTestId<MudMenuItem>("RssContextNewFolder");
             await target.InvokeAsync(() => newFolderItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.AddRssFolder(It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.AddRssFolderAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -581,64 +587,12 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => deleteCallback.InvokeAsync());
             await target.InvokeAsync(() => copyUrlCallback.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.RefreshRssItem(It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), null), Times.Never);
-            _apiClientMock.Verify(client => client.MoveRssItem(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.SetRssFeedUrl(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.RemoveRssItem(It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.RefreshRssItemAsync(It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null), Times.Never);
+            _apiClientMock.Verify(client => client.MoveRssItemAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.SetRssFeedUrlAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.RemoveRssItemAsync(It.IsAny<string>()), Times.Never);
             clipboardMock.Verify(service => service.WriteToClipboard(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_FeedContextCallbacks_WHEN_DisconnectedAfterCapture_THEN_ShouldReturnOnDisconnectedGuards()
-        {
-            var mainData = CreateMainData(disconnected: false);
-            var target = RenderTarget(mainData);
-            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
-
-            var updateCallback = FindPopoverByTestId<MudMenuItem>("RssContextUpdate").Instance.OnClick;
-            var markReadCallback = FindPopoverByTestId<MudMenuItem>("RssContextMarkItemsRead").Instance.OnClick;
-            var renameCallback = FindPopoverByTestId<MudMenuItem>("RssContextRename").Instance.OnClick;
-            var editUrlCallback = FindPopoverByTestId<MudMenuItem>("RssContextEditFeedUrl").Instance.OnClick;
-            var deleteCallback = FindPopoverByTestId<MudMenuItem>("RssContextDelete").Instance.OnClick;
-            var addSubscriptionCallback = FindPopoverByTestId<MudMenuItem>("RssContextNewSubscription").Instance.OnClick;
-
-            mainData.LostConnection = true;
-            target.Render();
-
-            await target.InvokeAsync(() => updateCallback.InvokeAsync());
-            await target.InvokeAsync(() => markReadCallback.InvokeAsync());
-            await target.InvokeAsync(() => renameCallback.InvokeAsync());
-            await target.InvokeAsync(() => editUrlCallback.InvokeAsync());
-            await target.InvokeAsync(() => deleteCallback.InvokeAsync());
-            await target.InvokeAsync(() => addSubscriptionCallback.InvokeAsync());
-
-            _apiClientMock.Verify(client => client.RefreshRssItem(It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), null), Times.Never);
-            _apiClientMock.Verify(client => client.MoveRssItem(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.SetRssFeedUrl(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.RemoveRssItem(It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.AddRssFeed(It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
-            _dialogWorkflowMock.Verify(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
-            _dialogWorkflowMock.Verify(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_FolderNewFolderCallback_WHEN_DisconnectedAfterCapture_THEN_ShouldReturnWithoutDialogOrApiCall()
-        {
-            var mainData = CreateMainData(disconnected: false);
-            var target = RenderTarget(mainData);
-            await OpenFeedContextMenu(target, "RssFeedNode-Folder");
-
-            var addFolderCallback = FindPopoverByTestId<MudMenuItem>("RssContextNewFolder").Instance.OnClick;
-
-            mainData.LostConnection = true;
-            target.Render();
-
-            await target.InvokeAsync(() => addFolderCallback.InvokeAsync());
-
-            _apiClientMock.Verify(client => client.AddRssFolder(It.IsAny<string>()), Times.Never);
-            _dialogWorkflowMock.Verify(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -648,8 +602,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please choose a folder name", "Folder name:", null))
                 .ReturnsAsync("TopFolder");
             _apiClientMock
-                .Setup(client => client.AddRssFolder("TopFolder"))
-                .ThrowsAsync(new HttpRequestException("add folder failed"));
+                .Setup(client => client.AddRssFolderAsync("TopFolder"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "add folder failed");
 
             var target = RenderTarget();
             var container = target.Find($"[data-test-id=\"{TestIdHelper.For("RssFeedListContainerDesktop")}\"]");
@@ -668,7 +622,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://folder-feed");
-            _apiClientMock.Setup(client => client.AddRssFeed("http://folder-feed", "Folder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://folder-feed", "Folder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -676,7 +630,7 @@ namespace Lantean.QBTMud.Test.Pages
             var newSubscriptionItem = FindPopoverByTestId<MudMenuItem>("RssContextNewSubscription");
             await target.InvokeAsync(() => newSubscriptionItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.AddRssFeed("http://folder-feed", "Folder"), Times.Once);
+            _apiClientMock.Verify(client => client.AddRssFeedAsync("http://folder-feed", "Folder"), Times.Once);
         }
 
         [Fact]
@@ -685,7 +639,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://feed-child");
-            _apiClientMock.Setup(client => client.AddRssFeed("http://feed-child", null)).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://feed-child", null)).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -693,7 +647,7 @@ namespace Lantean.QBTMud.Test.Pages
             var newSubscriptionItem = FindPopoverByTestId<MudMenuItem>("RssContextNewSubscription");
             await target.InvokeAsync(() => newSubscriptionItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.AddRssFeed("http://feed-child", null), Times.Once);
+            _apiClientMock.Verify(client => client.AddRssFeedAsync("http://feed-child", null), Times.Once);
         }
 
         [Fact]
@@ -702,7 +656,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://nested-feed");
-            _apiClientMock.Setup(client => client.AddRssFeed("http://nested-feed", "Folder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://nested-feed", "Folder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, @"RssFeedNode-Folder\Feed2");
@@ -710,7 +664,7 @@ namespace Lantean.QBTMud.Test.Pages
             var newSubscriptionItem = FindPopoverByTestId<MudMenuItem>("RssContextNewSubscription");
             await target.InvokeAsync(() => newSubscriptionItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.AddRssFeed("http://nested-feed", "Folder"), Times.Once);
+            _apiClientMock.Verify(client => client.AddRssFeedAsync("http://nested-feed", "Folder"), Times.Once);
         }
 
         [Fact]
@@ -719,7 +673,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://root-feed");
-            _apiClientMock.Setup(client => client.AddRssFeed("http://root-feed", null)).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://root-feed", null)).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var container = target.Find(ToDataTestIdSelector("RssFeedListContainerDesktop"));
@@ -728,7 +682,7 @@ namespace Lantean.QBTMud.Test.Pages
             var newSubscriptionItem = FindPopoverByTestId<MudMenuItem>("RssContextNewSubscription");
             await target.InvokeAsync(() => newSubscriptionItem.Instance.OnClick.InvokeAsync());
 
-            _apiClientMock.Verify(client => client.AddRssFeed("http://root-feed", null), Times.Once);
+            _apiClientMock.Verify(client => client.AddRssFeedAsync("http://root-feed", null), Times.Once);
         }
 
         [Fact]
@@ -738,8 +692,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://failed-feed");
             _apiClientMock
-                .Setup(client => client.AddRssFeed("http://failed-feed", null))
-                .ThrowsAsync(new HttpRequestException("add feed failure"));
+                .Setup(client => client.AddRssFeedAsync("http://failed-feed", null))
+                .ReturnsFailure(ApiFailureKind.ServerError, "add feed failure");
 
             var target = RenderTarget();
             var button = FindByTestId<MudIconButton>(target, "RssNewSubscription");
@@ -818,26 +772,26 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ReadArticleSelected_WHEN_Clicked_THEN_ShouldNotMarkReadAgain()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             await SelectArticle(target, "Article2");
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead("Feed1", "Article2"), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync("Feed1", "Article2"), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_UnreadArticleSelected_WHEN_Clicked_THEN_ShouldMarkAsReadWithArticleId()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             await SelectArticle(target, "Article1");
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead("Feed1", "Article1"), Times.Once);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync("Feed1", "Article1"), Times.Once);
         }
 
         [Fact]
@@ -848,7 +802,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => articleList.Instance.SelectedValueChanged.InvokeAsync("missing-id"));
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -857,10 +811,10 @@ namespace Lantean.QBTMud.Test.Pages
             var rssDataManager = new RssDataManager();
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
-                .SetupSequence(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, ClientRssItem>>()))
+                .SetupSequence(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns(rssDataManager.CreateRssList(CreateRssItems()))
                 .Returns((RssList)null!);
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var articleList = FindByTestId<MudList<string>>(target, "RssArticleListDesktop");
@@ -870,7 +824,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
             await target.InvokeAsync(() => selectedValueChanged.InvokeAsync("Article1"));
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -906,18 +860,6 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.Find(ToDataTestIdSelector("RssFeedNode-Feed1")).Should().NotBeNull();
             target.Find(ToDataTestIdSelector(@"RssFeedNode-Folder\Feed2")).Should().NotBeNull();
-        }
-
-        [Fact]
-        public async Task GIVEN_DisconnectedFeedContext_WHEN_Opened_THEN_ShouldOnlyExposeCopyAction()
-        {
-            var target = RenderTarget(disconnected: true);
-            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
-
-            FindPopoverByTestId<MudMenuItem>("RssContextCopyFeedUrl").Should().NotBeNull();
-            FindPopoverByTestIdOrDefault<MudMenuItem>("RssContextUpdate").Should().BeNull();
-            FindPopoverByTestIdOrDefault<MudMenuItem>("RssContextMarkItemsRead").Should().BeNull();
-            FindPopoverByTestIdOrDefault<MudMenuItem>("RssContextNewSubscription").Should().BeNull();
         }
 
         [Fact]
@@ -984,8 +926,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var items = CreateRssItems(article1Read: false, article2Read: true, article3Read: true);
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget(breakpoint: Breakpoint.Xs, orientation: Orientation.Portrait, rssItems: items);
 
             await SelectFeedNode(target, "RssFeedNode-Feed1");
@@ -1000,15 +942,15 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_SelectedArticleChangedFromDifferentFeed_WHEN_SelectedValueChanged_THEN_ShouldMarkRead()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             var articleList = FindByTestId<MudList<string>>(target, "RssArticleListDesktop");
 
             await target.InvokeAsync(() => articleList.Instance.SelectedValueChanged.InvokeAsync("Article3"));
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(@"Folder\Feed2", "Article3"), Times.Once);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed2", "Article3"), Times.Once);
         }
 
         [Fact]
@@ -1017,13 +959,13 @@ namespace Lantean.QBTMud.Test.Pages
             var initialItems = CreateRssItems(article1Read: false, article2Read: true, article3Read: true);
             var refreshedItems = CreateRssItemsWithoutFeed1Articles();
             _apiClientMock
-                .SetupSequence(client => client.GetAllRssItems(true))
+                .SetupSequence(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(initialItems)
                 .ReturnsAsync(refreshedItems);
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget(breakpoint: Breakpoint.Xs, orientation: Orientation.Portrait);
             await SelectFeedNode(target, "RssFeedNode-Feed1");
@@ -1039,10 +981,10 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_SelectedFeedRemovedOnRefresh_WHEN_Updated_THEN_ShouldFallbackToFirstTreeNode()
         {
             _apiClientMock
-                .SetupSequence(client => client.GetAllRssItems(true))
+                .SetupSequence(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(CreateRssItems())
                 .ReturnsAsync(CreateRssItemsOnlyFeed2());
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
@@ -1057,33 +999,20 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_RefreshInProgress_WHEN_AdditionalRefreshRequestsArrive_THEN_ShouldQueueAndProcessPendingRefresh()
         {
-            var refreshGate = new TaskCompletionSource<IReadOnlyDictionary<string, ClientRssItem>>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var callCount = 0;
+            var refreshGate = new TaskCompletionSource<IReadOnlyDictionary<string, RssItem>>(TaskCreationOptions.RunContinuationsAsynchronously);
             _apiClientMock
-                .Setup(client => client.GetAllRssItems(true))
-                .Returns(() =>
-                {
-                    callCount++;
-                    if (callCount == 1)
-                    {
-                        return Task.FromResult((IReadOnlyDictionary<string, ClientRssItem>)CreateRssItems());
-                    }
-
-                    if (callCount == 2)
-                    {
-                        return refreshGate.Task;
-                    }
-
-                    return Task.FromResult((IReadOnlyDictionary<string, ClientRssItem>)CreateRssItems());
-                });
-            _apiClientMock.Setup(client => client.RefreshRssItem(It.IsAny<string>())).Returns(Task.CompletedTask);
-            _apiClientMock.Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), null)).Returns(Task.CompletedTask);
+                .SetupSequence(client => client.GetAllRssItemsAsync(true))
+                .ReturnsAsync(CreateRssItems())
+                .ReturnsSuccess(refreshGate.Task)
+                .ReturnsAsync(CreateRssItems());
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null)).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var refreshButton = FindByTestId<MudIconButton>(target, "RssUpdateAll");
             var refreshTask = target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            target.WaitForState(() => callCount >= 2);
+            target.WaitForState(() => _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetAllRssItemsAsync)) >= 2);
 
             var markReadButton = FindByTestId<MudIconButton>(target, "RssMarkItemsRead");
             await target.InvokeAsync(() => markReadButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
@@ -1093,17 +1022,17 @@ namespace Lantean.QBTMud.Test.Pages
 
             refreshGate.SetResult(CreateRssItems());
             await refreshTask;
-            target.WaitForState(() => callCount >= 3);
+            target.WaitForState(() => _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetAllRssItemsAsync)) >= 3);
 
-            _apiClientMock.Verify(client => client.GetAllRssItems(true), Times.AtLeast(3));
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.AtLeast(3));
         }
 
         [Fact]
         public async Task GIVEN_NoFeedsAvailable_WHEN_MarkItemsReadInvokedOnUnreadNode_THEN_ShouldNotCallMarkAsRead()
         {
             _apiClientMock
-                .Setup(client => client.MarkRssItemAsRead(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget(rssItems: CreateEmptyRssItems());
             await SelectFeedNode(target, "RssFeedNode-__unread__");
@@ -1111,7 +1040,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => markReadButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            _apiClientMock.Verify(client => client.MarkRssItemAsRead(It.IsAny<string>(), null), Times.Never);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null), Times.Never);
         }
 
         [Fact]
@@ -1119,7 +1048,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
-                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, ClientRssItem>>()))
+                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns((RssList)null!);
 
             var target = RenderTarget();
@@ -1127,58 +1056,41 @@ namespace Lantean.QBTMud.Test.Pages
             FindByTestId<MudList<RssTreeNode>>(target, "RssFeedListDesktop").Should().NotBeNull();
         }
 
+        [Fact]
+        public void GIVEN_RssLoadFails_WHEN_Rendered_THEN_ShouldRenderWithEmptyTree()
+        {
+            _apiClientMock
+                .Setup(client => client.GetAllRssItemsAsync(true))
+                .ReturnsFailure(ApiFailureKind.ServerError, "load failure");
+
+            var target = RenderTarget();
+
+            FindByTestId<MudList<RssTreeNode>>(target, "RssFeedListDesktop").Should().NotBeNull();
+            target.FindAll(ToDataTestIdSelector("RssFeedNode-Feed1")).Should().BeEmpty();
+        }
+
         private IRenderedComponent<Rss> RenderTarget(
             bool drawerOpen = false,
-            bool disconnected = false,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Landscape,
-            IReadOnlyDictionary<string, ClientRssItem>? rssItems = null)
+            IReadOnlyDictionary<string, RssItem>? rssItems = null)
         {
             if (rssItems is not null)
             {
                 _apiClientMock
-                    .Setup(client => client.GetAllRssItems(true))
-                    .ReturnsAsync(rssItems);
+                    .Setup(client => client.GetAllRssItemsAsync(true))
+                    .ReturnsSuccessAsync(rssItems);
             }
 
-            var mainData = CreateMainData(disconnected);
-
-            return RenderTarget(mainData, drawerOpen, breakpoint, orientation);
-        }
-
-        private IRenderedComponent<Rss> RenderTarget(
-            MainData mainData,
-            bool drawerOpen = false,
-            Breakpoint breakpoint = Breakpoint.Lg,
-            Orientation orientation = Orientation.Landscape)
-        {
             return TestContext.Render<Rss>(parameters =>
             {
-                parameters.AddCascadingValue(mainData);
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
                 parameters.AddCascadingValue(breakpoint);
                 parameters.AddCascadingValue(orientation);
             });
         }
 
-        private static MainData CreateMainData(bool disconnected)
-        {
-            return new MainData(
-                new Dictionary<string, Torrent>(),
-                new List<string>(),
-                new Dictionary<string, Category>(),
-                new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>())
-            {
-                LostConnection = disconnected
-            };
-        }
-
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateRssItems(
+        private static IReadOnlyDictionary<string, RssItem> CreateRssItems(
             bool includeArticleLink = true,
             bool feed1Loading = false,
             bool feed2HasError = false,
@@ -1190,9 +1102,9 @@ namespace Lantean.QBTMud.Test.Pages
             var article1Link = includeArticleLink ? "http://news1" : null;
             var article3Link = includeArticleLink ? "http://news3" : null;
 
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal)
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                ["Feed1"] = new ClientRssItem(
+                ["Feed1"] = CreateFeed(
                     new List<ClientRssArticle>
                     {
                         new ClientRssArticle("Category", "Comments", "2020-01-01", "Description", "Article1", article1Link, null, "Article 1", article1TorrentUrl, article1Read),
@@ -1204,48 +1116,54 @@ namespace Lantean.QBTMud.Test.Pages
                     "Feed 1",
                     "Feed1Uid",
                     "http://feed1"),
-                [@"Folder\Feed2"] = new ClientRssItem(
-                    new List<ClientRssArticle>
-                    {
-                        new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", article3Link, null, "Article 3", "http://torrent3", article3Read)
-                    },
-                    feed2HasError,
-                    false,
-                    "2020-01-01",
-                    "Feed 2",
-                    "Feed2Uid",
-                    "http://feed2")
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>(StringComparer.Ordinal)
+                {
+                    ["Feed2"] = CreateFeed(
+                        new List<ClientRssArticle>
+                        {
+                            new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", article3Link, null, "Article 3", "http://torrent3", article3Read)
+                        },
+                        feed2HasError,
+                        false,
+                        "2020-01-01",
+                        "Feed 2",
+                        "Feed2Uid",
+                        "http://feed2")
+                })
             };
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateRssItemsOnlyFeed2()
+        private static IReadOnlyDictionary<string, RssItem> CreateRssItemsOnlyFeed2()
         {
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal)
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                [@"Folder\Feed2"] = new ClientRssItem(
-                    new List<ClientRssArticle>
-                    {
-                        new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", false)
-                    },
-                    false,
-                    false,
-                    "2020-01-01",
-                    "Feed 2",
-                    "Feed2Uid",
-                    "http://feed2")
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>(StringComparer.Ordinal)
+                {
+                    ["Feed2"] = CreateFeed(
+                        new List<ClientRssArticle>
+                        {
+                            new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", false)
+                        },
+                        false,
+                        false,
+                        "2020-01-01",
+                        "Feed 2",
+                        "Feed2Uid",
+                        "http://feed2")
+                })
             };
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateEmptyRssItems()
+        private static IReadOnlyDictionary<string, RssItem> CreateEmptyRssItems()
         {
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal);
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal);
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateRssItemsWithoutFeed1Articles()
+        private static IReadOnlyDictionary<string, RssItem> CreateRssItemsWithoutFeed1Articles()
         {
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal)
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                ["Feed1"] = new ClientRssItem(
+                ["Feed1"] = CreateFeed(
                     new List<ClientRssArticle>(),
                     false,
                     false,
@@ -1253,18 +1171,33 @@ namespace Lantean.QBTMud.Test.Pages
                     "Feed 1",
                     "Feed1Uid",
                     "http://feed1"),
-                [@"Folder\Feed2"] = new ClientRssItem(
-                    new List<ClientRssArticle>
-                    {
-                        new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", true)
-                    },
-                    false,
-                    false,
-                    "2020-01-01",
-                    "Feed 2",
-                    "Feed2Uid",
-                    "http://feed2")
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>(StringComparer.Ordinal)
+                {
+                    ["Feed2"] = CreateFeed(
+                        new List<ClientRssArticle>
+                        {
+                            new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", true)
+                        },
+                        false,
+                        false,
+                        "2020-01-01",
+                        "Feed 2",
+                        "Feed2Uid",
+                        "http://feed2")
+                })
             };
+        }
+
+        private static RssFeedItem CreateFeed(
+            IReadOnlyList<ClientRssArticle>? articles,
+            bool? hasError,
+            bool? isLoading,
+            string? lastBuildDate,
+            string? title,
+            string uid,
+            string url)
+        {
+            return new RssFeedItem(articles, hasError, isLoading, lastBuildDate, null, title, uid, url);
         }
 
         private static IRenderedComponent<TComponent> FindByTestId<TComponent>(IRenderedComponent<Rss> target, string testId)

@@ -1,9 +1,9 @@
+using System.Globalization;
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Globalization;
 
 namespace Lantean.QBTMud.Test.Services
 {

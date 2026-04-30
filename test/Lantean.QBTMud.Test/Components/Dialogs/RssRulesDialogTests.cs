@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Services;
@@ -11,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRule(It.IsAny<string>(), It.IsAny<AutoDownloadingRule>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRuleAsync(It.IsAny<string>(), It.IsAny<AutoDownloadingRule>()), Times.Never);
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
             await dialog.Component.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRule(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
             await removeButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRule(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync(It.IsAny<string>()), Times.Never);
 
             Action action = () => FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-NewRule");
             action.Should().Throw<InvalidOperationException>();
@@ -143,8 +143,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 { "RuleA", CreateRule(enabled: false) },
             });
             Mock.Get(_apiClient)
-                .Setup(client => client.RemoveRssAutoDownloadingRule("RuleA"))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -154,7 +154,31 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
             await removeButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRule("RuleA"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_SavedRuleRemoveFails_WHEN_Removed_THEN_ShowsErrorAndKeepsSelection()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleA", CreateRule(enabled: false) },
+            });
+            Mock.Get(_apiClient)
+                .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "remove failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            await removeButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("remove failure", Severity.Error, null, null), Times.Once);
+            FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA").Should().NotBeNull();
         }
 
         [Fact]
@@ -167,7 +191,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var list = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesList");
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("MissingRule"));
 
-            Mock.Get(_apiClient).Verify(client => client.GetRssMatchingArticles(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -175,17 +199,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             SetupApiClient(new Dictionary<string, AutoDownloadingRule>
             {
-                { "RuleDefault", CreateRule(enabled: true, stopped: null, contentLayout: "Default", savePath: "C:/Downloads", affectedFeeds: new[] { "http://feed-a" }) },
-                { "RuleAlways", CreateRule(enabled: true, stopped: true, contentLayout: "Original", savePath: "", affectedFeeds: Array.Empty<string>()) },
-                { "RuleNever", CreateRule(enabled: true, stopped: false, contentLayout: "Subfolder", savePath: "", affectedFeeds: Array.Empty<string>()) },
-                { "RuleNoSubfolder", CreateRule(enabled: true, stopped: null, contentLayout: "NoSubfolder", savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleDefault", CreateRule(enabled: true, stopped: null, contentLayout: null, savePath: "C:/Downloads", affectedFeeds: new[] { "http://feed-a" }) },
+                { "RuleAlways", CreateRule(enabled: true, stopped: true, contentLayout: TorrentContentLayout.Original, savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleNever", CreateRule(enabled: true, stopped: false, contentLayout: TorrentContentLayout.Subfolder, savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleNoSubfolder", CreateRule(enabled: true, stopped: null, contentLayout: TorrentContentLayout.NoSubfolder, savePath: "", affectedFeeds: Array.Empty<string>()) },
             });
 
             var dialog = await _target.RenderDialogAsync();
 
             var list = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesList");
             var addStopped = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesAddStopped");
-            var contentLayout = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesContentLayout");
+            var contentLayout = FindComponentByTestId<MudSelect<TorrentContentLayout?>>(dialog.Component, "RssRulesContentLayout");
             var feeds = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
             var saveToField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
 
@@ -197,15 +221,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleAlways"));
             addStopped.Instance.GetState(x => x.Value).Should().Be("always");
-            contentLayout.Instance.GetState(x => x.Value).Should().Be("Original");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNever"));
             addStopped.Instance.GetState(x => x.Value).Should().Be("never");
-            contentLayout.Instance.GetState(x => x.Value).Should().Be("Subfolder");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Subfolder);
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNoSubfolder"));
             addStopped.Instance.GetState(x => x.Value).Should().Be("default");
-            contentLayout.Instance.GetState(x => x.Value).Should().Be("NoSubfolder");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.NoSubfolder);
         }
 
         [Fact]
@@ -216,8 +240,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("RuleA");
             Mock.Get(_apiClient)
-                .Setup(client => client.SetRssAutoDownloadingRule("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -236,7 +260,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRule(
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRuleAsync(
                     "RuleA",
                     It.Is<AutoDownloadingRule>(rule => rule.TorrentParams.SavePath == "C:/Downloads/RuleA")),
                 Times.Once);
@@ -252,15 +276,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetRssMatchingArticles("RuleA"))
-                .ReturnsAsync(new Dictionary<string, IReadOnlyList<string>>
+                .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>>
                 {
                     { "FeedA", new List<string> { "ArticleA" } },
                 });
 
             apiClientMock
-                .Setup(client => client.SetRssAutoDownloadingRule("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -303,11 +327,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("always"));
             await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("never"));
 
-            var contentLayout = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesContentLayout");
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("Default"));
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("Original"));
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("Subfolder"));
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("NoSubfolder"));
+            var contentLayout = FindComponentByTestId<MudSelect<TorrentContentLayout?>>(dialog.Component, "RssRulesContentLayout");
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(null));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.Original));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.Subfolder));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.NoSubfolder));
 
             var feedsList = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
             await dialog.Component.InvokeAsync(() => feedsList.Instance.SelectedValuesChanged.InvokeAsync(new List<string> { "FeedA" }));
@@ -315,7 +339,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetRssAutoDownloadingRule(
+            apiClientMock.Verify(client => client.SetRssAutoDownloadingRuleAsync(
                     "RuleA",
                     It.Is<AutoDownloadingRule>(rule =>
                         rule.UseRegex == true
@@ -329,7 +353,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                         && rule.TorrentParams.Tags.SequenceEqual(new[] { "alpha", "beta", "gamma" })
                         && rule.TorrentParams.SavePath == string.Empty
                         && rule.TorrentParams.Stopped == false
-                        && rule.TorrentParams.ContentLayout == "NoSubfolder"
+                        && rule.TorrentParams.ContentLayout == TorrentContentLayout.NoSubfolder
                         && rule.AffectedFeeds.Count == 1
                         && rule.AffectedFeeds.Contains("http://feed-a"))),
                 Times.Once);
@@ -337,24 +361,84 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRulesArticle-ArticleA").Should().NotBeNull();
         }
 
+        [Fact]
+        public async Task GIVEN_SaveFails_WHEN_SaveClicked_THEN_ShowsErrorAndDoesNotLoadMatchingArticles()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "save failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("save failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_MatchingArticlesLoadFailsAfterSave_WHEN_SaveClicked_THEN_ShowsError()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            apiClientMock
+                .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, IReadOnlyList<string>>>(ApiFailureKind.ServerError, "matching failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("matching failure", Severity.Error, null, null), Times.Once);
+        }
+
         private void SetupApiClient(Dictionary<string, AutoDownloadingRule> rules)
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllRssAutoDownloadingRules())
-                .ReturnsAsync(rules);
+                .Setup(client => client.GetAllRssAutoDownloadingRulesAsync())
+                .ReturnsSuccessAsync(rules);
             apiClientMock
-                .Setup(client => client.GetRssMatchingArticles(It.IsAny<string>()))
-                .ReturnsAsync(new Dictionary<string, IReadOnlyList<string>>());
+                .Setup(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>>());
             apiClientMock
-                .Setup(client => client.GetAllCategories())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "CatA", new Category("CatA", null, null) },
                 });
             apiClientMock
-                .Setup(client => client.GetAllRssItems(false))
-                .ReturnsAsync(new Dictionary<string, RssItem>
+                .Setup(client => client.GetAllRssItemsAsync(false))
+                .ReturnsSuccessAsync(new Dictionary<string, RssItem>
                 {
                     { "FeedA", CreateFeed("FeedA", "http://feed-a") },
                 });
@@ -368,7 +452,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private static AutoDownloadingRule CreateRule(
             bool? enabled,
             bool? stopped,
-            string? contentLayout,
+            TorrentContentLayout? contentLayout,
             string? savePath,
             IReadOnlyList<string>? affectedFeeds)
         {
@@ -376,7 +460,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             {
                 Enabled = enabled,
                 AffectedFeeds = affectedFeeds ?? Array.Empty<string>(),
-                TorrentParams = new TorrentParams
+                TorrentParams = new AutoDownloadingRuleTorrentParams
                 {
                     Stopped = stopped,
                     ContentLayout = contentLayout,
@@ -385,9 +469,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             };
         }
 
-        private static RssItem CreateFeed(string title, string url)
+        private static RssFeedItem CreateFeed(string title, string url)
         {
-            return new RssItem(null, false, false, null, title, title, url);
+            return new RssFeedItem(null, false, false, null, null, title, title, url);
         }
     }
 

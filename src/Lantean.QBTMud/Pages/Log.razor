@@ -1,3 +1,5 @@
+@using QBittorrent.ApiClient.Models
+@using ClientLog = QBittorrent.ApiClient.Models.Log
 @page "/log"
 @layout OtherLayout
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
@@ -44,7 +46,7 @@
 
         <DynamicTable @ref="Table"
                       TableId="Log"
-                      T="Lantean.QBitTorrentClient.Models.Log"
+                      T="ClientLog"
                       ColumnDefinitions="Columns"
                       Items="Results"
                       MultiSelection="false"

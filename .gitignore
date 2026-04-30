@@ -92,3 +92,6 @@ node_modules/
 
 # Mono crash logs (may appear on Linux/macOS)
 mono_crash.*
+
+# Other
+.codex

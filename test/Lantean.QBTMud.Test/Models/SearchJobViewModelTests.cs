@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Models
 {
@@ -20,17 +20,17 @@ namespace Lantean.QBTMud.Test.Models
                 new SearchResult("http://desc", "Ubuntu", 1_000_000, "http://files", 1, 10, "http://site", "movies", 1_700_000_000)
             });
 
-            job.UpdateStatus("Stopped", 1);
+            job.UpdateStatus(SearchJobStatus.Stopped, 1);
             job.IsStopped.Should().BeTrue();
 
-            job.UpdateStatus("Completed", 1);
+            job.UpdateStatus(SearchJobStatus.Stopped, 1);
 
-            job.Status.Should().Be("Completed");
+            job.Status.Should().Be(SearchJobStatus.Stopped);
             job.CompletedOn.Should().NotBeNull();
             job.CurrentOffset.Should().Be(1);
 
             job.SetError("failed");
-            job.Status.Should().Be("Error");
+            job.Status.Should().Be(SearchJobStatus.Stopped);
             job.ErrorMessage.Should().Be("failed");
             job.IsErrored.Should().BeTrue();
 
@@ -40,6 +40,20 @@ namespace Lantean.QBTMud.Test.Models
 
             job.ResetResults();
             job.ErrorMessage.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_RunningSearchJob_WHEN_SetErrorCalled_THEN_JobStopsRunning()
+        {
+            var job = new SearchJobViewModel(1, "Ubuntu", new[] { "movies" }, SearchForm.AllCategoryId);
+
+            job.SetError("failed");
+
+            job.Status.Should().Be(SearchJobStatus.Stopped);
+            job.IsRunning.Should().BeFalse();
+            job.IsStopped.Should().BeTrue();
+            job.ErrorMessage.Should().Be("failed");
+            job.CompletedOn.Should().NotBeNull();
         }
 
         [Fact]

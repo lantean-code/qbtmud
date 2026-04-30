@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Models
 {
@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Models
             Plugins = _plugins.AsReadOnly();
             Category = category;
             CreatedOn = DateTimeOffset.UtcNow;
-            Status = "Running";
+            Status = SearchJobStatus.Running;
         }
 
         public int Id { get; }
@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Models
 
         public string Category { get; }
 
-        public string Status { get; private set; }
+        public SearchJobStatus Status { get; private set; }
 
         public int Total { get; private set; }
 
@@ -39,11 +39,11 @@ namespace Lantean.QBTMud.Models
 
         public IReadOnlyList<SearchResult> Results => _results;
 
-        public bool IsRunning => string.Equals(Status, "Running", StringComparison.OrdinalIgnoreCase);
+        public bool IsRunning => Status == SearchJobStatus.Running;
 
-        public bool IsStopped => string.Equals(Status, "Stopped", StringComparison.OrdinalIgnoreCase);
+        public bool IsStopped => Status == SearchJobStatus.Stopped;
 
-        public bool IsErrored => string.Equals(Status, "Error", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrWhiteSpace(ErrorMessage);
+        public bool IsErrored => !string.IsNullOrWhiteSpace(ErrorMessage);
 
         public int CurrentOffset => _results.Count;
 
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Models
             }
         }
 
-        public void UpdateStatus(string status, int total)
+        public void UpdateStatus(SearchJobStatus status, int total)
         {
             Status = status;
             Total = total;
@@ -77,7 +77,7 @@ namespace Lantean.QBTMud.Models
 
         public void SetError(string message)
         {
-            Status = "Error";
+            Status = SearchJobStatus.Stopped;
             ErrorMessage = message;
             CompletedOn ??= DateTimeOffset.UtcNow;
         }

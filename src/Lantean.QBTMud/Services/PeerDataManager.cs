@@ -1,12 +1,15 @@
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
+using ClientPeer = QBittorrent.ApiClient.Models.Peer;
+using MudPeer = Lantean.QBTMud.Models.Peer;
 
 namespace Lantean.QBTMud.Services
 {
     public class PeerDataManager : IPeerDataManager
     {
-        public PeerList CreatePeerList(QBitTorrentClient.Models.TorrentPeers torrentPeers)
+        public PeerList CreatePeerList(TorrentPeers torrentPeers)
         {
-            var peers = new Dictionary<string, Peer>();
+            var peers = new Dictionary<string, MudPeer>();
             if (torrentPeers.Peers is not null)
             {
                 foreach (var (key, peer) in torrentPeers.Peers)
@@ -22,7 +25,7 @@ namespace Lantean.QBTMud.Services
             return peerList;
         }
 
-        public void MergeTorrentPeers(QBitTorrentClient.Models.TorrentPeers torrentPeers, PeerList peerList)
+        public void MergeTorrentPeers(TorrentPeers torrentPeers, PeerList peerList)
         {
             if (torrentPeers.PeersRemoved is not null)
             {
@@ -49,13 +52,13 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private static Peer CreatePeer(string key, QBitTorrentClient.Models.Peer peer)
+        private static MudPeer CreatePeer(string key, ClientPeer peer)
         {
-            return new Peer(
+            return new MudPeer(
                 key,
                 peer.Client ?? string.Empty,
                 peer.ClientId ?? string.Empty,
-                peer.Connection ?? string.Empty,
+                peer.Connection,
                 peer.Country,
                 peer.CountryCode,
                 peer.Downloaded.GetValueOrDefault(),
@@ -71,7 +74,7 @@ namespace Lantean.QBTMud.Services
                 peer.UploadSpeed.GetValueOrDefault());
         }
 
-        private static void UpdatePeer(Peer existingPeer, QBitTorrentClient.Models.Peer peer)
+        private static void UpdatePeer(MudPeer existingPeer, ClientPeer peer)
         {
             existingPeer.Client = peer.Client ?? existingPeer.Client;
             existingPeer.ClientId = peer.ClientId ?? existingPeer.ClientId;

@@ -1,6 +1,6 @@
-using Lantean.QBTMud.Models;
 using System.Text;
 using System.Text.RegularExpressions;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Services
 {
@@ -23,7 +23,7 @@ namespace Lantean.QBTMud.Services
     public static class FileNameMatcher
     {
         private const int _maxMatchesPerFile = 250;
-        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan _regexTimeout = TimeSpan.FromSeconds(2);
 
         public static IReadOnlyList<FileRow> GetRenamedFiles(
             IEnumerable<FileRow> files,
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Services
             Regex regex;
             try
             {
-                regex = new Regex(pattern, options, RegexTimeout);
+                regex = new Regex(pattern, options, _regexTimeout);
             }
             catch (ArgumentException)
             {

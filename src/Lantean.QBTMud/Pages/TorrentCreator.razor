@@ -1,6 +1,6 @@
 @page "/torrent-creator"
 @layout OtherLayout
-@using Lantean.QBitTorrentClient.Models
+@using QBittorrent.ApiClient.Models
 @using Lantean.QBTMud.Helpers
 @using Lantean.QBTMud.Models
 
@@ -48,7 +48,7 @@
         {
             return context => __builder =>
             {
-                var status = (string?)context.GetValue();
+                var status = (TorrentCreationTaskStatusKind?)context.GetValue();
                 var color = GetStatusColor(status);
                 var statusText = DisplayHelpers.EmptyIfNull(GetStatusDisplayText(status));
                 var task = (TorrentCreationTaskStatus)context.Data;

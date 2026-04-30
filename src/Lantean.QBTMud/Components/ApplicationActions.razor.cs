@@ -1,12 +1,10 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
-using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -24,9 +22,6 @@ namespace Lantean.QBTMud.Components
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
-
-        [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
@@ -41,15 +36,15 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [Parameter]
         public bool IsMenu { get; set; }
 
         [Parameter]
         [EditorRequired]
-        public Preferences? Preferences { get; set; }
-
-        [CascadingParameter]
-        public Models.MainData? MainData { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         protected IEnumerable<UIAction> Actions => GetActions();
 
@@ -100,7 +95,11 @@ namespace Lantean.QBTMud.Components
                 AlternativeWebuiEnabled = false,
             };
 
-            await ApiClient.SetApplicationPreferences(preferences);
+            var result = await ApiClient.SetApplicationPreferencesAsync(preferences);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(result))
+            {
+                return;
+            }
 
             NavigationManager.NavigateToHome(forceLoad: true);
         }
@@ -112,27 +111,25 @@ namespace Lantean.QBTMud.Components
                 LanguageLocalizer.Translate("AppApplicationActions", "Are you sure you want to logout?"),
                 async () =>
             {
-                try
+                var logoutResult = await ApiClient.LogoutAsync();
+                if (logoutResult.IsFailure)
                 {
-                    await ApiClient.Logout();
-                    await SpeedHistoryService.ClearAsync();
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        logoutResult,
+                        async (failure, cancellationToken) =>
+                        {
+                            if (failure.IsAuthenticationFailure())
+                            {
+                                await SpeedHistoryService.ClearAsync(cancellationToken);
+                            }
 
-                    NavigationManager.NavigateTo("login");
+                            return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                        });
+                    return;
                 }
-                catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                {
-                    await SpeedHistoryService.ClearAsync();
-                    NavigationManager.NavigateTo("login");
-                }
-                catch (HttpRequestException)
-                {
-                    if (MainData is not null)
-                    {
-                        MainData.LostConnection = true;
-                    }
 
-                    await ShowLostConnectionDialogAsync();
-                }
+                await SpeedHistoryService.ClearAsync();
+                NavigationManager.NavigateTo("login", forceLoad: true);
             });
         }
 
@@ -141,7 +138,11 @@ namespace Lantean.QBTMud.Components
             await DialogWorkflow.ShowConfirmDialog(
                 LanguageLocalizer.Translate("AppApplicationActions", "Quit?"),
                 LanguageLocalizer.Translate("AppApplicationActions", "Are you sure you want to exit qBittorrent?"),
-                ApiClient.Shutdown);
+                async () =>
+                {
+                    var shutdownResult = await ApiClient.ShutdownAsync();
+                    await ApiFeedbackWorkflow.ProcessResultAsync(shutdownResult);
+                });
         }
 
         private async Task RegisterMagnetHandler()
@@ -186,21 +187,6 @@ namespace Lantean.QBTMud.Components
             }
         }
 
-        private async Task ShowLostConnectionDialogAsync()
-        {
-            var options = new DialogOptions
-            {
-                CloseOnEscapeKey = false,
-                BackdropClick = false,
-                NoHeader = true,
-                FullWidth = true,
-                MaxWidth = MaxWidth.ExtraSmall,
-                BackgroundClass = "background-blur background-blur-strong"
-            };
-
-            await DialogService.ShowAsync<LostConnectionDialog>(title: null, options);
-        }
-
         protected async Task StartAllTorrents()
         {
             if (_startAllInProgress)
@@ -208,21 +194,16 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (MainData?.LostConnection == true)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
-                return;
-            }
-
             _startAllInProgress = true;
             try
             {
-                await ApiClient.StartAllTorrents();
+                var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.AllTorrents());
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(startResult))
+                {
+                    return;
+                }
+
                 SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
-            }
-            catch (HttpRequestException)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "Unable to start torrents."), Severity.Error);
             }
             finally
             {
@@ -237,21 +218,16 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (MainData?.LostConnection == true)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
-                return;
-            }
-
             _stopAllInProgress = true;
             try
             {
-                await ApiClient.StopAllTorrents();
+                var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.AllTorrents());
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(stopResult))
+                {
+                    return;
+                }
+
                 SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
-            }
-            catch (HttpRequestException)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "Unable to stop torrents."), Severity.Error);
             }
             finally
             {

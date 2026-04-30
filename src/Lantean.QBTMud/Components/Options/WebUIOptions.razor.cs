@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Interop;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Options
 {
@@ -37,7 +38,7 @@ namespace Lantean.QBTMud.Components.Options
         protected bool? WebUiReverseProxyEnabled { get; private set; }
         protected string? WebUiReverseProxiesList { get; private set; }
         protected bool? DyndnsEnabled { get; private set; }
-        protected int DyndnsService { get; private set; }
+        protected DyndnsService DyndnsService { get; private set; }
         protected string? DyndnsDomain { get; private set; }
         protected string? DyndnsUsername { get; private set; }
         protected string? DyndnsPassword { get; private set; }
@@ -146,7 +147,7 @@ namespace Lantean.QBTMud.Components.Options
             WebUiHttpsCertPath = Preferences.WebUiHttpsCertPath;
             WebUiHttpsKeyPath = Preferences.WebUiHttpsKeyPath;
             WebUiUsername = Preferences.WebUiUsername;
-            WebUiPassword = Preferences.WebUiPassword;
+            WebUiPassword = null;
             BypassLocalAuth = Preferences.BypassLocalAuth;
             BypassAuthSubnetWhitelistEnabled = Preferences.BypassAuthSubnetWhitelistEnabled;
             BypassAuthSubnetWhitelist = Preferences.BypassAuthSubnetWhitelist;
@@ -368,7 +369,7 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task DyndnsServiceChanged(int value)
+        protected async Task DyndnsServiceChanged(DyndnsService value)
         {
             DyndnsService = value;
             UpdatePreferences.DyndnsService = value;
@@ -406,8 +407,8 @@ namespace Lantean.QBTMud.Components.Options
 #pragma warning disable S1075 // URIs should not be hardcoded
             var url = DyndnsService switch
             {
-                0 => "https://www.dyndns.com/account/services/hosts/add.html",
-                1 => "http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html",
+                DyndnsService.DynDns => "https://www.dyndns.com/account/services/hosts/add.html",
+                DyndnsService.NoIp => "http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html",
                 _ => throw new InvalidOperationException($"DyndnsService value of {DyndnsService} is not supported."),
             };
 #pragma warning restore S1075 // URIs should not be hardcoded

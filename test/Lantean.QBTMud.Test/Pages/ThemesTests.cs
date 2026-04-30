@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
@@ -12,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Pages
 {

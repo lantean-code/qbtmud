@@ -1,3 +1,4 @@
+@using QBittorrent.ApiClient.Models
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddTracker">@TranslateTrackersAddition("Add trackers")</MudMenuItem>
     @if (ContextMenuItem is not null)
@@ -23,7 +24,7 @@
     <div class="content-panel__body">
         <DynamicTable @ref="Table"
                       TableId="Trackers"
-                      T="Lantean.QBitTorrentClient.Models.TorrentTracker"
+                      T="TorrentTracker"
                       ColumnDefinitions="Columns"
                       Items="Trackers"
                       MultiSelection="false"

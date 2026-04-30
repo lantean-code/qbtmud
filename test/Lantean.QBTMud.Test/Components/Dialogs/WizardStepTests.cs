@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;
-using System.Runtime.CompilerServices;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {

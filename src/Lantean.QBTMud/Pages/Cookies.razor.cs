@@ -1,12 +1,12 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
+using System.Globalization;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Globalization;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -29,6 +29,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -141,11 +144,13 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                await LoadCookiesCoreAsync();
-            }
-            catch (HttpRequestException)
-            {
-                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                var loadResult = await LoadCookiesCoreAsync();
+                if (loadResult.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        loadResult,
+                        _ => Translate("Unable to load cookies. Please try again."));
+                }
             }
             finally
             {
@@ -164,12 +169,22 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                await ApiClient.SetApplicationCookies(nextCookies);
-                await LoadCookiesCoreAsync();
-            }
-            catch (HttpRequestException)
-            {
-                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to update cookies. Please try again."), Severity.Error);
+                var persistResult = await ApiClient.SetApplicationCookiesAsync(nextCookies);
+                if (persistResult.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        persistResult,
+                        _ => Translate("Unable to update cookies. Please try again."));
+                    return;
+                }
+
+                var loadResult = await LoadCookiesCoreAsync();
+                if (loadResult.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        loadResult,
+                        _ => Translate("Unable to load cookies. Please try again."));
+                }
             }
             finally
             {
@@ -178,17 +193,25 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private async Task LoadCookiesCoreAsync()
+        private async Task<ApiResult<IReadOnlyList<ApplicationCookie>>> LoadCookiesCoreAsync()
         {
             _cookies.Clear();
 
-            var cookies = await ApiClient.GetApplicationCookies();
-            foreach (var cookie in cookies.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
+            var cookiesResult = await ApiClient.GetApplicationCookiesAsync();
+            if (cookiesResult.IsFailure)
+            {
+                return cookiesResult;
+            }
+
+            var cookieList = cookiesResult.Value;
+            foreach (var cookie in cookieList.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase))
             {
                 _cookies.Add(new CookieRow(Guid.NewGuid(), cookie));
             }
+
+            return cookiesResult;
         }
 
         private IEnumerable<ColumnDefinition<CookieRow>> GetColumnDefinitions()

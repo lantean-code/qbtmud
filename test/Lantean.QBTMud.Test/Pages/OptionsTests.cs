@@ -1,17 +1,18 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -20,16 +21,12 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IApiClient _apiClient;
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly ISnackbar _snackbar;
-        private readonly ILanguageInitializationService _languageInitializationService;
-        private readonly IPreferencesUpdateService _preferencesUpdateService;
 
         public OptionsTests()
         {
             _apiClient = Mock.Of<IApiClient>();
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
-            _languageInitializationService = Mock.Of<ILanguageInitializationService>();
-            _preferencesUpdateService = Mock.Of<IPreferencesUpdateService>();
 
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
@@ -37,23 +34,13 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
-            TestContext.Services.RemoveAll<ILanguageInitializationService>();
-            TestContext.Services.AddSingleton(_languageInitializationService);
-            TestContext.Services.RemoveAll<IPreferencesUpdateService>();
-            TestContext.Services.AddSingleton(_preferencesUpdateService);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationPreferences())
-                .ReturnsAsync(CreatePreferences());
+                .Setup(client => client.GetApplicationPreferencesAsync())
+                .ReturnsSuccessAsync(CreatePreferences());
             Mock.Get(_apiClient)
-                .Setup(client => client.GetNetworkInterfaces())
-                .ReturnsAsync(Array.Empty<NetworkInterface>());
-            Mock.Get(_languageInitializationService)
-                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
-                .Returns(ValueTask.CompletedTask);
-            Mock.Get(_preferencesUpdateService)
-                .Setup(service => service.PublishAsync(It.IsAny<Preferences>()))
-                .Returns(ValueTask.CompletedTask);
+                .Setup(client => client.GetNetworkInterfacesAsync())
+                .ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
 
             TestContext.Render<MudPopoverProvider>();
         }
@@ -68,16 +55,7 @@ namespace Lantean.QBTMud.Test.Pages
             FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
             FindIconButton(target, Icons.Material.Outlined.Undo).Instance.Disabled.Should().BeTrue();
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferences(), Times.Once);
-        }
-
-        [Fact]
-        public void GIVEN_LostConnection_WHEN_Rendered_THEN_DisablesSaveAndUndo()
-        {
-            var target = RenderPage(lostConnection: true);
-
-            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
-            FindIconButton(target, Icons.Material.Outlined.Undo).Instance.Disabled.Should().BeTrue();
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferencesAsync(), Times.Once);
         }
 
         [Fact]
@@ -102,24 +80,29 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()), Times.Never);
         }
 
         [Fact]
-        public async Task GIVEN_SaveWithChanges_WHEN_Clicked_THEN_SavesAndNavigatesHome()
+        public async Task GIVEN_SaveWithChanges_WHEN_Clicked_THEN_SavesReloadsPreferencesAndStaysOnPage()
         {
             var preferences = CreatePreferences();
+            var savedPreferences = CreatePreferences(spec =>
+            {
+                spec.ConfirmTorrentDeletion = true;
+            });
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferences())
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
                 .ReturnsAsync(preferences)
-                .ReturnsAsync(preferences);
+                .ReturnsAsync(savedPreferences);
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
-            _apiClient.ClearInvocations();
             var target = RenderPage(preferences, configureApi: false);
+            _apiClient.ClearInvocations();
+            _snackbar.ClearInvocations();
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/settings");
@@ -130,20 +113,15 @@ namespace Lantean.QBTMud.Test.Pages
             var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferences(), Times.Exactly(2));
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferencesAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(
                     It.Is<UpdatePreferences>(value => value.ConfirmTorrentDeletion == true)),
                 Times.Once);
             Mock.Get(_snackbar).Verify(
-                snackbar => snackbar.Add("Options saved.", Severity.Success, It.IsAny<Action<SnackbarOptions>>()),
+                snackbar => snackbar.Add("Options saved.", Severity.Success, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
                 Times.Once);
-            Mock.Get(_preferencesUpdateService)
-                .Verify(service => service.PublishAsync(It.IsAny<Preferences>()), Times.Once);
-
-            target.WaitForAssertion(() =>
-            {
-                navigationManager.Uri.Should().Be("http://localhost/");
-            });
+            navigationManager.Uri.Should().Be("http://localhost/settings");
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
         }
 
         [Fact]
@@ -152,12 +130,8 @@ namespace Lantean.QBTMud.Test.Pages
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferences())
-                .ReturnsAsync(preferences)
-                .ReturnsAsync(preferences);
-            Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/settings");
@@ -173,8 +147,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                navigationManager.Uri.Should().Be("http://localhost/");
+                target.FindComponents<NavigationLock>().Should().BeEmpty();
             });
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
 
             navigationManager.NavigateTo("http://localhost/other");
 
@@ -189,17 +164,34 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_SaveFails_WHEN_Clicked_THEN_ShowsLocalizedErrorAndStaysOnPage()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            var snackbarMock = Mock.Get(_snackbar);
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/settings");
+
+            var target = RenderPage();
+            await ActivateTab(target, 0);
+            await SetSwitchValue(target, "ConfirmTorrentDeletion", true);
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Unable to save options.", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
+            navigationManager.Uri.Should().Be("http://localhost/settings");
+        }
+
+        [Fact]
         public async Task GIVEN_LocaleChanged_WHEN_Saved_THEN_ShouldPersistLocaleToLocalStorage()
         {
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferences())
-                .ReturnsAsync(preferences)
-                .ReturnsAsync(preferences);
-            Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             await TestContext.LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
 
@@ -214,9 +206,148 @@ namespace Lantean.QBTMud.Test.Pages
 
             var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("fr");
+        }
 
-            Mock.Get(_languageInitializationService)
-                .Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
+        [Fact]
+        public async Task GIVEN_LocaleChanged_WHEN_Saved_THEN_ShowsReloadActionPrompt()
+        {
+            var preferences = CreatePreferences();
+            Action<SnackbarOptions>? capturedOptions = null;
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add(
+                    "Language preference changed on server. Click Reload to apply it.",
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    "options-language-reload"))
+                .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, configure, _) => capturedOptions = configure);
+
+            var target = RenderPage(preferences, configureApi: false);
+            await ActivateTab(target, 0);
+
+            var languageSelect = FindSelect<string>(target, "UserInterfaceLanguage");
+            await target.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(
+                    "Language preference changed on server. Click Reload to apply it.",
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    "options-language-reload"),
+                Times.Once);
+            capturedOptions.Should().NotBeNull();
+
+            var options = new SnackbarOptions(Severity.Warning, new SnackbarConfiguration());
+            capturedOptions!(options);
+            options.Action.Should().Be("Reload");
+            options.RequireInteraction.Should().BeTrue();
+            options.OnClick.Should().NotBeNull();
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/settings");
+
+            await options.OnClick!(null!);
+
+            navigationManager.Uri.Should().Be("http://localhost/");
+        }
+
+        [Fact]
+        public async Task GIVEN_RuntimePreferencesChangedAfterSave_WHEN_Saved_THEN_QBittorrentPreferencesChangedEventRaised()
+        {
+            var preferences = CreatePreferences();
+            var savedPreferences = CreatePreferences(spec =>
+            {
+                spec.ConfirmTorrentDeletion = true;
+            });
+            var stateService = TestContext.Services.GetRequiredService<IQBittorrentPreferencesStateService>();
+            var eventCount = 0;
+            stateService.SetPreferences(CreateQBittorrentPreferences(preferences));
+            stateService.Changed += (_, _) => eventCount++;
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
+                .ReturnsAsync(preferences)
+                .ReturnsAsync(savedPreferences);
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var target = RenderPage(preferences, configureApi: false);
+            await ActivateTab(target, 0);
+            await SetSwitchValue(target, "ConfirmTorrentDeletion", true);
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            eventCount.Should().Be(1);
+            stateService.Current.Should().Be(CreateQBittorrentPreferences(savedPreferences));
+        }
+
+        [Fact]
+        public async Task GIVEN_RuntimePreferencesUnchangedAfterSave_WHEN_Saved_THEN_QBittorrentPreferencesChangedEventNotRaised()
+        {
+            var preferences = CreatePreferences();
+            var savedPreferences = CreatePreferences(spec =>
+            {
+                spec.Upnp = true;
+            });
+            var stateService = TestContext.Services.GetRequiredService<IQBittorrentPreferencesStateService>();
+            var eventCount = 0;
+            stateService.SetPreferences(CreateQBittorrentPreferences(preferences));
+            stateService.Changed += (_, _) => eventCount++;
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
+                .ReturnsAsync(preferences)
+                .ReturnsAsync(savedPreferences);
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var target = RenderPage(preferences, configureApi: false);
+            await ActivateTab(target, 2);
+            await SetSwitchValue(target, "Upnp", true);
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            eventCount.Should().Be(0);
+            stateService.Current.Should().Be(CreateQBittorrentPreferences(preferences));
+        }
+
+        [Fact]
+        public async Task GIVEN_PreferencesRefreshFailsAfterSave_WHEN_Saved_THEN_ShowsSuccessAndApiFailureWithoutPublishingChange()
+        {
+            var preferences = CreatePreferences();
+            var stateService = TestContext.Services.GetRequiredService<IQBittorrentPreferencesStateService>();
+            var eventCount = 0;
+            stateService.SetPreferences(CreateQBittorrentPreferences(preferences));
+            stateService.Changed += (_, _) => eventCount++;
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
+                .ReturnsAsync(preferences)
+                .ReturnsFailure(ApiFailureKind.ServerError, "Refresh failed");
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var target = RenderPage(preferences, configureApi: false);
+            await ActivateTab(target, 0);
+            await SetSwitchValue(target, "ConfirmTorrentDeletion", true);
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Options saved.", Severity.Success, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Refresh failed", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+            eventCount.Should().Be(0);
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
         }
 
         [Fact]
@@ -405,19 +536,18 @@ namespace Lantean.QBTMud.Test.Pages
                 .NotContain(button => button.Instance.Icon == Icons.Material.Outlined.NavigateBefore);
         }
 
-        private IRenderedComponent<Options> RenderPage(Preferences? preferences = null, bool drawerOpen = false, bool lostConnection = false, bool configureApi = true)
+        private IRenderedComponent<Options> RenderPage(Preferences? preferences = null, bool drawerOpen = false, bool configureApi = true)
         {
             if (configureApi)
             {
                 Mock.Get(_apiClient)
-                    .Setup(client => client.GetApplicationPreferences())
-                    .ReturnsAsync(preferences ?? CreatePreferences());
+                    .Setup(client => client.GetApplicationPreferencesAsync())
+                    .ReturnsSuccessAsync(preferences ?? CreatePreferences());
             }
 
             return TestContext.Render<Options>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
-                parameters.AddCascadingValue("LostConnection", lostConnection);
             });
         }
 
@@ -439,27 +569,30 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static Preferences CreatePreferences()
+        private static QBittorrentPreferences CreateQBittorrentPreferences(Preferences preferences)
         {
-            const string json = """
-            {
-                "confirm_torrent_deletion": false,
-                "temp_path_enabled": false,
-                "temp_path": "/temp",
-                "save_path": "/downloads",
-                "scan_dirs": {},
-                "upnp": false,
-                "limit_utp_rate": false,
-                "dht": false,
-                "rss_processing_enabled": false,
-                "web_ui_upnp": false,
-                "web_ui_port": 8080,
-                "web_ui_address": "0.0.0.0",
-                "recheck_completed_torrents": false
-            }
-            """;
+            return new PreferencesDataManager().CreateQBittorrentPreferences(preferences);
+        }
 
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+        private static Preferences CreatePreferences(Action<PreferencesFactory.PreferencesSpec>? configure = null)
+        {
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.ConfirmTorrentDeletion = false;
+                spec.Dht = false;
+                spec.LimitUtpRate = false;
+                spec.RecheckCompletedTorrents = false;
+                spec.RssProcessingEnabled = false;
+                spec.SavePath = "/downloads";
+                spec.ScanDirs = [];
+                spec.TempPath = "/temp";
+                spec.TempPathEnabled = false;
+                spec.Upnp = false;
+                spec.WebUiAddress = "0.0.0.0";
+                spec.WebUiPort = 8080;
+                spec.WebUiUpnp = false;
+                configure?.Invoke(spec);
+            });
         }
     }
 }

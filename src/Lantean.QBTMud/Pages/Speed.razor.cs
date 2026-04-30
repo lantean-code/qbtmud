@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Speed
     {
-        private static readonly IReadOnlyList<(SpeedPeriod Period, string Label)> PeriodOptions = new List<(SpeedPeriod Period, string Label)>
+        private static readonly IReadOnlyList<(SpeedPeriod Period, string Label)> _periodOptions = new List<(SpeedPeriod Period, string Label)>
         {
             (SpeedPeriod.Min1, "1m"),
             (SpeedPeriod.Min5, "5m"),
@@ -20,9 +20,9 @@ namespace Lantean.QBTMud.Pages
             (SpeedPeriod.Hour24, "24h")
         };
 
-        private static readonly string[] Palette = ["#86c43f", "#3299ff"];
+        private static readonly string[] _palette = ["#86c43f", "#3299ff"];
 
-        private static readonly Dictionary<SpeedPeriod, TimeSpan> BucketSizes = new()
+        private static readonly Dictionary<SpeedPeriod, TimeSpan> _bucketSizes = new()
         {
             { SpeedPeriod.Min1, TimeSpan.FromSeconds(2) },
             { SpeedPeriod.Min5, TimeSpan.FromSeconds(5) },
@@ -33,9 +33,9 @@ namespace Lantean.QBTMud.Pages
             { SpeedPeriod.Hour24, TimeSpan.FromMinutes(8) }
         };
 
-        private static readonly SpeedSeriesBuilder SeriesBuilder = new();
+        private static readonly SpeedSeriesBuilder _seriesBuilder = new();
 
-        private static readonly Dictionary<SpeedPeriod, TimeSpan> LabelSpacings = new()
+        private static readonly Dictionary<SpeedPeriod, TimeSpan> _labelSpacings = new()
         {
             { SpeedPeriod.Min1, TimeSpan.FromSeconds(10) },
             { SpeedPeriod.Min5, TimeSpan.FromSeconds(30) },
@@ -46,19 +46,19 @@ namespace Lantean.QBTMud.Pages
             { SpeedPeriod.Hour24, TimeSpan.FromHours(2) }
         };
 
-        private static readonly UnitScale BytesPerSecond = new(1, "B/s");
-        private static readonly UnitScale KibiBytesPerSecond = new(1024, "KiB/s");
-        private static readonly UnitScale MebiBytesPerSecond = new(1024 * 1024, "MiB/s");
-        private static readonly UnitScale GibiBytesPerSecond = new(1024 * 1024 * 1024, "GiB/s");
+        private static readonly UnitScale _bytesPerSecond = new(1, "B/s");
+        private static readonly UnitScale _kibiBytesPerSecond = new(1024, "KiB/s");
+        private static readonly UnitScale _mebiBytesPerSecond = new(1024 * 1024, "MiB/s");
+        private static readonly UnitScale _gibiBytesPerSecond = new(1024 * 1024 * 1024, "GiB/s");
 
         private SpeedPeriod _selectedPeriod = SpeedPeriod.Min5;
         private bool _includeDownload = true;
         private bool _includeUpload = true;
-        private List<ChartSeries<double>> _series = new();
+        private List<ChartSeries<double>> _series = [];
         private TimeSeriesChartOptions _chartOptions = new();
         private TimeSpan _timeLabelSpacing = TimeSpan.FromMinutes(5);
         private string _lastUpdatedText = string.Empty;
-        private UnitScale _currentUnit = MebiBytesPerSecond;
+        private UnitScale _currentUnit = _mebiBytesPerSecond;
 
         [Inject]
         protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
@@ -153,11 +153,11 @@ namespace Lantean.QBTMud.Pages
         {
             var windowEnd = SpeedHistoryService.LastUpdatedUtc ?? DateTime.UtcNow;
             var windowStart = windowEnd - GetPeriodDuration(_selectedPeriod);
-            var bucketSize = BucketSizes.TryGetValue(_selectedPeriod, out var size) ? size : TimeSpan.FromMinutes(1);
-            _timeLabelSpacing = LabelSpacings.TryGetValue(_selectedPeriod, out var spacing) ? spacing : TimeSpan.FromMinutes(1);
+            var bucketSize = _bucketSizes.TryGetValue(_selectedPeriod, out var size) ? size : TimeSpan.FromMinutes(1);
+            _timeLabelSpacing = _labelSpacings.TryGetValue(_selectedPeriod, out var spacing) ? spacing : TimeSpan.FromMinutes(1);
 
-            var downloadSegments = SeriesBuilder.BuildSegments(downloadSamples, windowStart, windowEnd, bucketSize);
-            var uploadSegments = SeriesBuilder.BuildSegments(uploadSamples, windowStart, windowEnd, bucketSize);
+            var downloadSegments = _seriesBuilder.BuildSegments(downloadSamples, windowStart, windowEnd, bucketSize);
+            var uploadSegments = _seriesBuilder.BuildSegments(uploadSamples, windowStart, windowEnd, bucketSize);
             _currentUnit = SelectUnit(downloadSegments.SelectMany(s => s).ToList(), uploadSegments.SelectMany(s => s).ToList());
 
             var seriesList = new List<ChartSeries<double>>();
@@ -215,12 +215,12 @@ namespace Lantean.QBTMud.Pages
 
             for (var i = 0; i < downloadSegmentCount; i++)
             {
-                palette.Add(Palette[0]);
+                palette.Add(_palette[0]);
             }
 
             for (var i = 0; i < uploadSegmentCount; i++)
             {
-                palette.Add(Palette[1]);
+                palette.Add(_palette[1]);
             }
 
             if (hasBounds)
@@ -237,22 +237,22 @@ namespace Lantean.QBTMud.Pages
                 downloadSeries.Count > 0 ? downloadSeries.Max(p => p.Value) : 0,
                 uploadSeries.Count > 0 ? uploadSeries.Max(p => p.Value) : 0);
 
-            if (maxValue >= GibiBytesPerSecond.Factor)
+            if (maxValue >= _gibiBytesPerSecond.Factor)
             {
-                return GibiBytesPerSecond;
+                return _gibiBytesPerSecond;
             }
 
-            if (maxValue >= MebiBytesPerSecond.Factor)
+            if (maxValue >= _mebiBytesPerSecond.Factor)
             {
-                return MebiBytesPerSecond;
+                return _mebiBytesPerSecond;
             }
 
-            if (maxValue >= KibiBytesPerSecond.Factor)
+            if (maxValue >= _kibiBytesPerSecond.Factor)
             {
-                return KibiBytesPerSecond;
+                return _kibiBytesPerSecond;
             }
 
-            return BytesPerSecond;
+            return _bytesPerSecond;
         }
 
         private string FormatBytesPerSecond(double value, UnitScale unit)

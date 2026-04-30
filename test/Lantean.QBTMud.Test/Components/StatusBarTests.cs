@@ -10,8 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient.Models;
+
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -320,12 +324,10 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Theory]
-        [InlineData("connected", "Connection status: Connected", Icons.Material.Outlined.SignalWifi4Bar, Color.Success)]
-        [InlineData("firewalled", "Connection status: Firewalled", Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning)]
-        [InlineData("disconnected", "Connection status: Disconnected", Icons.Material.Outlined.SignalWifiOff, Color.Error)]
-        [InlineData("ConnectionStatus", "ConnectionStatus", Icons.Material.Outlined.SignalWifiOff, Color.Error)]
-        [InlineData(" ", null, Icons.Material.Outlined.SignalWifiOff, Color.Error)]
-        public void GIVEN_ConnectionStatus_WHEN_Rendered_THEN_ShowsExpectedTooltipAndIcon(string connectionStatus, string? expectedTooltip, string expectedIcon, Color expectedColor)
+        [InlineData(ConnectionStatus.Connected, "Connection status: Connected", Icons.Material.Outlined.SignalWifi4Bar, Color.Success)]
+        [InlineData(ConnectionStatus.Firewalled, "Connection status: Firewalled", Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning)]
+        [InlineData(ConnectionStatus.Disconnected, "Connection status: Disconnected", Icons.Material.Outlined.SignalWifiOff, Color.Error)]
+        public void GIVEN_ConnectionStatus_WHEN_Rendered_THEN_ShowsExpectedTooltipAndIcon(ConnectionStatus connectionStatus, string? expectedTooltip, string expectedIcon, Color expectedColor)
         {
             var serverState = CreateServerState(connectionStatus: connectionStatus);
             var mainData = CreateMainData(serverState);
@@ -338,6 +340,22 @@ namespace Lantean.QBTMud.Test.Components
             tooltip.Instance.Text.Should().Be(expectedTooltip);
             icon.Instance.Icon.Should().Be(expectedIcon);
             icon.Instance.Color.Should().Be(expectedColor);
+        }
+
+        [Fact]
+        public void GIVEN_UnknownConnectionStatus_WHEN_Rendered_THEN_ShowsFallbackTooltipAndIcon()
+        {
+            var serverState = CreateServerState(connectionStatus: (ConnectionStatus)999);
+            var mainData = CreateMainData(serverState);
+
+            var target = RenderStatusBar(mainData: mainData);
+
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
+
+            tooltip.Instance.Text.Should().Be("999");
+            icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiOff);
+            icon.Instance.Color.Should().Be(Color.Error);
         }
 
         [Fact]
@@ -635,9 +653,9 @@ namespace Lantean.QBTMud.Test.Components
 
         private IRenderedComponent<StatusBar> RenderStatusBar(
             IReadOnlyList<IManagedTimer>? timers = null,
-            MainData? mainData = null,
+            MudMainData? mainData = null,
             bool includeMainData = true,
-            ClientModels.Preferences? preferences = null,
+            QBittorrentPreferences? preferences = null,
             bool isDarkMode = false,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Portrait,
@@ -670,38 +688,35 @@ namespace Lantean.QBTMud.Test.Components
             return target.FindComponents<TComponent>().Any(component => HasTestId(component, testId));
         }
 
-        private static MainData CreateMainData(ServerState serverState, bool lostConnection = false)
+        private static MudMainData CreateMainData(MudServerState serverState)
         {
-            return new MainData(
-                torrents: new Dictionary<string, Torrent>(),
+            return new MudMainData(
+                torrents: new Dictionary<string, MudTorrent>(),
                 tags: new List<string>(),
-                categories: new Dictionary<string, Category>(),
+                categories: new Dictionary<string, MudCategory>(),
                 trackers: new Dictionary<string, IReadOnlyList<string>>(),
                 serverState: serverState,
                 tagState: new Dictionary<string, HashSet<string>>(),
                 categoriesState: new Dictionary<string, HashSet<string>>(),
                 statusState: new Dictionary<string, HashSet<string>>(),
-                trackersState: new Dictionary<string, HashSet<string>>())
-            {
-                LostConnection = lostConnection
-            };
+                trackersState: new Dictionary<string, HashSet<string>>());
         }
 
-        private static ServerState CreateServerState(
-            string connectionStatus = "connected",
+        private static MudServerState CreateServerState(
+            ConnectionStatus? connectionStatus = ConnectionStatus.Connected,
             int dhtNodes = 10,
             long freeSpaceOnDisk = 1024,
             long downloadInfoSpeed = 1024,
-            long downloadRateLimit = 0,
+            int downloadRateLimit = 0,
             long downloadInfoData = 2048,
             long uploadInfoSpeed = 512,
-            long uploadRateLimit = 0,
+            int uploadRateLimit = 0,
             long uploadInfoData = 1024,
             bool useAltSpeedLimits = false,
             string lastExternalAddressV4 = "1.1.1.1",
             string lastExternalAddressV6 = "")
         {
-            return new ServerState
+            return new MudServerState
             {
                 ConnectionStatus = connectionStatus,
                 DHTNodes = dhtNodes,
@@ -718,10 +733,13 @@ namespace Lantean.QBTMud.Test.Components
             };
         }
 
-        private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp)
+        private static QBittorrentPreferences CreatePreferences(bool statusBarExternalIp)
         {
-            var json = $"{{\"rss_processing_enabled\":false,\"status_bar_external_ip\":{statusBarExternalIp.ToString().ToLowerInvariant()}}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.RssProcessingEnabled = false;
+                spec.StatusBarExternalIp = statusBarExternalIp;
+            });
         }
 
         private static IManagedTimer CreateTimer(ManagedTimerState state)

@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Lantean.QBTMud.Theming;
 using Microsoft.JSInterop;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Services
 {

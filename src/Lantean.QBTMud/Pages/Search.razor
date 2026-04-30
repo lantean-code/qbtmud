@@ -1,3 +1,4 @@
+@using QBittorrent.ApiClient.Models
 @page "/search"
 @layout OtherLayout
 <div class="content-panel">
@@ -289,7 +290,7 @@
 
                 <DynamicTable @ref="Table"
                               TableId="SearchResults"
-                              T="Lantean.QBitTorrentClient.Models.SearchResult"
+                              T="SearchResult"
                               ColumnDefinitions="Columns"
                               Items="Results"
                               MultiSelection="false"

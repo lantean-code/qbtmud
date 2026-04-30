@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Layout
@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Layout
         public EventCallback<bool> DrawerOpenChanged { get; set; }
 
         [CascadingParameter]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         protected async Task OnDrawerOpenChanged(bool value)
         {

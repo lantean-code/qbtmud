@@ -1,10 +1,11 @@
-using ByteSizeLib;
-using Lantean.QBitTorrentClient;
-using Lantean.QBTMud.Models;
-using MudBlazor;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+using ByteSizeLib;
+using Lantean.QBTMud.Models;
+using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -287,7 +288,7 @@ namespace Lantean.QBTMud.Helpers
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static string Percentage(float? value)
+        public static string Percentage(double? value)
         {
             if (value is null)
             {
@@ -307,84 +308,74 @@ namespace Lantean.QBTMud.Helpers
             return value.Value.ToString("0.#%");
         }
 
-        public static string State(string? state)
+        public static string State(TorrentState? state)
         {
             var status = state switch
             {
-                "downloading" => "Downloading",
-                "stalledDL" => "Stalled",
-                "metaDL" => "Downloading metadata",
-                "forcedMetaDL" => "[F] Downloading metadata",
-                "forcedDL" => "[F] Downloading",
-                "uploading" or "stalledUP" => "Seeding",
-                "forcedUP" => "[F] Seeding",
-                "queuedDL" or "queuedUP" => "Queued",
-                "checkingDL" or "checkingUP" => "Checking",
-                "queuedForChecking" => "Queued for checking",
-                "checkingResumeData" => "Checking resume data",
-                "pausedDL" => "Paused",
-                "pausedUP" => "Completed",
-                "stoppedDL" => "Stopped",
-                "stoppedUP" => "Completed",
-                "moving" => "Moving",
-                "missingFiles" => "Missing Files",
-                "error" => "Errored",
+                TorrentState.Downloading => "Downloading",
+                TorrentState.StalledDownloading => "Stalled",
+                TorrentState.DownloadingMetadata => "Downloading metadata",
+                TorrentState.ForcedDownloadingMetadata => "[F] Downloading metadata",
+                TorrentState.ForcedDownloading => "[F] Downloading",
+                TorrentState.Uploading or TorrentState.StalledUploading => "Seeding",
+                TorrentState.ForcedUploading => "[F] Seeding",
+                TorrentState.QueuedDownloading or TorrentState.QueuedUploading => "Queued",
+                TorrentState.CheckingDownloading or TorrentState.CheckingUploading => "Checking",
+                TorrentState.CheckingResumeData => "Checking resume data",
+                TorrentState.StoppedDownloading => "Stopped",
+                TorrentState.StoppedUploading => "Completed",
+                TorrentState.Moving => "Moving",
+                TorrentState.MissingFiles => "Missing Files",
+                TorrentState.Error => "Errored",
                 _ => "Unknown",
             };
 
             return status;
         }
 
-        public static (string, Color) GetStateIcon(string? state)
+        public static (string, Color) GetStateIcon(TorrentState? state)
         {
             switch (state)
             {
-                case "forcedDL":
-                case "metaDL":
-                case "forcedMetaDL":
-                case "downloading":
+                case TorrentState.ForcedDownloading:
+                case TorrentState.DownloadingMetadata:
+                case TorrentState.ForcedDownloadingMetadata:
+                case TorrentState.Downloading:
                     return (Icons.Material.Filled.Downloading, Color.Success);
 
-                case "forcedUP":
-                case "uploading":
+                case TorrentState.ForcedUploading:
+                case TorrentState.Uploading:
                     return (Icons.Material.Filled.Upload, Color.Info);
 
-                case "stalledUP":
+                case TorrentState.StalledUploading:
                     return (Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info);
 
-                case "stalledDL":
+                case TorrentState.StalledDownloading:
                     return (Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success);
 
-                case "pausedDL":
-                    return (Icons.Material.Filled.Pause, Color.Success);
-
-                case "pausedUP":
-                    return (Icons.Material.Filled.Pause, Color.Info);
-
-                case "stoppedDL":
+                case TorrentState.StoppedDownloading:
                     return (Icons.Material.Filled.Stop, Color.Success);
 
-                case "stoppedUP":
+                case TorrentState.StoppedUploading:
                     return (Icons.Material.Filled.Stop, Color.Info);
 
-                case "queuedDL":
-                case "queuedUP":
+                case TorrentState.QueuedDownloading:
+                case TorrentState.QueuedUploading:
                     return (Icons.Material.Filled.Queue, Color.Default);
 
-                case "checkingDL":
-                case "checkingUP":
+                case TorrentState.CheckingDownloading:
+                case TorrentState.CheckingUploading:
                     return (Icons.Material.Filled.Loop, Color.Info);
 
-                case "queuedForChecking":
-                case "checkingResumeData":
+                case TorrentState.CheckingResumeData:
                     return (Icons.Material.Filled.Loop, Color.Warning);
 
-                case "moving":
+                case TorrentState.Moving:
                     return (Icons.Material.Filled.Moving, Color.Info);
 
-                case "error":
-                case "unknown":
-                case "missingFiles":
+                case TorrentState.Error:
+                case TorrentState.Unknown:
+                case TorrentState.MissingFiles:
                     return (Icons.Material.Filled.Error, Color.Error);
 
                 default:
@@ -423,14 +414,14 @@ namespace Lantean.QBTMud.Helpers
             return value ? trueText : falseText;
         }
 
-        public static string RatioLimit(float value)
+        public static string RatioLimit(double value)
         {
-            if (value == Limits.GlobalLimit)
+            if (value == Limits.UseGlobalShareRatioLimit)
             {
                 return "Global";
             }
 
-            if (value <= Limits.NoLimit)
+            if (value <= Limits.NoShareRatioLimit)
             {
                 return "∞";
             }

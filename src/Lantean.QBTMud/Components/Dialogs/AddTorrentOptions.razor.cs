@@ -1,7 +1,8 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -9,6 +10,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     {
         private readonly List<CategoryOption> _categoryOptions = new();
         private readonly Dictionary<string, CategoryOption> _categoryLookup = new(StringComparer.Ordinal);
+        private BuildPlatform _qBittorrentPlatform = BuildPlatform.Unknown;
         private string _manualSavePath = string.Empty;
         private bool _manualUseDownloadPath;
         private string _manualDownloadPath = string.Empty;
@@ -18,6 +20,12 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        [Parameter]
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [Parameter]
         public bool ShowCookieOption { get; set; }
@@ -50,25 +58,25 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected bool AddToTopOfQueue { get; set; } = true;
 
-        protected string StopCondition { get; set; } = "None";
+        protected StopCondition StopCondition { get; set; } = StopCondition.None;
 
         protected bool SkipHashCheck { get; set; }
 
-        protected string ContentLayout { get; set; } = "Original";
+        protected TorrentContentLayout ContentLayout { get; set; } = TorrentContentLayout.Original;
 
         protected bool DownloadInSequentialOrder { get; set; }
 
         protected bool DownloadFirstAndLastPiecesFirst { get; set; }
 
-        protected long DownloadLimit { get; set; }
+        protected int DownloadLimit { get; set; }
 
-        protected long UploadLimit { get; set; }
+        protected int UploadLimit { get; set; }
 
         protected ShareLimitMode SelectedShareLimitMode { get; set; } = ShareLimitMode.Global;
 
         protected bool RatioLimitEnabled { get; set; }
 
-        protected float RatioLimit { get; set; } = 1.0f;
+        protected double RatioLimit { get; set; } = 1.0;
 
         protected bool SeedingTimeLimitEnabled { get; set; }
 
@@ -82,53 +90,48 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var categories = await ApiClient.GetAllCategories();
-            foreach (var (name, value) in categories.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+            var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+            if (categoriesResult.IsFailure)
             {
-                var option = new CategoryOption(name, value.SavePath, value.DownloadPath);
-                _categoryOptions.Add(option);
-                _categoryLookup[name] = option;
+                await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
+            }
+            else
+            {
+                foreach (var (name, value) in categoriesResult.Value.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    var option = new CategoryOption(name, value.SavePath, value.DownloadPath);
+                    _categoryOptions.Add(option);
+                    _categoryLookup[name] = option;
+                }
             }
 
-            var tags = await ApiClient.GetAllTags();
-            AvailableTags = tags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
-
-            var preferences = await ApiClient.GetApplicationPreferences();
-
-            TorrentManagementMode = preferences.AutoTmmEnabled;
-
-            _defaultSavePath = preferences.SavePath ?? string.Empty;
-            _manualSavePath = _defaultSavePath;
-            SavePath = _defaultSavePath;
-
-            _defaultDownloadPath = preferences.TempPath ?? string.Empty;
-            _defaultDownloadPathEnabled = preferences.TempPathEnabled;
-            _manualDownloadPath = _defaultDownloadPath;
-            _manualUseDownloadPath = preferences.TempPathEnabled;
-            UseDownloadPath = _manualUseDownloadPath;
-            DownloadPath = UseDownloadPath ? _manualDownloadPath : string.Empty;
-
-            StartTorrent = !preferences.AddStoppedEnabled;
-            AddToTopOfQueue = preferences.AddToTopOfQueue;
-            StopCondition = preferences.TorrentStopCondition;
-            ContentLayout = preferences.TorrentContentLayout;
-
-            RatioLimitEnabled = preferences.MaxRatioEnabled;
-            RatioLimit = preferences.MaxRatio;
-            SeedingTimeLimitEnabled = preferences.MaxSeedingTimeEnabled;
-            if (preferences.MaxSeedingTimeEnabled)
+            var tagsResult = await ApiClient.GetAllTagsAsync();
+            if (tagsResult.IsFailure)
             {
-                SeedingTimeLimit = preferences.MaxSeedingTime;
+                AvailableTags = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(tagsResult);
             }
-            InactiveSeedingTimeLimitEnabled = preferences.MaxInactiveSeedingTimeEnabled;
-            if (preferences.MaxInactiveSeedingTimeEnabled)
+            else
             {
-                InactiveSeedingTimeLimit = preferences.MaxInactiveSeedingTime;
+                AvailableTags = tagsResult.Value.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
             }
-            if (TorrentManagementMode)
+
+            var buildInfoResult = await ApiClient.GetBuildInfoAsync();
+            if (buildInfoResult.IsFailure)
             {
-                ApplyAutomaticPaths();
+                await ApiFeedbackWorkflow.HandleFailureAsync(buildInfoResult);
             }
+            else
+            {
+                _qBittorrentPlatform = buildInfoResult.Value.Platform;
+            }
+
+            if (Preferences is null)
+            {
+                return;
+            }
+
+            ApplyPreferences(Preferences);
         }
 
         protected void SetTorrentManagementMode(bool value)
@@ -209,12 +212,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 : new HashSet<string>(tags, StringComparer.Ordinal);
         }
 
-        protected void StopConditionChanged(string value)
+        protected void StopConditionChanged(StopCondition value)
         {
             StopCondition = value;
         }
 
-        protected void ContentLayoutChanged(string value)
+        protected void ContentLayoutChanged(TorrentContentLayout value)
         {
             ContentLayout = value;
         }
@@ -235,7 +238,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             RatioLimitEnabled = value;
         }
 
-        protected void RatioLimitChanged(float value)
+        protected void RatioLimitChanged(double value)
         {
             RatioLimit = value;
         }
@@ -285,25 +288,65 @@ namespace Lantean.QBTMud.Components.Dialogs
             switch (SelectedShareLimitMode)
             {
                 case ShareLimitMode.Global:
-                    options.RatioLimit = Limits.GlobalLimit;
-                    options.SeedingTimeLimit = Limits.GlobalLimit;
-                    options.InactiveSeedingTimeLimit = Limits.GlobalLimit;
+                    options.RatioLimit = Limits.UseGlobalShareRatioLimit;
+                    options.SeedingTimeLimit = Limits.UseGlobalSeedingTimeLimit;
+                    options.InactiveSeedingTimeLimit = Limits.UseGlobalInactiveSeedingTimeLimit;
                     break;
 
                 case ShareLimitMode.NoLimit:
-                    options.RatioLimit = Limits.NoLimit;
-                    options.SeedingTimeLimit = Limits.NoLimit;
-                    options.InactiveSeedingTimeLimit = Limits.NoLimit;
+                    options.RatioLimit = Limits.NoShareRatioLimit;
+                    options.SeedingTimeLimit = Limits.NoSeedingTimeLimit;
+                    options.InactiveSeedingTimeLimit = Limits.NoInactiveSeedingTimeLimit;
                     break;
 
                 case ShareLimitMode.Custom:
-                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoLimit;
-                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoLimit;
-                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : Limits.NoLimit;
+                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoShareRatioLimit;
+                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoSeedingTimeLimit;
+                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : Limits.NoInactiveSeedingTimeLimit;
                     break;
             }
 
             return options;
+        }
+
+        private void ApplyPreferences(QBittorrentPreferences preferences)
+        {
+            TorrentManagementMode = preferences.AutoTmmEnabled;
+
+            _defaultSavePath = preferences.SavePath ?? string.Empty;
+            _manualSavePath = _defaultSavePath;
+            SavePath = _defaultSavePath;
+
+            _defaultDownloadPath = preferences.TempPath ?? string.Empty;
+            _defaultDownloadPathEnabled = preferences.TempPathEnabled;
+            _manualDownloadPath = _defaultDownloadPath;
+            _manualUseDownloadPath = preferences.TempPathEnabled;
+            UseDownloadPath = _manualUseDownloadPath;
+            DownloadPath = UseDownloadPath ? _manualDownloadPath : string.Empty;
+
+            StartTorrent = !preferences.AddStoppedEnabled;
+            AddToTopOfQueue = preferences.AddToTopOfQueue;
+            StopCondition = preferences.TorrentStopCondition;
+            ContentLayout = preferences.TorrentContentLayout;
+
+            RatioLimitEnabled = preferences.MaxRatioEnabled;
+            RatioLimit = preferences.MaxRatio;
+            SeedingTimeLimitEnabled = preferences.MaxSeedingTimeEnabled;
+            if (preferences.MaxSeedingTimeEnabled)
+            {
+                SeedingTimeLimit = preferences.MaxSeedingTime;
+            }
+
+            InactiveSeedingTimeLimitEnabled = preferences.MaxInactiveSeedingTimeEnabled;
+            if (preferences.MaxInactiveSeedingTimeEnabled)
+            {
+                InactiveSeedingTimeLimit = preferences.MaxInactiveSeedingTime;
+            }
+
+            if (TorrentManagementMode)
+            {
+                ApplyAutomaticPaths();
+            }
         }
 
         private void ApplyAutomaticPaths()
@@ -336,7 +379,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (!string.IsNullOrWhiteSpace(_defaultSavePath))
             {
-                return Path.Combine(_defaultSavePath, category.Name);
+                return CombineQbittorrentPath(_defaultSavePath, category.Name);
             }
 
             return _defaultSavePath;
@@ -385,7 +428,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return string.Empty;
             }
 
-            return Path.Combine(_defaultDownloadPath, categoryName);
+            return CombineQbittorrentPath(_defaultDownloadPath, categoryName);
         }
 
         private CategoryOption? GetSelectedCategory()
@@ -396,6 +439,27 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return _categoryLookup.TryGetValue(Category, out var option) ? option : null;
+        }
+
+        private string CombineQbittorrentPath(string basePath, string childPath)
+        {
+            if (basePath[^1] == '/' || basePath[^1] == '\\')
+            {
+                return string.Concat(basePath, childPath);
+            }
+
+            return string.Concat(basePath, GetQbittorrentPathSeparator(basePath), childPath);
+        }
+
+        private char GetQbittorrentPathSeparator(string path)
+        {
+            return _qBittorrentPlatform switch
+            {
+                BuildPlatform.Windows => '\\',
+                BuildPlatform.Linux => '/',
+                BuildPlatform.MacOS => '/',
+                _ => path.Contains('\\', StringComparison.Ordinal) && !path.Contains('/', StringComparison.Ordinal) ? '\\' : '/'
+            };
         }
 
         protected internal enum ShareLimitMode

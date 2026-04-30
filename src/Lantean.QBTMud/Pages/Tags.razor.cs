@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -30,6 +30,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -72,7 +75,15 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                _tags = await ApiClient.GetAllTags();
+                var tagsResult = await ApiClient.GetAllTagsAsync();
+                if (tagsResult.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(tagsResult);
+                    return;
+                }
+
+                var tagList = tagsResult.Value;
+                _tags = tagList;
             }
             finally
             {
@@ -87,7 +98,8 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await ApiClient.DeleteTags(tag);
+            var deleteResult = await ApiClient.DeleteTagsAsync(tags: [tag]);
+            await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult);
         }
 
         protected async Task AddTag()
@@ -102,13 +114,21 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var existingTags = await ApiClient.GetAllTags();
-            if (existingTags.Contains(tag))
+            var existingTagsResult = await ApiClient.GetAllTagsAsync();
+            if (existingTagsResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(existingTagsResult);
+                return;
+            }
+
+            var existingTagList = existingTagsResult.Value;
+            if (existingTagList.Contains(tag))
             {
                 return;
             }
 
-            await ApiClient.CreateTags([tag]);
+            var createResult = await ApiClient.CreateTagsAsync([tag]);
+            await ApiFeedbackWorkflow.ProcessResultAsync(createResult);
         }
 
         protected IEnumerable<ColumnDefinition<string>> Columns => GetColumnDefinitions();

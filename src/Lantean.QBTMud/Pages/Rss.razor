@@ -10,9 +10,9 @@
             }
             <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("MainWindow", "RSS")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="@LanguageLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" title="@LanguageLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
             <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@LanguageLocalizer.Translate("RSSWidget", "Mark items read")" data-test-id="@TestIdHelper.For("RssMarkItemsRead")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="@LanguageLocalizer.Translate("RSSWidget", "Update all")" data-test-id="@TestIdHelper.For("RssUpdateAll")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" title="@LanguageLocalizer.Translate("RSSWidget", "Update all")" data-test-id="@TestIdHelper.For("RssUpdateAll")" />
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@LanguageLocalizer.Translate("RSSWidget", "RSS Downloader...")" data-test-id="@TestIdHelper.For("RssEditDownloadRules")" />
         </MudToolBar>

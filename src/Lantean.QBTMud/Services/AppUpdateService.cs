@@ -1,8 +1,8 @@
-using Lantean.QBTMud.Models;
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Services
 {
@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Services
     public sealed class AppUpdateService : IAppUpdateService
     {
         private const string _latestReleasePath = "repos/lantean-code/qbtmud/releases/latest";
-        private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
 
         private readonly SemaphoreSlim _cacheSemaphore = new SemaphoreSlim(1, 1);
         private readonly IHttpClientFactory _httpClientFactory;
@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<AppUpdateStatus> GetUpdateStatusAsync(bool forceRefresh = false, CancellationToken cancellationToken = default)
         {
-            if (!forceRefresh && _cachedStatus is not null && (DateTime.UtcNow - _cacheTimestampUtc) < CacheDuration)
+            if (!forceRefresh && _cachedStatus is not null && (DateTime.UtcNow - _cacheTimestampUtc) < _cacheDuration)
             {
                 return _cachedStatus;
             }
@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Services
             await _cacheSemaphore.WaitAsync(cancellationToken);
             try
             {
-                if (!forceRefresh && _cachedStatus is not null && (DateTime.UtcNow - _cacheTimestampUtc) < CacheDuration)
+                if (!forceRefresh && _cachedStatus is not null && (DateTime.UtcNow - _cacheTimestampUtc) < _cacheDuration)
                 {
                     return _cachedStatus;
                 }

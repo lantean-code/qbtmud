@@ -1,15 +1,15 @@
-using Lantean.QBitTorrentClient.Models;
+using System.Globalization;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Globalization;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class CookiePropertiesDialog
     {
-        private static readonly string[] ExpirationFormats =
+        private static readonly string[] _expirationFormats =
         [
             "yyyy-MM-ddTHH:mm",
             "yyyy-MM-ddTHH:mm:ss"
@@ -61,7 +61,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return [];
             }
 
-            if (DateTime.TryParseExact(value, ExpirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out _))
+            if (DateTime.TryParseExact(value, _expirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out _))
             {
                 return [];
             }
@@ -134,12 +134,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return true;
             }
 
-            if (!DateTime.TryParseExact(input, ExpirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var localDateTime))
+            if (!DateTime.TryParseExact(input, _expirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var localDateTime))
             {
                 return false;
             }
 
-            var localOffset = new DateTimeOffset(localDateTime, DateTimeOffset.Now.Offset);
+            var localOffset = new DateTimeOffset(localDateTime);
             expirationDate = localOffset.ToUnixTimeSeconds();
             return true;
         }

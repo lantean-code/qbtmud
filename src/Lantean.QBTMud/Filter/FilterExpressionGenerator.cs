@@ -1,5 +1,5 @@
-using MudBlazor;
 using System.Linq.Expressions;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Filter
 {

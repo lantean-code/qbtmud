@@ -3,11 +3,9 @@
 
 <div class="app-shell__body">
     <MudDrawer Open="DrawerOpen" OpenChanged="OnDrawerOpenChanged" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false" Class="app-shell__sidebar">
-        <FiltersNav CategoryChanged="CategoryChanged" StatusChanged="StatusChanged" TagChanged="TagChanged" TrackerChanged="TrackerChanged" />
+        <FiltersNav />
     </MudDrawer>
     <MudMainContent Class="app-shell__main">
-        <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
-            @Body
-        </CascadingValue>
+        @Body
     </MudMainContent>
 </div>

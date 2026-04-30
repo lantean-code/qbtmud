@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -39,7 +39,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private string? _torrentFilePath;
         private string? _trackers;
         private string? _urlSeeds;
-        private string _torrentFormat = "hybrid";
+        private TorrentFormat _torrentFormat = TorrentFormat.Hybrid;
         private int? _pieceSize;
         private int _paddedFileSizeLimitKiB = -1;
         private bool _isPrivate;
@@ -171,7 +171,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             _urlSeeds = state.UrlSeeds;
             _comment = state.Comment;
             _source = state.Source;
-            _torrentFormat = string.IsNullOrWhiteSpace(state.Format) ? _torrentFormat : state.Format;
+            _torrentFormat = state.Format;
             _optimizeAlignment = state.OptimizeAlignment;
 
             if (state.PaddedFileSizeLimit.HasValue)
@@ -186,8 +186,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             try
             {
-                var buildInfo = await ApiClient.GetBuildInfo();
-                _supportsTorrentFormat = SupportsTorrentFormatForVersion(buildInfo.LibTorrentVersion);
+                var buildInfoResult = await ApiClient.GetBuildInfoAsync();
+                _supportsTorrentFormat = buildInfoResult.TryGetValue(out var buildInfo)
+                    && SupportsTorrentFormatForVersion(buildInfo.LibTorrentVersion);
             }
             catch (Exception)
             {

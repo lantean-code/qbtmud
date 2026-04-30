@@ -1,8 +1,8 @@
-using Lantean.QBTMud.Models;
-using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using Lantean.QBTMud.Models;
+using Microsoft.Extensions.Options;
 
 namespace Lantean.QBTMud.Services.Localization
 {
@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Services.Localization
     /// </summary>
     public sealed class LanguageCatalog : ILanguageCatalog
     {
-        private static readonly JsonSerializerOptions JsonOptions = new()
+        private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true
@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Services.Localization
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             try
             {
-                var locales = await JsonSerializer.DeserializeAsync<List<string>>(stream, JsonOptions, cancellationToken);
+                var locales = await JsonSerializer.DeserializeAsync<List<string>>(stream, _jsonOptions, cancellationToken);
                 return locales ?? [];
             }
             catch (JsonException ex)

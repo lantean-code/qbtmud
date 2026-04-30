@@ -1,8 +1,10 @@
-using Lantean.QBitTorrentClient;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -25,9 +27,12 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected string? SelectedRuleName { get; set; }
 
-        protected Dictionary<string, QBitTorrentClient.Models.AutoDownloadingRule?> Rules { get; set; } = [];
+        protected Dictionary<string, AutoDownloadingRule?> Rules { get; set; } = [];
 
         protected IEnumerable<string> Categories { get; set; } = [];
 
@@ -35,7 +40,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected IReadOnlyDictionary<string, IReadOnlyList<string>>? MatchingArticles { get; set; }
 
-        private QBitTorrentClient.Models.AutoDownloadingRule SelectedRule { get; set; } = default!;
+        private AutoDownloadingRule SelectedRule { get; set; } = default!;
 
         protected bool UseRegex { get; set; }
 
@@ -142,30 +147,12 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
-        protected string? ContentLayout { get; set; }
+        protected TorrentContentLayout? ContentLayout { get; set; }
 
-        protected void ContentLayoutChanged(string value)
+        protected void ContentLayoutChanged(TorrentContentLayout? value)
         {
             ContentLayout = value;
-
-            switch (value)
-            {
-                case "Default":
-                    SelectedRule.TorrentParams.ContentLayout = null;
-                    break;
-
-                case "Original":
-                    SelectedRule.TorrentParams.ContentLayout = "Original";
-                    break;
-
-                case "Subfolder":
-                    SelectedRule.TorrentParams.ContentLayout = "Subfolder";
-                    break;
-
-                case "NoSubfolder":
-                    SelectedRule.TorrentParams.ContentLayout = "NoSubfolder";
-                    break;
-            }
+            SelectedRule.TorrentParams.ContentLayout = value;
         }
 
         protected IReadOnlyCollection<string>? SelectedFeeds { get; set; }
@@ -188,15 +175,40 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var rules = await ApiClient.GetAllRssAutoDownloadingRules();
-            foreach (var kvp in rules)
+            var rulesResult = await ApiClient.GetAllRssAutoDownloadingRulesAsync();
+            if (rulesResult.IsFailure)
             {
-                Rules.Add(kvp.Key, kvp.Value);
+                await ApiFeedbackWorkflow.HandleFailureAsync(rulesResult);
+            }
+            else
+            {
+                foreach (var kvp in rulesResult.Value)
+                {
+                    Rules.Add(kvp.Key, kvp.Value);
+                }
             }
 
-            Categories = (await ApiClient.GetAllCategories()).Keys;
+            var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+            if (categoriesResult.IsFailure)
+            {
+                Categories = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
+            }
+            else
+            {
+                Categories = categoriesResult.Value.Keys;
+            }
 
-            Feeds = (await ApiClient.GetAllRssItems(false)).ToDictionary(f => f.Key, f => f.Value.Url);
+            var feedsResult = await ApiClient.GetAllRssItemsAsync(false);
+            if (feedsResult.IsFailure)
+            {
+                Feeds = new Dictionary<string, string>();
+                await ApiFeedbackWorkflow.HandleFailureAsync(feedsResult);
+            }
+            else
+            {
+                Feeds = RssItemTreeHelper.EnumerateFeeds(feedsResult.Value).ToDictionary(f => f.Key, f => f.Value.Url, StringComparer.Ordinal);
+            }
         }
 
         protected async Task AddRule()
@@ -235,7 +247,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             else
             {
-                await ApiClient.RemoveRssAutoDownloadingRule(SelectedRuleName);
+                var removeResult = await ApiClient.RemoveRssAutoDownloadingRuleAsync(SelectedRuleName);
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
+                {
+                    return;
+                }
             }
 
             Rules.Remove(SelectedRuleName);
@@ -255,7 +271,16 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (!_unsavedRuleNames.Contains(SelectedRuleName))
             {
-                MatchingArticles = await ApiClient.GetRssMatchingArticles(SelectedRuleName);
+                var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
+                if (matchingArticlesResult.IsFailure)
+                {
+                    MatchingArticles = null;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
+                }
+                else
+                {
+                    MatchingArticles = matchingArticlesResult.Value;
+                }
             }
             else
             {
@@ -264,7 +289,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (rule is null)
             {
-                rule = new QBitTorrentClient.Models.AutoDownloadingRule();
+                rule = new AutoDownloadingRule();
 
                 Rules[SelectedRuleName] = rule;
             }
@@ -295,24 +320,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     break;
             }
 
-            switch (SelectedRule.TorrentParams.ContentLayout)
-            {
-                case "Default":
-                    ContentLayout = null;
-                    break;
-
-                case "Original":
-                    ContentLayout = "Original";
-                    break;
-
-                case "Subfolder":
-                    ContentLayout = "Subfolder";
-                    break;
-
-                case "NoSubfolder":
-                    ContentLayout = "NoSubfolder";
-                    break;
-            }
+            ContentLayout = SelectedRule.TorrentParams.ContentLayout;
 
             var feeds = new List<string>();
             foreach (var feed in SelectedRule.AffectedFeeds)
@@ -340,9 +348,20 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await ApiClient.SetRssAutoDownloadingRule(SelectedRuleName, SelectedRule);
+            var setRuleResult = await ApiClient.SetRssAutoDownloadingRuleAsync(SelectedRuleName, SelectedRule);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(setRuleResult))
+            {
+                return;
+            }
 
-            MatchingArticles = await ApiClient.GetRssMatchingArticles(SelectedRuleName);
+            var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
+            if (matchingArticlesResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
+                return;
+            }
+
+            MatchingArticles = matchingArticlesResult.Value;
 
             _unsavedRuleNames.Remove(SelectedRuleName);
         }

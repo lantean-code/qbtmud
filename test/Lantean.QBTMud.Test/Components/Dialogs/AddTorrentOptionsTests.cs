@@ -1,24 +1,26 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Moq;
 using MudBlazor;
-using System.Globalization;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
     public sealed class AddTorrentOptionsTests : RazorComponentTestBase<AddTorrentOptions>
     {
         private readonly AddTorrentOptionsTestDriver _target;
+        private QBittorrentPreferences? _preferences;
 
         public AddTorrentOptionsTests()
         {
-            _target = new AddTorrentOptionsTestDriver(TestContext);
+            _target = new AddTorrentOptionsTestDriver(TestContext, () => _preferences);
         }
 
         [Fact]
@@ -64,15 +66,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 tempPathEnabled: true,
                 addStoppedEnabled: true,
                 addToTopOfQueue: false,
-                stopCondition: "StopCondition",
-                contentLayout: "ContentLayout",
+                stopCondition: StopCondition.FilesChecked,
+                contentLayout: TorrentContentLayout.Subfolder,
                 maxRatioEnabled: true,
                 maxRatio: 1.5f,
                 maxSeedingTimeEnabled: true,
                 maxSeedingTime: 60,
                 maxInactiveSeedingTimeEnabled: true,
                 maxInactiveSeedingTime: 120,
-                maxRatioAct: 2);
+                maxRatioAct: MaxRatioAction.EnableSuperSeeding);
 
             UseApiClientMock(categories: categories, tags: tags, preferences: preferences);
 
@@ -85,10 +87,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             GetDownloadPath(component).Should().Be("TempPath");
             FindFieldSwitch(component, "StartTorrent").Instance.Value.Should().BeFalse();
             FindFieldSwitch(component, "AddToTopOfQueue").Instance.Value.Should().BeFalse();
-            FindSelect<string>(component, "StopCondition").Instance.GetState(x => x.Value).Should().Be("StopCondition");
-            FindSelect<string>(component, "ContentLayout").Instance.GetState(x => x.Value).Should().Be("ContentLayout");
+            FindSelect<StopCondition>(component, "StopCondition").Instance.GetState(x => x.Value).Should().Be(StopCondition.FilesChecked);
+            FindSelect<TorrentContentLayout>(component, "ContentLayout").Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Subfolder);
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeTrue();
-            FindNumericField<float>(component, "RatioLimit").Instance.GetState(x => x.Value).Should().Be(1.5f);
+            FindNumericField<double>(component, "RatioLimit").Instance.GetState(x => x.Value).Should().Be(1.5d);
             FindFieldSwitch(component, "SeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
             FindNumericField<int>(component, "SeedingTimeLimit").Instance.GetState(x => x.Value).Should().Be(60);
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
@@ -113,6 +115,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             GetSavePath(component).Should().BeEmpty();
             GetUseDownloadPath(component).Should().BeTrue();
             GetDownloadPath(component).Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_NoPreferences_WHEN_Rendered_THEN_DefaultsAreNotApplied()
+        {
+            UseApiClientMock(preferences: CreatePreferences(savePath: "SavePath"));
+            _preferences = null;
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            GetSavePath(component).Should().BeEmpty();
         }
 
         [Fact]
@@ -183,7 +197,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 tempPath: "DownloadPath",
                 tempPathEnabled: true);
 
-            UseApiClientMock(categories: categories, preferences: preferences);
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: BuildPlatform.Linux);
 
             var component = _target.RenderComponent();
             ExpandOptions(component);
@@ -191,11 +205,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSelectValue(component, "Category", "CategorySave");
             GetSavePath(component).Should().Be("CategorySavePath");
             GetUseDownloadPath(component).Should().BeTrue();
-            GetDownloadPath(component).Should().Be(Path.Combine("DownloadPath", "CategorySave"));
+            GetDownloadPath(component).Should().Be(CombineQbittorrentPath("DownloadPath", "CategorySave", BuildPlatform.Linux));
 
             await SetSelectValue(component, "Category", "CategoryCombine");
-            GetSavePath(component).Should().Be(Path.Combine("SavePath", "CategoryCombine"));
-            GetDownloadPath(component).Should().Be(Path.Combine("DownloadPath", "CategoryCombine"));
+            GetSavePath(component).Should().Be(CombineQbittorrentPath("SavePath", "CategoryCombine", BuildPlatform.Linux));
+            GetDownloadPath(component).Should().Be(CombineQbittorrentPath("DownloadPath", "CategoryCombine", BuildPlatform.Linux));
 
             await SetSelectValue(component, "Category", "CategoryDownloadDisabled");
             GetUseDownloadPath(component).Should().BeFalse();
@@ -207,7 +221,105 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await SetSelectValue(component, "Category", "CategoryDownloadEmpty");
             GetUseDownloadPath(component).Should().BeTrue();
-            GetDownloadPath(component).Should().Be(Path.Combine("DownloadPath", "CategoryDownloadEmpty"));
+            GetDownloadPath(component).Should().Be(CombineQbittorrentPath("DownloadPath", "CategoryDownloadEmpty", BuildPlatform.Linux));
+        }
+
+        [Theory]
+        [InlineData(BuildPlatform.Linux)]
+        [InlineData(BuildPlatform.MacOS)]
+        public async Task GIVEN_UnixQbittorrentPlatform_WHEN_AutomaticModeCategoryChanged_THEN_UsesForwardSlashPaths(BuildPlatform buildPlatform)
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: "SavePath",
+                tempPath: "DownloadPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: buildPlatform);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be("SavePath/Category");
+            GetDownloadPath(component).Should().Be("DownloadPath/Category");
+        }
+
+        [Fact]
+        public async Task GIVEN_WindowsQbittorrentPlatform_WHEN_AutomaticModeCategoryChanged_THEN_UsesBackslashPaths()
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: @"SavePath",
+                tempPath: @"DownloadPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: BuildPlatform.Windows);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be(@"SavePath\Category");
+            GetDownloadPath(component).Should().Be(@"DownloadPath\Category");
+        }
+
+        [Fact]
+        public async Task GIVEN_BuildInfoUnavailableAndWindowsStylePaths_WHEN_AutomaticModeCategoryChanged_THEN_InfersBackslashPaths()
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: @"C:\SavePath",
+                tempPath: @"C:\DownloadPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildInfoResult: CreateBuildInfoFailureResult());
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be(@"C:\SavePath\Category");
+            GetDownloadPath(component).Should().Be(@"C:\DownloadPath\Category");
+        }
+
+        [Fact]
+        public async Task GIVEN_PathAlreadyEndsWithSeparator_WHEN_AutomaticModeCategoryChanged_THEN_DoesNotDuplicateSeparator()
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: "/SavePath/",
+                tempPath: "/DownloadPath/",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: BuildPlatform.Linux);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be("/SavePath/Category");
+            GetDownloadPath(component).Should().Be("/DownloadPath/Category");
         }
 
         [Fact]
@@ -400,20 +512,20 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Disabled.Should().BeFalse();
 
             await SetFieldSwitchValue(component, "RatioLimitEnabled", true);
-            await SetNumericValue(component, "RatioLimit", 2.5f);
+            await SetNumericValue(component, "RatioLimit", 2.5d);
             await SetFieldSwitchValue(component, "SeedingTimeLimitEnabled", true);
             await SetNumericValue(component, "SeedingTimeLimit", 60);
             await SetFieldSwitchValue(component, "InactiveSeedingTimeLimitEnabled", true);
             await SetNumericValue(component, "InactiveSeedingTimeLimit", 30);
-            await SetSelectValue(component, "StopCondition", "FilesChecked");
-            await SetSelectValue(component, "ContentLayout", "Subfolder");
+            await SetSelectValue(component, "StopCondition", StopCondition.FilesChecked);
+            await SetSelectValue(component, "ContentLayout", TorrentContentLayout.Subfolder);
 
             var customOptions = component.Instance.GetTorrentOptions();
-            customOptions.RatioLimit.Should().Be(2.5f);
+            customOptions.RatioLimit.Should().Be(2.5d);
             customOptions.SeedingTimeLimit.Should().Be(60);
             customOptions.InactiveSeedingTimeLimit.Should().Be(30);
-            customOptions.StopCondition.Should().Be("FilesChecked");
-            customOptions.ContentLayout.Should().Be("Subfolder");
+            customOptions.StopCondition.Should().Be(StopCondition.FilesChecked);
+            customOptions.ContentLayout.Should().Be(TorrentContentLayout.Subfolder);
 
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Global);
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeFalse();
@@ -421,22 +533,22 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
 
             var globalOptions = component.Instance.GetTorrentOptions();
-            globalOptions.RatioLimit.Should().Be(Limits.GlobalLimit);
-            globalOptions.SeedingTimeLimit.Should().Be(Limits.GlobalLimit);
-            globalOptions.InactiveSeedingTimeLimit.Should().Be(Limits.GlobalLimit);
+            globalOptions.RatioLimit.Should().Be(Limits.UseGlobalShareRatioLimit);
+            globalOptions.SeedingTimeLimit.Should().Be(Limits.UseGlobalSeedingTimeLimit);
+            globalOptions.InactiveSeedingTimeLimit.Should().Be(Limits.UseGlobalInactiveSeedingTimeLimit);
 
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.NoLimit);
 
             var noLimitOptions = component.Instance.GetTorrentOptions();
-            noLimitOptions.RatioLimit.Should().Be(Limits.NoLimit);
-            noLimitOptions.SeedingTimeLimit.Should().Be(Limits.NoLimit);
-            noLimitOptions.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
+            noLimitOptions.RatioLimit.Should().Be(Limits.NoShareRatioLimit);
+            noLimitOptions.SeedingTimeLimit.Should().Be(Limits.NoSeedingTimeLimit);
+            noLimitOptions.InactiveSeedingTimeLimit.Should().Be(Limits.NoInactiveSeedingTimeLimit);
         }
 
         [Fact]
         public async Task GIVEN_CustomShareLimitWithDefaults_WHEN_GetTorrentOptionsInvoked_THEN_NoLimitApplied()
         {
-            var preferences = CreatePreferences(maxRatioAct: 9);
+            var preferences = CreatePreferences(maxRatioAct: (MaxRatioAction)9);
 
             UseApiClientMock(preferences: preferences);
 
@@ -446,9 +558,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Custom);
 
             var options = component.Instance.GetTorrentOptions();
-            options.RatioLimit.Should().Be(Limits.NoLimit);
-            options.SeedingTimeLimit.Should().Be(Limits.NoLimit);
-            options.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
+            options.RatioLimit.Should().Be(Limits.NoShareRatioLimit);
+            options.SeedingTimeLimit.Should().Be(Limits.NoSeedingTimeLimit);
+            options.InactiveSeedingTimeLimit.Should().Be(Limits.NoInactiveSeedingTimeLimit);
         }
 
         [Fact]
@@ -486,18 +598,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await component.InvokeAsync(() => FindSelect<string>(component, "StopCondition").Instance.OpenMenu());
+            await component.InvokeAsync(() => FindSelect<StopCondition>(component, "StopCondition").Instance.OpenMenu());
             component.WaitForAssertion(() =>
             {
-                var values = component.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("MetadataReceived");
+                var values = component.FindComponents<MudSelectItem<StopCondition>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(StopCondition.MetadataReceived);
             });
 
-            await component.InvokeAsync(() => FindSelect<string>(component, "ContentLayout").Instance.OpenMenu());
+            await component.InvokeAsync(() => FindSelect<TorrentContentLayout>(component, "ContentLayout").Instance.OpenMenu());
             component.WaitForAssertion(() =>
             {
-                var values = component.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("NoSubfolder");
+                var values = component.FindComponents<MudSelectItem<TorrentContentLayout>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(TorrentContentLayout.NoSubfolder);
             });
         }
 
@@ -621,13 +733,64 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private Mock<IApiClient> UseApiClientMock(
             IReadOnlyDictionary<string, ClientModels.Category>? categories = null,
             IEnumerable<string>? tags = null,
-            ClientModels.Preferences? preferences = null)
+            QBittorrentPreferences? preferences = null,
+            BuildPlatform buildPlatform = BuildPlatform.Unknown,
+            ApiResult<BuildInfo>? buildInfoResult = null)
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetAllCategories()).ReturnsAsync(categories ?? new Dictionary<string, ClientModels.Category>());
-            apiClientMock.Setup(c => c.GetAllTags()).ReturnsAsync(tags?.ToArray() ?? Array.Empty<string>());
-            apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(preferences ?? CreatePreferences());
+            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsSuccessAsync(categories ?? new Dictionary<string, ClientModels.Category>());
+            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsSuccessAsync(tags?.ToArray() ?? Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(buildInfoResult ?? CreateBuildInfoResult(buildPlatform));
+
+            _preferences = preferences ?? CreatePreferences();
+
             return apiClientMock;
+        }
+
+        private static ApiResult<BuildInfo> CreateBuildInfoResult(BuildPlatform buildPlatform)
+        {
+            return ApiResult.CreateSuccess(CreateBuildInfo(buildPlatform));
+        }
+
+        private static ApiResult<BuildInfo> CreateBuildInfoFailureResult()
+        {
+            return ApiResult.CreateFailure<BuildInfo>(new ApiFailure
+            {
+                Kind = ApiFailureKind.UnexpectedResponse,
+                Operation = "GetBuildInfoAsync",
+                UserMessage = "UserMessage",
+            });
+        }
+
+        private static BuildInfo CreateBuildInfo(BuildPlatform buildPlatform)
+        {
+            return new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, buildPlatform);
+        }
+
+        private static string CombineQbittorrentPath(string basePath, string childPath, BuildPlatform buildPlatform)
+        {
+            if (string.IsNullOrEmpty(basePath))
+            {
+                return childPath;
+            }
+
+            if (basePath[^1] == '/' || basePath[^1] == '\\')
+            {
+                return string.Concat(basePath, childPath);
+            }
+
+            return string.Concat(basePath, GetQbittorrentPathSeparator(basePath, buildPlatform), childPath);
+        }
+
+        private static char GetQbittorrentPathSeparator(string path, BuildPlatform buildPlatform)
+        {
+            return buildPlatform switch
+            {
+                BuildPlatform.Windows => '\\',
+                BuildPlatform.Linux => '/',
+                BuildPlatform.MacOS => '/',
+                _ => path.Contains('\\', StringComparison.Ordinal) && !path.Contains('/', StringComparison.Ordinal) ? '\\' : '/'
+            };
         }
 
         private static ClientModels.Category CreateCategory(string name, string? savePath, ClientModels.DownloadPathOption? downloadPath)
@@ -635,43 +798,66 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return new ClientModels.Category(name, savePath, downloadPath);
         }
 
-        private static ClientModels.Preferences CreatePreferences(
+        private static QBittorrentPreferences CreatePreferences(
             bool autoTmmEnabled = false,
             string? savePath = "SavePath",
             string? tempPath = "TempPath",
             bool tempPathEnabled = false,
             bool addStoppedEnabled = false,
             bool addToTopOfQueue = true,
-            string stopCondition = "StopCondition",
-            string contentLayout = "ContentLayout",
+            StopCondition stopCondition = StopCondition.None,
+            TorrentContentLayout contentLayout = TorrentContentLayout.Original,
             bool maxRatioEnabled = false,
             float maxRatio = 1.0f,
             bool maxSeedingTimeEnabled = false,
             int maxSeedingTime = 0,
             bool maxInactiveSeedingTimeEnabled = false,
             int maxInactiveSeedingTime = 0,
-            int maxRatioAct = 0)
+            MaxRatioAction maxRatioAct = MaxRatioAction.StopTorrent)
         {
-            var savePathValue = savePath is null ? "null" : $"\"{savePath}\"";
-            var tempPathValue = tempPath is null ? "null" : $"\"{tempPath}\"";
-            var json = $"{{\"auto_tmm_enabled\":{autoTmmEnabled.ToString().ToLowerInvariant()},\"save_path\":{savePathValue},\"temp_path\":{tempPathValue},\"temp_path_enabled\":{tempPathEnabled.ToString().ToLowerInvariant()},\"add_stopped_enabled\":{addStoppedEnabled.ToString().ToLowerInvariant()},\"add_to_top_of_queue\":{addToTopOfQueue.ToString().ToLowerInvariant()},\"torrent_stop_condition\":\"{stopCondition}\",\"torrent_content_layout\":\"{contentLayout}\",\"max_ratio_enabled\":{maxRatioEnabled.ToString().ToLowerInvariant()},\"max_ratio\":{maxRatio.ToString(CultureInfo.InvariantCulture)},\"max_seeding_time_enabled\":{maxSeedingTimeEnabled.ToString().ToLowerInvariant()},\"max_seeding_time\":{maxSeedingTime},\"max_inactive_seeding_time_enabled\":{maxInactiveSeedingTimeEnabled.ToString().ToLowerInvariant()},\"max_inactive_seeding_time\":{maxInactiveSeedingTime},\"max_ratio_act\":{maxRatioAct}}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.AddStoppedEnabled = addStoppedEnabled;
+                spec.AddToTopOfQueue = addToTopOfQueue;
+                spec.AutoTmmEnabled = autoTmmEnabled;
+                spec.MaxInactiveSeedingTime = maxInactiveSeedingTime;
+                spec.MaxInactiveSeedingTimeEnabled = maxInactiveSeedingTimeEnabled;
+                spec.MaxRatio = maxRatio;
+                spec.MaxRatioAct = maxRatioAct;
+                spec.MaxRatioEnabled = maxRatioEnabled;
+                spec.MaxSeedingTime = maxSeedingTime;
+                spec.MaxSeedingTimeEnabled = maxSeedingTimeEnabled;
+                spec.SavePath = savePath!;
+                spec.TempPath = tempPath!;
+                spec.TempPathEnabled = tempPathEnabled;
+                spec.TorrentContentLayout = contentLayout;
+                spec.TorrentStopCondition = stopCondition;
+            });
         }
     }
 
     internal sealed class AddTorrentOptionsTestDriver
     {
         private readonly ComponentTestContext _testContext;
+        private readonly Func<QBittorrentPreferences?> _getPreferences;
 
-        public AddTorrentOptionsTestDriver(ComponentTestContext testContext)
+        public AddTorrentOptionsTestDriver(ComponentTestContext testContext, Func<QBittorrentPreferences?> getPreferences)
         {
             _testContext = testContext;
+            _getPreferences = getPreferences;
         }
 
         public IRenderedComponent<AddTorrentOptions> RenderComponent(bool showCookieOption = false)
         {
+            var preferences = _getPreferences();
+
             return _testContext.Render<AddTorrentOptions>(parameters =>
             {
+                if (preferences is not null)
+                {
+                    parameters.Add(p => p.Preferences, preferences);
+                }
+
                 parameters.Add(p => p.ShowCookieOption, showCookieOption);
             });
         }

@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -16,7 +15,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
             var update = new UpdatePreferences();
@@ -47,13 +46,13 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTextField(target, "WebUiReverseProxiesList").Instance.Disabled.Should().BeFalse();
 
             FindSwitch(target, "DyndnsEnabled").Instance.Value.Should().BeTrue();
-            FindSelect<int>(target, "DyndnsService").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSelect<DyndnsService>(target, "DyndnsService").Instance.GetState(x => x.Value).Should().Be(DyndnsService.DynDns);
         }
 
         [Fact]
         public async Task GIVEN_WebUiSettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -92,7 +91,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_AuthenticationSettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -145,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_SecurityAndHeaders_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -212,7 +211,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_DyndnsSettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -228,9 +227,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var serviceSelect = FindSelect<int>(target, "DyndnsService");
+            var serviceSelect = FindSelect<DyndnsService>(target, "DyndnsService");
             serviceSelect.Instance.Disabled.Should().BeTrue();
-            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(DyndnsService.NoIp));
 
             var domainField = FindTextField(target, "DyndnsDomain");
             domainField.Instance.Disabled.Should().BeTrue();
@@ -245,7 +244,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => passField.Instance.ValueChanged.InvokeAsync("newpass"));
 
             update.DyndnsEnabled.Should().BeFalse();
-            update.DyndnsService.Should().Be(1);
+            update.DyndnsService.Should().Be(DyndnsService.NoIp);
             update.DyndnsDomain.Should().Be("newdomain");
             update.DyndnsUsername.Should().Be("newuser");
             update.DyndnsPassword.Should().Be("newpass");
@@ -260,7 +259,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             var openInvocation = TestContext.JSInterop.SetupVoid("qbt.open", _ => true);
             openInvocation.SetVoidResult();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var target = TestContext.Render<WebUIOptions>(parameters =>
             {
@@ -285,8 +284,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             calls.Should().HaveCount(1);
 
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(true));
-            var serviceSelect = FindSelect<int>(target, "DyndnsService");
-            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
+            var serviceSelect = FindSelect<DyndnsService>(target, "DyndnsService");
+            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(DyndnsService.NoIp));
             await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             calls = openInvocation.Invocations.ToList();
@@ -301,7 +300,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
         {
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var target = TestContext.Render<WebUIOptions>(parameters =>
             {
@@ -360,7 +359,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_UnsupportedDyndnsService_WHEN_RegisterClicked_THEN_ShouldThrowInvalidOperationException()
         {
             TestContext.Render<MudPopoverProvider>();
-            var preferences = DeserializeUnsupportedDyndnsPreferences();
+            var preferences = CreateUnsupportedDyndnsPreferences();
             var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
@@ -374,58 +373,52 @@ namespace Lantean.QBTMud.Test.Components.Options
             await action.Should().ThrowAsync<InvalidOperationException>();
         }
 
-        private static Preferences DeserializeUnsupportedDyndnsPreferences()
+        private static Preferences CreateUnsupportedDyndnsPreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "dyndns_enabled": true,
-                "dyndns_service": 2
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.DyndnsEnabled = true;
+                spec.DyndnsService = (DyndnsService)2;
+            });
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "locale": "en",
-                "performance_warning": false,
-                "web_ui_domain_list": "domain1\n.domain2",
-                "web_ui_address": "example.com",
-                "web_ui_port": 9090,
-                "web_ui_upnp": true,
-                "use_https": true,
-                "web_ui_https_cert_path": "/cert.pem",
-                "web_ui_https_key_path": "/key.pem",
-                "web_ui_username": "admin",
-                "web_ui_password": "secret!",
-                "bypass_local_auth": true,
-                "bypass_auth_subnet_whitelist_enabled": true,
-                "bypass_auth_subnet_whitelist": "10.0.0.0/8",
-                "web_ui_max_auth_fail_count": 5,
-                "web_ui_ban_duration": 60,
-                "web_ui_session_timeout": 3600,
-                "alternative_webui_enabled": true,
-                "alternative_webui_path": "/var/ui",
-                "web_ui_clickjacking_protection_enabled": true,
-                "web_ui_csrf_protection_enabled": true,
-                "web_ui_secure_cookie_enabled": true,
-                "web_ui_host_header_validation_enabled": true,
-                "web_ui_use_custom_http_headers_enabled": true,
-                "web_ui_custom_http_headers": "X-Test: 1",
-                "web_ui_reverse_proxy_enabled": true,
-                "web_ui_reverse_proxies_list": "proxy1",
-                "dyndns_enabled": true,
-                "dyndns_service": 0,
-                "dyndns_domain": "example.com",
-                "dyndns_username": "user",
-                "dyndns_password": "pass"
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AlternativeWebuiEnabled = true;
+                spec.AlternativeWebuiPath = "/var/ui";
+                spec.BypassAuthSubnetWhitelist = "10.0.0.0/8";
+                spec.BypassAuthSubnetWhitelistEnabled = true;
+                spec.BypassLocalAuth = true;
+                spec.DyndnsDomain = "example.com";
+                spec.DyndnsEnabled = true;
+                spec.DyndnsPassword = "pass";
+                spec.DyndnsService = DyndnsService.DynDns;
+                spec.DyndnsUsername = "user";
+                spec.Locale = "en";
+                spec.PerformanceWarning = false;
+                spec.UseHttps = true;
+                spec.WebUiAddress = "example.com";
+                spec.WebUiBanDuration = 60;
+                spec.WebUiClickjackingProtectionEnabled = true;
+                spec.WebUiCsrfProtectionEnabled = true;
+                spec.WebUiCustomHttpHeaders = "X-Test: 1";
+                spec.WebUiDomainList = "domain1\n.domain2";
+                spec.WebUiHostHeaderValidationEnabled = true;
+                spec.WebUiHttpsCertPath = "/cert.pem";
+                spec.WebUiHttpsKeyPath = "/key.pem";
+                spec.WebUiMaxAuthFailCount = 5;
+                spec.WebUiPassword = "secret!";
+                spec.WebUiPort = 9090;
+                spec.WebUiReverseProxiesList = "proxy1";
+                spec.WebUiReverseProxyEnabled = true;
+                spec.WebUiSecureCookieEnabled = true;
+                spec.WebUiSessionTimeout = 3600;
+                spec.WebUiUpnp = true;
+                spec.WebUiUseCustomHttpHeadersEnabled = true;
+                spec.WebUiUsername = "admin";
+            });
         }
 
         private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<WebUIOptions> target, string testId)

@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -15,20 +14,19 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldDisplayPreferenceStates()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "confirm_torrent_deletion": true,
-                "status_bar_external_ip": false,
-                "file_log_enabled": true,
-                "file_log_path": "/logs",
-                "file_log_backup_enabled": true,
-                "file_log_max_size": 4096,
-                "file_log_delete_old": true,
-                "file_log_age": 7,
-                "file_log_age_type": 2,
-                "performance_warning": true
-            }
-            """);
+                spec.ConfirmTorrentDeletion = true;
+                spec.FileLogAge = 7;
+                spec.FileLogAgeType = 2;
+                spec.FileLogBackupEnabled = true;
+                spec.FileLogDeleteOld = true;
+                spec.FileLogEnabled = true;
+                spec.FileLogMaxSize = 4096;
+                spec.FileLogPath = "/logs";
+                spec.PerformanceWarning = true;
+                spec.StatusBarExternalIp = false;
+            });
 
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
@@ -64,11 +62,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_LocaleNotInCatalog_WHEN_Rendered_THEN_ShouldResolveLocaleAndDisplayName()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "locale": "C"
-            }
-            """);
+                spec.Locale = "C";
+            });
 
             var updatePreferences = new UpdatePreferences();
 
@@ -90,11 +87,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_WhitespaceLocale_WHEN_FormattingDisplayName_THEN_ShouldReturnWhitespace()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "locale": "en"
-            }
-            """);
+                spec.Locale = "en";
+            });
 
             var updatePreferences = new UpdatePreferences();
 
@@ -136,17 +132,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_FileLogDisabled_WHEN_Toggled_THEN_ShouldEnableInputsAndEmitPreferences()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "file_log_enabled": false,
-                "file_log_path": "/logs",
-                "file_log_backup_enabled": false,
-                "file_log_delete_old": false,
-                "file_log_age": 3,
-                "file_log_age_type": 1,
-                "file_log_max_size": 1024
-            }
-            """);
+                spec.FileLogAge = 3;
+                spec.FileLogAgeType = 1;
+                spec.FileLogBackupEnabled = false;
+                spec.FileLogDeleteOld = false;
+                spec.FileLogEnabled = false;
+                spec.FileLogMaxSize = 1024;
+                spec.FileLogPath = "/logs";
+            });
 
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
@@ -182,17 +177,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_FileLogInputs_WHEN_Modified_THEN_ShouldUpdatePreferencesAndNotify()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "file_log_enabled": true,
-                "file_log_path": "/logs",
-                "file_log_backup_enabled": true,
-                "file_log_delete_old": true,
-                "file_log_age": 5,
-                "file_log_age_type": 0,
-                "file_log_max_size": 256
-            }
-            """);
+                spec.FileLogAge = 5;
+                spec.FileLogAgeType = 0;
+                spec.FileLogBackupEnabled = true;
+                spec.FileLogDeleteOld = true;
+                spec.FileLogEnabled = true;
+                spec.FileLogMaxSize = 256;
+                spec.FileLogPath = "/logs";
+            });
 
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
@@ -228,14 +222,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_PrimarySwitches_WHEN_Toggled_THEN_ShouldUpdatePreferences()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "confirm_torrent_deletion": false,
-                "status_bar_external_ip": true,
-                "performance_warning": false,
-                "file_log_enabled": false
-            }
-            """);
+                spec.ConfirmTorrentDeletion = false;
+                spec.FileLogEnabled = false;
+                spec.PerformanceWarning = false;
+                spec.StatusBarExternalIp = true;
+            });
 
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
@@ -271,16 +264,15 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_FileLogToggles_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            var preferences = DeserializePreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "file_log_enabled": true,
-                "file_log_backup_enabled": false,
-                "file_log_delete_old": false,
-                "file_log_age": 10,
-                "file_log_age_type": 1,
-                "file_log_max_size": 2048
-            }
-            """);
+                spec.FileLogAge = 10;
+                spec.FileLogAgeType = 1;
+                spec.FileLogBackupEnabled = false;
+                spec.FileLogDeleteOld = false;
+                spec.FileLogEnabled = true;
+                spec.FileLogMaxSize = 2048;
+            });
 
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
@@ -337,11 +329,6 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             raised.Should().HaveCount(6);
             raised.Should().AllSatisfy(value => value.Should().BeSameAs(updatePreferences));
-        }
-
-        private static Preferences DeserializePreferences(string json)
-        {
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
         }
 
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<BehaviourOptions> target, string testId)

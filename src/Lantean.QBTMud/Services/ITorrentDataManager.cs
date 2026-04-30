@@ -1,23 +1,28 @@
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
+using ClientMainData = QBittorrent.ApiClient.Models.MainData;
+using ClientTorrent = QBittorrent.ApiClient.Models.Torrent;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Services
 {
     public interface ITorrentDataManager
     {
-        MainData CreateMainData(QBitTorrentClient.Models.MainData mainData);
+        MudMainData CreateMainData(ClientMainData mainData);
 
-        Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent);
+        MudTorrent CreateTorrent(string hash, ClientTorrent torrent);
 
-        bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged);
+        bool MergeMainData(ClientMainData mainData, MudMainData torrentList, out bool filterChanged);
 
         bool MergeMainData(
-            QBitTorrentClient.Models.MainData mainData,
-            MainData torrentList,
+            ClientMainData mainData,
+            MudMainData torrentList,
             out bool filterChanged,
             out IReadOnlyList<TorrentTransition> torrentTransitions);
 
-        Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files);
+        Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<FileData> files);
 
-        bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents);
+        bool MergeContentsList(IReadOnlyList<FileData> files, Dictionary<string, ContentItem> contents);
     }
 }

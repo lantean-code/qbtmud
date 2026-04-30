@@ -1,9 +1,9 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -16,6 +16,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -50,13 +53,20 @@ namespace Lantean.QBTMud.Components.Dialogs
             _loading = true;
             try
             {
-                var response = await ApiClient.GetSearchPlugins();
-                Plugins = response is null ? [] : response.ToList();
+                var pluginsResult = await ApiClient.GetSearchPluginsAsync();
+                if (pluginsResult.IsFailure)
+                {
+                    Plugins = [];
+                    SelectedPluginNames = [];
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        pluginsResult,
+                        message => TranslateApp("Failed to load search plugins: %1", message ?? string.Empty));
+                    return;
+                }
+
+                var plugins = pluginsResult.Value;
+                Plugins = [.. plugins];
                 SelectedPluginNames = [];
-            }
-            catch (Exception exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Failed to load search plugins: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -73,7 +83,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var success = await RunOperation(() => ApiClient.InstallSearchPlugins(source), TranslateApp("Plugin install queued."), true);
+            var success = await RunOperation(() => ApiClient.InstallSearchPluginsAsync(sources: [source]), () => TranslateApp("Plugin install queued."), true);
             if (success)
             {
                 InstallUrl = string.Empty;
@@ -88,7 +98,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var success = await RunOperation(() => ApiClient.InstallSearchPlugins(source), TranslateApp("Plugin install queued."), true);
+            var success = await RunOperation(() => ApiClient.InstallSearchPluginsAsync(sources: [source]), () => TranslateApp("Plugin install queued."), true);
             if (success)
             {
                 InstallLocalPath = string.Empty;
@@ -103,7 +113,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var names = SelectedPluginNames.ToArray();
-            await RunOperation(() => ApiClient.EnableSearchPlugins(names), TranslateApp("Enabled %1 plugin(s).", names.Length));
+            await RunOperation(() => ApiClient.EnableSearchPluginsAsync(names: names), () => TranslateApp("Enabled %1 plugin(s).", names.Length));
         }
 
         protected async Task DisableSelected()
@@ -114,7 +124,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var names = SelectedPluginNames.ToArray();
-            await RunOperation(() => ApiClient.DisableSearchPlugins(names), TranslateApp("Disabled %1 plugin(s).", names.Length));
+            await RunOperation(() => ApiClient.DisableSearchPluginsAsync(names: names), () => TranslateApp("Disabled %1 plugin(s).", names.Length));
         }
 
         protected async Task UninstallSelected()
@@ -125,7 +135,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var names = SelectedPluginNames.ToArray();
-            await RunOperation(() => ApiClient.UninstallSearchPlugins(names), TranslateApp("Removed %1 plugin(s).", names.Length));
+            await RunOperation(() => ApiClient.UninstallSearchPluginsAsync(names: names), () => TranslateApp("Removed %1 plugin(s).", names.Length));
         }
 
         protected async Task UpdateAll()
@@ -135,7 +145,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await RunOperation(() => ApiClient.UpdateSearchPlugins(), TranslateApp("Plugin update queued."));
+            await RunOperation(() => ApiClient.UpdateSearchPluginsAsync(), () => TranslateApp("Plugin update queued."));
         }
 
         protected async Task TogglePlugin(SearchPlugin plugin, bool enable)
@@ -148,12 +158,15 @@ namespace Lantean.QBTMud.Components.Dialogs
             var previous = plugin.Enabled;
             plugin.Enabled = enable;
 
-            var success = await RunOperation(
-                enable
-                    ? () => ApiClient.EnableSearchPlugins(plugin.Name)
-                    : () => ApiClient.DisableSearchPlugins(plugin.Name),
-                enable ? TranslateApp("Enabled %1.", plugin.FullName) : TranslateApp("Disabled %1.", plugin.FullName),
-                false);
+            bool success;
+            if (enable)
+            {
+                success = await RunOperation(() => ApiClient.EnableSearchPluginsAsync([plugin.Name]), () => TranslateApp("Enabled %1.", plugin.FullName), false);
+            }
+            else
+            {
+                success = await RunOperation(() => ApiClient.DisableSearchPluginsAsync([plugin.Name]), () => TranslateApp("Disabled %1.", plugin.FullName), false);
+            }
 
             if (!success)
             {
@@ -191,21 +204,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             return IsSelected(plugin) ? Color.Primary : Color.Default;
         }
 
-        protected string GetEnabledIcon(SearchPlugin plugin)
+        protected static string GetEnabledIcon(SearchPlugin plugin)
         {
             return plugin.Enabled ? Icons.Material.Filled.ToggleOn : Icons.Material.Outlined.ToggleOff;
         }
 
-        protected Color GetEnabledColor(SearchPlugin plugin)
+        protected static Color GetEnabledColor(SearchPlugin plugin)
         {
             return plugin.Enabled ? Color.Success : Color.Default;
-        }
-
-        protected string GetLastUpdatedText(SearchPlugin plugin)
-        {
-            // qBittorrent's search/plugins API does not expose the last update timestamp,
-            // so we display a placeholder until the client model is extended.
-            return TranslateApp("Not available");
         }
 
         protected void CloseDialog()
@@ -213,34 +219,28 @@ namespace Lantean.QBTMud.Components.Dialogs
             MudDialog.Close(DialogResult.Ok(_hasChanges));
         }
 
-        private async Task<bool> RunOperation(Func<Task> operation, string successMessage, bool refresh = true)
+        private async Task<bool> RunOperation(Func<Task<ApiResult>> operation, Func<string> successMessage, bool refresh = true)
         {
             OperationInProgress = true;
-            try
+            var result = await operation();
+            if (result.IsFailure)
             {
-                await operation();
-                SnackbarWorkflow.ShowTransientMessage(successMessage, Severity.Success);
-                _hasChanges = true;
-                if (refresh)
-                {
-                    await LoadPlugins();
-                }
-                return true;
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
-            }
-            catch (InvalidOperationException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
-            }
-            finally
-            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    result,
+                    message => TranslateApp("Search plugin operation failed: %1", message ?? string.Empty));
                 OperationInProgress = false;
+                return false;
             }
 
-            return false;
+            SnackbarWorkflow.ShowTransientMessage(successMessage(), Severity.Success);
+            _hasChanges = true;
+            if (refresh)
+            {
+                await LoadPlugins();
+            }
+
+            OperationInProgress = false;
+            return true;
         }
 
         private string TranslateApp(string source, params object[] arguments)

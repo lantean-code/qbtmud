@@ -1,7 +1,6 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
@@ -11,7 +10,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using MudPriority = Lantean.QBTMud.Models.Priority;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
@@ -23,6 +23,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         public RenameFilesDialogTests()
         {
+            TestContext.AddSingleton(Mock.Of<IApiFeedbackWorkflow>());
             _target = new RenameFilesDialogTestDriver(TestContext);
         }
 
@@ -73,7 +74,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await TestContext.LocalStorage.SetItemAsStringAsync(_preferencesKey, preferencesJson, Xunit.TestContext.Current.CancellationToken);
 
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
 
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
@@ -114,6 +115,37 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             names.Should().NotContain("root/empty");
 
             component.FindComponents<MudIcon>().Any(icon => icon.Instance.Icon == Icons.Material.Filled.Folder).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ContentLoadFails_WHEN_Rendered_THEN_ShouldShowApiFailureAndUseEmptyFileList()
+        {
+            var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            var result = ApiResult.CreateFailure<IReadOnlyList<FileData>>(new ApiFailure
+            {
+                Kind = ApiFailureKind.ServerError,
+                Operation = "GetTorrentContentsAsync",
+                UserMessage = "Load failed",
+            });
+            apiClientMock
+                .Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(result);
+            var feedbackWorkflow = TestContext.Services.GetRequiredService<IApiFeedbackWorkflow>();
+            Mock.Get(feedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(result, null, Severity.Error, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var dialog = await _target.RenderDialogAsync("Hash");
+            var table = FindTable(dialog.Component);
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                table.Instance.Items.Should().NotBeNull();
+                table.Instance.Items!.Should().BeEmpty();
+            });
+            Mock.Get(feedbackWorkflow).Verify(
+                workflow => workflow.HandleFailureAsync(result, null, Severity.Error, It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -175,7 +207,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_InvalidSortColumn_WHEN_FilesQueried_THEN_UsesNameSort()
         {
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
 
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
@@ -236,7 +268,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_NoMatches_WHEN_Submitted_THEN_DoesNotRename()
         {
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
 
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
@@ -257,21 +289,21 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
 
-            apiClientMock.Verify(c => c.RenameFile(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            apiClientMock.Verify(c => c.RenameFolder(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            apiClientMock.Verify(c => c.RenameFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            apiClientMock.Verify(c => c.RenameFolderAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_ReplaceAllSelected_WHEN_Submitted_THEN_RenamesFilesAndFolders()
         {
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
 
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
             {
                 CreateContentItem("NameFile.txt", "NameFile.txt", 1, false, 0),
-                CreateContentItem("NameFolder/", "NameFolder", -1, true, 0),
+                CreateContentItem("NameFolder", "NameFolder", -1, true, 0),
             };
             dataManagerMock
                 .Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>()))
@@ -280,42 +312,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("Hash");
 
             await ClickRowAsync(dialog.Component, "NameFile.txt", false);
-            await ClickRowAsync(dialog.Component, "NameFolder/", true);
+            await ClickRowAsync(dialog.Component, "NameFolder", true);
             await SetTextFieldValue(dialog.Component, "RenameFilesSearch", "Name");
             await SetTextFieldValue(dialog.Component, "RenameFilesReplacement", "Replacement");
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFolders", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", true);
 
-            var selectedRows = new List<FileRow>
-            {
-                CreateFileRow(contentItems[0]),
-                CreateFileRow(contentItems[1]),
-            };
-            selectedRows[0].Renamed.Should().BeFalse();
-            selectedRows[0].ErrorMessage.Should().BeNull();
-            selectedRows[0].Equals(null).Should().BeFalse();
+            var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
+            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder");
 
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                selectedRows,
-                "Name",
-                false,
-                "Replacement",
-                false,
-                false,
-                AppliesTo.FilenameExtension,
-                true,
-                true,
-                true,
-                0);
+            renamedFile.NewName.Should().Be("ReplacementFile.txt");
+            renamedFolder.NewName.Should().Be("ReplacementFolder");
+            renamedFile.Renamed.Should().BeFalse();
+            renamedFile.ErrorMessage.Should().BeNull();
+            renamedFile.Equals(null).Should().BeFalse();
 
-            var renamedFile = renamedFiles.Single(r => !r.IsFolder);
-            var renamedFolder = renamedFiles.Single(r => r.IsFolder);
+            var filePaths = GetReplaceAllPaths(renamedFile!);
+            var folderPaths = GetReplaceAllPaths(renamedFolder!);
 
-            var filePaths = GetReplaceAllPaths(renamedFile);
-            var folderPaths = GetReplaceAllPaths(renamedFolder);
-
-            apiClientMock.Setup(c => c.RenameFile("Hash", filePaths.OldPath, filePaths.NewPath)).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.RenameFolder("Hash", folderPaths.OldPath, folderPaths.NewPath)).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RenameFileAsync("Hash", filePaths.OldPath, filePaths.NewPath)).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RenameFolderAsync("Hash", folderPaths.OldPath, folderPaths.NewPath)).ReturnsSuccess(Task.CompletedTask);
 
             var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "RenameFilesSubmit");
             await submitButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -330,7 +346,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_SingleFileSelected_WHEN_Submitted_THEN_RenamesFile()
         {
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
 
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
@@ -349,28 +365,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFiles", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
 
-            var selectedRows = new List<FileRow>
-            {
-                CreateFileRow(contentItems[0]),
-            };
+            var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
+            renamedFile.NewName.Should().Be("ReplacementFile.txt");
+            var filePaths = GetReplaceAllPaths(renamedFile!);
 
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                selectedRows,
-                "Name",
-                false,
-                "Replacement",
-                false,
-                false,
-                AppliesTo.FilenameExtension,
-                true,
-                false,
-                false,
-                0);
-
-            var renamedFile = renamedFiles.Single();
-            var filePaths = GetReplaceAllPaths(renamedFile);
-
-            apiClientMock.Setup(c => c.RenameFile("Hash", filePaths.OldPath, filePaths.NewPath)).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RenameFileAsync("Hash", filePaths.OldPath, filePaths.NewPath)).ReturnsSuccess(Task.CompletedTask);
 
             var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "RenameFilesSubmit");
             await submitButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -385,12 +384,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_SingleFolderSelected_WHEN_Submitted_THEN_RenamesFolder()
         {
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
 
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
             {
-                CreateContentItem("NameFolder/", "NameFolder", -1, true, 0),
+                CreateContentItem("NameFolder", "NameFolder", -1, true, 0),
             };
             dataManagerMock
                 .Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>()))
@@ -398,34 +397,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync("Hash");
 
-            await ClickRowAsync(dialog.Component, "NameFolder/", false);
+            await ClickRowAsync(dialog.Component, "NameFolder", false);
             await SetTextFieldValue(dialog.Component, "RenameFilesSearch", "Name");
             await SetTextFieldValue(dialog.Component, "RenameFilesReplacement", "Replacement");
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFolders", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
 
-            var selectedRows = new List<FileRow>
-            {
-                CreateFileRow(contentItems[0]),
-            };
+            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder");
+            renamedFolder.NewName.Should().Be("ReplacementFolder");
+            var folderPaths = GetReplaceAllPaths(renamedFolder!);
 
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                selectedRows,
-                "Name",
-                false,
-                "Replacement",
-                false,
-                false,
-                AppliesTo.FilenameExtension,
-                true,
-                true,
-                false,
-                0);
-
-            var renamedFolder = renamedFiles.Single();
-            var folderPaths = GetReplaceAllPaths(renamedFolder);
-
-            apiClientMock.Setup(c => c.RenameFolder("Hash", folderPaths.OldPath, folderPaths.NewPath)).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RenameFolderAsync("Hash", folderPaths.OldPath, folderPaths.NewPath)).ReturnsSuccess(Task.CompletedTask);
 
             var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "RenameFilesSubmit");
             await submitButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -433,6 +415,49 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
 
+            apiClientMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleRenameFailsWithoutUserMessage_WHEN_Submitted_THEN_ShowsDefaultErrorAndKeepsDialogOpen()
+        {
+            var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(Array.Empty<FileData>());
+
+            var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
+            var contentItems = new[]
+            {
+                CreateContentItem("NameFile.txt", "NameFile.txt", 1, false, 0),
+            };
+            dataManagerMock
+                .Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>()))
+                .Returns(CreateContentMap(contentItems));
+
+            var dialog = await _target.RenderDialogAsync("Hash");
+
+            await ClickRowAsync(dialog.Component, "NameFile.txt", false);
+            await SetTextFieldValue(dialog.Component, "RenameFilesSearch", "Name");
+            await SetTextFieldValue(dialog.Component, "RenameFilesReplacement", "Replacement");
+            await SetSwitchValue(dialog.Component, "RenameFilesIncludeFiles", true);
+            await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
+
+            var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
+            var filePaths = GetReplaceAllPaths(renamedFile);
+            apiClientMock
+                .Setup(c => c.RenameFileAsync("Hash", filePaths.OldPath, filePaths.NewPath))
+                .ReturnsAsync(ApiResult.CreateFailure(new ApiFailure
+                {
+                    Kind = ApiFailureKind.ServerError,
+                    Operation = "RenameFileAsync",
+                    UserMessage = string.Empty,
+                }));
+
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "RenameFilesSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var failedRow = GetPreviewRow(dialog.Component, "NameFile.txt");
+            failedRow.Renamed.Should().BeFalse();
+            failedRow.ErrorMessage.Should().Be("qBittorrent returned an error. Please try again.");
             apiClientMock.VerifyAll();
         }
 
@@ -454,6 +479,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private static IRenderedComponent<DynamicTable<FileRow>> FindTable(IRenderedComponent<RenameFilesDialog> component)
         {
             return FindComponentByTestId<DynamicTable<FileRow>>(component, "RenameFilesTable");
+        }
+
+        private static FileRow GetPreviewRow(IRenderedComponent<RenameFilesDialog> component, string name)
+        {
+            var table = FindTable(component);
+            table.Instance.Items.Should().NotBeNull();
+
+            var item = table.Instance.Items!.Single(item => item is not null && item.Name == name);
+            item.Should().NotBeNull();
+
+            return item!;
         }
 
         private static async Task SetTextFieldValue(IRenderedComponent<RenameFilesDialog> component, string testId, string value)
@@ -497,25 +533,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return items.ToDictionary(item => item.Name, StringComparer.Ordinal);
         }
 
-        private static FileRow CreateFileRow(ContentItem item)
-        {
-            var fileRow = new FileRow
-            {
-                IsFolder = item.IsFolder,
-                Level = item.Level,
-                NewName = item.DisplayName,
-                OriginalName = item.DisplayName,
-                Name = item.Name,
-                Path = item.Path,
-            };
-
-            return fileRow;
-        }
-
         private static (string OldPath, string NewPath) GetReplaceAllPaths(FileRow row)
         {
-            var oldPath = row.Path + row.OriginalName;
-            var newPath = row.Path + row.NewName;
+            var parentPath = global::Lantean.QBTMud.Extensions.GetDirectoryPath(row.Name);
+            var oldPath = string.IsNullOrEmpty(parentPath)
+                ? row.OriginalName!
+                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, row.OriginalName!);
+            var newPath = string.IsNullOrEmpty(parentPath)
+                ? row.NewName!
+                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, row.NewName!);
             return (oldPath, newPath);
         }
     }

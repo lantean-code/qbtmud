@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.UI
 {
@@ -20,6 +20,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [Parameter]
         public string? Label { get; set; }
@@ -174,16 +177,14 @@ namespace Lantean.QBTMud.Components.UI
                 return [];
             }
 
-            IReadOnlyList<string> candidates;
-            try
+            var directoryContentResult = await ApiClient.GetDirectoryContentAsync(parentPath, mode);
+            if (directoryContentResult.IsFailure)
             {
-                candidates = await ApiClient.GetDirectoryContent(parentPath, mode);
-            }
-            catch
-            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(directoryContentResult);
                 return [];
             }
 
+            var candidates = directoryContentResult.Value;
             if (string.IsNullOrWhiteSpace(prefix))
             {
                 return candidates;

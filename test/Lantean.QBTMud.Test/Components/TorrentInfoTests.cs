@@ -2,14 +2,20 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient.Models;
+
+using ClientModels = QBittorrent.ApiClient.Models;
+
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -31,7 +37,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_NullHash_WHEN_Rendered_THEN_ShouldNotRenderToolbar()
         {
-            var mainData = CreateMainData(CreateTorrent("Hash", "Name", 0.5f, 1024, "downloading"));
+            var mainData = CreateMainData(CreateTorrent("Hash", "Name", 0.5f, 1024, TorrentState.Downloading));
 
             var target = TestContext.Render<TorrentInfo>(parameters =>
             {
@@ -46,7 +52,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_UnknownHash_WHEN_Rendered_THEN_ShouldNotRenderToolbar()
         {
-            var mainData = CreateMainData(CreateTorrent("Hash", "Name", 0.5f, 1024, "downloading"));
+            var mainData = CreateMainData(CreateTorrent("Hash", "Name", 0.5f, 1024, TorrentState.Downloading));
 
             var target = TestContext.Render<TorrentInfo>(parameters =>
             {
@@ -61,7 +67,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_ExistingHashAndIncompleteProgress_WHEN_Rendered_THEN_ShouldRenderProgressWithSuccessColor()
         {
-            var torrent = CreateTorrent("Hash", "Name", 0.5f, 1024, "downloading");
+            var torrent = CreateTorrent("Hash", "Name", 0.5f, 1024, TorrentState.Downloading);
             var mainData = CreateMainData(torrent);
 
             var target = TestContext.Render<TorrentInfo>(parameters =>
@@ -91,7 +97,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_ExistingHashAndCompletedProgress_WHEN_Rendered_THEN_ShouldRenderProgressWithInfoColor()
         {
-            var torrent = CreateTorrent("Hash", "Name", 1f, 2048, "uploading");
+            var torrent = CreateTorrent("Hash", "Name", 1f, 2048, TorrentState.Uploading);
             var mainData = CreateMainData(torrent);
 
             var target = TestContext.Render<TorrentInfo>(parameters =>
@@ -108,28 +114,28 @@ namespace Lantean.QBTMud.Test.Components
             _languageLocalizerMock.Verify(localizer => localizer.Translate("TransferListModel", "Progress", It.IsAny<object[]>()), Times.Once);
         }
 
-        private static MainData CreateMainData(Torrent torrent)
+        private static MudMainData CreateMainData(MudTorrent torrent)
         {
-            return new MainData(
-                new Dictionary<string, Torrent> { [torrent.Hash] = torrent },
+            return new MudMainData(
+                new Dictionary<string, MudTorrent> { [torrent.Hash] = torrent },
                 Array.Empty<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
+                new MudServerState(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static Torrent CreateTorrent(string hash, string name, float progress, long size, string state)
+        private static MudTorrent CreateTorrent(string hash, string name, float progress, long size, TorrentState? state)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 0,
+                availability: 0,
                 category: "Category",
                 completed: 0,
                 completionOn: 0,

@@ -1,4 +1,5 @@
 @inherits Options
+@using QBittorrent.ApiClient.Models
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -9,9 +10,9 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Resume data storage type (requires restart):")" Value="ResumeDataStorageType" ValueChanged="ResumeDataStorageTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ResumeDataStorageType")">
-                    <MudSelectItem T="string" Value="@("Legacy")">@LanguageLocalizer.Translate("OptionsDialog", "Fastresume files")</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("SQLite")">@LanguageLocalizer.Translate("OptionsDialog", "SQLite database (experimental)")</MudSelectItem>
+                <MudSelect T="ResumeDataStorageType" Label="@LanguageLocalizer.Translate("OptionsDialog", "Resume data storage type (requires restart):")" Value="ResumeDataStorageType" ValueChanged="ResumeDataStorageTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ResumeDataStorageType")">
+                    <MudSelectItem T="ResumeDataStorageType" Value="ResumeDataStorageType.Legacy">@LanguageLocalizer.Translate("OptionsDialog", "Fastresume files")</MudSelectItem>
+                    <MudSelectItem T="ResumeDataStorageType" Value="ResumeDataStorageType.Sqlite">@LanguageLocalizer.Translate("OptionsDialog", "SQLite database (experimental)")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
@@ -119,23 +120,24 @@
                 <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk queue size:")" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("misc", "KiB")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskQueueSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk IO type (requires restart):")" Value="DiskIoType" ValueChanged="DiskIoTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoType")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Default")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Memory mapped files")</MudSelectItem>
-                    <MudSelectItem T="int" Value="2">@LanguageLocalizer.Translate("OptionsDialog", "POSIX-compliant")</MudSelectItem>
+                <MudSelect T="DiskIoType" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk IO type (requires restart):")" Value="DiskIoType" ValueChanged="DiskIoTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoType")">
+                    <MudSelectItem T="DiskIoType" Value="DiskIoType.Default">@LanguageLocalizer.Translate("OptionsDialog", "Default")</MudSelectItem>
+                    <MudSelectItem T="DiskIoType" Value="DiskIoType.MemoryMappedFiles">@LanguageLocalizer.Translate("OptionsDialog", "Memory mapped files")</MudSelectItem>
+                    <MudSelectItem T="DiskIoType" Value="DiskIoType.PosixCompliant">@LanguageLocalizer.Translate("OptionsDialog", "POSIX-compliant")</MudSelectItem>
+                    <MudSelectItem T="DiskIoType" Value="DiskIoType.SimplePreadPwrite">@LanguageLocalizer.Translate("OptionsDialog", "Simple pread/pwrite")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk IO read mode:")" Value="DiskIoReadMode" ValueChanged="DiskIoReadModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoReadMode")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Disable OS cache")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Enable OS cache")</MudSelectItem>
+                <MudSelect T="DiskIoReadMode" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk IO read mode:")" Value="DiskIoReadMode" ValueChanged="DiskIoReadModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoReadMode")">
+                    <MudSelectItem T="DiskIoReadMode" Value="DiskIoReadMode.DisableOsCache">@LanguageLocalizer.Translate("OptionsDialog", "Disable OS cache")</MudSelectItem>
+                    <MudSelectItem T="DiskIoReadMode" Value="DiskIoReadMode.EnableOsCache">@LanguageLocalizer.Translate("OptionsDialog", "Enable OS cache")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk IO write mode:")" Value="DiskIoWriteMode" ValueChanged="DiskIoWriteModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoWriteMode")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Disable OS cache")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Enable OS cache")</MudSelectItem>
-                    <MudSelectItem T="int" Value="2">@LanguageLocalizer.Translate("OptionsDialog", "Write-through")</MudSelectItem>
+                <MudSelect T="DiskIoWriteMode" Label="@LanguageLocalizer.Translate("OptionsDialog", "Disk IO write mode:")" Value="DiskIoWriteMode" ValueChanged="DiskIoWriteModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoWriteMode")">
+                    <MudSelectItem T="DiskIoWriteMode" Value="DiskIoWriteMode.DisableOsCache">@LanguageLocalizer.Translate("OptionsDialog", "Disable OS cache")</MudSelectItem>
+                    <MudSelectItem T="DiskIoWriteMode" Value="DiskIoWriteMode.EnableOsCache">@LanguageLocalizer.Translate("OptionsDialog", "Enable OS cache")</MudSelectItem>
+                    <MudSelectItem T="DiskIoWriteMode" Value="DiskIoWriteMode.WriteThrough">@LanguageLocalizer.Translate("OptionsDialog", "Write-through")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
@@ -181,9 +183,9 @@
                 <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Type of service (ToS) for connections to peers")" Value="PeerTos" ValueChanged="PeerTosChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTos")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "μTP-TCP mixed mode algorithm:")" Value="UtpTcpMixedMode" ValueChanged="UtpTcpMixedModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UtpTcpMixedMode")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Prefer TCP")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Peer proportional (throttles TCP)")</MudSelectItem>
+                <MudSelect T="UtpTcpMixedMode" Label="@LanguageLocalizer.Translate("OptionsDialog", "μTP-TCP mixed mode algorithm:")" Value="UtpTcpMixedMode" ValueChanged="UtpTcpMixedModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UtpTcpMixedMode")">
+                    <MudSelectItem T="UtpTcpMixedMode" Value="UtpTcpMixedMode.PreferTcp">@LanguageLocalizer.Translate("OptionsDialog", "Prefer TCP")</MudSelectItem>
+                    <MudSelectItem T="UtpTcpMixedMode" Value="UtpTcpMixedMode.PeerProportional">@LanguageLocalizer.Translate("OptionsDialog", "Peer proportional (throttles TCP)")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
@@ -202,16 +204,16 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Disallow connection to peers on privileged ports:")" Value="BlockPeersOnPrivilegedPorts" ValueChanged="BlockPeersOnPrivilegedPortsChanged" data-test-id="@TestIdHelper.For("BlockPeersOnPrivilegedPorts")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Upload slots behavior:")" Value="UploadSlotsBehavior" ValueChanged="UploadSlotsBehaviorChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UploadSlotsBehavior")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Fixed slots")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Upload rate based")</MudSelectItem>
+                <MudSelect T="UploadSlotsBehavior" Label="@LanguageLocalizer.Translate("OptionsDialog", "Upload slots behavior:")" Value="UploadSlotsBehavior" ValueChanged="UploadSlotsBehaviorChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UploadSlotsBehavior")">
+                    <MudSelectItem T="UploadSlotsBehavior" Value="UploadSlotsBehavior.FixedSlots">@LanguageLocalizer.Translate("OptionsDialog", "Fixed slots")</MudSelectItem>
+                    <MudSelectItem T="UploadSlotsBehavior" Value="UploadSlotsBehavior.UploadRateBased">@LanguageLocalizer.Translate("OptionsDialog", "Upload rate based")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Upload choking algorithm:")" Value="UploadChokingAlgorithm" ValueChanged="UploadChokingAlgorithmChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UploadChokingAlgorithm")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Round-robin")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Fastest upload")</MudSelectItem>
-                    <MudSelectItem T="int" Value="2">@LanguageLocalizer.Translate("OptionsDialog", "Anti-leech")</MudSelectItem>
+                <MudSelect T="UploadChokingAlgorithm" Label="@LanguageLocalizer.Translate("OptionsDialog", "Upload choking algorithm:")" Value="UploadChokingAlgorithm" ValueChanged="UploadChokingAlgorithmChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UploadChokingAlgorithm")">
+                    <MudSelectItem T="UploadChokingAlgorithm" Value="UploadChokingAlgorithm.RoundRobin">@LanguageLocalizer.Translate("OptionsDialog", "Round-robin")</MudSelectItem>
+                    <MudSelectItem T="UploadChokingAlgorithm" Value="UploadChokingAlgorithm.FastestUpload">@LanguageLocalizer.Translate("OptionsDialog", "Fastest upload")</MudSelectItem>
+                    <MudSelectItem T="UploadChokingAlgorithm" Value="UploadChokingAlgorithm.AntiLeech">@LanguageLocalizer.Translate("OptionsDialog", "Anti-leech")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">

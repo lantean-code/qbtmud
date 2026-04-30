@@ -1,11 +1,12 @@
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Services
 {
     public interface IPeerDataManager
     {
-        PeerList CreatePeerList(QBitTorrentClient.Models.TorrentPeers torrentPeers);
+        PeerList CreatePeerList(TorrentPeers torrentPeers);
 
-        void MergeTorrentPeers(QBitTorrentClient.Models.TorrentPeers torrentPeers, PeerList peerList);
+        void MergeTorrentPeers(TorrentPeers torrentPeers, PeerList peerList);
     }
 }

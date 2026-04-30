@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Models
 {
     internal sealed record TorrentCreationFormState
@@ -20,7 +22,7 @@ namespace Lantean.QBTMud.Models
 
         public string Source { get; init; } = string.Empty;
 
-        public string Format { get; init; } = "hybrid";
+        public TorrentFormat Format { get; init; } = TorrentFormat.Hybrid;
 
         public bool OptimizeAlignment { get; init; } = true;
 

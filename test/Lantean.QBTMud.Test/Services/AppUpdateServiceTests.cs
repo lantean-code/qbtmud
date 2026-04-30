@@ -1,11 +1,11 @@
+using System.Net;
+using System.Text;
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Net;
-using System.Text;
 
 namespace Lantean.QBTMud.Test.Services
 {

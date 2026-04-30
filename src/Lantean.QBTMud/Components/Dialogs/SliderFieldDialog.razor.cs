@@ -1,7 +1,7 @@
+using System.Numerics;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Numerics;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {

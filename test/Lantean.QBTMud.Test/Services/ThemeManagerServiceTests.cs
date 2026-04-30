@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -7,8 +9,6 @@ using Lantean.QBTMud.Theming;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;
-using System.Net;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -44,6 +44,80 @@ namespace Lantean.QBTMud.Test.Services
                 .Returns((string _, string source, object[] _) => source);
             SetupThemeRepositoryIndexUrl(string.Empty);
             _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer, _appSettingsService, _logger);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeModePreferenceConfiguredInAppSettings_WHEN_Initialized_THEN_CurrentThemeModePreferenceMatchesSettings()
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeModePreference = ThemeModePreference.Dark;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.Dark);
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidThemeModePreferenceConfiguredInAppSettings_WHEN_Initialized_THEN_CurrentThemeModePreferenceFallsBackToSystem()
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeModePreference = (ThemeModePreference)999;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.System);
+        }
+
+        [Fact]
+        public void GIVEN_NewThemeModePreference_WHEN_ApplyPersistedThemeModePreferenceInvoked_THEN_RaisesThemeModePreferenceChangedEvent()
+        {
+            ThemeModePreferenceChangedEventArgs? captured = null;
+            _target.ThemeModePreferenceChanged += (_, args) => captured = args;
+
+            _target.ApplyPersistedThemeModePreference(ThemeModePreference.Dark);
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            captured.Should().NotBeNull();
+            captured!.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_UnchangedThemeModePreference_WHEN_ApplyPersistedThemeModePreferenceInvoked_THEN_DoesNotRaiseThemeModePreferenceChangedEvent()
+        {
+            ThemeModePreferenceChangedEventArgs? captured = null;
+            _target.ThemeModePreferenceChanged += (_, args) => captured = args;
+
+            _target.ApplyPersistedThemeModePreference(ThemeModePreference.System);
+
+            captured.Should().BeNull();
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_InvalidThemeModePreference_WHEN_ApplyPersistedThemeModePreferenceInvoked_THEN_NormalizesToSystem()
+        {
+            ThemeModePreferenceChangedEventArgs? captured = null;
+            _target.ThemeModePreferenceChanged += (_, args) => captured = args;
+
+            _target.ApplyPersistedThemeModePreference((ThemeModePreference)999);
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.System);
+            captured.Should().BeNull();
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

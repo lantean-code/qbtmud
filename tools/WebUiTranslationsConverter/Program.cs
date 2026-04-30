@@ -6,9 +6,9 @@ namespace WebUiTranslationsConverter
 {
     internal static class Program
     {
-        private const string FilePrefix = "webui_";
-        private const string FileExtension = ".ts";
-        private const string LanguagesFileName = "webui_languages.json";
+        private const string _filePrefix = "webui_";
+        private const string _fileExtension = ".ts";
+        private const string _languagesFileName = "webui_languages.json";
 
         private static readonly JsonSerializerOptions _options = new JsonSerializerOptions
         {
@@ -65,7 +65,7 @@ namespace WebUiTranslationsConverter
                 Console.WriteLine($"Generated {outputFile} ({translations.Count} entries)");
             }
 
-            var languagesManifestPath = BuildOutputFilePath(options.OutputPath, LanguagesFileName);
+            var languagesManifestPath = BuildOutputFilePath(options.OutputPath, _languagesFileName);
             WriteLanguagesManifest(languagesManifestPath, locales);
 
             return 0;
@@ -83,20 +83,32 @@ namespace WebUiTranslationsConverter
                 {
                     case "--source":
                         if (!TryReadValue(args, ref i, out source))
+                        {
                             return null;
+                        }
+
                         break;
 
                     case "--output":
                         if (!TryReadValue(args, ref i, out output))
+                        {
                             return null;
+                        }
+
                         break;
 
                     case "--mode":
                         if (!TryReadValue(args, ref i, out var modeValue))
+                        {
                             return null;
+                        }
+
                         mode = ParseMode(modeValue);
                         if (mode == ConversionMode.Unknown)
+                        {
                             return null;
+                        }
+
                         break;
 
                     case "--help":
@@ -131,9 +143,14 @@ namespace WebUiTranslationsConverter
         private static ConversionMode ParseMode(string value)
         {
             if (string.Equals(value, "en", StringComparison.OrdinalIgnoreCase))
+            {
                 return ConversionMode.EnglishOnly;
+            }
+
             if (string.Equals(value, "all", StringComparison.OrdinalIgnoreCase))
+            {
                 return ConversionMode.All;
+            }
 
             return ConversionMode.Unknown;
         }
@@ -147,15 +164,15 @@ namespace WebUiTranslationsConverter
         private static string GetLocale(string filePath)
         {
             var fileName = Path.GetFileName(filePath);
-            if (fileName is null || !fileName.StartsWith(FilePrefix, StringComparison.OrdinalIgnoreCase))
+            if (fileName is null || !fileName.StartsWith(_filePrefix, StringComparison.OrdinalIgnoreCase))
             {
                 return string.Empty;
             }
 
-            var locale = fileName[FilePrefix.Length..];
-            if (locale.EndsWith(FileExtension, StringComparison.OrdinalIgnoreCase))
+            var locale = fileName[_filePrefix.Length..];
+            if (locale.EndsWith(_fileExtension, StringComparison.OrdinalIgnoreCase))
             {
-                locale = locale.Substring(0, locale.Length - FileExtension.Length);
+                locale = locale[..^_fileExtension.Length];
             }
 
             return locale;

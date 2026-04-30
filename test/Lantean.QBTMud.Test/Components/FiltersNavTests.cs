@@ -1,19 +1,20 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientCategory = Lantean.QBitTorrentClient.Models.Category;
-using ClientTorrent = Lantean.QBitTorrentClient.Models.Torrent;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using ClientCategory = QBittorrent.ApiClient.Models.Category;
+using ClientTorrent = QBittorrent.ApiClient.Models.Torrent;
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudMainData = Lantean.QBTMud.Models.MainData;
 using MudServerState = Lantean.QBTMud.Models.ServerState;
@@ -36,29 +37,19 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
             await TestContext.LocalStorage.SetItemAsStringAsync(_statusStorageKey, Status.Downloading.ToString(), Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsStringAsync(_categoryStorageKey, "Movies", Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsStringAsync(_tagStorageKey, "Tag1", Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsStringAsync(_trackerStorageKey, "tracker.example.com", Xunit.TestContext.Current.CancellationToken);
 
-            Status? status = null;
-            string? category = null;
-            string? tag = null;
-            string? tracker = null;
+            var target = RenderFiltersNav(mainData, CreatePreferences(useSubcategories: true, confirmDeletion: true));
 
-            var target = RenderFiltersNav(mainData, CreatePreferences(useSubcategories: true, confirmDeletion: true), parameters =>
-            {
-                parameters.Add(p => p.StatusChanged, EventCallback.Factory.Create<Status>(this, value => status = value));
-                parameters.Add(p => p.CategoryChanged, EventCallback.Factory.Create<string>(this, value => category = value));
-                parameters.Add(p => p.TagChanged, EventCallback.Factory.Create<string>(this, value => tag = value));
-                parameters.Add(p => p.TrackerChanged, EventCallback.Factory.Create<string>(this, value => tracker = value));
-            });
-
-            status.Should().Be(Status.Downloading);
-            category.Should().Be("Movies");
-            tag.Should().Be("Tag1");
-            tracker.Should().Be("tracker.example.com");
+            queryState.Status.Should().Be(Status.Downloading);
+            queryState.Category.Should().Be("Movies");
+            queryState.Tag.Should().Be("Tag1");
+            queryState.Tracker.Should().Be("tracker.example.com");
 
             FindComponentByTestId<CustomNavLink>(target, "Status-Downloading").Instance.Active.Should().BeTrue();
             FindComponentByTestId<CustomNavLink>(target, "Category-Movies").Instance.Active.Should().BeTrue();
@@ -72,24 +63,14 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var statusInvoked = false;
-            var categoryInvoked = false;
-            var tagInvoked = false;
-            var trackerInvoked = false;
+            var target = RenderFiltersNav(mainData, null);
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.StatusChanged, EventCallback.Factory.Create<Status>(this, _ => statusInvoked = true));
-                parameters.Add(p => p.CategoryChanged, EventCallback.Factory.Create<string>(this, _ => categoryInvoked = true));
-                parameters.Add(p => p.TagChanged, EventCallback.Factory.Create<string>(this, _ => tagInvoked = true));
-                parameters.Add(p => p.TrackerChanged, EventCallback.Factory.Create<string>(this, _ => trackerInvoked = true));
-            });
-
-            statusInvoked.Should().BeFalse();
-            categoryInvoked.Should().BeFalse();
-            tagInvoked.Should().BeFalse();
-            trackerInvoked.Should().BeFalse();
+            queryState.Status.Should().Be(Status.All);
+            queryState.Category.Should().Be(FilterHelper.CATEGORY_ALL);
+            queryState.Tag.Should().Be(FilterHelper.TAG_ALL);
+            queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
 
             FindComponentByTestId<CustomNavLink>(target, "Status-All").Instance.Active.Should().BeTrue();
             FindComponentByTestId<CustomNavLink>(target, "Category-All").Instance.Active.Should().BeTrue();
@@ -103,23 +84,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            Status? status = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.StatusChanged, EventCallback.Factory.Create<Status>(this, value => status = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var downloading = FindComponentByTestId<CustomNavLink>(target, "Status-Downloading");
             await target.InvokeAsync(() => downloading.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            status.Should().Be(Status.Downloading);
+            queryState.Status.Should().Be(Status.Downloading);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_statusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be(Status.Downloading.ToString());
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Status-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            status.Should().Be(Status.All);
+            queryState.Status.Should().Be(Status.All);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_statusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -129,23 +107,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            string? category = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.CategoryChanged, EventCallback.Factory.Create<string>(this, value => category = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
             await target.InvokeAsync(() => movies.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            category.Should().Be("Movies");
+            queryState.Category.Should().Be("Movies");
             (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Movies");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Category-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            category.Should().Be(FilterHelper.CATEGORY_ALL);
+            queryState.Category.Should().Be(FilterHelper.CATEGORY_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -155,23 +130,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            string? tag = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.TagChanged, EventCallback.Factory.Create<string>(this, value => tag = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tag.Should().Be("Tag1");
+            queryState.Tag.Should().Be("Tag1");
             (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Tag1");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Tag-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tag.Should().Be(FilterHelper.TAG_ALL);
+            queryState.Tag.Should().Be(FilterHelper.TAG_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -181,23 +153,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            string? tracker = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.TrackerChanged, EventCallback.Factory.Create<string>(this, value => tracker = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var trackerLink = FindComponentByTestId<CustomNavLink>(target, "Tracker-tracker.example.com");
             await target.InvokeAsync(() => trackerLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tracker.Should().Be("tracker.example.com");
+            queryState.Tracker.Should().Be("tracker.example.com");
             (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("tracker.example.com");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Tracker-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tracker.Should().Be(FilterHelper.TRACKER_ALL);
+            queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -310,7 +279,7 @@ namespace Lantean.QBTMud.Test.Components
             dialogMock.Setup(d => d.InvokeAddCategoryDialog(null, null)).ReturnsAsync("Category");
             dialogMock.Setup(d => d.InvokeEditCategoryDialog("Movies")).ReturnsAsync("Movies");
             dialogMock.Setup(d => d.InvokeAddCategoryDialog("Movies\\", "C:\\Movies")).ReturnsAsync("Movies\\Sub");
-            apiClientMock.Setup(c => c.RemoveCategories("Movies")).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" })).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
 
@@ -332,7 +301,31 @@ namespace Lantean.QBTMud.Test.Components
             dialogMock.Verify(d => d.InvokeAddCategoryDialog(null, null), Times.Once);
             dialogMock.Verify(d => d.InvokeEditCategoryDialog("Movies"), Times.Once);
             dialogMock.Verify(d => d.InvokeAddCategoryDialog("Movies\\", "C:\\Movies"), Times.Once);
-            apiClientMock.Verify(c => c.RemoveCategories("Movies"), Times.Once);
+            apiClientMock.Verify(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" }), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_CategoryMenuActions_WHEN_RemoveFails_THEN_ErrorShownAndCategoryRemains()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" }))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
+            await target.InvokeAsync(() => movies.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var removeCategory = WaitForMenuItemByTestId("CategoryRemove");
+            await target.InvokeAsync(() => removeCategory.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+            mainData.Categories.Should().ContainKey("Movies");
         }
 
         [Fact]
@@ -364,7 +357,7 @@ namespace Lantean.QBTMud.Test.Components
             var mainData = CreateMainData();
 
             apiClientMock
-                .Setup(c => c.GetTorrentList(
+                .Setup(c => c.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -375,14 +368,15 @@ namespace Lantean.QBTMud.Test.Components
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
-                .ReturnsAsync(new List<ClientTorrent> { new ClientTorrent { Category = "Movies" } });
-            apiClientMock.Setup(c => c.GetAllCategories()).ReturnsAsync(new Dictionary<string, ClientCategory>
+                    It.IsAny<TorrentSelector>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new List<ClientTorrent> { ClientTorrentFactory.Create(category: "Movies") });
+            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsSuccessAsync(new Dictionary<string, ClientCategory>
             {
                 ["Movies"] = new ClientCategory("Movies", "C:\\Movies", null),
                 ["Games"] = new ClientCategory("Games", "C:\\Games", null)
             });
-            apiClientMock.Setup(c => c.RemoveCategories("Games")).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RemoveCategoriesAsync(categories: new[] { "Games" })).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
 
@@ -391,7 +385,44 @@ namespace Lantean.QBTMud.Test.Components
             var removeUnused = WaitForMenuItemByTestId("CategoryRemoveUnused");
             await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.RemoveCategories("Games"), Times.Once);
+            apiClientMock.Verify(c => c.RemoveCategoriesAsync(categories: new[] { "Games" }), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RemoveUnusedCategoriesFails_WHEN_Clicked_THEN_ErrorShownAndCategoriesRemain()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<TorrentSelector?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new List<ClientTorrent> { ClientTorrentFactory.Create(category: "Movies") });
+            apiClientMock
+                .Setup(c => c.GetAllCategoriesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            await OpenMenuAsync(target, 1);
+
+            var removeUnused = WaitForMenuItemByTestId("CategoryRemoveUnused");
+            await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -401,7 +432,7 @@ namespace Lantean.QBTMud.Test.Components
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var mainData = CreateMainData();
 
-            apiClientMock.Setup(c => c.DeleteTags("Tag1")).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.DeleteTagsAsync(tags: new[] { "Tag1" })).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
 
@@ -411,8 +442,32 @@ namespace Lantean.QBTMud.Test.Components
             var removeTag = WaitForMenuItemByTestId("TagRemove");
             await target.InvokeAsync(() => removeTag.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.DeleteTags("Tag1"), Times.Once);
+            apiClientMock.Verify(c => c.DeleteTagsAsync(tags: new[] { "Tag1" }), Times.Once);
             dialogMock.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_TagMenuActions_WHEN_RemoveFails_THEN_ErrorShownAndTagRemains()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.DeleteTagsAsync(tags: new[] { "Tag1" }))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
+            await target.InvokeAsync(() => tagLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var removeTag = WaitForMenuItemByTestId("TagRemove");
+            await target.InvokeAsync(() => removeTag.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+            mainData.Tags.Should().Contain("Tag1");
         }
 
         [Fact]
@@ -423,7 +478,7 @@ namespace Lantean.QBTMud.Test.Components
             var mainData = CreateMainData();
 
             apiClientMock
-                .Setup(c => c.GetTorrentList(
+                .Setup(c => c.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -434,13 +489,14 @@ namespace Lantean.QBTMud.Test.Components
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
-                .ReturnsAsync(new List<ClientTorrent>
+                    It.IsAny<TorrentSelector?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new List<ClientTorrent>
                 {
-                    new ClientTorrent { Tags = new List<string> { "Tag1" } }
+                    ClientTorrentFactory.Create(tags: new List<string> { "Tag1" })
                 });
-            apiClientMock.Setup(c => c.GetAllTags()).ReturnsAsync(new List<string> { "Tag1", "Tag2" });
-            apiClientMock.Setup(c => c.DeleteTags("Tag2")).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsSuccessAsync(new List<string> { "Tag1", "Tag2" });
+            apiClientMock.Setup(c => c.DeleteTagsAsync(tags: new[] { "Tag2" })).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
 
@@ -449,7 +505,47 @@ namespace Lantean.QBTMud.Test.Components
             var removeUnused = WaitForMenuItemByTestId("TagRemoveUnused");
             await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.DeleteTags("Tag2"), Times.Once);
+            apiClientMock.Verify(c => c.DeleteTagsAsync(tags: new[] { "Tag2" }), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RemoveUnusedTagsFails_WHEN_Clicked_THEN_ErrorShownAndTagsRemain()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<TorrentSelector?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new List<ClientTorrent>
+                {
+                    ClientTorrentFactory.Create(tags: new List<string> { "Tag1" })
+                });
+            apiClientMock
+                .Setup(c => c.GetAllTagsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            await OpenMenuAsync(target, 2);
+
+            var removeUnused = WaitForMenuItemByTestId("TagRemoveUnused");
+            await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -497,7 +593,7 @@ namespace Lantean.QBTMud.Test.Components
             var mainData = CreateMainData();
 
             dialogMock.Setup(d => d.ShowAddTagsDialog()).ReturnsAsync(new HashSet<string> { "Tag2" });
-            apiClientMock.Setup(c => c.CreateTags(It.Is<IEnumerable<string>>(t => t.SequenceEqual(new[] { "Tag2" })))).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.CreateTagsAsync(It.Is<IEnumerable<string>>(t => t.SequenceEqual(new[] { "Tag2" })))).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
 
@@ -507,7 +603,7 @@ namespace Lantean.QBTMud.Test.Components
             var addTag = WaitForMenuItemByTestId("TagAdd");
             await target.InvokeAsync(() => addTag.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.CreateTags(It.Is<IEnumerable<string>>(t => t.SequenceEqual(new[] { "Tag2" }))), Times.Once);
+            apiClientMock.Verify(c => c.CreateTagsAsync(It.Is<IEnumerable<string>>(t => t.SequenceEqual(new[] { "Tag2" }))), Times.Once);
         }
 
         [Fact]
@@ -571,11 +667,11 @@ namespace Lantean.QBTMud.Test.Components
             var mainData = CreateMainData();
 
             apiClientMock
-                .Setup(c => c.RemoveTrackers(
+                .Setup(c => c.RemoveTrackersAsync(
+                    TorrentSelectorTestHelper.FromHash("Hash1"),
                     It.Is<IEnumerable<string>>(urls => urls.SequenceEqual(new[] { "http://tracker.example.com/announce" })),
-                    null,
-                    It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash1" }))))
-                .Returns(Task.CompletedTask);
+                    It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
 
@@ -597,11 +693,11 @@ namespace Lantean.QBTMud.Test.Components
             var preferences = CreatePreferences(useSubcategories: true, confirmDeletion: true);
 
             apiClientMock
-                .Setup(c => c.StartTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash1", "Hash3" }))))
-                .Returns(Task.CompletedTask);
+                .Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash3" })), It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
             apiClientMock
-                .Setup(c => c.StopTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash1", "Hash2" }))))
-                .Returns(Task.CompletedTask);
+                .Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash2" })), It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
             dialogMock
                 .Setup(d => d.InvokeDeleteTorrentDialog(true, false, "Hash1"))
                 .ReturnsAsync(true);
@@ -631,14 +727,47 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_TorrentControlsWithContext_WHEN_StartAndStopFail_THEN_ErrorShownForEachFailure()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var mainData = CreateMainData();
+            var preferences = CreatePreferences(useSubcategories: true, confirmDeletion: true);
+
+            apiClientMock
+                .Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash3" })), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash2" })), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData, preferences);
+
+            var downloading = FindComponentByTestId<CustomNavLink>(target, "Status-Downloading");
+            await target.InvokeAsync(() => downloading.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var start = WaitForMenuItemByTestId("_statusType-Start");
+            await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
+
+            var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
+            await target.InvokeAsync(() => movies.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var stop = WaitForMenuItemByTestId("_categoryType-Stop");
+            await target.InvokeAsync(() => stop.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task GIVEN_TorrentControlsWithoutContext_WHEN_Clicked_THEN_EmptyHashes()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var mainData = CreateMainData();
 
-            apiClientMock.Setup(c => c.StartTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.StopTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             dialogMock.Setup(d => d.InvokeDeleteTorrentDialog(false, false, It.IsAny<string[]>())).ReturnsAsync(true);
 
             var target = RenderFiltersNav(mainData);
@@ -663,9 +792,9 @@ namespace Lantean.QBTMud.Test.Components
             var trackerStart = WaitForMenuItemByTestId("_trackerType-Start");
             await target.InvokeAsync(() => trackerStart.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(client => client.StartTorrents(null, It.IsAny<string[]>()), Times.Exactly(2));
-            apiClientMock.Verify(client => client.StopTorrents(null, It.IsAny<string[]>()), Times.Once);
-            dialogMock.Verify(workflow => workflow.InvokeDeleteTorrentDialog(false, false, It.IsAny<string[]>()), Times.Once);
+            apiClientMock.Verify(client => client.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>()), Times.Never);
+            apiClientMock.Verify(client => client.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>()), Times.Never);
+            dialogMock.Verify(workflow => workflow.InvokeDeleteTorrentDialog(false, false, It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -674,7 +803,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
 
-            apiClientMock.Setup(c => c.StartTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData: null);
 
@@ -685,7 +814,7 @@ namespace Lantean.QBTMud.Test.Components
             var statusStart = WaitForMenuItemByTestId("_statusType-Start");
             await target.InvokeAsync(() => statusStart.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(client => client.StartTorrents(null, It.IsAny<string[]>()), Times.Once);
+            apiClientMock.Verify(client => client.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -710,8 +839,7 @@ namespace Lantean.QBTMud.Test.Components
 
         private IRenderedComponent<FiltersNav> RenderFiltersNav(
             MudMainData? mainData = null,
-            Preferences? preferences = null,
-            Action<ComponentParameterCollectionBuilder<FiltersNav>>? configure = null)
+            QBittorrentPreferences? preferences = null)
         {
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
@@ -726,8 +854,6 @@ namespace Lantean.QBTMud.Test.Components
                 {
                     parameters.AddCascadingValue(preferences);
                 }
-
-                configure?.Invoke(parameters);
             });
 
             return target;
@@ -767,14 +893,14 @@ namespace Lantean.QBTMud.Test.Components
                     tags: new[] { "Tag1" },
                     tracker: "http://tracker.example.com/announce",
                     trackersCount: 1,
-                    state: "downloading"),
+                    state: TorrentState.Downloading),
                 ["Hash2"] = CreateTorrent(
                     hash: "Hash2",
                     category: "Movies/Sub",
                     tags: new[] { "Tag2" },
                     tracker: "::::",
                     trackersCount: 1,
-                    state: "uploading",
+                    state: TorrentState.Uploading,
                     hasTrackerWarning: true),
                 ["Hash3"] = CreateTorrent(
                     hash: "Hash3",
@@ -782,7 +908,7 @@ namespace Lantean.QBTMud.Test.Components
                     tags: Array.Empty<string>(),
                     tracker: string.Empty,
                     trackersCount: 0,
-                    state: "stalledDL",
+                    state: TorrentState.StalledDownloading,
                     hasTrackerError: true,
                     hasOtherAnnounceError: true),
             };
@@ -843,7 +969,7 @@ namespace Lantean.QBTMud.Test.Components
                 [FilterHelper.TRACKER_ANNOUNCE_ERROR] = new HashSet<string> { "Hash3" }
             };
 
-            var serverState = JsonSerializer.Deserialize<MudServerState>("{}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            var serverState = new MudServerState();
 
             return new MudMainData(
                 torrents,
@@ -857,10 +983,13 @@ namespace Lantean.QBTMud.Test.Components
                 trackersState);
         }
 
-        private static Preferences CreatePreferences(bool useSubcategories, bool confirmDeletion)
+        private static QBittorrentPreferences CreatePreferences(bool useSubcategories, bool confirmDeletion)
         {
-            var json = $"{{\"use_subcategories\":{useSubcategories.ToString().ToLowerInvariant()},\"confirm_torrent_deletion\":{confirmDeletion.ToString().ToLowerInvariant()}}}";
-            return JsonSerializer.Deserialize<Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.ConfirmTorrentDeletion = confirmDeletion;
+                spec.UseSubcategories = useSubcategories;
+            });
         }
 
         private static MudTorrent CreateTorrent(
@@ -869,7 +998,7 @@ namespace Lantean.QBTMud.Test.Components
             IEnumerable<string> tags,
             string tracker,
             int trackersCount,
-            string state,
+            TorrentState? state,
             bool hasTrackerError = false,
             bool hasTrackerWarning = false,
             bool hasOtherAnnounceError = false)
@@ -879,7 +1008,7 @@ namespace Lantean.QBTMud.Test.Components
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category,
                 completed: 0,
                 completionOn: 0,

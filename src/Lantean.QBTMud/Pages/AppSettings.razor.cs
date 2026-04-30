@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
@@ -5,8 +7,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Diagnostics;
-using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 
 namespace Lantean.QBTMud.Pages
@@ -26,6 +26,9 @@ namespace Lantean.QBTMud.Pages
         protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
+        protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
         protected IStorageRoutingService StorageRoutingService { get; set; } = default!;
 
         [Inject]
@@ -36,12 +39,6 @@ namespace Lantean.QBTMud.Pages
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
-
-        [CascadingParameter(Name = "LostConnection")]
-        public bool LostConnection { get; set; }
-
-        [CascadingParameter(Name = "AppSettings")]
-        public AppSettingsModel? CascadedAppSettings { get; set; }
 
         protected bool IsLoading { get; private set; } = true;
 
@@ -76,16 +73,8 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             var storageRoutingSettingsTask = StorageRoutingService.GetSettingsAsync();
-            if (CascadedAppSettings is not null)
-            {
-                Settings = CascadedAppSettings.Clone();
-                _savedSettings = Settings.Clone();
-            }
-            else
-            {
-                Settings = await AppSettingsService.GetSettingsAsync();
-                _savedSettings = Settings.Clone();
-            }
+            Settings = await AppSettingsService.GetSettingsAsync();
+            _savedSettings = Settings.Clone();
 
             StorageRoutingSettings = await storageRoutingSettingsTask;
             _savedStorageRoutingSettings = StorageRoutingSettings.Clone();
@@ -267,8 +256,14 @@ namespace Lantean.QBTMud.Pages
 
             if (settingsChanged)
             {
+                var previousThemeModePreference = _savedSettings.ThemeModePreference;
                 Settings = await AppSettingsService.SaveSettingsAsync(Settings);
                 _savedSettings = Settings.Clone();
+
+                if (previousThemeModePreference != Settings.ThemeModePreference)
+                {
+                    ThemeManagerService.ApplyPersistedThemeModePreference(Settings.ThemeModePreference);
+                }
             }
 
             if (storageRoutingChanged)

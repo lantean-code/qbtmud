@@ -1,7 +1,8 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -12,6 +13,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -25,7 +29,15 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            Categories = [.. (await ApiClient.GetAllCategories()).Select(c => c.Key)];
+            var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+            if (categoriesResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
+                return;
+            }
+
+            var categories = categoriesResult.Value;
+            Categories = [.. categories.Select(c => c.Key)];
             if (!Hashes.Any())
             {
                 return;
@@ -36,8 +48,15 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task GetTorrentCategories()
         {
-            var torrents = await ApiClient.GetTorrentList(hashes: Hashes.ToArray());
-            TorrentCategories = torrents.Where(t => !string.IsNullOrEmpty(t.Category)).Select(t => t.Category!).ToList();
+            var torrentsResult = await ApiClient.GetTorrentListAsync(selector: TorrentSelector.FromHashes(Hashes));
+            if (torrentsResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(torrentsResult);
+                return;
+            }
+
+            var torrentList = torrentsResult.Value;
+            TorrentCategories = torrentList.Where(t => !string.IsNullOrEmpty(t.Category)).Select(t => t.Category!).ToList();
         }
 
         protected string GetIcon(string tag)
@@ -92,11 +111,19 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (nextState == CategoryState.All)
             {
-                await ApiClient.SetTorrentCategory(category, Hashes);
+                var setResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), category);
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(setResult))
+                {
+                    return;
+                }
             }
             else
             {
-                await ApiClient.RemoveTorrentCategory(Hashes);
+                var clearResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), string.Empty);
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(clearResult))
+                {
+                    return;
+                }
             }
 
             await GetTorrentCategories();
@@ -112,14 +139,22 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await ApiClient.SetTorrentCategory(addedCategoy, Hashes);
+            var setResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), addedCategoy);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(setResult))
+            {
+                return;
+            }
             Categories.Add(addedCategoy);
             await GetTorrentCategories();
         }
 
         protected async Task RemoveCategory()
         {
-            await ApiClient.RemoveTorrentCategory(Hashes);
+            var clearResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), string.Empty);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(clearResult))
+            {
+                return;
+            }
             await GetTorrentCategories();
         }
 

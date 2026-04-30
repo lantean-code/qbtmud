@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -17,16 +16,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
-                .ReturnsAsync(new List<NetworkInterface>
+            api.Setup(a => a.GetNetworkInterfacesAsync())
+                .ReturnsSuccessAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>()))
-                .ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>()))
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -38,8 +37,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var resumeSelect = FindSelect<string>(target, "ResumeDataStorageType");
-            resumeSelect.Instance.GetState(x => x.Value).Should().Be("SQLite");
+            var resumeSelect = FindSelect<ResumeDataStorageType>(target, "ResumeDataStorageType");
+            resumeSelect.Instance.GetState(x => x.Value).Should().Be(ResumeDataStorageType.Sqlite);
 
             FindNumeric(target, "MemoryWorkingSetLimit").Instance.GetState(x => x.Value).Should().Be(512);
             FindSelect<string>(target, "CurrentNetworkInterface").Instance.GetState(x => x.Value).Should().Be("eth0");
@@ -58,18 +57,18 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_NetworkInterface_WHEN_Changed_THEN_ShouldRefreshAddresses()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
-                .ReturnsAsync(new List<NetworkInterface>
+            api.Setup(a => a.GetNetworkInterfacesAsync())
+                .ReturnsSuccessAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList("eth0"))
-                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(""))
-                .ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync("eth0"))
+                .ReturnsSuccessAsync(new[] { "192.168.0.10", "fe80::1" });
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(""))
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -92,25 +91,25 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => addressSelect.Instance.ValueChanged.InvokeAsync("::"));
             update.CurrentInterfaceAddress.Should().Be("::");
             raised[^1].Should().BeSameAs(update);
-            api.Verify(a => a.GetNetworkInterfaceAddressList("eth0"), Times.Once);
+            api.Verify(a => a.GetNetworkInterfaceAddressListAsync("eth0"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_InterfaceWithAddresses_WHEN_Selected_THEN_ShouldRenderAddressItems()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
-                .ReturnsAsync(new List<NetworkInterface>
+            api.Setup(a => a.GetNetworkInterfacesAsync())
+                .ReturnsSuccessAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList("eth0"))
-                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.Is<string>(value => value != "eth0")))
-                .ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync("eth0"))
+                .ReturnsSuccessAsync(new[] { "192.168.0.10", "fe80::1" });
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.Is<string>(value => value != "eth0")))
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -140,10 +139,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_CoreAdvancedSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -156,7 +155,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "ResumeDataStorageType").Instance.ValueChanged.InvokeAsync("Legacy"));
+            await target.InvokeAsync(() => FindSelect<ResumeDataStorageType>(target, "ResumeDataStorageType").Instance.ValueChanged.InvokeAsync(ResumeDataStorageType.Legacy));
             await target.InvokeAsync(() => FindNumeric(target, "MemoryWorkingSetLimit").Instance.ValueChanged.InvokeAsync(768));
             await target.InvokeAsync(() => FindNumeric(target, "SaveResumeDataInterval").Instance.ValueChanged.InvokeAsync(20));
             await target.InvokeAsync(() => FindNumeric(target, "TorrentFileSizeLimit").Instance.ValueChanged.InvokeAsync(175));
@@ -166,7 +165,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindSwitch(target, "ResolvePeerCountries").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "ReannounceWhenAddressChanged").Instance.ValueChanged.InvokeAsync(false));
 
-            update.ResumeDataStorageType.Should().Be("Legacy");
+            update.ResumeDataStorageType.Should().Be(ResumeDataStorageType.Legacy);
             update.MemoryWorkingSetLimit.Should().Be(768);
             update.SaveResumeDataInterval.Should().Be(20);
             update.TorrentFileSizeLimit.Should().Be(175 * 1024 * 1024);
@@ -182,10 +181,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_DiskSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -207,9 +206,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "DiskCache").Instance.ValueChanged.InvokeAsync(384));
             await target.InvokeAsync(() => FindNumeric(target, "DiskCacheTtl").Instance.ValueChanged.InvokeAsync(120));
             await target.InvokeAsync(() => FindNumeric(target, "DiskQueueSize").Instance.ValueChanged.InvokeAsync(10240));
-            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoType").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoReadMode").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoWriteMode").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSelect<DiskIoType>(target, "DiskIoType").Instance.ValueChanged.InvokeAsync(DiskIoType.MemoryMappedFiles));
+            await target.InvokeAsync(() => FindSelect<DiskIoReadMode>(target, "DiskIoReadMode").Instance.ValueChanged.InvokeAsync(DiskIoReadMode.EnableOsCache));
+            await target.InvokeAsync(() => FindSelect<DiskIoWriteMode>(target, "DiskIoWriteMode").Instance.ValueChanged.InvokeAsync(DiskIoWriteMode.WriteThrough));
             await target.InvokeAsync(() => FindSwitch(target, "EnableCoalesceReadWrite").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "EnablePieceExtentAffinity").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "EnableUploadSuggestions").Instance.ValueChanged.InvokeAsync(true));
@@ -223,9 +222,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.DiskCache.Should().Be(384);
             update.DiskCacheTtl.Should().Be(120);
             update.DiskQueueSize.Should().Be(10240 * 1024);
-            update.DiskIoType.Should().Be(1);
-            update.DiskIoReadMode.Should().Be(1);
-            update.DiskIoWriteMode.Should().Be(2);
+            update.DiskIoType.Should().Be(DiskIoType.MemoryMappedFiles);
+            update.DiskIoReadMode.Should().Be(DiskIoReadMode.EnableOsCache);
+            update.DiskIoWriteMode.Should().Be(DiskIoWriteMode.WriteThrough);
             update.EnableCoalesceReadWrite.Should().BeFalse();
             update.EnablePieceExtentAffinity.Should().BeFalse();
             update.EnableUploadSuggestions.Should().BeTrue();
@@ -236,10 +235,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_BufferAndConnectionSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -263,7 +262,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "OutgoingPortsMax").Instance.ValueChanged.InvokeAsync(20000));
             await target.InvokeAsync(() => FindNumeric(target, "UpnpLeaseDuration").Instance.ValueChanged.InvokeAsync(1200));
             await target.InvokeAsync(() => FindNumeric(target, "PeerTos").Instance.ValueChanged.InvokeAsync(16));
-            await target.InvokeAsync(() => FindSelect<int>(target, "UtpTcpMixedMode").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<UtpTcpMixedMode>(target, "UtpTcpMixedMode").Instance.ValueChanged.InvokeAsync(UtpTcpMixedMode.PeerProportional));
             await target.InvokeAsync(() => FindSwitch(target, "IdnSupportEnabled").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "EnableMultiConnectionsFromSameIp").Instance.ValueChanged.InvokeAsync(true));
             await target.InvokeAsync(() => FindSwitch(target, "ValidateHttpsTrackerCertificate").Instance.ValueChanged.InvokeAsync(false));
@@ -284,7 +283,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.OutgoingPortsMax.Should().Be(20000);
             update.UpnpLeaseDuration.Should().Be(1200);
             update.PeerTos.Should().Be(16);
-            update.UtpTcpMixedMode.Should().Be(1);
+            update.UtpTcpMixedMode.Should().Be(UtpTcpMixedMode.PeerProportional);
             update.IdnSupportEnabled.Should().BeFalse();
             update.EnableMultiConnectionsFromSameIp.Should().BeTrue();
             update.ValidateHttpsTrackerCertificate.Should().BeFalse();
@@ -300,10 +299,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_TrackerSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -316,8 +315,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindSelect<int>(target, "UploadSlotsBehavior").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "UploadChokingAlgorithm").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSelect<UploadSlotsBehavior>(target, "UploadSlotsBehavior").Instance.ValueChanged.InvokeAsync(UploadSlotsBehavior.UploadRateBased));
+            await target.InvokeAsync(() => FindSelect<UploadChokingAlgorithm>(target, "UploadChokingAlgorithm").Instance.ValueChanged.InvokeAsync(UploadChokingAlgorithm.AntiLeech));
             await target.InvokeAsync(() => FindSwitch(target, "AnnounceToAllTrackers").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "AnnounceToAllTiers").Instance.ValueChanged.InvokeAsync(true));
             await target.InvokeAsync(() => FindTextField(target, "AnnounceIp").Instance.ValueChanged.InvokeAsync("203.0.113.5"));
@@ -332,8 +331,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "I2pInboundLength").Instance.ValueChanged.InvokeAsync(3));
             await target.InvokeAsync(() => FindNumeric(target, "I2pOutboundLength").Instance.ValueChanged.InvokeAsync(2));
 
-            update.UploadSlotsBehavior.Should().Be(1);
-            update.UploadChokingAlgorithm.Should().Be(2);
+            update.UploadSlotsBehavior.Should().Be(UploadSlotsBehavior.UploadRateBased);
+            update.UploadChokingAlgorithm.Should().Be(UploadChokingAlgorithm.AntiLeech);
             update.AnnounceToAllTrackers.Should().BeFalse();
             update.AnnounceToAllTiers.Should().BeTrue();
             update.AnnounceIp.Should().Be("203.0.113.5");
@@ -354,10 +353,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_EmbeddedTrackerPortValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnValidationMessages()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -380,16 +379,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_SelectMenus_WHEN_Opened_THEN_ShouldRenderMenuItems()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
-                .ReturnsAsync(new[]
+            api.Setup(a => a.GetNetworkInterfacesAsync())
+                .ReturnsSuccessAsync(new[]
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0"),
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>()))
-                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>()))
+                .ReturnsSuccessAsync(new[] { "192.168.0.10", "fe80::1" });
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -424,34 +423,34 @@ namespace Lantean.QBTMud.Test.Components.Options
                 values.Should().Contain("::");
             });
 
-            var diskIoTypeSelect = FindSelect<int>(target, "DiskIoType");
+            var diskIoTypeSelect = FindSelect<DiskIoType>(target, "DiskIoType");
             await target.InvokeAsync(() => diskIoTypeSelect.Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<DiskIoType>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain(2);
+                values.Should().Contain(DiskIoType.PosixCompliant);
             });
 
-            var diskIoWriteModeSelect = FindSelect<int>(target, "DiskIoWriteMode");
+            var diskIoWriteModeSelect = FindSelect<DiskIoWriteMode>(target, "DiskIoWriteMode");
             await target.InvokeAsync(() => diskIoWriteModeSelect.Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<DiskIoWriteMode>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain(1);
+                values.Should().Contain(DiskIoWriteMode.EnableOsCache);
             });
 
-            var uploadChokingAlgorithmSelect = FindSelect<int>(target, "UploadChokingAlgorithm");
+            var uploadChokingAlgorithmSelect = FindSelect<UploadChokingAlgorithm>(target, "UploadChokingAlgorithm");
             await target.InvokeAsync(() => uploadChokingAlgorithmSelect.Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<UploadChokingAlgorithm>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain(0);
+                values.Should().Contain(UploadChokingAlgorithm.RoundRobin);
             });
         }
 
@@ -470,79 +469,76 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<MudSelect<T>>(target, testId);
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "resume_data_storage_type": "SQLite",
-                "memory_working_set_limit": 512,
-                "current_network_interface": "eth0",
-                "current_interface_address": "10.0.0.2",
-                "save_resume_data_interval": 15,
-                "torrent_file_size_limit": 157286400,
-                "recheck_completed_torrents": true,
-                "confirm_torrent_recheck": true,
-                "app_instance_name": "Instance",
-                "refresh_interval": 1500,
-                "resolve_peer_countries": true,
-                "reannounce_when_address_changed": true,
-                "bdecode_depth_limit": 100,
-                "bdecode_token_limit": 200,
-                "async_io_threads": 4,
-                "hashing_threads": 4,
-                "file_pool_size": 512,
-                "checking_memory_use": 128,
-                "disk_cache": 256,
-                "disk_cache_ttl": 60,
-                "disk_queue_size": 8192,
-                "disk_io_type": 0,
-                "disk_io_read_mode": 0,
-                "disk_io_write_mode": 0,
-                "enable_coalesce_read_write": true,
-                "enable_piece_extent_affinity": true,
-                "enable_upload_suggestions": false,
-                "send_buffer_watermark": 192,
-                "send_buffer_low_watermark": 16,
-                "send_buffer_watermark_factor": 150,
-                "connection_speed": 300,
-                "socket_send_buffer_size": 128,
-                "socket_receive_buffer_size": 128,
-                "socket_backlog_size": 50,
-                "outgoing_ports_min": 0,
-                "outgoing_ports_max": 0,
-                "upnp_lease_duration": 600,
-                "peer_tos": 8,
-                "utp_tcp_mixed_mode": 0,
-                "idn_support_enabled": true,
-                "enable_multi_connections_from_same_ip": false,
-                "validate_https_tracker_certificate": true,
-                "ssrf_mitigation": true,
-                "block_peers_on_privileged_ports": true,
-                "enable_embedded_tracker": true,
-                "embedded_tracker_port": 19000,
-                "embedded_tracker_port_forwarding": true,
-                "mark_of_the_web": false,
-                "python_executable_path": "/usr/bin/python",
-                "upload_slots_behavior": 0,
-                "upload_choking_algorithm": 1,
-                "announce_to_all_trackers": true,
-                "announce_to_all_tiers": false,
-                "announce_ip": "198.51.100.5",
-                "max_concurrent_http_announces": 60,
-                "stop_tracker_timeout": 30,
-                "peer_turnover": 10,
-                "peer_turnover_cutoff": 20,
-                "peer_turnover_interval": 90,
-                "request_queue_size": 150,
-                "dht_bootstrap_nodes": "node.example.com",
-                "i2p_inbound_quantity": 3,
-                "i2p_outbound_quantity": 2,
-                "i2p_inbound_length": 1,
-                "i2p_outbound_length": 1
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AnnounceIp = "198.51.100.5";
+                spec.AnnounceToAllTiers = false;
+                spec.AnnounceToAllTrackers = true;
+                spec.AppInstanceName = "Instance";
+                spec.AsyncIoThreads = 4;
+                spec.BdecodeDepthLimit = 100;
+                spec.BdecodeTokenLimit = 200;
+                spec.BlockPeersOnPrivilegedPorts = true;
+                spec.CheckingMemoryUse = 128;
+                spec.ConnectionSpeed = 300;
+                spec.CurrentInterfaceAddress = "10.0.0.2";
+                spec.CurrentNetworkInterface = "eth0";
+                spec.DhtBootstrapNodes = "node.example.com";
+                spec.DiskCache = 256;
+                spec.DiskCacheTtl = 60;
+                spec.DiskIoReadMode = DiskIoReadMode.DisableOsCache;
+                spec.DiskIoType = DiskIoType.Default;
+                spec.DiskIoWriteMode = DiskIoWriteMode.DisableOsCache;
+                spec.DiskQueueSize = 8192;
+                spec.EmbeddedTrackerPort = 19000;
+                spec.EmbeddedTrackerPortForwarding = true;
+                spec.EnableCoalesceReadWrite = true;
+                spec.EnableEmbeddedTracker = true;
+                spec.EnableMultiConnectionsFromSameIp = false;
+                spec.EnablePieceExtentAffinity = true;
+                spec.EnableUploadSuggestions = false;
+                spec.FilePoolSize = 512;
+                spec.HashingThreads = 4;
+                spec.I2pInboundLength = 1;
+                spec.I2pInboundQuantity = 3;
+                spec.I2pOutboundLength = 1;
+                spec.I2pOutboundQuantity = 2;
+                spec.IdnSupportEnabled = true;
+                spec.MarkOfTheWeb = false;
+                spec.MaxConcurrentHttpAnnounces = 60;
+                spec.MemoryWorkingSetLimit = 512;
+                spec.OutgoingPortsMax = 0;
+                spec.OutgoingPortsMin = 0;
+                spec.PeerTos = 8;
+                spec.PeerTurnover = 10;
+                spec.PeerTurnoverCutoff = 20;
+                spec.PeerTurnoverInterval = 90;
+                spec.PythonExecutablePath = "/usr/bin/python";
+                spec.ReannounceWhenAddressChanged = true;
+                spec.RecheckCompletedTorrents = true;
+                spec.RefreshInterval = 1500;
+                spec.RequestQueueSize = 150;
+                spec.ResolvePeerCountries = true;
+                spec.ResumeDataStorageType = ResumeDataStorageType.Sqlite;
+                spec.SaveResumeDataInterval = 15;
+                spec.SendBufferLowWatermark = 16;
+                spec.SendBufferWatermark = 192;
+                spec.SendBufferWatermarkFactor = 150;
+                spec.SocketBacklogSize = 50;
+                spec.SocketReceiveBufferSize = 128;
+                spec.SocketSendBufferSize = 128;
+                spec.SsrfMitigation = true;
+                spec.StopTrackerTimeout = 30;
+                spec.TorrentFileSizeLimit = 157286400;
+                spec.UploadChokingAlgorithm = UploadChokingAlgorithm.FastestUpload;
+                spec.UploadSlotsBehavior = UploadSlotsBehavior.FixedSlots;
+                spec.UpnpLeaseDuration = 600;
+                spec.UtpTcpMixedMode = UtpTcpMixedMode.PreferTcp;
+                spec.ValidateHttpsTrackerCertificate = true;
+                spec.ConfirmTorrentRecheck = true;
+            });
         }
     }
 }

@@ -1,5 +1,5 @@
 @inherits Options
-@using Lantean.QBitTorrentClient.Models
+@using QBittorrent.ApiClient.Models
 @using Lantean.QBTMud.Components.UI
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
@@ -11,10 +11,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent content layout:")" Value="TorrentContentLayout" ValueChanged="TorrentContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentContentLayout")">
-                    <MudSelectItem Value="@("Original")">@LanguageLocalizer.Translate("OptionsDialog", "Original")</MudSelectItem>
-                    <MudSelectItem Value="@("Subfolder")">@LanguageLocalizer.Translate("OptionsDialog", "Create subfolder")</MudSelectItem>
-                    <MudSelectItem Value="@("NoSubfolder")">@LanguageLocalizer.Translate("OptionsDialog", "Don't create subfolder")</MudSelectItem>
+                <MudSelect T="TorrentContentLayout" Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent content layout:")" Value="TorrentContentLayout" ValueChanged="TorrentContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentContentLayout")">
+                    <MudSelectItem T="TorrentContentLayout" Value="TorrentContentLayout.Original">@LanguageLocalizer.Translate("OptionsDialog", "Original")</MudSelectItem>
+                    <MudSelectItem T="TorrentContentLayout" Value="TorrentContentLayout.Subfolder">@LanguageLocalizer.Translate("OptionsDialog", "Create subfolder")</MudSelectItem>
+                    <MudSelectItem T="TorrentContentLayout" Value="TorrentContentLayout.NoSubfolder">@LanguageLocalizer.Translate("OptionsDialog", "Don't create subfolder")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
@@ -24,14 +24,18 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Do not start the download automatically")" Value="AddStoppedEnabled" ValueChanged="AddStoppedEnabledChanged" data-test-id="@TestIdHelper.For("AddStoppedEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent stop condition:")" Value="TorrentStopCondition" ValueChanged="TorrentStopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentStopCondition")">
-                    <MudSelectItem Value="@("None")">@LanguageLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
-                    <MudSelectItem Value="@("MetadataReceived")">@LanguageLocalizer.Translate("OptionsDialog", "Metadata received")</MudSelectItem>
-                    <MudSelectItem Value="@("FilesChecked")">@LanguageLocalizer.Translate("OptionsDialog", "Files checked")</MudSelectItem>
+                <MudSelect T="StopCondition" Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent stop condition:")" Value="TorrentStopCondition" ValueChanged="TorrentStopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentStopCondition")">
+                    <MudSelectItem T="StopCondition" Value="StopCondition.None">@LanguageLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
+                    <MudSelectItem T="StopCondition" Value="StopCondition.MetadataReceived">@LanguageLocalizer.Translate("OptionsDialog", "Metadata received")</MudSelectItem>
+                    <MudSelectItem T="StopCondition" Value="StopCondition.FilesChecked">@LanguageLocalizer.Translate("OptionsDialog", "Files checked")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Delete .torrent files afterwards")" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" data-test-id="@TestIdHelper.For("AutoDeleteMode")" />
+                <MudSelect T="AutoDeleteMode" Label="@LanguageLocalizer.Translate("OptionsDialog", "Delete .torrent files afterwards")" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AutoDeleteMode")">
+                    <MudSelectItem T="AutoDeleteMode" Value="AutoDeleteMode.Never">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Never")</MudSelectItem>
+                    <MudSelectItem T="AutoDeleteMode" Value="AutoDeleteMode.IfAdded">@LanguageLocalizer.Translate("AppDownloadsOptions", "If added")</MudSelectItem>
+                    <MudSelectItem T="AutoDeleteMode" Value="AutoDeleteMode.Always">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Always")</MudSelectItem>
+                </MudSelect>
             </MudItem>
         </MudGrid>
     </MudCardContent>

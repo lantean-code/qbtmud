@@ -1,14 +1,52 @@
+using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Services
 {
     public class PreferencesDataManager : IPreferencesDataManager
     {
-        public QBitTorrentClient.Models.UpdatePreferences MergePreferences(
-            QBitTorrentClient.Models.UpdatePreferences? original,
-            QBitTorrentClient.Models.UpdatePreferences changed)
+        /// <inheritdoc />
+        public QBittorrentPreferences CreateQBittorrentPreferences(Preferences preferences)
+        {
+            ArgumentNullException.ThrowIfNull(preferences);
+
+            return new QBittorrentPreferences
+            {
+                Locale = preferences.Locale,
+                AutoTmmEnabled = preferences.AutoTmmEnabled,
+                SavePath = preferences.SavePath,
+                TempPath = preferences.TempPath,
+                TempPathEnabled = preferences.TempPathEnabled,
+                AddStoppedEnabled = preferences.AddStoppedEnabled,
+                AddToTopOfQueue = preferences.AddToTopOfQueue,
+                TorrentStopCondition = preferences.TorrentStopCondition,
+                TorrentContentLayout = preferences.TorrentContentLayout,
+                MaxRatioEnabled = preferences.MaxRatioEnabled,
+                MaxRatio = preferences.MaxRatio,
+                MaxSeedingTimeEnabled = preferences.MaxSeedingTimeEnabled,
+                MaxSeedingTime = preferences.MaxSeedingTime,
+                MaxInactiveSeedingTimeEnabled = preferences.MaxInactiveSeedingTimeEnabled,
+                MaxInactiveSeedingTime = preferences.MaxInactiveSeedingTime,
+                QueueingEnabled = preferences.QueueingEnabled,
+                ConfirmTorrentDeletion = preferences.ConfirmTorrentDeletion,
+                DeleteTorrentContentFiles = preferences.DeleteTorrentContentFiles,
+                ConfirmTorrentRecheck = preferences.ConfirmTorrentRecheck,
+                StatusBarExternalIp = preferences.StatusBarExternalIp,
+                RssProcessingEnabled = preferences.RssProcessingEnabled,
+                UseSubcategories = preferences.UseSubcategories == true,
+                ResolvePeerCountries = preferences.ResolvePeerCountries,
+                RefreshInterval = preferences.RefreshInterval
+            };
+        }
+
+        /// <inheritdoc />
+        public UpdatePreferences MergePreferences(
+            UpdatePreferences? original,
+            UpdatePreferences changed)
         {
             if (original is null)
             {
-                original = new QBitTorrentClient.Models.UpdatePreferences
+                original = new UpdatePreferences
                 {
                     AddToTopOfQueue = changed.AddToTopOfQueue,
                     AddStoppedEnabled = changed.AddStoppedEnabled,
@@ -464,8 +502,8 @@ namespace Lantean.QBTMud.Services
         }
 
         private static void ApplyMutuallyExclusiveLimits(
-            QBitTorrentClient.Models.UpdatePreferences target,
-            QBitTorrentClient.Models.UpdatePreferences changed)
+            UpdatePreferences target,
+            UpdatePreferences changed)
         {
             if (changed.MaxRatio.HasValue)
             {

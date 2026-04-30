@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -10,8 +9,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+using ClientModels = QBittorrent.ApiClient.Models;
+
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -29,17 +35,17 @@ namespace Lantean.QBTMud.Test.Pages
 
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock
-                .Setup(c => c.GetTorrentProperties(_hashValue))
-                .ReturnsAsync(CreateTorrentProperties());
+                .Setup(c => c.GetTorrentPropertiesAsync(_hashValue))
+                .ReturnsSuccessAsync(CreateTorrentProperties());
             apiClientMock
-                .Setup(c => c.GetTorrentPieceStates(_hashValue))
-                .ReturnsAsync(Array.Empty<ClientModels.PieceState>());
+                .Setup(c => c.GetTorrentPieceStatesAsync(_hashValue))
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.PieceState>());
             apiClientMock
-                .Setup(c => c.GetTorrentTrackers(_hashValue))
-                .ReturnsAsync(Array.Empty<ClientModels.TorrentTracker>());
+                .Setup(c => c.GetTorrentTrackersAsync(_hashValue))
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.TorrentTracker>());
             apiClientMock
-                .Setup(c => c.GetTorrentContents(_hashValue, It.IsAny<int[]>()))
-                .ReturnsAsync(Array.Empty<ClientModels.FileData>());
+                .Setup(c => c.GetTorrentContentsAsync(_hashValue, It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.FileData>());
 
             var keyboardServiceMock = Mock.Get(_keyboardService);
             keyboardServiceMock
@@ -181,7 +187,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.DisposeAsync();
         }
 
-        private IRenderedComponent<Details> RenderDetails(string? hash, MainData mainData)
+        private IRenderedComponent<Details> RenderDetails(string? hash, MudMainData mainData)
         {
             var preferences = CreatePreferences();
             var theme = new MudTheme();
@@ -198,29 +204,31 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static MainData CreateMainData(string hash)
+        private static MudMainData CreateMainData(string hash)
         {
-            var torrents = new Dictionary<string, Torrent>
+            var torrents = new Dictionary<string, MudTorrent>
             {
                 { hash, CreateTorrent(hash) }
             };
 
-            return new MainData(
+            return new MudMainData(
                 torrents,
                 Array.Empty<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState { RefreshInterval = 1500 },
+                new MudServerState { RefreshInterval = 1500 },
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static ClientModels.Preferences CreatePreferences()
+        private static QBittorrentPreferences CreatePreferences()
         {
-            var json = "{\"rss_processing_enabled\":false}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.RssProcessingEnabled = false;
+            });
         }
 
         private static ClientModels.TorrentProperties CreateTorrentProperties()
@@ -263,14 +271,14 @@ namespace Lantean.QBTMud.Test.Pages
                 infoHashV2: "InfoHashV2");
         }
 
-        private static Torrent CreateTorrent(string hash)
+        private static MudTorrent CreateTorrent(string hash)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 0,
+                availability: 0,
                 category: "Category",
                 completed: 0,
                 completionOn: 0,
@@ -303,7 +311,7 @@ namespace Lantean.QBTMud.Test.Pages
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 0,
-                state: "State",
+                state: TorrentState.Unknown,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,

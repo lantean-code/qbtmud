@@ -1,8 +1,10 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Components.Options
 {
     public partial class ConnectionOptions : Options
     {
-        protected int BittorrentProtocol { get; private set; }
+        protected BittorrentProtocol BittorrentProtocol { get; private set; }
         protected int ListenPort { get; private set; }
         protected bool? Upnp { get; private set; }
         protected bool? MaxConnecEnabled { get; private set; }
@@ -19,7 +21,7 @@ namespace Lantean.QBTMud.Components.Options
         protected bool? I2pMixedMode { get; private set; }
         protected bool ProxyDisabled { get; private set; }
         protected bool ProxySocks4 { get; private set; }
-        protected string? ProxyType { get; private set; }
+        protected ProxyType ProxyType { get; private set; }
         protected string? ProxyIp { get; private set; }
         protected int ProxyPort { get; private set; }
         protected bool? ProxyAuthEnabled { get; private set; }
@@ -143,6 +145,8 @@ namespace Lantean.QBTMud.Components.Options
             I2pMixedMode = Preferences.I2pMixedMode;
 
             ProxyType = Preferences.ProxyType;
+            ProxyDisabled = ProxyType == ProxyType.None;
+            ProxySocks4 = ProxyType == ProxyType.Socks4;
             ProxyIp = Preferences.ProxyIp;
             ProxyPort = Preferences.ProxyPort;
             ProxyAuthEnabled = Preferences.ProxyAuthEnabled;
@@ -162,7 +166,7 @@ namespace Lantean.QBTMud.Components.Options
             return true;
         }
 
-        protected async Task BittorrentProtocolChanged(int value)
+        protected async Task BittorrentProtocolChanged(BittorrentProtocol value)
         {
             BittorrentProtocol = value;
             UpdatePreferences.BittorrentProtocol = value;
@@ -259,12 +263,12 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task ProxyTypeChanged(string value)
+        protected async Task ProxyTypeChanged(ProxyType value)
         {
             ProxyType = value;
             UpdatePreferences.ProxyType = value;
-            ProxyDisabled = value == "None";
-            ProxySocks4 = value == "SOCKS4";
+            ProxyDisabled = value == ProxyType.None;
+            ProxySocks4 = value == ProxyType.Socks4;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

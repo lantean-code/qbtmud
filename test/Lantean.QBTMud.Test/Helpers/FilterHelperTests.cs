@@ -1,7 +1,7 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Helpers
@@ -20,11 +20,11 @@ namespace Lantean.QBTMud.Test.Helpers
                     tags: new[] { "tag1" },
                     tracker: "http://tracker.example.com/announce",
                     trackersCount: 1,
-                    state: "downloading",
+                    state: TorrentState.Downloading,
                     uploadSpeed: 100,
                     savePath: "/data/movies"),
-                CreateTorrent(hash: "2", name: "Other", category: "Movies", tags: new[] { "tag1" }, tracker: "tracker.example.com", trackersCount: 1, state: "uploading"),
-                CreateTorrent(hash: "3", name: "Match Name", category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0, state: "queuedUP")
+                CreateTorrent(hash: "2", name: "Other", category: "Movies", tags: new[] { "tag1" }, tracker: "tracker.example.com", trackersCount: 1, state: TorrentState.Uploading),
+                CreateTorrent(hash: "3", name: "Match Name", category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0, state: TorrentState.QueuedUploading)
             };
 
             var filterState = new FilterState(
@@ -225,26 +225,26 @@ namespace Lantean.QBTMud.Test.Helpers
         }
 
         [Theory]
-        [InlineData("downloading", 0, Status.Downloading, true)]
-        [InlineData("queuedDL", 0, Status.Downloading, true)]
-        [InlineData("uploading", 0, Status.Downloading, false)]
-        [InlineData("uploading", 0, Status.Seeding, true)]
-        [InlineData("downloading", 0, Status.Seeding, false)]
-        [InlineData("forcedUP", 0, Status.Completed, true)]
-        [InlineData("downloading", 0, Status.Completed, false)]
-        [InlineData("stoppedDL", 0, Status.Stopped, true)]
-        [InlineData("downloading", 0, Status.Stopped, false)]
-        [InlineData("stalledDL", 0, Status.Stalled, true)]
-        [InlineData("downloading", 0, Status.Stalled, false)]
-        [InlineData("stalledUP", 0, Status.StalledUploading, true)]
-        [InlineData("downloading", 0, Status.StalledUploading, false)]
-        [InlineData("stalledDL", 0, Status.StalledDownloading, true)]
-        [InlineData("stalledUP", 0, Status.StalledDownloading, false)]
-        [InlineData("checkingResumeData", 0, Status.Checking, true)]
-        [InlineData("downloading", 0, Status.Checking, false)]
-        [InlineData("error", 0, Status.Errored, true)]
-        [InlineData("downloading", 0, Status.Errored, false)]
-        public void GIVEN_State_WHEN_FilterStatusInvoked_THEN_ShouldReturnResult(string state, long uploadSpeed, Status status, bool expected)
+        [InlineData(TorrentState.Downloading, 0, Status.Downloading, true)]
+        [InlineData(TorrentState.QueuedDownloading, 0, Status.Downloading, true)]
+        [InlineData(TorrentState.Uploading, 0, Status.Downloading, false)]
+        [InlineData(TorrentState.Uploading, 0, Status.Seeding, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.Seeding, false)]
+        [InlineData(TorrentState.ForcedUploading, 0, Status.Completed, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.Completed, false)]
+        [InlineData(TorrentState.StoppedDownloading, 0, Status.Stopped, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.Stopped, false)]
+        [InlineData(TorrentState.StalledDownloading, 0, Status.Stalled, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.Stalled, false)]
+        [InlineData(TorrentState.StalledUploading, 0, Status.StalledUploading, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.StalledUploading, false)]
+        [InlineData(TorrentState.StalledDownloading, 0, Status.StalledDownloading, true)]
+        [InlineData(TorrentState.StalledUploading, 0, Status.StalledDownloading, false)]
+        [InlineData(TorrentState.CheckingResumeData, 0, Status.Checking, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.Checking, false)]
+        [InlineData(TorrentState.Error, 0, Status.Errored, true)]
+        [InlineData(TorrentState.Downloading, 0, Status.Errored, false)]
+        public void GIVEN_State_WHEN_FilterStatusInvoked_THEN_ShouldReturnResult(TorrentState state, int uploadSpeed, Status status, bool expected)
         {
             FilterHelper.FilterStatus(state, uploadSpeed, status).Should().Be(expected);
         }
@@ -252,10 +252,10 @@ namespace Lantean.QBTMud.Test.Helpers
         [Fact]
         public void GIVEN_State_WHEN_FilterStatusActiveInactive_THEN_ShouldDistinguish()
         {
-            FilterHelper.FilterStatus("downloading", 0, Status.Active).Should().BeTrue();
-            FilterHelper.FilterStatus("stalledDL", 0, Status.Active).Should().BeFalse();
-            FilterHelper.FilterStatus("stalledDL", 0, Status.Inactive).Should().BeTrue();
-            FilterHelper.FilterStatus("downloading", 0, Status.Inactive).Should().BeFalse();
+            FilterHelper.FilterStatus(TorrentState.Downloading, 0, Status.Active).Should().BeTrue();
+            FilterHelper.FilterStatus(TorrentState.StalledDownloading, 0, Status.Active).Should().BeFalse();
+            FilterHelper.FilterStatus(TorrentState.StalledDownloading, 0, Status.Inactive).Should().BeTrue();
+            FilterHelper.FilterStatus(TorrentState.Downloading, 0, Status.Inactive).Should().BeFalse();
         }
 
         [Fact]
@@ -276,8 +276,8 @@ namespace Lantean.QBTMud.Test.Helpers
             bool hasTrackerError = false,
             bool hasTrackerWarning = false,
             bool hasOtherAnnounceError = false,
-            string state = "downloading",
-            long uploadSpeed = 0,
+            TorrentState? state = TorrentState.Downloading,
+            int uploadSpeed = 0,
             string? savePath = "/downloads")
         {
             return new MudTorrent(
@@ -285,7 +285,7 @@ namespace Lantean.QBTMud.Test.Helpers
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category,
                 completed: 0,
                 completionOn: 0,

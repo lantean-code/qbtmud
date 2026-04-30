@@ -1,19 +1,21 @@
+using System.Net;
 using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using UiCategory = Lantean.QBTMud.Models.Category;
 using UiMainData = Lantean.QBTMud.Models.MainData;
 using UiServerState = Lantean.QBTMud.Models.ServerState;
@@ -32,8 +34,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var apiMock = TestContext.UseApiClientMock();
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -70,8 +72,8 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -110,15 +112,15 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(11, "Stopped", 2)
+                new SearchStatus(11, SearchJobStatus.Stopped, 2)
             });
-            apiMock.Setup(client => client.GetSearchResults(11, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchResultsAsync(11, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
-            }, "Stopped", 2));
+            }, SearchJobStatus.Stopped, 2));
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -146,8 +148,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -185,8 +187,8 @@ namespace Lantean.QBTMud.Test.Pages
             var enabledPlugin = new SearchPlugin(true, "Primary", "primary", new[] { new SearchCategory("primary", "Primary") }, "http://plugins/primary", "2.0");
             var disabledPlugin = new SearchPlugin(false, "Legacy", "legacy", new[] { new SearchCategory("legacy", "Legacy") }, "http://plugins/legacy", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { disabledPlugin, enabledPlugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { disabledPlugin, enabledPlugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -205,10 +207,14 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_PluginLoadFails_WHEN_Render_THEN_SearchUnavailableAlertDisplayed()
+        public void GIVEN_PluginLoadReturnsForbidden_WHEN_Render_THEN_NavigatesToLogin()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ThrowsAsync(new HttpRequestException("Search disabled", null, HttpStatusCode.Forbidden));
+            apiMock.Setup(client => client.GetSearchPluginsAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -217,12 +223,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
-                GetChildContentText(alert.Instance.ChildContent).Should().Be("Search is disabled in the connected qBittorrent instance.");
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
             });
 
-            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
-            startButton.Instance.Disabled.Should().BeTrue();
+            target.FindComponents<MudAlert>().Where(component => HasTestId(component, "SearchUnavailableAlert")).Should().BeEmpty();
         }
 
         [Fact]
@@ -230,8 +235,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var apiMock = TestContext.UseApiClientMock();
             var disabledPlugin = new SearchPlugin(false, "Legacy", "legacy", new[] { new SearchCategory("legacy", "Legacy") }, "http://plugins/legacy", "1.0");
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { disabledPlugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { disabledPlugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -262,10 +267,10 @@ namespace Lantean.QBTMud.Test.Pages
             var apiMock = TestContext.UseApiClientMock();
             var disabledPlugin = new SearchPlugin(false, "Legacy", "legacy", new[] { new SearchCategory("legacy", "Legacy") }, "http://plugins/legacy", "1.0");
             var enabledPlugin = new SearchPlugin(true, "Primary", "primary", new[] { new SearchCategory("primary", "Primary") }, "http://plugins/primary", "2.0");
-            apiMock.SetupSequence(client => client.GetSearchPlugins())
+            apiMock.SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(new List<SearchPlugin> { disabledPlugin })
                 .ReturnsAsync(new List<SearchPlugin> { enabledPlugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             dialogMock.Setup(flow => flow.ShowSearchPluginsDialog()).ReturnsAsync(true);
@@ -294,10 +299,10 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var apiMock = TestContext.UseApiClientMock();
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            apiMock.SetupSequence(client => client.GetSearchPlugins())
+            apiMock.SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(new List<SearchPlugin> { plugin })
-                .ThrowsAsync(new HttpRequestException("Network error", null, HttpStatusCode.ServiceUnavailable));
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+                .ReturnsFailure<IReadOnlyList<SearchPlugin>>(ApiFailureKind.ServerError, "Network error", HttpStatusCode.ServiceUnavailable);
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             dialogMock.Setup(flow => flow.ShowSearchPluginsDialog()).ReturnsAsync(true);
@@ -322,7 +327,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 snackbarMock.Verify();
                 var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
-                GetChildContentText(alert.Instance.ChildContent).Should().Be("Search is disabled in the connected qBittorrent instance.");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to load search plugins: Network error");
             });
         }
 
@@ -331,8 +336,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             dialogMock.Setup(flow => flow.ShowSearchPluginsDialog()).ReturnsAsync(false);
@@ -345,32 +350,40 @@ namespace Lantean.QBTMud.Test.Pages
             var manageButton = iconButton.FindAll("button").First();
             manageButton.Click();
 
-            apiMock.Verify(client => client.GetSearchPlugins(), Times.Once());
+            apiMock.Verify(client => client.GetSearchPluginsAsync(), Times.Once());
         }
 
         [Fact]
-        public void GIVEN_SearchUnavailable_WHEN_SubmitForm_THEN_ShowsSearchDisabledSnackbar()
+        public void GIVEN_PluginLoadReturnsForbidden_WHEN_Render_THEN_DoesNotShowPluginLoadErrorSnackbar()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ThrowsAsync(new HttpRequestException("Search disabled", null, HttpStatusCode.Forbidden));
+            apiMock.Setup(client => client.GetSearchPluginsAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
             snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
-            snackbarMock.Setup(snackbar => snackbar.Add(
-                It.Is<string>(message => message.Contains("Search is disabled in the connected qBittorrent instance.")),
-                Severity.Warning,
-                It.IsAny<Action<SnackbarOptions>>(),
-                It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
             TestContext.Render<MudPopoverProvider>();
 
             var target = TestContext.Render<Search>();
 
-            var form = target.Find("form");
-            form.Submit();
+            target.WaitForAssertion(() =>
+            {
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
+            });
 
-            target.WaitForAssertion(() => snackbarMock.Verify());
+            snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => message.Contains("Unable to load search plugins: Search disabled")),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Never);
         }
 
         [Fact]
@@ -378,8 +391,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var apiMock = TestContext.UseApiClientMock();
             var disabledPlugin = new SearchPlugin(false, "Legacy", "legacy", new[] { new SearchCategory("legacy", "Legacy") }, "http://plugins/legacy", "1.0");
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { disabledPlugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { disabledPlugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -405,12 +418,70 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_SearchUnavailable_WHEN_SubmitForm_THEN_ShowsUnavailableSnackbar()
+        {
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Plugin load failure", HttpStatusCode.InternalServerError);
+
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
+            snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
+            snackbarMock.Setup(snackbar => snackbar.Add(
+                It.Is<string>(message => message.Contains("Unable to load search plugins: Plugin load failure", StringComparison.Ordinal)),
+                Severity.Warning,
+                It.IsAny<Action<SnackbarOptions>>(),
+                It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+
+            var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+            criteriaField.Find("input").Input("Ubuntu");
+
+            target.Find("form").Submit();
+
+            target.WaitForAssertion(() => snackbarMock.Verify());
+        }
+
+        [Fact]
+        public async Task GIVEN_MissingSelectedPluginsAndNoEnabledPlugins_WHEN_Rendered_THEN_PluginSelectionClearsAndCategoryFallsBack()
+        {
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
+            {
+                SelectedCategory = "missing-category",
+                SelectedPlugins = new HashSet<string>(new[] { "missing-plugin" }, StringComparer.OrdinalIgnoreCase)
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var disabledPlugin = new SearchPlugin(false, "Legacy", "legacy", new[] { new SearchCategory("legacy", "Legacy") }, "http://plugins/legacy", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { disabledPlugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+
+            target.WaitForAssertion(() =>
+            {
+                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().BeEmpty();
+
+                var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
+                categorySelect.Instance.GetState(x => x.Value).Should().Be(SearchForm.AllCategoryId);
+            });
+        }
+
+        [Fact]
         public void GIVEN_EmptyCriteria_WHEN_SubmitForm_THEN_ShowsEnterCriteriaSnackbar()
         {
             var apiMock = TestContext.UseApiClientMock();
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -439,25 +510,25 @@ namespace Lantean.QBTMud.Test.Pages
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var statusQueue = new Queue<IReadOnlyList<SearchStatus>>();
             statusQueue.Enqueue(Array.Empty<SearchStatus>());
-            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, "Running", 1) });
-            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, "Completed", 1) });
+            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) });
+            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Stopped, 1) });
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(() =>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(() =>
             {
                 var next = statusQueue.Count > 1 ? statusQueue.Dequeue() : statusQueue.Peek();
                 return next;
             });
-            apiMock.Setup(client => client.StartSearch("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(jobId);
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsSuccessAsync(jobId);
 
             var resultQueue = new Queue<SearchResults>();
             resultQueue.Enqueue(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
-            }, "Running", 1));
-            resultQueue.Enqueue(new SearchResults(new List<SearchResult>(), "Completed", 1));
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((int id, int limit, int offset) =>
+            }, SearchJobStatus.Running, 1));
+            resultQueue.Enqueue(new SearchResults(new List<SearchResult>(), SearchJobStatus.Stopped, 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(() =>
             {
                 if (resultQueue.Count > 1)
                 {
@@ -467,8 +538,8 @@ namespace Lantean.QBTMud.Test.Pages
                 return resultQueue.Peek();
             });
 
-            apiMock.Setup(client => client.DeleteSearch(jobId)).Returns(Task.CompletedTask);
-            apiMock.Setup(client => client.StopSearch(jobId)).Returns(Task.CompletedTask);
+            apiMock.Setup(client => client.DeleteSearchAsync(jobId)).ReturnsSuccess(Task.CompletedTask);
+            apiMock.Setup(client => client.StopSearchAsync(jobId)).ReturnsSuccess(Task.CompletedTask);
 
             var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
@@ -492,8 +563,8 @@ namespace Lantean.QBTMud.Test.Pages
             var results = resultsTable.Instance.Items.Should().NotBeNull().And.Subject;
             results.Should().ContainSingle(result => result.FileName == "Ubuntu 24.04");
 
-            apiMock.Verify(client => client.StartSearch("Ubuntu", It.Is<IReadOnlyCollection<string>>(plugins => plugins.Contains("movies")), SearchForm.AllCategoryId), Times.Once());
-            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeast(2));
+            apiMock.Verify(client => client.StartSearchAsync("Ubuntu", It.Is<IReadOnlyCollection<string>>(plugins => plugins.Contains("movies")), SearchForm.AllCategoryId), Times.Once());
+            apiMock.Verify(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeast(2));
 
             var storedMetadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedMetadata.Should().NotBeNull();
@@ -518,12 +589,12 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Completed", 1) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Stopped, 1) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
-            }, "Completed", 1));
+            }, SearchJobStatus.Stopped, 1));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -547,8 +618,8 @@ namespace Lantean.QBTMud.Test.Pages
                 tabPanels.Count.Should().Be(1);
             });
 
-            apiMock.Verify(client => client.StartSearch(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string>()), Times.Never());
-            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+            apiMock.Verify(client => client.StartSearchAsync(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string>()), Times.Never());
+            apiMock.Verify(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
         }
 
         [Fact]
@@ -569,11 +640,11 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Running", 0) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
-            apiMock.Setup(client => client.StopSearch(jobId)).Returns(Task.CompletedTask);
-            apiMock.Setup(client => client.DeleteSearch(jobId)).Returns(Task.CompletedTask);
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            apiMock.Setup(client => client.StopSearchAsync(jobId)).ReturnsSuccess(Task.CompletedTask);
+            apiMock.Setup(client => client.DeleteSearchAsync(jobId)).ReturnsSuccess(Task.CompletedTask);
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -593,8 +664,8 @@ namespace Lantean.QBTMud.Test.Pages
                 GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("Start a search above.");
             });
 
-            apiMock.Verify(client => client.StopSearch(jobId), Times.Once());
-            apiMock.Verify(client => client.DeleteSearch(jobId), Times.Once());
+            apiMock.Verify(client => client.StopSearchAsync(jobId), Times.Once());
+            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Once());
 
             var storedMetadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedMetadata.Should().NotBeNull();
@@ -608,34 +679,23 @@ namespace Lantean.QBTMud.Test.Pages
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var statusQueue = new Queue<IReadOnlyList<SearchStatus>>();
             statusQueue.Enqueue(Array.Empty<SearchStatus>());
-            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, "Running", 1) });
+            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) });
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(() =>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(() =>
             {
                 var next = statusQueue.Count > 1 ? statusQueue.Dequeue() : statusQueue.Peek();
                 return next;
             });
-            apiMock.Setup(client => client.StartSearch("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(jobId);
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsSuccessAsync(jobId);
 
-            var resultQueue = new Queue<object>();
-            resultQueue.Enqueue(new SearchResults(new List<SearchResult>
-            {
-                new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
-            }, "Running", 1));
-            resultQueue.Enqueue(new HttpRequestException("Server error", null, HttpStatusCode.InternalServerError));
-
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((int id, int limit, int offset) =>
-            {
-                var next = resultQueue.Count > 1 ? resultQueue.Dequeue() : resultQueue.Peek();
-                if (next is HttpRequestException exception)
+            apiMock.SetupSequence(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>
                 {
-                    throw exception;
-                }
-
-                return (SearchResults)next;
-            });
+                    new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
+                }, SearchJobStatus.Running, 1))
+                .ReturnsFailure<SearchResults>(ApiFailureKind.ServerError, "Server error", HttpStatusCode.InternalServerError);
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -678,12 +738,13 @@ namespace Lantean.QBTMud.Test.Pages
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(jobId, "Running", 0)
+                new SearchStatus(jobId, SearchJobStatus.Running, 0)
             });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ThrowsAsync(new HttpRequestException("Not found", null, HttpStatusCode.NotFound));
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not found", HttpStatusCode.NotFound);
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -710,7 +771,7 @@ namespace Lantean.QBTMud.Test.Pages
             var refreshButton = FindComponentByTestId<MudIconButton>(target, "RefreshActiveJobButton");
             await target.InvokeAsync(() => refreshButton.Find("button").Click());
 
-            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeastOnce());
+            apiMock.Verify(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeastOnce());
             snackbarMock.Verify(snackbar => snackbar.Add(
                 It.IsAny<string>(),
                 It.IsAny<Severity>(),
@@ -719,31 +780,28 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_RunningJob_WHEN_SearchStatusRequestFails_THEN_FlagsConnectionLoss()
+        public async Task GIVEN_RunningJob_WHEN_SearchStatusRequestGetsNoResponse_THEN_FlagsConnectionLoss()
         {
             var jobId = 51;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            var statusQueue = new Queue<object>();
-            statusQueue.Enqueue(Array.Empty<SearchStatus>());
-            statusQueue.Enqueue(new HttpRequestException("Network down", null, HttpStatusCode.BadGateway));
-
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(() =>
-            {
-                var next = statusQueue.Count > 1 ? statusQueue.Dequeue() : statusQueue.Peek();
-                if (next is HttpRequestException exception)
-                {
-                    throw exception;
-                }
-
-                return (IReadOnlyList<SearchStatus>)next;
-            });
-            apiMock.Setup(client => client.StartSearch("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(jobId);
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(Array.Empty<SearchStatus>())
+                .ReturnsFailure<IReadOnlyList<SearchStatus>>(ApiFailureKind.NoResponse, "Network down");
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsSuccessAsync(jobId);
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var serverState = new UiServerState();
-            serverState.ConnectionStatus = "Connected";
+            serverState.ConnectionStatus = ConnectionStatus.Connected;
             var mainData = new UiMainData(
                 new Dictionary<string, UiTorrent>(),
                 Array.Empty<string>(),
@@ -777,12 +835,75 @@ namespace Lantean.QBTMud.Test.Pages
 
             await handler(CancellationToken.None);
 
-            target.WaitForAssertion(() =>
-            {
-                mainData.LostConnection.Should().BeTrue();
-            });
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
 
             target.Render();
+        }
+
+        [Fact]
+        public async Task GIVEN_RunningJob_WHEN_SearchStatusRequestGetsApiError_THEN_ShowsSnackbarWithoutFlaggingConnectionLoss()
+        {
+            var jobId = 52;
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(Array.Empty<SearchStatus>())
+                .ReturnsFailure<IReadOnlyList<SearchStatus>>(ApiFailureKind.ServerError, "Server error", HttpStatusCode.InternalServerError);
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsSuccessAsync(jobId);
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
+            snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
+
+            var serverState = new UiServerState();
+            var mainData = new UiMainData(
+                new Dictionary<string, UiTorrent>(),
+                Array.Empty<string>(),
+                new Dictionary<string, UiCategory>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                serverState,
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>());
+
+            var handler = CapturePollHandler();
+            TestContext.Render<MudPopoverProvider>();
+            var target = TestContext.Render<Search>(parameters => parameters.AddCascadingValue(mainData));
+
+            var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+            criteriaField.Find("input").Input("Ubuntu");
+
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
+            target.WaitForAssertion(() =>
+            {
+                startButton.Instance.Disabled.Should().BeFalse();
+            });
+
+            target.Find("form").Submit();
+
+            target.WaitForAssertion(() =>
+            {
+                FindComponentByTestId<MudTabs>(target, "JobTabs").Should().NotBeNull();
+            });
+
+            await handler(CancellationToken.None);
+
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
+            snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => message.Contains("Search polling failed: Server error", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    "search-polling-api-error"),
+                Times.Once);
         }
 
         [Fact]
@@ -808,13 +929,13 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Completed", 2) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Stopped, 2) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/ubuntu", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site/ubuntu", "movies", 1_700_000_000),
                 new SearchResult("http://desc/fedora", "Fedora 39", 1_600_000_000, "http://files/fedora", 8, 150, "http://site/fedora", "movies", 1_700_000_000)
-            }, "Completed", 2));
+            }, SearchJobStatus.Stopped, 2));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -860,16 +981,16 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Completed", 3) });
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Stopped, 3) });
             var passingSize = 100_000_000;
             var failingLarge = 3L * 1024 * 1024 * 1024;
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/passing", "Passing Result", passingSize, "http://files/passing", 20, 80, "http://site/passing", "movies", 1_700_000_000),
                 new SearchResult("http://desc/lowseed", "Low Seed Result", passingSize, "http://files/lowseed", 20, 30, "http://site/lowseed", "movies", 1_700_000_000),
                 new SearchResult("http://desc/largesize", "Large Size Result", failingLarge, "http://files/largesize", 20, 70, "http://site/largesize", "movies", 1_700_000_000)
-            }, "Completed", 3));
+            }, SearchJobStatus.Stopped, 3));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -910,13 +1031,13 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Completed", 2) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Stopped, 2) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/item1", "Item One", 1_500_000_000, "http://files/item1", 10, 200, "http://site/item1", "movies", 1_700_000_000),
                 new SearchResult(string.Empty, "Item Two", 500_000_000, string.Empty, 5, 50, string.Empty, "movies", null)
-            }, "Completed", 2));
+            }, SearchJobStatus.Stopped, 2));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1091,8 +1212,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1121,10 +1242,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
-            apiMock.Setup(client => client.StartSearch("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(401);
-            apiMock.Setup(client => client.GetSearchResults(401, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsSuccessAsync(401);
+            apiMock.Setup(client => client.GetSearchResultsAsync(401, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1171,10 +1292,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
-            apiMock.Setup(client => client.StartSearch(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string>()))
-                .ThrowsAsync(new HttpRequestException("boom"));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.StartSearchAsync(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "boom", HttpStatusCode.InternalServerError);
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -1204,6 +1325,33 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_StartSearchAuthenticationRequired_WHEN_Submit_THEN_NavigatesToLogin()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+            criteriaField.Find("input").Input("Ubuntu");
+
+            target.Find("form").Submit();
+
+            target.WaitForAssertion(() =>
+            {
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_FilterInputs_WHEN_UserAdjustsValues_THEN_PreferencesPersisted()
         {
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
@@ -1228,8 +1376,8 @@ namespace Lantean.QBTMud.Test.Pages
             var plugin = new SearchPlugin(true, "Movies", "movies", categories, "http://plugins/movies", "1.0");
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1386,8 +1534,9 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_SearchUnavailable_WHEN_HydrateJobsRuns_THEN_MetadataCleared()
+        public async Task GIVEN_PluginLoadReturnsForbidden_WHEN_HydrateJobsRuns_THEN_MetadataPreservedAndNavigatesToLogin()
         {
+            var navigationManager = UseTestNavigationManager();
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
@@ -1400,25 +1549,35 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ThrowsAsync(new HttpRequestException("disabled"));
+            apiMock.Setup(client => client.GetSearchPluginsAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "disabled", HttpStatusCode.Forbidden);
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "disabled", HttpStatusCode.Forbidden);
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
 
-            _ = TestContext.Render<Search>();
+            var target = TestContext.Render<Search>();
+
+            target.WaitForAssertion(() =>
+            {
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
+            });
 
             var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
-            stored!.Should().BeEmpty();
+            stored!.Should().HaveCount(1);
+            stored[0].Id.Should().Be(500);
         }
 
         [Fact]
         public async Task GIVEN_RunningJob_WHEN_StopJobInvoked_THEN_StatusUpdated()
         {
             Mock<IApiClient>? apiMockReference = null;
-            var target = await RenderSearchWithResultsAsync(300, new List<SearchResult>(), "Running", 0, apiMock =>
+            var target = await RenderSearchWithResultsAsync(300, new List<SearchResult>(), SearchJobStatus.Running, 0, apiMock =>
             {
-                apiMock.Setup(client => client.StopSearch(300)).Returns(Task.CompletedTask).Verifiable();
+                apiMock.Setup(client => client.StopSearchAsync(300)).ReturnsSuccess(Task.CompletedTask).Verifiable();
                 apiMockReference = apiMock;
             });
 
@@ -1430,7 +1589,7 @@ namespace Lantean.QBTMud.Test.Pages
                 var statusIcon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
                 statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
                 apiMockReference.Should().NotBeNull();
-                apiMockReference!.Verify(client => client.StopSearch(300), Times.Once());
+                apiMockReference!.Verify(client => client.StopSearchAsync(300), Times.Once());
             });
         }
 
@@ -1450,10 +1609,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", Array.Empty<SearchCategory>(), "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(301, "Running", 0) });
-            apiMock.Setup(client => client.GetSearchResults(301, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
-            apiMock.Setup(client => client.StopSearch(301)).ThrowsAsync(new HttpRequestException("stop failed"));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(301, SearchJobStatus.Running, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(301, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            apiMock.Setup(client => client.StopSearchAsync(301))
+                .ReturnsFailure(ApiFailureKind.ServerError, "stop failed", HttpStatusCode.InternalServerError);
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -1484,12 +1644,12 @@ namespace Lantean.QBTMud.Test.Pages
             new SearchResult("http://desc/refreshed", "Refreshed", 2_000_000, "http://files/refreshed", 2, 20, "http://site/refreshed", "movies", null)
         };
 
-            var target = await RenderSearchWithResultsAsync(302, initialResults, "Running", initialResults.Count, apiMock =>
+            var target = await RenderSearchWithResultsAsync(302, initialResults, SearchJobStatus.Running, initialResults.Count, apiMock =>
             {
-                apiMock.SetupSequence(client => client.GetSearchResults(302, It.IsAny<int>(), It.IsAny<int>()))
-                    .ReturnsAsync(new SearchResults(initialResults, "Running", initialResults.Count))
-                    .ReturnsAsync(new SearchResults(refreshedResults, "Running", refreshedResults.Count))
-                    .ReturnsAsync(new SearchResults(refreshedResults, "Running", refreshedResults.Count));
+                apiMock.SetupSequence(client => client.GetSearchResultsAsync(302, It.IsAny<int>(), It.IsAny<int>()))
+                    .ReturnsAsync(new SearchResults(initialResults, SearchJobStatus.Running, initialResults.Count))
+                    .ReturnsAsync(new SearchResults(refreshedResults, SearchJobStatus.Running, refreshedResults.Count))
+                    .ReturnsAsync(new SearchResults(refreshedResults, SearchJobStatus.Running, refreshedResults.Count));
             });
 
             var tableBefore = target.FindComponent<DynamicTable<SearchResult>>();
@@ -1507,34 +1667,50 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_StopAndDeleteFail_WHEN_CloseAllJobs_THEN_Succeeds()
+        public async Task GIVEN_DeleteFails_WHEN_CloseAllJobs_THEN_JobRemains()
         {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
             var target = await RenderSearchWithResultsAsync(303, new List<SearchResult>
         {
             new SearchResult("http://desc/close", "Close", 1_000_000, "http://files/close", 1, 5, "http://site/close", "movies", null)
-        }, "Completed", 1, apiMock =>
+        }, SearchJobStatus.Stopped, 1, apiMock =>
         {
-            apiMock.Setup(client => client.StopSearch(303)).ThrowsAsync(new HttpRequestException("stop"));
-            apiMock.Setup(client => client.DeleteSearch(303)).ThrowsAsync(new HttpRequestException("delete"));
+            apiMock.Setup(client => client.DeleteSearchAsync(303))
+                .ReturnsFailure(ApiFailureKind.ServerError, "delete", HttpStatusCode.InternalServerError);
         });
 
             var closeAllButton = FindComponentByTestId<MudIconButton>(target, "CloseAllJobsButton");
             await target.InvokeAsync(() => closeAllButton.Find("button").Click());
 
-            target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty());
+            target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().HaveCount(1));
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
             var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
-            stored!.Should().BeEmpty();
+            stored!.Should().HaveCount(1);
         }
 
         [Fact]
         public async Task GIVEN_RunningJob_WHEN_CloseAllJobs_THEN_StopAndDeleteCalled()
         {
             Mock<IApiClient>? apiMockReference = null;
-            var target = await RenderSearchWithResultsAsync(304, new List<SearchResult>(), "Running", 0, apiMock =>
+            var target = await RenderSearchWithResultsAsync(304, new List<SearchResult>(), SearchJobStatus.Running, 0, apiMock =>
             {
-                apiMock.Setup(client => client.StopSearch(304)).Returns(Task.CompletedTask).Verifiable();
-                apiMock.Setup(client => client.DeleteSearch(304)).Returns(Task.CompletedTask).Verifiable();
+                apiMock.Setup(client => client.StopSearchAsync(304)).ReturnsSuccess(Task.CompletedTask).Verifiable();
+                apiMock.Setup(client => client.DeleteSearchAsync(304)).ReturnsSuccess(Task.CompletedTask).Verifiable();
                 apiMockReference = apiMock;
             });
 
@@ -1544,8 +1720,8 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 apiMockReference.Should().NotBeNull();
-                apiMockReference!.Verify(client => client.StopSearch(304), Times.Once());
-                apiMockReference.Verify(client => client.DeleteSearch(304), Times.Once());
+                apiMockReference!.Verify(client => client.StopSearchAsync(304), Times.Once());
+                apiMockReference.Verify(client => client.DeleteSearchAsync(304), Times.Once());
             });
 
             target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty());
@@ -1556,8 +1732,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1580,8 +1756,8 @@ namespace Lantean.QBTMud.Test.Pages
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1612,8 +1788,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1628,9 +1804,9 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
             await target.InvokeAsync(() => closeButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            apiMock.Verify(client => client.StopSearch(It.IsAny<int>()), Times.Never());
-            apiMock.Verify(client => client.GetSearchResults(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never());
-            apiMock.Verify(client => client.DeleteSearch(It.IsAny<int>()), Times.Never());
+            apiMock.Verify(client => client.StopSearchAsync(It.IsAny<int>()), Times.Never());
+            apiMock.Verify(client => client.GetSearchResultsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never());
+            apiMock.Verify(client => client.DeleteSearchAsync(It.IsAny<int>()), Times.Never());
         }
 
         [Fact]
@@ -1639,9 +1815,9 @@ namespace Lantean.QBTMud.Test.Pages
             var jobId = 777;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Running", 0) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1668,16 +1844,16 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(710, "Finished", 1),
-                new SearchStatus(711, "Aborted", 1),
-                new SearchStatus(712, "Queued", 1)
+                new SearchStatus(710, SearchJobStatus.Stopped, 1),
+                new SearchStatus(711, SearchJobStatus.Stopped, 1),
+                new SearchStatus(712, SearchJobStatus.Stopped, 1)
             });
-            apiMock.Setup(client => client.GetSearchResults(710, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Finished", 1));
-            apiMock.Setup(client => client.GetSearchResults(711, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Aborted", 1));
-            apiMock.Setup(client => client.GetSearchResults(712, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Queued", 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(710, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Stopped, 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(711, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Stopped, 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(712, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Stopped, 1));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1686,9 +1862,38 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var statusIcons = target.FindComponents<MudIcon>().Where(component => HasTestId(component, "JobStatusIcon")).ToList();
-                statusIcons.Should().Contain(component => component.Instance.Icon == Icons.Material.Filled.CheckCircle && component.Instance.Color == Color.Success);
-                statusIcons.Should().Contain(component => component.Instance.Icon == Icons.Material.Filled.Error && component.Instance.Color == Color.Error);
-                statusIcons.Should().Contain(component => component.Instance.Icon == Icons.Material.Filled.Task && component.Instance.Color == Color.Default);
+                statusIcons.Should().HaveCount(3);
+                statusIcons.Should().OnlyContain(component => component.Instance.Icon == Icons.Material.Filled.Stop && component.Instance.Color == Color.Warning);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_UnknownJobStatus_WHEN_TabsRender_THEN_DefaultIconAndColorAreUsed()
+        {
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata { Id = 713, Pattern = "Unknown", Plugins = new List<string> { "movies" } }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
+            {
+                new SearchStatus(713, (SearchJobStatus)999, 1)
+            });
+            apiMock.Setup(client => client.GetSearchResultsAsync(713, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), (SearchJobStatus)999, 1));
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            target.WaitForAssertion(() =>
+            {
+                var statusIcon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
+                statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Task);
+                statusIcon.Instance.Color.Should().Be(Color.Default);
             });
         }
 
@@ -1728,12 +1933,12 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(901, "Completed", 1) });
-            apiMock.Setup(client => client.GetSearchResults(901, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(901, SearchJobStatus.Stopped, 1) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(901, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/result", "Result", 1_000, "http://files/result", 1, 2, "http://site/result", "movies", null)
-            }, "Completed", 1));
+            }, SearchJobStatus.Stopped, 1));
 
             var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
@@ -1743,7 +1948,7 @@ namespace Lantean.QBTMud.Test.Pages
             var tickResult = await handler(CancellationToken.None);
 
             tickResult.Should().Be(ManagedTimerTickResult.Continue);
-            apiMock.Verify(client => client.GetSearchResults(901, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+            apiMock.Verify(client => client.GetSearchResultsAsync(901, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
         }
 
         [Fact]
@@ -1780,19 +1985,19 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(902, "Completed", 0),
-                new SearchStatus(906, "Running", 1)
+                new SearchStatus(902, SearchJobStatus.Stopped, 0),
+                new SearchStatus(906, SearchJobStatus.Running, 1)
             });
-            apiMock.SetupSequence(client => client.GetSearchResults(902, It.IsAny<int>(), It.IsAny<int>()))
-                .ReturnsAsync(new SearchResults(new List<SearchResult>(), "Completed", 0))
+            apiMock.SetupSequence(client => client.GetSearchResultsAsync(902, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Stopped, 0))
                 .ReturnsAsync(new SearchResults(new List<SearchResult>
                 {
                     new SearchResult("http://desc/refetch", "Refetched", 1_000, "http://files/refetch", 1, 2, "http://site/refetch", "movies", null)
-                }, "Completed", 1));
-            apiMock.Setup(client => client.GetSearchResults(906, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 1));
+                }, SearchJobStatus.Stopped, 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(906, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
 
             var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
@@ -1801,7 +2006,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await handler(CancellationToken.None);
 
-            apiMock.Verify(client => client.GetSearchResults(902, It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
+            apiMock.Verify(client => client.GetSearchResultsAsync(902, It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -1809,23 +2014,56 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var jobId = 903;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            var statusQueue = new Queue<object>();
-            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, "Running", 1) });
-            statusQueue.Enqueue(new InvalidOperationException("PollingBoom"));
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) })
+                .ReturnsFailure<IReadOnlyList<SearchStatus>>(ApiFailureKind.UnexpectedResponse, "PollingBoom");
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
+
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
+            snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
+            snackbarMock.Setup(snackbar => snackbar.Add(
+                "Search polling failed: PollingBoom",
+                Severity.Error,
+                It.IsAny<Action<SnackbarOptions>>(),
+                "search-polling-api-error")).Returns((Snackbar?)null).Verifiable();
+
+            var handler = CapturePollHandler();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<Search>();
+
+            var tickResult = await handler(CancellationToken.None);
+
+            tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            snackbarMock.Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_PollingStatusRequestThrowsException_WHEN_TimerTickRuns_THEN_PollingStopsAndShowsFailureSnackbar()
+        {
+            var jobId = 913;
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = jobId,
+                    Pattern = "Ubuntu",
+                    Category = SearchForm.AllCategoryId,
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(() =>
-            {
-                var next = statusQueue.Dequeue();
-                if (next is Exception exception)
-                {
-                    throw exception;
-                }
-
-                return (IReadOnlyList<SearchStatus>)next;
-            });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 1));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) })
+                .ThrowsAsync(new InvalidOperationException("PollingBoom"));
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
@@ -1842,7 +2080,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             var tickResult = await handler(CancellationToken.None);
 
-            tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            tickResult.Should().Be(ManagedTimerTickResult.Stop);
             snackbarMock.Verify();
         }
 
@@ -1853,9 +2091,9 @@ namespace Lantean.QBTMud.Test.Pages
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Running", 1) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 1));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
 
             var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
@@ -1867,16 +2105,101 @@ namespace Lantean.QBTMud.Test.Pages
             var tickResult = await handler(cancellationTokenSource.Token);
 
             tickResult.Should().Be(ManagedTimerTickResult.Stop);
-            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+            apiMock.Verify(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
         }
 
         [Fact]
-        public async Task GIVEN_InitialStatusRequestFails_WHEN_Rendered_THEN_LostConnectionFlagSet()
+        public async Task GIVEN_PollingAuthFailure_WHEN_TimerTickRuns_THEN_CancelsPollingAndNavigatesToLoginWithForceLoad()
+        {
+            var navigationManager = UseTestNavigationManager();
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = 905,
+                    Pattern = "AuthFailure",
+                    Category = SearchForm.AllCategoryId,
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(new List<SearchStatus> { new SearchStatus(905, SearchJobStatus.Running, 1) })
+                .ReturnsFailure<IReadOnlyList<SearchStatus>>(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+            apiMock.Setup(client => client.GetSearchResultsAsync(905, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
+
+            var capture = CapturePollHandlerRegistration();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            var target = TestContext.Render<Search>();
+
+            var tickResult = await capture.InvokeAsync(CancellationToken.None);
+
+            tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            capture.SubscriptionToken.IsCancellationRequested.Should().BeTrue();
+            navigationManager.Uri.Should().Be("http://localhost/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ResultPollingAuthFailure_WHEN_TimerTickRuns_THEN_CancelsPollingAndNavigatesToLoginWithForceLoad()
+        {
+            var navigationManager = UseTestNavigationManager();
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = 914,
+                    Pattern = "AuthResultFailure",
+                    Category = SearchForm.AllCategoryId,
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(914, SearchJobStatus.Running, 1) });
+            apiMock.SetupSequence(client => client.GetSearchResultsAsync(914, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1))
+                .ReturnsFailure<SearchResults>(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+
+            var capture = CapturePollHandlerRegistration();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            TestContext.Render<Search>();
+
+            var tickResult = await capture.InvokeAsync(CancellationToken.None);
+
+            tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            capture.SubscriptionToken.IsCancellationRequested.Should().BeTrue();
+            navigationManager.Uri.Should().Be("http://localhost/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialStatusRequestGetsNoResponse_WHEN_Rendered_THEN_LostConnectionFlagSet()
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ThrowsAsync(new HttpRequestException("initial failure", null, HttpStatusCode.BadGateway));
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsFailure(ApiFailureKind.NoResponse, "initial failure");
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var serverState = new UiServerState();
             var mainData = new UiMainData(
@@ -1894,9 +2217,54 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Render<MudSnackbarProvider>();
             var target = TestContext.Render<Search>(parameters => parameters.AddCascadingValue(mainData));
 
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_InitialStatusRequestGetsApiError_WHEN_Rendered_THEN_ShowsSnackbarWithoutLostConnectionFlag()
+        {
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "initial failure", HttpStatusCode.InternalServerError);
+
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
+            snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
+
+            var serverState = new UiServerState();
+            var mainData = new UiMainData(
+                new Dictionary<string, UiTorrent>(),
+                Array.Empty<string>(),
+                new Dictionary<string, UiCategory>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                serverState,
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>());
+
+            TestContext.Render<MudPopoverProvider>();
+            var target = TestContext.Render<Search>(parameters => parameters.AddCascadingValue(mainData));
+
             target.WaitForAssertion(() =>
             {
-                mainData.LostConnection.Should().BeTrue();
+                dialogServiceMock.Verify(
+                    service => service.ShowAsync<LostConnectionDialog>(
+                        It.IsAny<string?>(),
+                        It.IsAny<DialogOptions>()),
+                    Times.Never);
+                snackbarMock.Verify(
+                    snackbar => snackbar.Add(
+                        It.Is<string>(message => message.Contains("Search polling stopped: initial failure", StringComparison.Ordinal)),
+                        Severity.Error,
+                        It.IsAny<Action<SnackbarOptions>>(),
+                        It.IsAny<string>()),
+                    Times.Once);
             });
         }
 
@@ -1912,13 +2280,13 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(jobId, "Running", 0),
-                new SearchStatus(jobId, "Running", 0)
+                new SearchStatus(jobId, SearchJobStatus.Running, 0),
+                new SearchStatus(jobId, SearchJobStatus.Running, 0)
             });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1931,7 +2299,7 @@ namespace Lantean.QBTMud.Test.Pages
                 tabs.Count.Should().Be(1);
             });
 
-            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+            apiMock.Verify(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
         }
 
         [Fact]
@@ -1945,8 +2313,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -1983,21 +2351,21 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(907, "Completed", 1),
-                new SearchStatus(908, "Completed", 1)
+                new SearchStatus(907, SearchJobStatus.Stopped, 1),
+                new SearchStatus(908, SearchJobStatus.Stopped, 1)
             });
-            apiMock.Setup(client => client.GetSearchResults(907, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchResultsAsync(907, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/first", "First Result", 1_000, "http://files/first", 1, 2, "http://site/first", "movies", null)
-            }, "Completed", 1));
-            apiMock.Setup(client => client.GetSearchResults(908, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            }, SearchJobStatus.Stopped, 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(908, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/second", "Second Result", 1_000, "http://files/second", 1, 2, "http://site/second", "movies", null)
-            }, "Completed", 1));
-            apiMock.Setup(client => client.DeleteSearch(It.IsAny<int>())).Returns(Task.CompletedTask);
+            }, SearchJobStatus.Stopped, 1));
+            apiMock.Setup(client => client.DeleteSearchAsync(It.IsAny<int>())).ReturnsSuccess(Task.CompletedTask);
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -2030,20 +2398,20 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus>
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
             {
-                new SearchStatus(909, "Running", 1),
-                new SearchStatus(910, "Completed", 1)
+                new SearchStatus(909, SearchJobStatus.Running, 1),
+                new SearchStatus(910, SearchJobStatus.Stopped, 1)
             });
-            apiMock.Setup(client => client.GetSearchResults(909, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            apiMock.Setup(client => client.GetSearchResultsAsync(909, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/running", "Running Result", 1_000, "http://files/running", 1, 2, "http://site/running", "movies", null)
-            }, "Running", 1));
-            apiMock.Setup(client => client.GetSearchResults(910, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>
+            }, SearchJobStatus.Running, 1));
+            apiMock.Setup(client => client.GetSearchResultsAsync(910, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
             {
                 new SearchResult("http://desc/completed", "Completed Result", 1_000, "http://files/completed", 1, 2, "http://site/completed", "movies", null)
-            }, "Completed", 1));
+            }, SearchJobStatus.Stopped, 1));
 
             var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
@@ -2052,8 +2420,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             await handler(CancellationToken.None);
 
-            apiMock.Verify(client => client.GetSearchResults(910, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
-            apiMock.Verify(client => client.GetSearchResults(909, It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
+            apiMock.Verify(client => client.GetSearchResultsAsync(910, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+            apiMock.Verify(client => client.GetSearchResultsAsync(909, It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -2068,17 +2436,17 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Running", 1) });
-            apiMock.SetupSequence(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()))
-                .ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 1))
-                .Throws(new InvalidOperationException("UnexpectedResultFailure"));
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) });
+            apiMock.SetupSequence(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1))
+                .ReturnsFailure<SearchResults>(ApiFailureKind.UnexpectedResponse, "UnexpectedResultFailure");
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
             snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
             snackbarMock.Setup(snackbar => snackbar.Add(
-                "Search polling stopped: UnexpectedResultFailure",
+                "Failed to load results for \"Unexpected\": UnexpectedResultFailure",
                 Severity.Error,
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
@@ -2091,11 +2459,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             snackbarMock.Verify();
             var statusIcon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
-            statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Error);
+            statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
         }
 
         [Fact]
-        public async Task GIVEN_RunningJobAndStopFailsWithHttp_WHEN_CloseAllJobsClicked_THEN_DeleteStillExecutes()
+        public async Task GIVEN_RunningJobAndStopFailsWithHttp_WHEN_CloseAllJobsClicked_THEN_DeleteDoesNotExecute()
         {
             var jobId = 912;
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
@@ -2106,11 +2474,50 @@ namespace Lantean.QBTMud.Test.Pages
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, "Running", 0) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
-            apiMock.Setup(client => client.StopSearch(jobId)).ThrowsAsync(new HttpRequestException("stop-http"));
-            apiMock.Setup(client => client.DeleteSearch(jobId)).Returns(Task.CompletedTask).Verifiable();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            apiMock.Setup(client => client.StopSearchAsync(jobId))
+                .ReturnsFailure(ApiFailureKind.ServerError, "stop-http", HttpStatusCode.InternalServerError);
+            apiMock.Setup(client => client.DeleteSearchAsync(jobId)).ReturnsSuccess(Task.CompletedTask).Verifiable();
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            var closeAllButton = FindComponentByTestId<MudIconButton>(target, "CloseAllJobsButton");
+            await target.InvokeAsync(() => closeAllButton.Find("button").Click());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<DynamicTable<SearchResult>>().Should().HaveCount(1);
+            });
+
+            apiMock.Verify(client => client.StopSearchAsync(jobId), Times.Once());
+            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Never());
+
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            stored.Should().NotBeNull();
+            stored!.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task GIVEN_DeletedServerJob_WHEN_CloseAllJobsClicked_THEN_RemovesLocalJob()
+        {
+            var jobId = 913;
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata { Id = jobId, Pattern = "Deleted", Plugins = new List<string> { "movies" } }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Stopped, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Stopped, 0));
+            apiMock.Setup(client => client.DeleteSearchAsync(jobId))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not found", HttpStatusCode.NotFound);
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -2124,8 +2531,51 @@ namespace Lantean.QBTMud.Test.Pages
                 target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty();
             });
 
-            apiMock.Verify(client => client.StopSearch(jobId), Times.Once());
-            apiMock.Verify(client => client.DeleteSearch(jobId), Times.Once());
+            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Once());
+
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            stored.Should().NotBeNull();
+            stored!.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_StaleRunningServerJob_WHEN_CloseAllJobsClicked_THEN_RemovesLocalJob()
+        {
+            var jobId = 914;
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata { Id = jobId, Pattern = "StaleRunning", Plugins = new List<string> { "movies" } }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            apiMock.Setup(client => client.StopSearchAsync(jobId))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not found", HttpStatusCode.NotFound);
+            apiMock.Setup(client => client.DeleteSearchAsync(jobId))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not found", HttpStatusCode.NotFound);
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            var closeAllButton = FindComponentByTestId<MudIconButton>(target, "CloseAllJobsButton");
+            await target.InvokeAsync(() => closeAllButton.Find("button").Click());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty();
+            });
+
+            apiMock.Verify(client => client.StopSearchAsync(jobId), Times.Once());
+            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Once());
+
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            stored.Should().NotBeNull();
+            stored!.Should().BeEmpty();
         }
 
         [Fact]
@@ -2139,8 +2589,8 @@ namespace Lantean.QBTMud.Test.Pages
             var pluginA = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var pluginB = new SearchPlugin(true, "Shows", "shows", new[] { new SearchCategory("shows", "Shows") }, "http://plugins/shows", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { pluginA, pluginB });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { pluginA, pluginB });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -2161,8 +2611,8 @@ namespace Lantean.QBTMud.Test.Pages
             var pluginA = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var pluginB = new SearchPlugin(true, "Shows", "shows", new[] { new SearchCategory("shows", "Shows") }, "http://plugins/shows", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { pluginA, pluginB });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { pluginA, pluginB });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -2190,8 +2640,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -2205,8 +2655,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(Array.Empty<SearchStatus>());
 
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
@@ -2216,7 +2666,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.Instance.DisposeAsync();
         }
 
-        private async Task<IRenderedComponent<Search>> RenderSearchWithResultsAsync(int jobId, List<SearchResult> results, string status = "Completed", int? totalOverride = null, Action<Mock<IApiClient>>? configureMock = null)
+        private async Task<IRenderedComponent<Search>> RenderSearchWithResultsAsync(int jobId, List<SearchResult> results, SearchJobStatus status = SearchJobStatus.Stopped, int? totalOverride = null, Action<Mock<IApiClient>>? configureMock = null)
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
@@ -2235,10 +2685,10 @@ namespace Lantean.QBTMud.Test.Pages
             }, Xunit.TestContext.Current.CancellationToken);
 
             var apiMock = TestContext.UseApiClientMock();
-            apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
             var total = totalOverride ?? results.Count;
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, status, total) });
-            apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(results, status, total));
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, status, total) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(results, status, total));
 
             configureMock?.Invoke(apiMock);
 
@@ -2339,6 +2789,77 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(factory.Object);
 
             return cancellationToken => handler!.Invoke(cancellationToken);
+        }
+
+        private PollHandlerRegistration CapturePollHandlerRegistration()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var subscriptionToken = CancellationToken.None;
+            var timer = new Mock<IManagedTimer>();
+            timer.SetupGet(t => t.State).Returns(ManagedTimerState.Running);
+            timer.Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, token) =>
+                {
+                    handler = callback;
+                    subscriptionToken = token;
+                })
+                .ReturnsAsync(true);
+
+            var factory = new Mock<IManagedTimerFactory>();
+            factory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
+
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
+            TestContext.Services.AddSingleton(factory.Object);
+
+            return new PollHandlerRegistration(cancellationToken => handler!.Invoke(cancellationToken), () => subscriptionToken);
+        }
+
+        private TestNavigationManager UseTestNavigationManager()
+        {
+            var navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<NavigationManager>();
+            TestContext.Services.AddSingleton<NavigationManager>(navigationManager);
+            return navigationManager;
+        }
+
+        private sealed class PollHandlerRegistration
+        {
+            private readonly Func<CancellationToken, Task<ManagedTimerTickResult>> _invokeAsync;
+            private readonly Func<CancellationToken> _subscriptionTokenAccessor;
+
+            public PollHandlerRegistration(
+                Func<CancellationToken, Task<ManagedTimerTickResult>> invokeAsync,
+                Func<CancellationToken> subscriptionTokenAccessor)
+            {
+                _invokeAsync = invokeAsync;
+                _subscriptionTokenAccessor = subscriptionTokenAccessor;
+            }
+
+            public CancellationToken SubscriptionToken
+            {
+                get { return _subscriptionTokenAccessor(); }
+            }
+
+            public Task<ManagedTimerTickResult> InvokeAsync(CancellationToken cancellationToken)
+            {
+                return _invokeAsync(cancellationToken);
+            }
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            public bool LastForceLoad { get; private set; }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                LastForceLoad = forceLoad;
+                Uri = ToAbsoluteUri(uri).ToString();
+            }
         }
     }
 }

@@ -1,8 +1,9 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Helpers
 {
@@ -82,55 +83,50 @@ namespace Lantean.QBTMud.Test.Helpers
             DisplayHelpers.Bool(true).Should().Be("Yes");
             DisplayHelpers.Bool(false, "On", "Off").Should().Be("Off");
 
-            DisplayHelpers.RatioLimit(Limits.GlobalLimit).Should().Be("Global");
-            DisplayHelpers.RatioLimit(Limits.NoLimit).Should().Be("∞");
+            DisplayHelpers.RatioLimit(Limits.UseGlobalShareRatioLimit).Should().Be("Global");
+            DisplayHelpers.RatioLimit(Limits.NoShareRatioLimit).Should().Be("∞");
             DisplayHelpers.RatioLimit(1.234f).Should().Be("1.23");
         }
 
         [Theory]
-        [InlineData("downloading", "Downloading")]
-        [InlineData("stalledDL", "Stalled")]
-        [InlineData("metaDL", "Downloading metadata")]
-        [InlineData("forcedMetaDL", "[F] Downloading metadata")]
-        [InlineData("forcedDL", "[F] Downloading")]
-        [InlineData("uploading", "Seeding")]
-        [InlineData("stalledUP", "Seeding")]
-        [InlineData("forcedUP", "[F] Seeding")]
-        [InlineData("queuedDL", "Queued")]
-        [InlineData("queuedUP", "Queued")]
-        [InlineData("checkingDL", "Checking")]
-        [InlineData("checkingUP", "Checking")]
-        [InlineData("queuedForChecking", "Queued for checking")]
-        [InlineData("checkingResumeData", "Checking resume data")]
-        [InlineData("pausedDL", "Paused")]
-        [InlineData("pausedUP", "Completed")]
-        [InlineData("stoppedDL", "Stopped")]
-        [InlineData("stoppedUP", "Completed")]
-        [InlineData("moving", "Moving")]
-        [InlineData("missingFiles", "Missing Files")]
-        [InlineData("error", "Errored")]
-        [InlineData("unknown", "Unknown")]
-        public void GIVEN_State_WHEN_Mapped_THEN_ShouldReturnExpectedLabel(string state, string expected)
+        [InlineData(TorrentState.Downloading, "Downloading")]
+        [InlineData(TorrentState.StalledDownloading, "Stalled")]
+        [InlineData(TorrentState.DownloadingMetadata, "Downloading metadata")]
+        [InlineData(TorrentState.ForcedDownloadingMetadata, "[F] Downloading metadata")]
+        [InlineData(TorrentState.ForcedDownloading, "[F] Downloading")]
+        [InlineData(TorrentState.Uploading, "Seeding")]
+        [InlineData(TorrentState.StalledUploading, "Seeding")]
+        [InlineData(TorrentState.ForcedUploading, "[F] Seeding")]
+        [InlineData(TorrentState.QueuedDownloading, "Queued")]
+        [InlineData(TorrentState.QueuedUploading, "Queued")]
+        [InlineData(TorrentState.CheckingDownloading, "Checking")]
+        [InlineData(TorrentState.CheckingUploading, "Checking")]
+        [InlineData(TorrentState.CheckingResumeData, "Checking resume data")]
+        [InlineData(TorrentState.StoppedDownloading, "Stopped")]
+        [InlineData(TorrentState.StoppedUploading, "Completed")]
+        [InlineData(TorrentState.Moving, "Moving")]
+        [InlineData(TorrentState.MissingFiles, "Missing Files")]
+        [InlineData(TorrentState.Error, "Errored")]
+        [InlineData(TorrentState.Unknown, "Unknown")]
+        public void GIVEN_State_WHEN_Mapped_THEN_ShouldReturnExpectedLabel(TorrentState state, string expected)
         {
             DisplayHelpers.State(state).Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("forcedDL", Icons.Material.Filled.Downloading, Color.Success)]
-        [InlineData("uploading", Icons.Material.Filled.Upload, Color.Info)]
-        [InlineData("stalledUP", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info)]
-        [InlineData("stalledDL", Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success)]
-        [InlineData("pausedDL", Icons.Material.Filled.Pause, Color.Success)]
-        [InlineData("pausedUP", Icons.Material.Filled.Pause, Color.Info)]
-        [InlineData("stoppedDL", Icons.Material.Filled.Stop, Color.Success)]
-        [InlineData("stoppedUP", Icons.Material.Filled.Stop, Color.Info)]
-        [InlineData("queuedDL", Icons.Material.Filled.Queue, Color.Default)]
-        [InlineData("checkingDL", Icons.Material.Filled.Loop, Color.Info)]
-        [InlineData("queuedForChecking", Icons.Material.Filled.Loop, Color.Warning)]
-        [InlineData("moving", Icons.Material.Filled.Moving, Color.Info)]
-        [InlineData("error", Icons.Material.Filled.Error, Color.Error)]
-        [InlineData("unknown-state", Icons.Material.Filled.QuestionMark, Color.Warning)]
-        public void GIVEN_GetStateIcon_WHEN_StateProvided_THEN_ShouldReturnExpectedIconAndColor(string state, string expectedIcon, Color expectedColor)
+        [InlineData(TorrentState.ForcedDownloading, Icons.Material.Filled.Downloading, Color.Success)]
+        [InlineData(TorrentState.Uploading, Icons.Material.Filled.Upload, Color.Info)]
+        [InlineData(TorrentState.StalledUploading, Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info)]
+        [InlineData(TorrentState.StalledDownloading, Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success)]
+        [InlineData(TorrentState.StoppedDownloading, Icons.Material.Filled.Stop, Color.Success)]
+        [InlineData(TorrentState.StoppedUploading, Icons.Material.Filled.Stop, Color.Info)]
+        [InlineData(TorrentState.QueuedDownloading, Icons.Material.Filled.Queue, Color.Default)]
+        [InlineData(TorrentState.CheckingDownloading, Icons.Material.Filled.Loop, Color.Info)]
+        [InlineData(TorrentState.CheckingResumeData, Icons.Material.Filled.Loop, Color.Warning)]
+        [InlineData(TorrentState.Moving, Icons.Material.Filled.Moving, Color.Info)]
+        [InlineData(TorrentState.Error, Icons.Material.Filled.Error, Color.Error)]
+        [InlineData((TorrentState)999, Icons.Material.Filled.QuestionMark, Color.Warning)]
+        public void GIVEN_GetStateIcon_WHEN_StateProvided_THEN_ShouldReturnExpectedIconAndColor(TorrentState state, string expectedIcon, Color expectedColor)
         {
             var (icon, color) = DisplayHelpers.GetStateIcon(state);
             icon.Should().Be(expectedIcon);

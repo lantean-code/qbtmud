@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -10,12 +9,13 @@ using Moq;
 using MudBlazor;
 using MudBlazor.Services;
 using MudBlazor.Utilities;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components
 {
     public sealed class PieceProgressTests : RazorComponentTestBase<PieceProgress>
     {
-        private static readonly Guid TestBrowserViewportId = new("10000000-0000-0000-0000-000000000001");
+        private static readonly Guid _testBrowserViewportId = new("10000000-0000-0000-0000-000000000001");
 
         private readonly Mock<IBrowserViewportService> _viewportServiceMock;
         private IBrowserViewportObserver? _observer;
@@ -220,7 +220,7 @@ namespace Lantean.QBTMud.Test.Components
         private static BrowserViewportEventArgs CreateViewportEventArgs(Breakpoint breakpoint)
         {
             return new BrowserViewportEventArgs(
-                TestBrowserViewportId,
+                _testBrowserViewportId,
                 new BrowserWindowSize
                 {
                     Width = 1280,

@@ -30,9 +30,6 @@ namespace Lantean.QBTMud.Layout
         protected IThemeFontCatalog ThemeFontCatalog { get; set; } = default!;
 
         [Inject]
-        protected IAppSettingsService AppSettingsService { get; set; } = default!;
-
-        [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
@@ -117,15 +114,13 @@ namespace Lantean.QBTMud.Layout
         {
             base.OnInitialized();
             ThemeManagerService.ThemeChanged += OnThemeChanged;
-            AppSettingsService.SettingsChanged += OnAppSettingsChanged;
+            ThemeManagerService.ThemeModePreferenceChanged += OnThemeModePreferenceChanged;
         }
 
         protected override async Task OnInitializedAsync()
         {
-            var settings = await AppSettingsService.GetSettingsAsync();
-            _themeModePreference = NormalizeThemeModePreference(settings.ThemeModePreference);
-
             await ThemeManagerService.EnsureInitialized();
+            _themeModePreference = NormalizeThemeModePreference(ThemeManagerService.CurrentThemeModePreference);
             EnsureThemeApplied();
             _themeInitialized = true;
         }
@@ -241,7 +236,7 @@ namespace Lantean.QBTMud.Layout
         public void Dispose()
         {
             ThemeManagerService.ThemeChanged -= OnThemeChanged;
-            AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
+            ThemeManagerService.ThemeModePreferenceChanged -= OnThemeModePreferenceChanged;
         }
 
         private void BreakpointChanged(Breakpoint value)
@@ -302,9 +297,9 @@ namespace Lantean.QBTMud.Layout
             StateHasChanged();
         }
 
-        private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
+        private void OnThemeModePreferenceChanged(object? sender, ThemeModePreferenceChangedEventArgs args)
         {
-            var themeModePreference = NormalizeThemeModePreference(args.Settings.ThemeModePreference);
+            var themeModePreference = NormalizeThemeModePreference(args.ThemeModePreference);
             if (_themeModePreference == themeModePreference)
             {
                 return;

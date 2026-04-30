@@ -1,6 +1,16 @@
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
-using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
+using QBittorrent.ApiClient.Models;
+using ClientCategory = QBittorrent.ApiClient.Models.Category;
+using ClientMainData = QBittorrent.ApiClient.Models.MainData;
+using ClientPriority = QBittorrent.ApiClient.Models.Priority;
+using ClientServerState = QBittorrent.ApiClient.Models.ServerState;
+using ClientTorrent = QBittorrent.ApiClient.Models.Torrent;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudPriority = Lantean.QBTMud.Models.Priority;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Services
 {
@@ -8,9 +18,9 @@ namespace Lantean.QBTMud.Services
     {
         private static Status[]? _statusArray = null;
 
-        public MainData CreateMainData(QBitTorrentClient.Models.MainData mainData)
+        public MudMainData CreateMainData(ClientMainData mainData)
         {
-            var torrents = new Dictionary<string, Torrent>(mainData.Torrents?.Count ?? 0);
+            var torrents = new Dictionary<string, MudTorrent>(mainData.Torrents?.Count ?? 0);
             if (mainData.Torrents is not null)
             {
                 foreach (var (hash, torrent) in mainData.Torrents)
@@ -37,7 +47,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            var categories = new Dictionary<string, Category>(mainData.Categories?.Count ?? 0);
+            var categories = new Dictionary<string, MudCategory>(mainData.Categories?.Count ?? 0);
             if (mainData.Categories is not null)
             {
                 foreach (var (name, category) in mainData.Categories)
@@ -98,22 +108,22 @@ namespace Lantean.QBTMud.Services
                 trackersState[tracker] = hashes.Where(torrents.ContainsKey).ToHashSet();
             }
 
-            var torrentList = new MainData(torrents, tags, categories, trackers, serverState, tagState, categoriesState, statusState, trackersState);
+            var torrentList = new MudMainData(torrents, tags, categories, trackers, serverState, tagState, categoriesState, statusState, trackersState);
 
             return torrentList;
         }
 
-        private static ServerState CreateServerState(QBitTorrentClient.Models.ServerState? serverState)
+        private static MudServerState CreateServerState(ClientServerState? serverState)
         {
             if (serverState is null)
             {
-                return new ServerState();
+                return new MudServerState();
             }
-            return new ServerState(
+            return new MudServerState(
                 serverState.AllTimeDownloaded.GetValueOrDefault(),
                 serverState.AllTimeUploaded.GetValueOrDefault(),
                 serverState.AverageTimeQueue.GetValueOrDefault(),
-                serverState.ConnectionStatus ?? string.Empty,
+                serverState.ConnectionStatus,
                 serverState.DHTNodes.GetValueOrDefault(),
                 serverState.DownloadInfoData.GetValueOrDefault(),
                 serverState.DownloadInfoSpeed.GetValueOrDefault(),
@@ -139,14 +149,14 @@ namespace Lantean.QBTMud.Services
                 serverState.LastExternalAddressV6 ?? string.Empty);
         }
 
-        public bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged)
+        public bool MergeMainData(ClientMainData mainData, MudMainData torrentList, out bool filterChanged)
         {
             return MergeMainData(mainData, torrentList, out filterChanged, out _);
         }
 
         public bool MergeMainData(
-            QBitTorrentClient.Models.MainData mainData,
-            MainData torrentList,
+            ClientMainData mainData,
+            MudMainData torrentList,
             out bool filterChanged,
             out IReadOnlyList<TorrentTransition> torrentTransitions)
         {
@@ -394,7 +404,7 @@ namespace Lantean.QBTMud.Services
                     currentIsFinished));
         }
 
-        private static void AddTorrentToStates(MainData torrentList, string hash)
+        private static void AddTorrentToStates(MudMainData torrentList, string hash)
         {
             if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
             {
@@ -436,7 +446,7 @@ namespace Lantean.QBTMud.Services
             return _statusArray;
         }
 
-        private static void UpdateTorrentStates(MainData torrentList, string hash, TorrentSnapshot previousSnapshot, Torrent updatedTorrent)
+        private static void UpdateTorrentStates(MudMainData torrentList, string hash, TorrentSnapshot previousSnapshot, MudTorrent updatedTorrent)
         {
             UpdateTagStateForUpdate(torrentList, hash, previousSnapshot.Tags, updatedTorrent.Tags);
             UpdateCategoryState(torrentList, updatedTorrent, hash, previousSnapshot.Category);
@@ -444,7 +454,7 @@ namespace Lantean.QBTMud.Services
             UpdateTrackerState(torrentList, updatedTorrent, hash, previousSnapshot);
         }
 
-        private static void RemoveTorrentFromStates(MainData torrentList, string hash, TorrentSnapshot snapshot)
+        private static void RemoveTorrentFromStates(MudMainData torrentList, string hash, TorrentSnapshot snapshot)
         {
             torrentList.TagState[FilterHelper.TAG_ALL].Remove(hash);
             UpdateTagStateForRemoval(torrentList, hash, snapshot.Tags);
@@ -469,7 +479,7 @@ namespace Lantean.QBTMud.Services
             UpdateTrackerStateForRemoval(torrentList, hash, snapshot);
         }
 
-        private static bool UpdateServerState(ServerState existingServerState, QBitTorrentClient.Models.ServerState serverState)
+        private static bool UpdateServerState(MudServerState existingServerState, ClientServerState serverState)
         {
             var changed = false;
 
@@ -638,12 +648,12 @@ namespace Lantean.QBTMud.Services
             return changed;
         }
 
-        private static Category CreateCategory(QBitTorrentClient.Models.Category category)
+        private static MudCategory CreateCategory(ClientCategory category)
         {
-            return new Category(category.Name, category.SavePath!);
+            return new MudCategory(category.Name, category.SavePath!);
         }
 
-        public Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent)
+        public MudTorrent CreateTorrent(string hash, ClientTorrent torrent)
         {
             var normalizedTags = torrent.Tags?
                 .Select(NormalizeTag)
@@ -651,7 +661,7 @@ namespace Lantean.QBTMud.Services
                 .ToList()
                 ?? new List<string>();
 
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 torrent.AddedOn.GetValueOrDefault(),
                 torrent.AmountLeft.GetValueOrDefault(),
@@ -689,7 +699,7 @@ namespace Lantean.QBTMud.Services
                 torrent.SeenComplete.GetValueOrDefault(),
                 torrent.SequentialDownload.GetValueOrDefault(),
                 torrent.Size.GetValueOrDefault(),
-                torrent.State ?? string.Empty,
+                torrent.State,
                 torrent.SuperSeeding.GetValueOrDefault(),
                 normalizedTags,
                 torrent.TimeActive.GetValueOrDefault(),
@@ -727,13 +737,13 @@ namespace Lantean.QBTMud.Services
             return normalized.Trim();
         }
 
-        internal static TorrentSnapshot CreateSnapshot(Torrent torrent)
+        internal static TorrentSnapshot CreateSnapshot(MudTorrent torrent)
         {
             return new TorrentSnapshot(
                 string.IsNullOrEmpty(torrent.Category) ? null : torrent.Category,
                 torrent.Tags.ToList(),
                 torrent.Tracker ?? string.Empty,
-                torrent.State ?? string.Empty,
+                torrent.State,
                 torrent.UploadSpeed,
                 torrent.TrackersCount,
                 torrent.HasTrackerError,
@@ -747,7 +757,7 @@ namespace Lantean.QBTMud.Services
                 string? category,
                 List<string> tags,
                 string tracker,
-                string state,
+                TorrentState? state,
                 long uploadSpeed,
                 int trackersCount,
                 bool hasTrackerError,
@@ -771,7 +781,7 @@ namespace Lantean.QBTMud.Services
 
             public string Tracker { get; }
 
-            public string State { get; }
+            public TorrentState? State { get; }
 
             public long UploadSpeed { get; }
 
@@ -784,7 +794,7 @@ namespace Lantean.QBTMud.Services
             public bool HasOtherAnnounceError { get; }
         }
 
-        internal static void UpdateTagStateForAddition(MainData torrentList, Torrent torrent, string hash)
+        internal static void UpdateTagStateForAddition(MudMainData torrentList, MudTorrent torrent, string hash)
         {
             if (torrent.Tags.Count == 0)
             {
@@ -804,7 +814,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateTagStateForUpdate(MainData torrentList, string hash, IReadOnlyList<string> previousTags, IList<string> newTags)
+        internal static void UpdateTagStateForUpdate(MudMainData torrentList, string hash, IReadOnlyList<string> previousTags, IList<string> newTags)
         {
             UpdateTagStateForRemoval(torrentList, hash, previousTags);
 
@@ -826,7 +836,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateTagStateForRemoval(MainData torrentList, string hash, IReadOnlyList<string> previousTags)
+        internal static void UpdateTagStateForRemoval(MudMainData torrentList, string hash, IReadOnlyList<string> previousTags)
         {
             torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
 
@@ -844,7 +854,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateCategoryState(MainData torrentList, Torrent updatedTorrent, string hash, string? previousCategory)
+        internal static void UpdateCategoryState(MudMainData torrentList, MudTorrent updatedTorrent, string hash, string? previousCategory)
         {
             var useSubcategories = torrentList.ServerState.UseSubcategories;
 
@@ -875,7 +885,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateCategoryStateForRemoval(MainData torrentList, string hash, string? previousCategory)
+        internal static void UpdateCategoryStateForRemoval(MudMainData torrentList, string hash, string? previousCategory)
         {
             if (string.IsNullOrEmpty(previousCategory))
             {
@@ -892,7 +902,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateStatusState(MainData torrentList, string hash, string previousState, long previousUploadSpeed, string newState, long newUploadSpeed)
+        internal static void UpdateStatusState(MudMainData torrentList, string hash, TorrentState? previousState, long previousUploadSpeed, TorrentState? newState, long newUploadSpeed)
         {
             foreach (var status in GetStatuses())
             {
@@ -921,7 +931,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateTrackerState(MainData torrentList, Torrent updatedTorrent, string hash, TorrentSnapshot? previousSnapshot)
+        internal static void UpdateTrackerState(MudMainData torrentList, MudTorrent updatedTorrent, string hash, TorrentSnapshot? previousSnapshot)
         {
             var previousTracker = previousSnapshot?.Tracker ?? string.Empty;
             var currentTracker = updatedTorrent.Tracker ?? string.Empty;
@@ -945,7 +955,7 @@ namespace Lantean.QBTMud.Services
             UpdateTrackerBucketState(torrentList, FilterHelper.TRACKER_ANNOUNCE_ERROR, hash, updatedTorrent.HasOtherAnnounceError);
         }
 
-        internal static void UpdateTrackerStateForRemoval(MainData torrentList, string hash, TorrentSnapshot snapshot)
+        internal static void UpdateTrackerStateForRemoval(MudMainData torrentList, string hash, TorrentSnapshot snapshot)
         {
             if (!string.IsNullOrEmpty(snapshot.Tracker) && torrentList.TrackersState.TryGetValue(snapshot.Tracker, out var trackerSet))
             {
@@ -1001,7 +1011,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static HashSet<string> GetOrCreateTagSet(MainData torrentList, string tag)
+        internal static HashSet<string> GetOrCreateTagSet(MudMainData torrentList, string tag)
         {
             if (!torrentList.TagState.TryGetValue(tag, out var set))
             {
@@ -1012,7 +1022,7 @@ namespace Lantean.QBTMud.Services
             return set;
         }
 
-        internal static HashSet<string> GetOrCreateCategorySet(MainData torrentList, string category)
+        internal static HashSet<string> GetOrCreateCategorySet(MudMainData torrentList, string category)
         {
             if (!torrentList.CategoriesState.TryGetValue(category, out var set))
             {
@@ -1023,7 +1033,7 @@ namespace Lantean.QBTMud.Services
             return set;
         }
 
-        private static void UpdateTrackerBucketState(MainData torrentList, string key, string hash, bool include)
+        private static void UpdateTrackerBucketState(MudMainData torrentList, string key, string hash, bool include)
         {
             if (include)
             {
@@ -1037,7 +1047,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static HashSet<string> GetOrCreateTrackerSet(MainData torrentList, string tracker)
+        internal static HashSet<string> GetOrCreateTrackerSet(MudMainData torrentList, string tracker)
         {
             if (!torrentList.TrackersState.TryGetValue(tracker, out var set))
             {
@@ -1048,7 +1058,7 @@ namespace Lantean.QBTMud.Services
             return set;
         }
 
-        internal static bool UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
+        internal static bool UpdateCategory(MudCategory existingCategory, ClientCategory category)
         {
             if (category.SavePath is not null && existingCategory.SavePath != category.SavePath)
             {
@@ -1072,7 +1082,7 @@ namespace Lantean.QBTMud.Services
             public bool FilterChanged { get; }
         }
 
-        internal static TorrentUpdateResult UpdateTorrent(Torrent existingTorrent, QBitTorrentClient.Models.Torrent torrent)
+        internal static TorrentUpdateResult UpdateTorrent(MudTorrent existingTorrent, ClientTorrent torrent)
         {
             var dataChanged = false;
             var filterChanged = false;
@@ -1455,12 +1465,12 @@ namespace Lantean.QBTMud.Services
             return new TorrentUpdateResult(dataChanged, filterChanged);
         }
 
-        public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
+        public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<FileData> files)
         {
             return BuildContentsTree(files);
         }
 
-        private static Dictionary<string, ContentItem> BuildContentsTree(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
+        private static Dictionary<string, ContentItem> BuildContentsTree(IReadOnlyList<FileData> files)
         {
             var result = new Dictionary<string, ContentItem>();
             if (files.Count == 0)
@@ -1480,7 +1490,7 @@ namespace Lantean.QBTMud.Services
                 var segments = file.Name.Split(Extensions.DirectorySeparator);
                 var directoriesLength = segments.Length - 1;
 
-                var isDoNotDownload = file.Priority == QBitTorrentClient.Models.Priority.DoNotDownload;
+                var isDoNotDownload = file.Priority == ClientPriority.DoNotDownload;
                 var downloadSize = isDoNotDownload ? 0 : file.Size;
 
                 for (var i = 0; i < directoriesLength; i++)
@@ -1498,7 +1508,7 @@ namespace Lantean.QBTMud.Services
                     if (!nodes.TryGetValue(folderPath, out var folderNode))
                     {
                         var level = (parent.Item?.Level ?? -1) + 1;
-                        var folderItem = new ContentItem(folderPath, folderName, folderIndex--, Priority.Normal, 0, 0, 0, true, level, 0);
+                        var folderItem = new ContentItem(folderPath, folderName, folderIndex--, MudPriority.Normal, 0, 0, 0, true, level, 0);
                         folderNode = new ContentTreeNode(folderItem, parent);
                         nodes[folderPath] = folderNode;
                         parent.Children[folderPath] = folderNode;
@@ -1510,7 +1520,7 @@ namespace Lantean.QBTMud.Services
 
                 var displayName = segments[^1];
                 var fileLevel = (parent.Item?.Level ?? -1) + 1;
-                var fileItem = new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, fileLevel, downloadSize);
+                var fileItem = new ContentItem(file.Name, displayName, file.Index, (MudPriority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, fileLevel, downloadSize);
                 var fileNode = new ContentTreeNode(fileItem, parent);
                 nodes[file.Name] = fileNode;
                 parent.Children[fileItem.Name] = fileNode;
@@ -1529,7 +1539,7 @@ namespace Lantean.QBTMud.Services
                     folderItem.Size = 0;
                     folderItem.Progress = 0;
                     folderItem.Availability = 0;
-                    folderItem.Priority = Priority.Normal;
+                    folderItem.Priority = MudPriority.Normal;
                     continue;
                 }
 
@@ -1563,7 +1573,7 @@ namespace Lantean.QBTMud.Services
 
         internal static bool UpdateContentItem(ContentItem destination, ContentItem source)
         {
-            const float floatTolerance = 0.0001f;
+            const double floatTolerance = 0.0001;
             var changed = false;
 
             if (destination.Priority != source.Priority)
@@ -1607,10 +1617,10 @@ namespace Lantean.QBTMud.Services
 
             private double _downloadedDownloadSizeSum;
             private double _availabilitySum;
-            private Priority? _priority;
+            private MudPriority? _priority;
             private bool _mixedPriority;
 
-            public void Add(Priority priority, float progress, long size, float availability, long downloadSize)
+            public void Add(MudPriority priority, double progress, long size, double availability, long downloadSize)
             {
                 TotalSize += size;
 
@@ -1620,7 +1630,7 @@ namespace Lantean.QBTMud.Services
                     _downloadedDownloadSizeSum += downloadSize * progress;
                 }
 
-                if (priority != Priority.DoNotDownload)
+                if (priority != MudPriority.DoNotDownload)
                 {
                     _availabilitySum += size * availability;
                 }
@@ -1635,49 +1645,49 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            public Priority ResolvePriority()
+            public MudPriority ResolvePriority()
             {
                 if (_mixedPriority)
                 {
-                    return Priority.Mixed;
+                    return MudPriority.Mixed;
                 }
 
-                return _priority ?? Priority.Normal;
+                return _priority ?? MudPriority.Normal;
             }
 
-            public float ResolveProgress()
+            public double ResolveProgress()
             {
                 if (DownloadSize == 0)
                 {
-                    return 0f;
+                    return 0d;
                 }
 
                 var value = _downloadedDownloadSizeSum / DownloadSize;
-                if (value > 0.999999f)
+                if (value > 0.999999d)
                 {
-                    return 1f;
+                    return 1d;
                 }
                 if (value < 0)
                 {
-                    return 0f;
+                    return 0d;
                 }
 
                 if (value > 1)
                 {
-                    return 1f;
+                    return 1d;
                 }
 
-                return (float)value;
+                return value;
             }
 
-            public float ResolveAvailability()
+            public double ResolveAvailability()
             {
                 if (TotalSize == 0)
                 {
-                    return 0f;
+                    return 0d;
                 }
 
-                return (float)(_availabilitySum / TotalSize);
+                return _availabilitySum / TotalSize;
             }
         }
 
@@ -1697,7 +1707,7 @@ namespace Lantean.QBTMud.Services
             public Dictionary<string, ContentTreeNode> Children { get; }
         }
 
-        public bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
+        public bool MergeContentsList(IReadOnlyList<FileData> files, Dictionary<string, ContentItem> contents)
         {
             if (files.Count == 0)
             {
@@ -1722,8 +1732,8 @@ namespace Lantean.QBTMud.Services
 
             foreach (var file in files)
             {
-                var priority = (Priority)(int)file.Priority;
-                var isDoNotDownload = file.Priority == QBitTorrentClient.Models.Priority.DoNotDownload;
+                var priority = (MudPriority)(int)file.Priority;
+                var isDoNotDownload = file.Priority == ClientPriority.DoNotDownload;
                 var downloadSize = isDoNotDownload ? 0 : file.Size;
                 var pathSegments = file.Name.Split(Extensions.DirectorySeparator);
                 var level = pathSegments.Length - 1;
@@ -1763,7 +1773,7 @@ namespace Lantean.QBTMud.Services
 
                     if (!contents.TryGetValue(directoryPath, out var directoryItem))
                     {
-                        var newDirectory = new ContentItem(directoryPath, segment, nextFolderIndex--, Priority.Normal, 0, 0, 0, true, i, 0);
+                        var newDirectory = new ContentItem(directoryPath, segment, nextFolderIndex--, MudPriority.Normal, 0, 0, 0, true, i, 0);
                         contents[directoryPath] = newDirectory;
                         hasChanges = true;
                     }

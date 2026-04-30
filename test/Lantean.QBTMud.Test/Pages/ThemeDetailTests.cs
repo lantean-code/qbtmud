@@ -126,9 +126,10 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
 
             var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
-            await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync(" "));
+            await nameField.Find("input").InputAsync(" ");
 
-            nameField.Instance.GetState(x => x.Error).Should().BeTrue();
+            target.WaitForAssertion(() =>
+                FindComponentByTestId<MudIconButton>(target, "ThemeDetailSaveApply").Instance.Disabled.Should().BeTrue());
         }
 
         [Fact]
@@ -304,14 +305,15 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage("ThemeId", themes);
 
             var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
-            await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync(" "));
+            await nameField.Find("input").InputAsync(" ");
 
             var saveApplyButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSaveApply");
             await target.InvokeAsync(() => saveApplyButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_themeManagerService)
                 .Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
-            nameField.Instance.GetState(x => x.Error).Should().BeTrue();
+            target.WaitForAssertion(() =>
+                FindComponentByTestId<MudIconButton>(target, "ThemeDetailSaveApply").Instance.Disabled.Should().BeTrue());
         }
 
         [Fact]

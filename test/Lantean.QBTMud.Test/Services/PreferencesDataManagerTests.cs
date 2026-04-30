@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Services
                 AnonymousMode = true,
                 AppInstanceName = "app-a",
                 AsyncIoThreads = 3,
-                AutoDeleteMode = 4,
+                AutoDeleteMode = (AutoDeleteMode)4,
                 AutoTmmEnabled = true,
                 AutorunEnabled = true,
                 AutorunOnTorrentAddedEnabled = true,
@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Test.Services
                 BannedIPs = "10.0.0.1;10.0.0.2",
                 BdecodeDepthLimit = 5,
                 BdecodeTokenLimit = 6,
-                BittorrentProtocol = 7,
+                BittorrentProtocol = (BittorrentProtocol)7,
                 BlockPeersOnPrivilegedPorts = true,
                 BypassAuthSubnetWhitelist = "192.168.0.0/24",
                 BypassAuthSubnetWhitelistEnabled = true,
@@ -62,16 +62,16 @@ namespace Lantean.QBTMud.Test.Services
                 DhtBootstrapNodes = "node-a;node-b",
                 DiskCache = 10,
                 DiskCacheTtl = 11,
-                DiskIoReadMode = 12,
-                DiskIoType = 13,
-                DiskIoWriteMode = 14,
+                DiskIoReadMode = (DiskIoReadMode)12,
+                DiskIoType = (DiskIoType)13,
+                DiskIoWriteMode = (DiskIoWriteMode)14,
                 DiskQueueSize = 15,
                 DlLimit = 16,
                 DontCountSlowTorrents = true,
                 DyndnsDomain = "dyndns-a",
                 DyndnsEnabled = true,
                 DyndnsPassword = "dyndns-pass-a",
-                DyndnsService = 17,
+                DyndnsService = (DyndnsService)17,
                 DyndnsUsername = "dyndns-user-a",
                 EmbeddedTrackerPort = 18,
                 EmbeddedTrackerPortForwarding = true,
@@ -80,7 +80,7 @@ namespace Lantean.QBTMud.Test.Services
                 EnableMultiConnectionsFromSameIp = true,
                 EnablePieceExtentAffinity = true,
                 EnableUploadSuggestions = true,
-                Encryption = 19,
+                Encryption = (EncryptionMode)19,
                 ExcludedFileNames = "*.tmp;*.bak",
                 ExcludedFileNamesEnabled = true,
                 ExportDir = "/export-a",
@@ -135,7 +135,7 @@ namespace Lantean.QBTMud.Test.Services
                 MaxInactiveSeedingTime = 38,
                 MaxInactiveSeedingTimeEnabled = true,
                 MaxRatio = 1.1f,
-                MaxRatioAct = 39,
+                MaxRatioAct = (MaxRatioAction)39,
                 MaxRatioEnabled = null, // kept null to avoid Validate() conflict in tests that don't call Validate
                 MaxSeedingTime = 40,
                 MaxSeedingTimeEnabled = null, // same as above
@@ -161,7 +161,7 @@ namespace Lantean.QBTMud.Test.Services
                 ProxyPeerConnections = true,
                 ProxyPort = 8080,
                 ProxyRss = true,
-                ProxyType = "http",
+                ProxyType = ProxyType.Http,
                 ProxyUsername = "proxy-user-a",
                 PythonExecutablePath = "/python-a",
                 QueueingEnabled = true,
@@ -171,7 +171,7 @@ namespace Lantean.QBTMud.Test.Services
                 RefreshInterval = 50,
                 RequestQueueSize = 51,
                 ResolvePeerCountries = true,
-                ResumeDataStorageType = "fastresume",
+                ResumeDataStorageType = ResumeDataStorageType.Legacy,
                 RssAutoDownloadingEnabled = true,
                 RssDownloadRepackProperEpisodes = true,
                 RssFetchDelay = 5200L,
@@ -193,7 +193,7 @@ namespace Lantean.QBTMud.Test.Services
                 ScheduleFromMin = 2,
                 ScheduleToHour = 3,
                 ScheduleToMin = 4,
-                SchedulerDays = 5,
+                SchedulerDays = (SchedulerDays)5,
                 SchedulerEnabled = true,
                 SendBufferLowWatermark = 55,
                 SendBufferWatermark = 56,
@@ -209,20 +209,20 @@ namespace Lantean.QBTMud.Test.Services
                 TempPath = "/tmp-a",
                 TempPathEnabled = true,
                 TorrentChangedTmmEnabled = true,
-                TorrentContentLayout = "original",
-                TorrentContentRemoveOption = "to_trash",
+                TorrentContentLayout = TorrentContentLayout.Original,
+                TorrentContentRemoveOption = TorrentContentRemoveOption.MoveToTrash,
                 TorrentFileSizeLimit = 65,
-                TorrentStopCondition = "metadata_received",
+                TorrentStopCondition = StopCondition.MetadataReceived,
                 UpLimit = 66,
-                UploadChokingAlgorithm = 67,
-                UploadSlotsBehavior = 68,
+                UploadChokingAlgorithm = (UploadChokingAlgorithm)67,
+                UploadSlotsBehavior = (UploadSlotsBehavior)68,
                 Upnp = true,
                 UpnpLeaseDuration = 69,
                 UseCategoryPathsInManualMode = true,
                 UseHttps = true,
                 IgnoreSslErrors = true,
                 UseSubcategories = true,
-                UtpTcpMixedMode = 70,
+                UtpTcpMixedMode = (UtpTcpMixedMode)70,
                 ValidateHttpsTrackerCertificate = true,
                 WebUiAddress = "0.0.0.0",
                 WebUiApiKey = "api-key-a",
@@ -272,7 +272,7 @@ namespace Lantean.QBTMud.Test.Services
                 AnonymousMode = false,
                 AppInstanceName = "app-b",
                 AsyncIoThreads = 103,
-                AutoDeleteMode = 104,
+                AutoDeleteMode = (AutoDeleteMode)104,
                 AutoTmmEnabled = false,
                 AutorunEnabled = false,
                 AutorunOnTorrentAddedEnabled = false,
@@ -282,7 +282,7 @@ namespace Lantean.QBTMud.Test.Services
                 BannedIPs = "10.1.1.1",
                 BdecodeDepthLimit = 105,
                 BdecodeTokenLimit = 106,
-                BittorrentProtocol = 107,
+                BittorrentProtocol = (BittorrentProtocol)107,
                 BlockPeersOnPrivilegedPorts = false,
                 BypassAuthSubnetWhitelist = "10.10.0.0/16",
                 BypassAuthSubnetWhitelistEnabled = false,
@@ -297,16 +297,16 @@ namespace Lantean.QBTMud.Test.Services
                 DhtBootstrapNodes = "node-c",
                 DiskCache = 110,
                 DiskCacheTtl = 111,
-                DiskIoReadMode = 112,
-                DiskIoType = 113,
-                DiskIoWriteMode = 114,
+                DiskIoReadMode = (DiskIoReadMode)112,
+                DiskIoType = (DiskIoType)113,
+                DiskIoWriteMode = (DiskIoWriteMode)114,
                 DiskQueueSize = 115,
                 DlLimit = 116,
                 DontCountSlowTorrents = false,
                 DyndnsDomain = "dyndns-b",
                 DyndnsEnabled = false,
                 DyndnsPassword = "dyndns-pass-b",
-                DyndnsService = 117,
+                DyndnsService = (DyndnsService)117,
                 DyndnsUsername = "dyndns-user-b",
                 EmbeddedTrackerPort = 118,
                 EmbeddedTrackerPortForwarding = false,
@@ -315,7 +315,7 @@ namespace Lantean.QBTMud.Test.Services
                 EnableMultiConnectionsFromSameIp = false,
                 EnablePieceExtentAffinity = false,
                 EnableUploadSuggestions = false,
-                Encryption = 119,
+                Encryption = (EncryptionMode)119,
                 ExcludedFileNames = "*.cache",
                 ExcludedFileNamesEnabled = false,
                 ExportDir = "/export-b",
@@ -370,7 +370,7 @@ namespace Lantean.QBTMud.Test.Services
                 MaxInactiveSeedingTime = 238, // non-null and different from A
                 MaxInactiveSeedingTimeEnabled = false, // non-null here
                 MaxRatio = 2.2f, // non-null here
-                MaxRatioAct = 139,
+                MaxRatioAct = (MaxRatioAction)139,
                 MaxRatioEnabled = true, // non-null here
                 MaxSeedingTime = 240,   // non-null here
                 MaxSeedingTimeEnabled = true, // non-null here
@@ -396,7 +396,7 @@ namespace Lantean.QBTMud.Test.Services
                 ProxyPeerConnections = false,
                 ProxyPort = 8888,
                 ProxyRss = false,
-                ProxyType = "socks5",
+                ProxyType = ProxyType.Socks5,
                 ProxyUsername = "proxy-user-b",
                 PythonExecutablePath = "/python-b",
                 QueueingEnabled = false,
@@ -406,7 +406,7 @@ namespace Lantean.QBTMud.Test.Services
                 RefreshInterval = 150,
                 RequestQueueSize = 151,
                 ResolvePeerCountries = false,
-                ResumeDataStorageType = "sqlite",
+                ResumeDataStorageType = ResumeDataStorageType.Sqlite,
                 RssAutoDownloadingEnabled = false,
                 RssDownloadRepackProperEpisodes = false,
                 RssFetchDelay = 5300L,
@@ -428,7 +428,7 @@ namespace Lantean.QBTMud.Test.Services
                 ScheduleFromMin = 12,
                 ScheduleToHour = 13,
                 ScheduleToMin = 14,
-                SchedulerDays = 15,
+                SchedulerDays = (SchedulerDays)15,
                 SchedulerEnabled = false,
                 SendBufferLowWatermark = 155,
                 SendBufferWatermark = 156,
@@ -444,20 +444,20 @@ namespace Lantean.QBTMud.Test.Services
                 TempPath = "/tmp-b",
                 TempPathEnabled = false,
                 TorrentChangedTmmEnabled = false,
-                TorrentContentLayout = "subfolder",
-                TorrentContentRemoveOption = "delete",
+                TorrentContentLayout = TorrentContentLayout.Subfolder,
+                TorrentContentRemoveOption = TorrentContentRemoveOption.Delete,
                 TorrentFileSizeLimit = 165,
-                TorrentStopCondition = "files_checked",
+                TorrentStopCondition = StopCondition.FilesChecked,
                 UpLimit = 166,
-                UploadChokingAlgorithm = 167,
-                UploadSlotsBehavior = 168,
+                UploadChokingAlgorithm = (UploadChokingAlgorithm)167,
+                UploadSlotsBehavior = (UploadSlotsBehavior)168,
                 Upnp = false,
                 UpnpLeaseDuration = 169,
                 UseCategoryPathsInManualMode = false,
                 UseHttps = false,
                 IgnoreSslErrors = false,
                 UseSubcategories = false,
-                UtpTcpMixedMode = 170,
+                UtpTcpMixedMode = (UtpTcpMixedMode)170,
                 ValidateHttpsTrackerCertificate = false,
                 WebUiAddress = "127.0.0.1",
                 WebUiApiKey = "api-key-b",
@@ -688,8 +688,7 @@ namespace Lantean.QBTMud.Test.Services
                     actual.ScanDirs.Should().ContainKey(kv.Key);
                     var act = actual.ScanDirs[kv.Key];
                     var exp = kv.Value;
-                    act.IsWatchedFolder.Should().Be(exp.IsWatchedFolder);
-                    act.IsDefaultFolder.Should().Be(exp.IsDefaultFolder);
+                    act.Kind.Should().Be(exp.Kind);
                     act.SavePath.Should().Be(exp.SavePath);
                 }
             }
@@ -752,6 +751,78 @@ namespace Lantean.QBTMud.Test.Services
             actual.ConfirmTorrentDeletion.Should().Be(expected.ConfirmTorrentDeletion);
             actual.ConfirmTorrentRecheck.Should().Be(expected.ConfirmTorrentRecheck);
             actual.StatusBarExternalIp.Should().Be(expected.StatusBarExternalIp);
+        }
+
+        [Fact]
+        public void GIVEN_ApiPreferences_WHEN_CreateQBittorrentPreferences_THEN_RuntimeFieldsAreMapped()
+        {
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.Locale = "Locale";
+                spec.AutoTmmEnabled = true;
+                spec.SavePath = "SavePath";
+                spec.TempPath = "TempPath";
+                spec.TempPathEnabled = true;
+                spec.AddStoppedEnabled = true;
+                spec.AddToTopOfQueue = true;
+                spec.TorrentStopCondition = StopCondition.FilesChecked;
+                spec.TorrentContentLayout = TorrentContentLayout.Subfolder;
+                spec.MaxRatioEnabled = true;
+                spec.MaxRatio = 1.5f;
+                spec.MaxSeedingTimeEnabled = true;
+                spec.MaxSeedingTime = 60;
+                spec.MaxInactiveSeedingTimeEnabled = true;
+                spec.MaxInactiveSeedingTime = 120;
+                spec.QueueingEnabled = true;
+                spec.ConfirmTorrentDeletion = true;
+                spec.DeleteTorrentContentFiles = true;
+                spec.ConfirmTorrentRecheck = true;
+                spec.StatusBarExternalIp = true;
+                spec.RssProcessingEnabled = true;
+                spec.UseSubcategories = true;
+                spec.ResolvePeerCountries = true;
+                spec.RefreshInterval = 1234;
+            });
+
+            var result = _target.CreateQBittorrentPreferences(preferences);
+
+            result.Locale.Should().Be("Locale");
+            result.AutoTmmEnabled.Should().BeTrue();
+            result.SavePath.Should().Be("SavePath");
+            result.TempPath.Should().Be("TempPath");
+            result.TempPathEnabled.Should().BeTrue();
+            result.AddStoppedEnabled.Should().BeTrue();
+            result.AddToTopOfQueue.Should().BeTrue();
+            result.TorrentStopCondition.Should().Be(StopCondition.FilesChecked);
+            result.TorrentContentLayout.Should().Be(TorrentContentLayout.Subfolder);
+            result.MaxRatioEnabled.Should().BeTrue();
+            result.MaxRatio.Should().Be(1.5d);
+            result.MaxSeedingTimeEnabled.Should().BeTrue();
+            result.MaxSeedingTime.Should().Be(60);
+            result.MaxInactiveSeedingTimeEnabled.Should().BeTrue();
+            result.MaxInactiveSeedingTime.Should().Be(120);
+            result.QueueingEnabled.Should().BeTrue();
+            result.ConfirmTorrentDeletion.Should().BeTrue();
+            result.DeleteTorrentContentFiles.Should().BeTrue();
+            result.ConfirmTorrentRecheck.Should().BeTrue();
+            result.StatusBarExternalIp.Should().BeTrue();
+            result.RssProcessingEnabled.Should().BeTrue();
+            result.UseSubcategories.Should().BeTrue();
+            result.ResolvePeerCountries.Should().BeTrue();
+            result.RefreshInterval.Should().Be(1234);
+        }
+
+        [Fact]
+        public void GIVEN_ApiPreferencesWithDisabledSubcategories_WHEN_CreateQBittorrentPreferences_THEN_UseSubcategoriesIsFalse()
+        {
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.UseSubcategories = false;
+            });
+
+            var result = _target.CreateQBittorrentPreferences(preferences);
+
+            result.UseSubcategories.Should().BeFalse();
         }
 
         // ---------- Tests ----------

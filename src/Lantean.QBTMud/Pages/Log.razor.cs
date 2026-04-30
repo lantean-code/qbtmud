@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -7,7 +6,8 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
+using ClientLog = QBittorrent.ApiClient.Models.Log;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -43,18 +43,21 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
         protected LogForm Model { get; set; } = new LogForm();
 
-        protected List<QBitTorrentClient.Models.Log>? Results { get; private set; }
+        protected List<ClientLog>? Results { get; private set; }
 
         protected MudSelect<string>? CategoryMudSelect { get; set; }
 
-        protected DynamicTable<QBitTorrentClient.Models.Log>? Table { get; set; }
+        protected DynamicTable<ClientLog>? Table { get; set; }
 
-        protected QBitTorrentClient.Models.Log? ContextMenuItem { get; set; }
+        protected ClientLog? ContextMenuItem { get; set; }
 
         protected MudMenu? ContextMenu { get; set; }
 
@@ -109,32 +112,39 @@ namespace Lantean.QBTMud.Pages
 
         private async Task DoSearch()
         {
-            var results = await ApiClient.GetLog(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
-            if (results.Count > 0)
+            var results = await ApiClient.GetLogAsync(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
+            if (results.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(results);
+                return;
+            }
+
+            var logEntries = results.Value;
+            if (logEntries.Count > 0)
             {
                 Results ??= [];
-                Results.AddRange(results);
-                Model.LastKnownId = results[^1].Id;
+                Results.AddRange(logEntries);
+                Model.LastKnownId = logEntries[^1].Id;
                 TrimResults();
             }
         }
 
-        protected static string RowClass(QBitTorrentClient.Models.Log log, int index)
+        protected static string RowClass(ClientLog log, int index)
         {
             return $"log-{log.Type.ToString().ToLower()}";
         }
 
-        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<QBitTorrentClient.Models.Log> eventArgs)
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<ClientLog> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
         }
 
-        protected Task TableDataLongPress(TableDataLongPressEventArgs<QBitTorrentClient.Models.Log> eventArgs)
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<ClientLog> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
         }
 
-        private async Task ShowContextMenu(QBitTorrentClient.Models.Log? item, EventArgs eventArgs)
+        private async Task ShowContextMenu(ClientLog? item, EventArgs eventArgs)
         {
             ContextMenuItem = item;
 
@@ -208,30 +218,50 @@ namespace Lantean.QBTMud.Pages
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
-            try
+            var results = await ApiClient.GetLogAsync(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
+            if (results.IsFailure)
             {
-                await DoSearch();
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    results,
+                    failure =>
+                    {
+                        if (failure.Kind == ApiFailureKind.AuthenticationRequired)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    },
+                    cancellationToken: cancellationToken);
+
+                return results.Failure?.Kind == ApiFailureKind.AuthenticationRequired
+                    ? ManagedTimerTickResult.Stop
+                    : ManagedTimerTickResult.Continue;
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
+
+            var logEntries = results.Value;
+            if (logEntries.Count > 0)
             {
-                _timerCancellationToken.CancelIfNotDisposed();
-                return ManagedTimerTickResult.Stop;
+                Results ??= [];
+                Results.AddRange(logEntries);
+                Model.LastKnownId = logEntries[^1].Id;
+                TrimResults();
             }
 
             await InvokeAsync(StateHasChanged);
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.Log>> Columns => BuildColumns();
+        protected IEnumerable<ColumnDefinition<ClientLog>> Columns => BuildColumns();
 
-        private List<ColumnDefinition<QBitTorrentClient.Models.Log>> BuildColumns()
+        private List<ColumnDefinition<ClientLog>> BuildColumns()
         {
             return
             [
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
             ];
         }
 

@@ -34,6 +34,7 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IAppSettingsService _appSettingsService;
         private readonly IAppUpdateService _appUpdateService;
         private readonly IBrowserNotificationService _browserNotificationService;
+        private readonly IThemeManagerService _themeManagerService;
         private readonly IStorageDiagnosticsService _storageDiagnosticsService;
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly ISnackbar _snackbar;
@@ -45,6 +46,7 @@ namespace Lantean.QBTMud.Test.Pages
             _appSettingsService = Mock.Of<IAppSettingsService>();
             _appUpdateService = Mock.Of<IAppUpdateService>();
             _browserNotificationService = Mock.Of<IBrowserNotificationService>();
+            _themeManagerService = Mock.Of<IThemeManagerService>();
             _storageDiagnosticsService = Mock.Of<IStorageDiagnosticsService>();
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
@@ -114,6 +116,7 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.RemoveAll<IAppSettingsService>();
             TestContext.Services.RemoveAll<IAppUpdateService>();
             TestContext.Services.RemoveAll<IBrowserNotificationService>();
+            TestContext.Services.RemoveAll<IThemeManagerService>();
             TestContext.Services.RemoveAll<IStorageDiagnosticsService>();
             TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.RemoveAll<ISnackbar>();
@@ -122,6 +125,7 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_appSettingsService);
             TestContext.Services.AddSingleton(_appUpdateService);
             TestContext.Services.AddSingleton(_browserNotificationService);
+            TestContext.Services.AddSingleton(_themeManagerService);
             TestContext.Services.AddSingleton(_storageDiagnosticsService);
             TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.AddSingleton(_snackbar);
@@ -196,6 +200,7 @@ namespace Lantean.QBTMud.Test.Pages
             var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
             var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
             _appSettingsService.ClearInvocations();
+            _themeManagerService.ClearInvocations();
             _snackbar.ClearInvocations();
 
             await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -206,12 +211,31 @@ namespace Lantean.QBTMud.Test.Pages
                     It.Is<AppSettingsModel>(settings => !settings.UpdateChecksEnabled),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+            Mock.Get(_themeManagerService).Verify(
+                service => service.ApplyPersistedThemeModePreference(It.IsAny<ThemeModePreference>()),
+                Times.Never);
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add(
                     It.Is<string>(message => string.Equals(message, "App settings saved.", StringComparison.Ordinal)),
                     Severity.Success,
                     It.IsAny<Action<SnackbarOptions>>(),
                     It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeModePreferenceChanged_WHEN_SaveClicked_THEN_NotifiesThemeManager()
+        {
+            var target = RenderPage();
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+            _themeManagerService.ClearInvocations();
+
+            await target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Dark));
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(
+                service => service.ApplyPersistedThemeModePreference(ThemeModePreference.Dark),
                 Times.Once);
         }
 
@@ -2001,22 +2025,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_CascadedAppSettings_WHEN_PageRendered_THEN_UsesCascadedSettingsWithoutCallingGetSettings()
-        {
-            var cascadedSettings = AppSettingsModel();
-            cascadedSettings.ThemeModePreference = ThemeModePreference.Dark;
-            _appSettingsService.ClearInvocations();
-
-            var target = RenderPage(cascadedAppSettings: cascadedSettings);
-            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
-
-            themeModeSelect.Instance.GetState(x => x.Value).Should().Be(ThemeModePreference.Dark);
-            Mock.Get(_appSettingsService).Verify(
-                service => service.GetSettingsAsync(It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
-
-        [Fact]
         public async Task GIVEN_ReloadThrowsHttpRequest_WHEN_ReloadClicked_THEN_ShowsRefreshErrorSnackbar()
         {
             Mock.Get(_appSettingsService)
@@ -2361,30 +2369,11 @@ namespace Lantean.QBTMud.Test.Pages
             saveButton.Instance.Disabled.Should().BeFalse();
         }
 
-        [Fact]
-        public async Task GIVEN_LostConnectionWithPendingChanges_WHEN_PageRendered_THEN_SaveAndUndoRemainDisabled()
-        {
-            var target = RenderPage(lostConnection: true);
-            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
-            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
-            var undoButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsUndoButton");
-
-            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
-
-            saveButton.Instance.Disabled.Should().BeTrue();
-            undoButton.Instance.Disabled.Should().BeTrue();
-        }
-
-        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false, bool lostConnection = false, AppSettingsModel? cascadedAppSettings = null)
+        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false)
         {
             return TestContext.Render<AppSettingsPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
-                parameters.AddCascadingValue("LostConnection", lostConnection);
-                if (cascadedAppSettings is not null)
-                {
-                    parameters.AddCascadingValue("AppSettings", cascadedAppSettings);
-                }
             });
         }
 

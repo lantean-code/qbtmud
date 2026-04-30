@@ -13,6 +13,11 @@ namespace Lantean.QBTMud.Services
         event EventHandler<ThemeChangedEventArgs>? ThemeChanged;
 
         /// <summary>
+        /// Occurs when the theme mode preference changes.
+        /// </summary>
+        event EventHandler<ThemeModePreferenceChangedEventArgs>? ThemeModePreferenceChanged;
+
+        /// <summary>
         /// Gets the available themes.
         /// </summary>
         IReadOnlyList<ThemeCatalogItem> Themes { get; }
@@ -31,6 +36,11 @@ namespace Lantean.QBTMud.Services
         /// Gets the currently applied font family.
         /// </summary>
         string CurrentFontFamily { get; }
+
+        /// <summary>
+        /// Gets the current theme mode preference.
+        /// </summary>
+        ThemeModePreference CurrentThemeModePreference { get; }
 
         /// <summary>
         /// Gets a value indicating whether the most recent theme-source reload had repository issues.
@@ -67,6 +77,12 @@ namespace Lantean.QBTMud.Services
         /// <param name="themeId">The theme identifier.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task ApplyTheme(string themeId);
+
+        /// <summary>
+        /// Applies a persisted theme mode preference for live shell consumers.
+        /// </summary>
+        /// <param name="themeModePreference">The persisted theme mode preference to apply.</param>
+        void ApplyPersistedThemeModePreference(ThemeModePreference themeModePreference);
 
         /// <summary>
         /// Saves a local theme definition.

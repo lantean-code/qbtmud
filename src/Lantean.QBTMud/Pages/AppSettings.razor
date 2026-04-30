@@ -19,16 +19,16 @@
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Save"
                            OnClick="Save"
-                           Disabled="@(LostConnection || !HasPendingChanges)"
+                           Disabled="@(!HasPendingChanges)"
                            data-test-id="@TestIdHelper.For("AppSettingsSaveButton")" />
             <MudIconButton Icon="@Icons.Material.Outlined.Undo"
                            OnClick="Undo"
-                           Disabled="@(LostConnection || !HasPendingChanges)"
+                           Disabled="@(!HasPendingChanges)"
                            data-test-id="@TestIdHelper.For("AppSettingsUndoButton")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                            OnClick="Reload"
                            title="@TranslateSettings("Refresh")"
-                           Disabled="@(LostConnection || IsLoading || IsReloading || IsStorageBusy)"
+                           Disabled="@(IsLoading || IsReloading || IsStorageBusy)"
                            data-test-id="@TestIdHelper.For("AppSettingsReloadButton")" />
         </MudToolBar>
     </div>

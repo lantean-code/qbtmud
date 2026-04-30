@@ -1,4 +1,5 @@
 @inherits Options
+@using QBittorrent.ApiClient.Models
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -18,10 +19,10 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable Local Peer Discovery to find more peers")" Value="Lsd" ValueChanged="LsdChanged" data-test-id="@TestIdHelper.For("Lsd")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Encryption mode:")" Value="Encryption" ValueChanged="EncryptionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Encryption")">
-                    <MudSelectItem Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Allow encryption")</MudSelectItem>
-                    <MudSelectItem Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Require encryption")</MudSelectItem>
-                    <MudSelectItem Value="2">@LanguageLocalizer.Translate("OptionsDialog", "Disable encryption")</MudSelectItem>
+                <MudSelect T="EncryptionMode" Label="@LanguageLocalizer.Translate("OptionsDialog", "Encryption mode:")" Value="Encryption" ValueChanged="EncryptionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Encryption")">
+                    <MudSelectItem T="EncryptionMode" Value="EncryptionMode.AllowEncryption">@LanguageLocalizer.Translate("OptionsDialog", "Allow encryption")</MudSelectItem>
+                    <MudSelectItem T="EncryptionMode" Value="EncryptionMode.RequireEncryption">@LanguageLocalizer.Translate("OptionsDialog", "Require encryption")</MudSelectItem>
+                    <MudSelectItem T="EncryptionMode" Value="EncryptionMode.DisableEncryption">@LanguageLocalizer.Translate("OptionsDialog", "Disable encryption")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="6">
@@ -92,7 +93,7 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "When ratio reaches")" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" data-test-id="@TestIdHelper.For("MaxRatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(MaxRatioEnabled != true)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("MaxRatio")" />
+                <MudNumericField T="double" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(MaxRatioEnabled != true)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("MaxRatio")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "When total seeding time reaches")" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxSeedingTimeEnabled")" />
@@ -107,11 +108,11 @@
                 <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(MaxInactiveSeedingTimeEnabled != true)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxInactiveSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTime")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Value="MaxRatioAct" ValueChanged="MaxRatioActChanged" Disabled="@(MaxRatioEnabled != true && MaxSeedingTimeEnabled != true && MaxInactiveSeedingTimeEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MaxRatioAct")">
-                    <MudSelectItem Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Stop torrent")</MudSelectItem>
-                    <MudSelectItem Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent")</MudSelectItem>
-                    <MudSelectItem Value="2">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent and its files")</MudSelectItem>
-                    <MudSelectItem Value="3">@LanguageLocalizer.Translate("OptionsDialog", "Enable super seeding for torrent")</MudSelectItem>
+                <MudSelect T="MaxRatioAction" Value="MaxRatioAct" ValueChanged="MaxRatioActChanged" Disabled="@(MaxRatioEnabled != true && MaxSeedingTimeEnabled != true && MaxInactiveSeedingTimeEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MaxRatioAct")">
+                    <MudSelectItem T="MaxRatioAction" Value="MaxRatioAction.StopTorrent">@LanguageLocalizer.Translate("OptionsDialog", "Stop torrent")</MudSelectItem>
+                    <MudSelectItem T="MaxRatioAction" Value="MaxRatioAction.RemoveTorrent">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent")</MudSelectItem>
+                    <MudSelectItem T="MaxRatioAction" Value="MaxRatioAction.RemoveTorrentAndFiles">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent and its files")</MudSelectItem>
+                    <MudSelectItem T="MaxRatioAction" Value="MaxRatioAction.EnableSuperSeeding">@LanguageLocalizer.Translate("OptionsDialog", "Enable super seeding for torrent")</MudSelectItem>
                 </MudSelect>
             </MudItem>
         </MudGrid>

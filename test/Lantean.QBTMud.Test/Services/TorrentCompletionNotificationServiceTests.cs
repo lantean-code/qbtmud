@@ -2,7 +2,9 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Moq;
+using QBittorrent.ApiClient.Models;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -40,7 +42,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ServiceNotInitialized_WHEN_ProcessAsync_THEN_ShouldInitializeWithoutShowingNotifications()
         {
-            var torrents = new Dictionary<string, Torrent>
+            var torrents = new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             };
@@ -60,12 +62,12 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateSettings(notificationsEnabled: false));
 
-            await _target.InitializeAsync(new Dictionary<string, Torrent>
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             }, Xunit.TestContext.Current.CancellationToken);
 
-            await _target.ProcessAsync(new Dictionary<string, Torrent>
+            await _target.ProcessAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", true)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -83,12 +85,12 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(service => service.IsSupportedAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
 
-            await _target.InitializeAsync(new Dictionary<string, Torrent>
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             }, Xunit.TestContext.Current.CancellationToken);
 
-            await _target.ProcessAsync(new Dictionary<string, Torrent>
+            await _target.ProcessAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", true)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -120,9 +122,9 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_NewTorrentWithBlankName_WHEN_ProcessAsync_THEN_ShouldShowAddedNotificationUsingHash()
         {
-            await _target.InitializeAsync(new Dictionary<string, Torrent>(), Xunit.TestContext.Current.CancellationToken);
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent>(), Xunit.TestContext.Current.CancellationToken);
 
-            await _target.ProcessAsync(new Dictionary<string, Torrent>
+            await _target.ProcessAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", " ", false)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -142,9 +144,9 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateSettings(torrentAddedNotificationsEnabled: false));
 
-            await _target.InitializeAsync(new Dictionary<string, Torrent>(), Xunit.TestContext.Current.CancellationToken);
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent>(), Xunit.TestContext.Current.CancellationToken);
 
-            await _target.ProcessAsync(new Dictionary<string, Torrent>
+            await _target.ProcessAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -157,12 +159,12 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_TorrentFinishesDownloading_WHEN_ProcessAsync_THEN_ShouldShowFinishedNotification()
         {
-            await _target.InitializeAsync(new Dictionary<string, Torrent>
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             }, Xunit.TestContext.Current.CancellationToken);
 
-            await _target.ProcessAsync(new Dictionary<string, Torrent>
+            await _target.ProcessAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", true)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -178,12 +180,12 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_TorrentDoesNotFinishDownloading_WHEN_ProcessAsync_THEN_ShouldNotShowFinishedNotification()
         {
-            await _target.InitializeAsync(new Dictionary<string, Torrent>
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             }, Xunit.TestContext.Current.CancellationToken);
 
-            await _target.ProcessAsync(new Dictionary<string, Torrent>
+            await _target.ProcessAsync(new Dictionary<string, MudTorrent>
             {
                 ["Hash"] = CreateTorrent("Hash", "Name", false)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -298,16 +300,16 @@ namespace Lantean.QBTMud.Test.Services
             };
         }
 
-        private static Torrent CreateTorrent(string hash, string name, bool isFinished)
+        private static MudTorrent CreateTorrent(string hash, string name, bool isFinished)
         {
             var downloaded = isFinished ? 100L : 50L;
 
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category: string.Empty,
                 completed: 0,
                 completionOn: 0,
@@ -340,7 +342,7 @@ namespace Lantean.QBTMud.Test.Services
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 100,
-                state: isFinished ? "uploading" : "downloading",
+                state: isFinished ? TorrentState.Uploading : TorrentState.Downloading,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,
@@ -361,7 +363,7 @@ namespace Lantean.QBTMud.Test.Services
                 downloadPath: string.Empty,
                 rootPath: string.Empty,
                 isPrivate: false,
-                Lantean.QBitTorrentClient.Models.ShareLimitAction.Default,
+                ShareLimitAction.Default,
                 comment: string.Empty);
         }
     }

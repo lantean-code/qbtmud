@@ -1,5 +1,5 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Services
 {
@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class WebApiCapabilityService : IWebApiCapabilityService
     {
-        private static readonly Version ClientDataMinimumVersion = new(2, 13, 1);
+        private static readonly Version _clientDataMinimumVersion = new(2, 13, 1);
 
         private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
         private readonly IApiClient _apiClient;
@@ -34,24 +34,13 @@ namespace Lantean.QBTMud.Services
                     return _cachedState;
                 }
 
-                string? rawVersion = null;
-                try
-                {
-                    rawVersion = await _apiClient.GetAPIVersion();
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (HttpRequestException)
-                {
-                    return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
-                }
-                catch (InvalidOperationException)
+                var versionResult = await _apiClient.GetAPIVersionAsync();
+                if (versionResult.IsFailure)
                 {
                     return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
                 }
 
+                var rawVersion = versionResult.Value;
                 rawVersion = string.IsNullOrWhiteSpace(rawVersion)
                     ? null
                     : rawVersion.Trim();
@@ -65,7 +54,7 @@ namespace Lantean.QBTMud.Services
                 _cachedState = new WebApiCapabilityState(
                     rawVersion,
                     parsedVersion,
-                    supportsClientData: parsedVersion >= ClientDataMinimumVersion);
+                    supportsClientData: parsedVersion >= _clientDataMinimumVersion);
                 return _cachedState;
             }
             finally

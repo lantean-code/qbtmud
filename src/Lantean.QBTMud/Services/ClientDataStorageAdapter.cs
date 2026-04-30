@@ -1,5 +1,5 @@
-using Lantean.QBitTorrentClient;
 using System.Text.Json;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Services
 {
@@ -14,18 +14,21 @@ namespace Lantean.QBTMud.Services
         public const string StorageKeyPrefix = "QbtMud.";
 
         private readonly IApiClient _apiClient;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientDataStorageAdapter"/> class.
         /// </summary>
         /// <param name="apiClient">The qBittorrent API client.</param>
-        public ClientDataStorageAdapter(IApiClient apiClient)
+        /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
+        public ClientDataStorageAdapter(IApiClient apiClient, IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _apiClient = apiClient;
+            _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
         /// <inheritdoc />
-        public async Task<IReadOnlyDictionary<string, JsonElement>> LoadPrefixedEntriesAsync(IEnumerable<string> prefixedKeys, CancellationToken cancellationToken = default)
+        public async Task<ClientDataLoadResult> LoadPrefixedEntriesAsync(IEnumerable<string> prefixedKeys, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(prefixedKeys);
 
@@ -40,28 +43,44 @@ namespace Lantean.QBTMud.Services
 
             if (normalizedKeys.Length == 0)
             {
-                return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+                return ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>(StringComparer.Ordinal));
             }
 
-            var loaded = await _apiClient.LoadClientData(normalizedKeys);
-            return loaded
+            var loadedResult = await _apiClient.LoadClientDataAsync(normalizedKeys, cancellationToken);
+            if (loadedResult.IsFailure)
+            {
+                await _apiFeedbackWorkflow.HandleFailureAsync(loadedResult, cancellationToken: cancellationToken);
+                return ClientDataLoadResult.Failure;
+            }
+
+            var loadedData = loadedResult.Value;
+            var entries = loadedData
                 .Where(entry => entry.Key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+            return ClientDataLoadResult.FromEntries(entries);
         }
 
         /// <inheritdoc />
-        public async Task<IReadOnlyDictionary<string, JsonElement>> LoadPrefixedEntriesAsync(CancellationToken cancellationToken = default)
+        public async Task<ClientDataLoadResult> LoadPrefixedEntriesAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var loaded = await _apiClient.LoadClientData();
-            return loaded
+            var loadedResult = await _apiClient.LoadClientDataAsync(keys: null, cancellationToken);
+            if (loadedResult.IsFailure)
+            {
+                await _apiFeedbackWorkflow.HandleFailureAsync(loadedResult, cancellationToken: cancellationToken);
+                return ClientDataLoadResult.Failure;
+            }
+
+            var loadedData = loadedResult.Value;
+            var entries = loadedData
                 .Where(entry => entry.Key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+            return ClientDataLoadResult.FromEntries(entries);
         }
 
         /// <inheritdoc />
-        public async Task StorePrefixedEntriesAsync(IReadOnlyDictionary<string, object?> prefixedValues, CancellationToken cancellationToken = default)
+        public async Task<ClientDataStorageResult> StorePrefixedEntriesAsync(IReadOnlyDictionary<string, object?> prefixedValues, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(prefixedValues);
             cancellationToken.ThrowIfCancellationRequested();
@@ -74,32 +93,54 @@ namespace Lantean.QBTMud.Services
 
             if (normalizedValues.Count == 0)
             {
-                return;
+                return ClientDataStorageResult.Success;
             }
 
-            await _apiClient.StoreClientData(normalizedValues);
+            var payload = normalizedValues.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(entry.Value),
+                StringComparer.Ordinal);
+
+            var storeResult = await _apiClient.StoreClientDataAsync(payload, cancellationToken);
+            if (!await _apiFeedbackWorkflow.ProcessResultAsync(storeResult, cancellationToken: cancellationToken))
+            {
+                return ClientDataStorageResult.Failure;
+            }
+
+            return ClientDataStorageResult.Success;
         }
 
         /// <inheritdoc />
-        public Task RemovePrefixedEntriesAsync(IEnumerable<string> prefixedKeys, CancellationToken cancellationToken = default)
+        public Task<ClientDataStorageResult> RemovePrefixedEntriesAsync(IEnumerable<string> prefixedKeys, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(prefixedKeys);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var removalValues = prefixedKeys
+            var removalKeys = prefixedKeys
                 .Where(key => !string.IsNullOrWhiteSpace(key))
                 .Select(key => key.Trim())
                 .Where(key => key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .Distinct(StringComparer.Ordinal)
-                .ToDictionary(key => key, _ => (object?)null, StringComparer.Ordinal);
+                .ToArray();
 
-            if (removalValues.Count == 0)
+            if (removalKeys.Length == 0)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(ClientDataStorageResult.Success);
             }
 
-            return _apiClient.StoreClientData(removalValues);
+            return RemovePrefixedEntriesCoreAsync(removalKeys, cancellationToken);
+        }
+
+        private async Task<ClientDataStorageResult> RemovePrefixedEntriesCoreAsync(IReadOnlyCollection<string> removalKeys, CancellationToken cancellationToken)
+        {
+            var removeResult = await _apiClient.DeleteClientDataAsync(removalKeys, cancellationToken);
+            if (!await _apiFeedbackWorkflow.ProcessResultAsync(removeResult, cancellationToken: cancellationToken))
+            {
+                return ClientDataStorageResult.Failure;
+            }
+
+            return ClientDataStorageResult.Success;
         }
     }
 }

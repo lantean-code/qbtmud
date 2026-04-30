@@ -1,11 +1,10 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -55,24 +54,41 @@ namespace Lantean.QBTMud.Pages
 
         private async Task DoLogin(string username, string password)
         {
-            try
+            var loginResult = await ApiClient.LoginAsync(username, password);
+            if (loginResult.IsSuccess)
             {
-                await ApiClient.Login(username, password);
-
                 NavigationManager.NavigateToHome();
+                return;
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
+
+            var failure = loginResult.Failure;
+
+            if (failure?.TryGetReason<LoginFailureReason>(out var reason) == true
+                && reason == LoginFailureReason.InvalidCredentials)
             {
                 ApiError = LanguageLocalizer.Translate("Login", "Invalid Username or Password.");
+                return;
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+
+            if ((failure?.Kind == ApiFailureKind.AccessDenied) && !string.IsNullOrWhiteSpace(failure.UserMessage))
+            {
+                ApiError = failure.UserMessage;
+                return;
+            }
+
+            if (failure?.Kind is ApiFailureKind.NoResponse or ApiFailureKind.Timeout or ApiFailureKind.ServerError or ApiFailureKind.UnexpectedResponse)
             {
                 ApiError = LanguageLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
+                return;
             }
-            catch
+
+            if (failure is not null && !string.IsNullOrWhiteSpace(failure.UserMessage))
             {
-                ApiError = LanguageLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
+                ApiError = failure.UserMessage;
+                return;
             }
+
+            ApiError = LanguageLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
         }
     }
 }

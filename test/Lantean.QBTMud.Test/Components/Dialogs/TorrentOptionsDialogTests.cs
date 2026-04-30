@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -10,8 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using ClientModels = QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -34,7 +36,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_TorrentMissing_WHEN_SaveClicked_THEN_ResultOk()
         {
-            var mainData = CreateMainData(new Dictionary<string, Torrent>());
+            var mainData = CreateMainData(new Dictionary<string, MudTorrent>());
             var preferences = CreatePreferences("TempPath");
 
             var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
@@ -50,7 +52,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_TorrentPresent_WHEN_CancelClicked_THEN_ResultCanceled()
         {
             var torrent = CreateTorrent("Hash", true, "SavePath");
-            var mainData = CreateMainData(new Dictionary<string, Torrent>
+            var mainData = CreateMainData(new Dictionary<string, MudTorrent>
             {
                 { "Hash", torrent },
             });
@@ -78,7 +80,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 })
                 .Returns(Task.CompletedTask);
 
-            var mainData = CreateMainData(new Dictionary<string, Torrent>());
+            var mainData = CreateMainData(new Dictionary<string, MudTorrent>());
             var preferences = CreatePreferences("TempPath");
 
             var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
@@ -91,29 +93,31 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             result!.Canceled.Should().BeFalse();
         }
 
-        private static MainData CreateMainData(Dictionary<string, Torrent> torrents)
+        private static MudMainData CreateMainData(Dictionary<string, MudTorrent> torrents)
         {
-            return new MainData(
+            return new MudMainData(
                 torrents,
                 Array.Empty<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
+                new MudServerState(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static ClientModels.Preferences CreatePreferences(string tempPath)
+        private static QBittorrentPreferences CreatePreferences(string tempPath)
         {
-            var json = $"{{\"temp_path\":\"{tempPath}\"}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, SerializerOptions.Options)!;
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.TempPath = tempPath;
+            });
         }
 
-        private static Torrent CreateTorrent(string hash, bool automaticTorrentManagement, string savePath)
+        private static MudTorrent CreateTorrent(string hash, bool automaticTorrentManagement, string savePath)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 1,
                 2,
@@ -151,7 +155,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 18,
                 false,
                 19,
-                "State",
+                ClientModels.TorrentState.Downloading,
                 false,
                 new[] { "Tag" },
                 20,
@@ -176,23 +180,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 "Comment");
         }
 
-        private async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MainData mainData, ClientModels.Preferences preferences, string hash)
+        private async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MudMainData mainData, QBittorrentPreferences preferences, string hash)
         {
             var provider = TestContext.Render((RenderFragment)(builder =>
             {
-                builder.OpenComponent<CascadingValue<MainData>>(0);
+                builder.OpenComponent<CascadingValue<MudMainData>>(0);
                 builder.AddAttribute(1, nameof(CascadingValue<>.Value), mainData);
                 builder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
                 builder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(mainDataBuilder =>
                 {
-                    mainDataBuilder.OpenComponent<CascadingValue<ClientModels.Preferences>>(0);
-                    mainDataBuilder.AddAttribute(1, nameof(CascadingValue<>.Value), preferences);
-                    mainDataBuilder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
-                    mainDataBuilder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(dialogBuilder =>
-                    {
-                        dialogBuilder.OpenComponent<MudDialogProvider>(0);
-                        dialogBuilder.CloseComponent();
-                    }));
+                    mainDataBuilder.OpenComponent<MudDialogProvider>(0);
                     mainDataBuilder.CloseComponent();
                 }));
                 builder.CloseComponent();
@@ -203,9 +200,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialogParameters = new DialogParameters
             {
                 { nameof(TorrentOptionsDialog.Hash), hash },
+                { nameof(TorrentOptionsDialog.Preferences), preferences },
             };
 
-            var reference = await dialogService.ShowAsync<TorrentOptionsDialog>("Torrent Options", dialogParameters);
+            var reference = await dialogService.ShowAsync<TorrentOptionsDialog>("MudTorrent Options", dialogParameters);
 
             var dialog = provider.FindComponent<MudDialog>();
             var component = provider.FindComponent<TorrentOptionsDialog>();

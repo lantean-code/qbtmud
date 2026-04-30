@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient.Models;
+using System.Text.Json;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -18,7 +19,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private const string _notificationSynchronizationErrorText = "Unable to synchronize notification settings.";
 
         [Inject]
-        protected QBitTorrentClient.IApiClient ApiClient { get; set; } = default!;
+        protected QBittorrent.ApiClient.IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
         protected ILanguageCatalog LanguageCatalog { get; set; } = default!;
@@ -635,6 +636,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             _settings.ThemeModePreference = value;
             await PersistAppSettingsAsync();
+            ThemeManagerService.ApplyPersistedThemeModePreference(_settings.ThemeModePreference);
         }
 
         private async Task OnLocaleChanged(string? value)
@@ -648,34 +650,30 @@ namespace Lantean.QBTMud.Components.Dialogs
             _selectedLanguage = _languageOptions.FirstOrDefault(item => string.Equals(item.Code, value, StringComparison.OrdinalIgnoreCase));
             var locale = value;
 
-            try
+            var setLocaleResult = await ApiClient.SetApplicationPreferencesAsync(new UpdatePreferences
             {
-                await ApiClient.SetApplicationPreferences(new UpdatePreferences
-                {
-                    Locale = locale
-                });
+                Locale = locale
+            });
 
-                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
-                await LanguageInitializationService.EnsureLanguageResourcesInitialized();
+            if (!setLocaleResult.IsSuccess)
+            {
+                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", GetDefaultApiFailureMessage(setLocaleResult.Failure)), Severity.Error);
+                return;
+            }
 
-                await InvokeAsync(StateHasChanged);
-            }
-            catch (HttpRequestException ex)
+            await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
+            await LanguageInitializationService.EnsureLanguageResourcesInitialized();
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private string GetDefaultApiFailureMessage(ApiFailure? failure)
+        {
+            if (!string.IsNullOrWhiteSpace(failure?.UserMessage))
             {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
+                return failure.UserMessage;
             }
-            catch (InvalidOperationException ex)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
-            }
-            catch (JSException ex)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
-            }
-            catch (JsonException ex)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
-            }
+
+            return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
         }
 
         private string GetStorageTypeDisplayName(StorageType storageType)

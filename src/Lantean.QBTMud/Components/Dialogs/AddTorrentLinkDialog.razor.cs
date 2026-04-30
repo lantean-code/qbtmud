@@ -12,6 +12,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public string? Url { get; set; }
 
+        [Parameter]
+        public QBittorrentPreferences? Preferences { get; set; }
+
         protected MudTextField<string?>? UrlsTextField { get; set; }
 
         protected string? Urls { get; set; }

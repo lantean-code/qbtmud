@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -10,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -58,14 +58,41 @@ namespace Lantean.QBTMud.Test.Pages
         public void GIVEN_LoadCookiesFails_WHEN_Initialized_THEN_ShowsError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationCookies())
-                .ThrowsAsync(new HttpRequestException("Failure"));
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
 
             RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
 
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add("Unable to load cookies. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_LoadCookiesFails_WHEN_Initialized_THEN_RoutesFailureThroughWorkflow()
+        {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<ApplicationCookie>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<ApplicationCookie>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -80,7 +107,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
         }
 
         [Fact]
@@ -93,12 +120,12 @@ namespace Lantean.QBTMud.Test.Pages
             var addedCookie = new ApplicationCookie("Added", "new.example", "/new", "AddedValue", null);
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationCookies())
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(initialCookies)
                 .ReturnsAsync(new[] { initialCookies[0], addedCookie });
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
@@ -109,10 +136,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(
                     It.Is<IEnumerable<ApplicationCookie>>(cookies => HasExistingAndAddedCookies(cookies))),
                 Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookiesAsync(), Times.Exactly(2));
         }
 
         [Fact]
@@ -122,7 +149,7 @@ namespace Lantean.QBTMud.Test.Pages
             var updatedCookie = new ApplicationCookie("Updated", "updated.example", "/updated", "UpdatedValue", 5);
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationCookies())
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(new[] { existingCookie })
                 .ReturnsAsync(new[] { updatedCookie });
 
@@ -130,8 +157,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Edit Cookie", It.IsAny<ApplicationCookie>()))
                 .ReturnsAsync(updatedCookie);
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var editButton = FindRowEditButton(target);
@@ -142,10 +169,10 @@ namespace Lantean.QBTMud.Test.Pages
                     "Edit Cookie",
                     It.Is<ApplicationCookie?>(cookie => ReferenceEquals(cookie, existingCookie))),
                 Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(
                     It.Is<IEnumerable<ApplicationCookie>>(cookies => HasOnlyCookie(cookies, updatedCookie))),
                 Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookiesAsync(), Times.Exactly(2));
         }
 
         [Fact]
@@ -161,7 +188,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
         }
 
         [Fact]
@@ -169,22 +196,22 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var existingCookie = new ApplicationCookie("Existing", "example.com", "/", "Value", null);
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationCookies())
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(new[] { existingCookie })
                 .ReturnsAsync(Array.Empty<ApplicationCookie>());
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(
                     It.Is<IEnumerable<ApplicationCookie>>(cookies => !cookies.Any())),
                 Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookiesAsync(), Times.Exactly(2));
         }
 
         [Fact]
@@ -193,19 +220,19 @@ namespace Lantean.QBTMud.Test.Pages
             var cookieA = new ApplicationCookie("A", "a.example", "/", "ValueA", null);
             var cookieB = new ApplicationCookie("B", "b.example", "/", "ValueB", null);
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationCookies())
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(new[] { cookieA, cookieB })
                 .ReturnsAsync(new[] { cookieB });
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(new[] { cookieA, cookieB }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(
                     It.Is<IEnumerable<ApplicationCookie>>(cookies =>
                         cookies.Count() == 1
                         && cookies.Single().Name == "B")),
@@ -216,7 +243,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_LoadsCookiesAgain()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationCookies())
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(Array.Empty<ApplicationCookie>())
                 .ReturnsAsync(Array.Empty<ApplicationCookie>());
 
@@ -225,7 +252,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookiesAsync(), Times.Exactly(2));
         }
 
         [Fact]
@@ -236,8 +263,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
                 .ReturnsAsync(newCookie);
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .ThrowsAsync(new HttpRequestException("Failure"));
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>());
             var addButton = FindIconButton(target, Icons.Material.Filled.Add);
@@ -247,7 +274,32 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add("Unable to update cookies. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
                 Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookiesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadFailsAfterUpdate_WHEN_AddConfirmed_THEN_ShowsLoadError()
+        {
+            var newCookie = new ApplicationCookie("Name", "Domain", "/", "Value", null);
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
+                .ReturnsAsync(newCookie);
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
+                .ReturnsAsync(Array.Empty<ApplicationCookie>())
+                .ReturnsFailure<IReadOnlyList<ApplicationCookie>>(ApiFailureKind.ServerError, "Failure");
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+            var addButton = FindIconButton(target, Icons.Material.Filled.Add);
+
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Unable to load cookies. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
+                Times.Once);
         }
 
         [Fact]
@@ -257,11 +309,11 @@ namespace Lantean.QBTMud.Test.Pages
             var pendingSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationCookies())
-                .ReturnsAsync(new[] { existingCookie });
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsSuccessAsync(new[] { existingCookie });
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(pendingSave.Task);
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(pendingSave.Task);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
@@ -271,7 +323,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() => deleteButton.Instance.Disabled.Should().BeTrue());
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Once);
 
             pendingSave.SetResult();
             await deleteTask;
@@ -282,8 +334,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var pendingLoad = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationCookies())
-                .Returns(pendingLoad.Task);
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsSuccess(pendingLoad.Task);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
             var addButton = FindIconButton(target, Icons.Material.Filled.Add);
@@ -304,15 +356,15 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var pendingLoad = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationCookies())
-                .Returns(pendingLoad.Task);
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsSuccess(pendingLoad.Task);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
             var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
 
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookiesAsync(), Times.Once);
 
             pendingLoad.SetResult(Array.Empty<ApplicationCookie>());
             target.WaitForAssertion(() =>
@@ -327,11 +379,11 @@ namespace Lantean.QBTMud.Test.Pages
             var existingCookie = new ApplicationCookie("Existing", "example.com", "/", "Value", null);
             var pendingSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationCookies())
-                .ReturnsAsync(new[] { existingCookie });
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsSuccessAsync(new[] { existingCookie });
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(pendingSave.Task);
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .ReturnsSuccess(pendingSave.Task);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
@@ -347,7 +399,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowCookiePropertiesDialog(It.IsAny<string>(), It.IsAny<ApplicationCookie?>()), Times.Never);
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Once);
 
             pendingSave.SetResult();
             await deleteTask;
@@ -360,9 +412,9 @@ namespace Lantean.QBTMud.Test.Pages
             var pendingDialog = new TaskCompletionSource<ApplicationCookie?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationCookies())
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(Array.Empty<ApplicationCookie>())
-                .Returns(pendingReload.Task);
+                .ReturnsSuccess(pendingReload.Task);
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
                 .Returns(pendingDialog.Task);
@@ -386,7 +438,7 @@ namespace Lantean.QBTMud.Test.Pages
             pendingDialog.SetResult(new ApplicationCookie("Added", "example.com", "/", "Value", null));
             await addTask;
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
 
             pendingReload.SetResult(Array.Empty<ApplicationCookie>());
             await reloadTask;
@@ -411,8 +463,8 @@ namespace Lantean.QBTMud.Test.Pages
             if (configureApi)
             {
                 Mock.Get(_apiClient)
-                    .Setup(client => client.GetApplicationCookies())
-                    .ReturnsAsync(cookies);
+                    .Setup(client => client.GetApplicationCookiesAsync())
+                    .ReturnsSuccessAsync(cookies);
             }
 
             return TestContext.Render<Cookies>(parameters =>

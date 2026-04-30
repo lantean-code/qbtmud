@@ -1,22 +1,22 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
-using Microsoft.Playwright;
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Playwright;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace ReadmeScreenshots
 {
     internal static class Program
     {
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
             WriteIndented = true
         };
 
-        private static readonly DateTimeOffset TorrentCreationDate = new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero);
+        private static readonly DateTimeOffset _torrentCreationDate = new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero);
 
         public static async Task<int> Main(string[] args)
         {
@@ -87,13 +87,18 @@ namespace ReadmeScreenshots
 
             Directory.CreateDirectory(downloadRoot);
 
-            using var httpClient = new HttpClient
+            var httpClient = new HttpClient
             {
                 BaseAddress = new Uri(apiBaseUrl, UriKind.Absolute),
                 Timeout = TimeSpan.FromSeconds(30)
             };
 
-            var apiClient = new ApiClient(httpClient);
+            var services = new ServiceCollection();
+            services.AddQBittorrentApiClient(httpClient);
+
+            var sp = services.BuildServiceProvider();
+            var apiClient = sp.GetRequiredService<IApiClient>();
+
             await WaitForApiAsync(apiClient, username, password);
 
             await ResetEnvironmentAsync(apiClient);
@@ -107,7 +112,7 @@ namespace ReadmeScreenshots
             {
                 var categoryPath = Path.Combine(downloadRoot, category);
                 Directory.CreateDirectory(categoryPath);
-                await apiClient.AddCategory(category, categoryPath);
+                await apiClient.AddCategoryAsync(category, categoryPath);
             }
 
             var tags = manifest.Fixtures
@@ -117,7 +122,7 @@ namespace ReadmeScreenshots
 
             if (tags.Length > 0)
             {
-                await apiClient.CreateTags(tags);
+                await apiClient.CreateTagsAsync(tags);
             }
 
             var seededFixtures = new List<SeededFixture>();
@@ -134,11 +139,11 @@ namespace ReadmeScreenshots
                     File.Copy(sourcePayloadPath, workingPayloadPath, overwrite: true);
                 }
 
-                var currentMainData = await apiClient.GetMainData(0);
+                var currentMainData = await GetRequiredValueAsync(apiClient.GetMainDataAsync(0), "load current main data");
                 var knownHashes = (currentMainData.Torrents ?? new Dictionary<string, Torrent>(StringComparer.Ordinal)).Keys.ToHashSet(StringComparer.Ordinal);
                 var torrentPath = Path.Combine(torrentRoot, $"{fixture.Id}.torrent");
                 await using var torrentStream = File.OpenRead(torrentPath);
-                var addTorrentResult = await apiClient.AddTorrent(new AddTorrentParams
+                var addTorrentResult = await GetRequiredValueAsync(apiClient.AddTorrentAsync(new AddTorrentParams
                 {
                     SavePath = fixtureDirectory,
                     Category = fixture.Category,
@@ -148,7 +153,7 @@ namespace ReadmeScreenshots
                     {
                         [Path.GetFileName(torrentPath)] = torrentStream
                     }
-                });
+                }), "add torrent");
 
                 var hash = await WaitForTorrentHashAsync(apiClient, knownHashes, addTorrentResult.AddedTorrentIds);
 
@@ -157,7 +162,7 @@ namespace ReadmeScreenshots
                     await WaitForTorrentAsync(
                         apiClient,
                         hash,
-                        torrent => (torrent.Progress ?? 0) >= 0.999f && IsCompletedState(torrent.State));
+                        torrent => (torrent.Progress ?? 0) >= 0.999d && IsCompletedState(torrent.State));
                 }
 
                 if (fixture.State == FixtureState.Missing)
@@ -167,7 +172,7 @@ namespace ReadmeScreenshots
                         File.Delete(workingPayloadPath);
                     }
 
-                    await apiClient.RecheckTorrents(null, hash);
+                    await apiClient.RecheckTorrentsAsync(TorrentSelector.FromHash(hash));
                     await WaitForTorrentAsync(
                         apiClient,
                         hash,
@@ -199,7 +204,7 @@ namespace ReadmeScreenshots
             };
 
             Directory.CreateDirectory(Path.GetDirectoryName(captureStatePath)!);
-            await File.WriteAllTextAsync(captureStatePath, JsonSerializer.Serialize(captureState, JsonOptions));
+            await File.WriteAllTextAsync(captureStatePath, JsonSerializer.Serialize(captureState, _jsonOptions));
             Console.WriteLine($"Wrote {captureStatePath}");
             return 0;
         }
@@ -214,7 +219,7 @@ namespace ReadmeScreenshots
             var edgeExecutablePath = GetOptionalOption(args, "--edge-executable");
             var browserChannel = GetOptionalOption(args, "--browser-channel");
 
-            var captureState = JsonSerializer.Deserialize<ReadmeCaptureState>(await File.ReadAllTextAsync(captureStatePath), JsonOptions)
+            var captureState = JsonSerializer.Deserialize<ReadmeCaptureState>(await File.ReadAllTextAsync(captureStatePath), _jsonOptions)
                 ?? throw new InvalidOperationException("Could not read capture state.");
 
             Directory.CreateDirectory(outputDir);
@@ -453,22 +458,21 @@ namespace ReadmeScreenshots
             {
                 try
                 {
-                    if (await apiClient.CheckAuthState())
+                    var authState = await apiClient.CheckAuthStateAsync();
+                    if (authState.TryGetValue(out var isAuthenticated) && isAuthenticated)
                     {
                         return;
                     }
 
                     if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
                     {
-                        await apiClient.Login(username, password);
-                        if (await apiClient.CheckAuthState())
+                        await apiClient.LoginAsync(username, password);
+                        authState = await apiClient.CheckAuthStateAsync();
+                        if (authState.TryGetValue(out isAuthenticated) && isAuthenticated)
                         {
                             return;
                         }
                     }
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.BadRequest)
-                {
                 }
                 catch (TaskCanceledException)
                 {
@@ -503,18 +507,18 @@ namespace ReadmeScreenshots
 
         private static async Task ResetEnvironmentAsync(IApiClient apiClient)
         {
-            await apiClient.DeleteTorrents(all: true, deleteFiles: true);
+            await EnsureSuccessAsync(apiClient.DeleteTorrentsAsync(TorrentSelector.AllTorrents(), deleteFiles: true), "delete all torrents");
 
-            var categories = await apiClient.GetAllCategories();
+            var categories = await GetRequiredValueAsync(apiClient.GetAllCategoriesAsync(), "load categories");
             if (categories.Count > 0)
             {
-                await apiClient.RemoveCategories(categories.Keys.ToArray());
+                await EnsureSuccessAsync(apiClient.RemoveCategoriesAsync(categories.Keys.ToArray()), "remove categories");
             }
 
-            var tags = await apiClient.GetAllTags();
+            var tags = await GetRequiredValueAsync(apiClient.GetAllTagsAsync(), "load tags");
             if (tags.Count > 0)
             {
-                await apiClient.DeleteTags(tags.ToArray());
+                await EnsureSuccessAsync(apiClient.DeleteTagsAsync(tags.ToArray()), "delete tags");
             }
         }
 
@@ -528,7 +532,7 @@ namespace ReadmeScreenshots
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             while (!timeout.IsCancellationRequested)
             {
-                var mainData = await apiClient.GetMainData(0);
+                var mainData = await GetRequiredValueAsync(apiClient.GetMainDataAsync(0), "load main data");
                 var torrents = mainData.Torrents ?? new Dictionary<string, Torrent>(StringComparer.Ordinal);
                 var newHash = torrents.Keys.FirstOrDefault(hash => !knownHashes.Contains(hash));
                 if (!string.IsNullOrWhiteSpace(newHash))
@@ -545,8 +549,8 @@ namespace ReadmeScreenshots
         private static async Task WaitForTorrentAsync(IApiClient apiClient, string hash, Func<Torrent, bool> predicate)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
-            string? lastState = null;
-            float? lastProgress = null;
+            TorrentState? lastState = null;
+            double? lastProgress = null;
             long? lastAmountLeft = null;
             string? lastName = null;
 
@@ -554,7 +558,7 @@ namespace ReadmeScreenshots
             {
                 while (!timeout.IsCancellationRequested)
                 {
-                    var torrent = await apiClient.GetTorrent(hash);
+                    var torrent = await GetRequiredValueAsync(apiClient.GetTorrentAsync(hash), "load torrent");
                     if (torrent is not null)
                     {
                         lastState = torrent.State;
@@ -578,41 +582,74 @@ namespace ReadmeScreenshots
             throw new TimeoutException($"Timed out waiting for torrent '{hash}' to reach the expected state. Last seen name='{lastName}', state='{lastState}', progress='{lastProgress}', amountLeft='{lastAmountLeft}'.");
         }
 
-        private static bool IsCheckingState(string? state)
+        private static async Task EnsureSuccessAsync(Task<ApiResult> resultTask, string operation)
         {
-            return string.Equals(state, "checkingUP", StringComparison.Ordinal)
-                || string.Equals(state, "checkingDL", StringComparison.Ordinal)
-                || string.Equals(state, "checkingResumeData", StringComparison.Ordinal);
+            var result = await resultTask;
+            if (result.IsSuccess)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
         }
 
-        private static bool IsCompletedState(string? state)
+        private static async Task<T> GetRequiredValueAsync<T>(Task<ApiResult<T>> resultTask, string operation) where T : notnull
         {
-            return string.Equals(state, "uploading", StringComparison.Ordinal)
-                || string.Equals(state, "stalledUP", StringComparison.Ordinal)
-                || string.Equals(state, "queuedUP", StringComparison.Ordinal)
-                || string.Equals(state, "forcedUP", StringComparison.Ordinal)
-                || string.Equals(state, "stoppedUP", StringComparison.Ordinal);
+            var result = await resultTask;
+            if (result.TryGetValue(out var value))
+            {
+                return value;
+            }
+
+            throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
         }
 
-        private static bool IsIncompleteState(string? state)
+        private static async Task<TValue> GetRequiredValueAsync<TValue, TPending>(Task<ApiResult<TValue, TPending>> resultTask, string operation) where TValue : notnull where TPending : notnull
         {
-            return string.Equals(state, "stoppedDL", StringComparison.Ordinal)
-                || string.Equals(state, "stalledDL", StringComparison.Ordinal)
-                || string.Equals(state, "queuedDL", StringComparison.Ordinal)
-                || string.Equals(state, "forcedDL", StringComparison.Ordinal)
-                || string.Equals(state, "downloading", StringComparison.Ordinal);
+            var result = await resultTask;
+            if (result.TryGetSuccessValue(out var value))
+            {
+                return value;
+            }
+
+            throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
         }
 
-        private static bool IsMissingLikeState(string? state)
+        private static bool IsCheckingState(TorrentState? state)
         {
-            return string.Equals(state, "missingFiles", StringComparison.Ordinal)
+            return state is TorrentState.CheckingUploading
+                or TorrentState.CheckingDownloading
+                or TorrentState.CheckingResumeData;
+        }
+
+        private static bool IsCompletedState(TorrentState? state)
+        {
+            return state is TorrentState.Uploading
+                or TorrentState.StalledUploading
+                or TorrentState.QueuedUploading
+                or TorrentState.ForcedUploading
+                or TorrentState.StoppedUploading;
+        }
+
+        private static bool IsIncompleteState(TorrentState? state)
+        {
+            return state is TorrentState.StoppedDownloading
+                or TorrentState.StalledDownloading
+                or TorrentState.QueuedDownloading
+                or TorrentState.ForcedDownloading
+                or TorrentState.Downloading;
+        }
+
+        private static bool IsMissingLikeState(TorrentState? state)
+        {
+            return state is TorrentState.MissingFiles
                 || IsIncompleteState(state);
         }
 
         private static async Task<FixtureManifest> LoadManifestAsync(string repoRoot)
         {
             var manifestPath = Path.Combine(repoRoot, "tools", "ReadmeScreenshots", "readme-fixtures", "manifest.json");
-            var manifest = JsonSerializer.Deserialize<FixtureManifest>(await File.ReadAllTextAsync(manifestPath), JsonOptions);
+            var manifest = JsonSerializer.Deserialize<FixtureManifest>(await File.ReadAllTextAsync(manifestPath), _jsonOptions);
             return manifest ?? throw new InvalidOperationException($"Could not load fixture manifest from '{manifestPath}'.");
         }
 
@@ -639,7 +676,7 @@ namespace ReadmeScreenshots
             {
                 ["comment"] = comment,
                 ["created by"] = "qbtmud README screenshot fixtures",
-                ["creation date"] = TorrentCreationDate.ToUnixTimeSeconds(),
+                ["creation date"] = _torrentCreationDate.ToUnixTimeSeconds(),
                 ["info"] = info
             };
 
@@ -823,8 +860,10 @@ namespace ReadmeScreenshots
         {
             [JsonStringEnumMemberName("complete")]
             Complete,
+
             [JsonStringEnumMemberName("stopped")]
             Stopped,
+
             [JsonStringEnumMemberName("missing")]
             Missing
         }

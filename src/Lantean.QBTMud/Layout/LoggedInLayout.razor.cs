@@ -1,6 +1,4 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -8,14 +6,13 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
-using System.Net;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Layout
 {
     public partial class LoggedInLayout : IAsyncDisposable
     {
-        private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
-        private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const int _defaultRefreshInterval = 1500;
         private static readonly TimeSpan _pwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
 
@@ -27,62 +24,42 @@ namespace Lantean.QBTMud.Layout
         private bool _toggleAltSpeedLimitsInProgress;
         private Task? _refreshLoopTask;
         private bool _authConfirmed;
+        private bool _startupRecoveryPending;
         private bool _startupUpdateCheckRequested;
-        private bool _updateSnackbarShown;
+        private Task? _preferencesChangeTask;
 
         [Inject]
-        protected IApiClient ApiClient { get; set; } = default!;
+        protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
 
         [Inject]
-        protected ITorrentDataManager DataManager { get; set; } = default!;
+        protected IShellSessionWorkflow ShellSessionWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IPreferencesDataManager PreferencesDataManager { get; set; } = default!;
+
+        [Inject]
+        protected IQBittorrentPreferencesStateService QBittorrentPreferencesStateService { get; set; } = default!;
+
+        [Inject]
+        protected IPendingDownloadWorkflow PendingDownloadWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IStartupExperienceWorkflow StartupExperienceWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IStatusBarWorkflow StatusBarWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
-
-        [Inject]
-        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
-
-        [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
-
-        [Inject]
-        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
-
-        [Inject]
-        protected ISessionStorageService SessionStorage { get; set; } = default!;
-
-        [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
-
-        [Inject]
-        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected IAppSettingsService AppSettingsService { get; set; } = default!;
-
-        [Inject]
-        protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
-
-        [Inject]
-        protected IMagnetLinkService MagnetLinkService { get; set; } = default!;
-
-        [Inject]
-        protected IAppUpdateService AppUpdateService { get; set; } = default!;
-
-        [Inject]
-        protected IWelcomeWizardPlanBuilder WelcomeWizardPlanBuilder { get; set; } = default!;
-
-        [Inject]
-        protected IWelcomeWizardStateService WelcomeWizardStateService { get; set; } = default!;
-
-        [Inject]
-        protected ITorrentCompletionNotificationService TorrentCompletionNotificationService { get; set; } = default!;
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
 
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
@@ -105,60 +82,34 @@ namespace Lantean.QBTMud.Layout
         [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
 
-        protected MainData? MainData { get; set; }
+        protected MudMainData? MainData { get; set; }
 
-        protected string Category { get; set; } = FilterHelper.CATEGORY_ALL;
-
-        protected string Tag { get; set; } = FilterHelper.TAG_ALL;
-
-        protected string Tracker { get; set; } = FilterHelper.TRACKER_ALL;
-
-        protected Status Status { get; set; } = Status.All;
-
-        protected QBitTorrentClient.Models.Preferences? Preferences { get; set; }
-
-        protected AppSettings? AppSettingsState { get; set; }
-
-        protected string? SortColumn { get; set; }
-
-        protected SortDirection SortDirection { get; set; }
+        protected QBittorrentPreferences? Preferences { get; set; }
 
         protected string Version { get; set; } = "";
 
-        protected string? SearchText { get; set; }
-
-        protected TorrentFilterField SearchField { get; set; } = TorrentFilterField.Name;
-
-        protected bool UseRegexSearch { get; set; }
-
-        protected bool IsRegexValid { get; set; } = true;
-
-        protected IReadOnlyList<Torrent> Torrents => GetTorrents();
+        protected IReadOnlyList<MudTorrent> Torrents => GetTorrents();
 
         protected bool IsAuthenticated { get; set; }
 
-        protected bool LostConnection { get; set; }
-
-        private IReadOnlyList<Torrent> _visibleTorrents = Array.Empty<Torrent>();
+        private IReadOnlyList<MudTorrent> _visibleTorrents = Array.Empty<MudTorrent>();
 
         private bool _torrentsDirty = true;
         private int _torrentsVersion;
-        private string? _lastProcessedDownloadToken;
-        private string? _pendingDownloadLink;
         private Task? _locationChangeTask;
         private bool _navigationHandlerAttached;
         private bool _welcomeWizardLaunched;
-        private bool _lostConnectionDialogShown;
-        private bool _localeMismatchWarningShown;
         private bool _showPwaInstallPrompt;
         private Task? _pwaInstallPromptDelayTask;
+        private bool _startupUpdateCheckReady;
+        private bool _startupUpdateChecksEnabled;
+        private string? _startupDismissedReleaseTag;
 
         protected override void OnInitialized()
         {
             base.OnInitialized();
 
             _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(_defaultRefreshInterval), retryCount: 3);
-            AppSettingsService.SettingsChanged += OnAppSettingsChanged;
 
             if (!_navigationHandlerAttached)
             {
@@ -166,10 +117,11 @@ namespace Lantean.QBTMud.Layout
                 _navigationHandlerAttached = true;
             }
 
-            PreferencesUpdateService.PreferencesUpdated += OnPreferencesUpdated;
+            TorrentQueryState.Changed += OnTorrentQueryStateChanged;
+            QBittorrentPreferencesStateService.Changed += OnQBittorrentPreferencesChanged;
         }
 
-        private IReadOnlyList<Torrent> GetTorrents()
+        private IReadOnlyList<MudTorrent> GetTorrents()
         {
             if (!_torrentsDirty)
             {
@@ -178,21 +130,21 @@ namespace Lantean.QBTMud.Layout
 
             if (MainData is null)
             {
-                _visibleTorrents = Array.Empty<Torrent>();
+                _visibleTorrents = Array.Empty<MudTorrent>();
                 _torrentsDirty = false;
                 return _visibleTorrents;
             }
 
             var filterState = new FilterState(
-                Category,
-                Status,
-                Tag,
-                Tracker,
-                MainData.ServerState.UseSubcategories,
-                SearchText,
-                SearchField,
-                UseRegexSearch,
-                IsRegexValid);
+                TorrentQueryState.Category,
+                TorrentQueryState.Status,
+                TorrentQueryState.Tag,
+                TorrentQueryState.Tracker,
+                Preferences?.UseSubcategories ?? MainData.ServerState.UseSubcategories,
+                TorrentQueryState.SearchText,
+                TorrentQueryState.SearchField,
+                TorrentQueryState.UseRegexSearch,
+                TorrentQueryState.IsRegexValid);
             _visibleTorrents = MainData.Torrents.Values.Filter(filterState).ToList();
             _torrentsDirty = false;
 
@@ -201,59 +153,33 @@ namespace Lantean.QBTMud.Layout
 
         protected override async Task OnInitializedAsync()
         {
-            await RestoreProcessedDownloadAsync();
-            await RestorePendingDownloadAsync();
+            await PendingDownloadWorkflow.RestoreAsync(_timerCancellationToken.Token);
 
-            bool isAuthenticated;
-            try
+            var loadResult = await ShellSessionWorkflow.LoadAsync(_timerCancellationToken.Token);
+            if (loadResult.Outcome == ShellSessionLoadOutcome.AuthenticationRequired)
             {
-                isAuthenticated = await ApiClient.CheckAuthState();
-            }
-            catch (HttpRequestException)
-            {
-                MainData ??= CreateDisconnectedMainData();
-                MainData.LostConnection = true;
+                await HandleAuthenticationFailureAsync(_timerCancellationToken.Token);
                 return;
             }
 
-            if (!isAuthenticated)
+            if (loadResult.Outcome == ShellSessionLoadOutcome.LostConnection)
             {
-                await ClearPendingDownloadAsync();
-                NavigationManager.NavigateTo("login");
+                _startupRecoveryPending = false;
+                await LostConnectionWorkflow.MarkLostConnectionAsync();
+                return;
+            }
+
+            if (loadResult.Outcome == ShellSessionLoadOutcome.RetryableFailure)
+            {
+                _startupRecoveryPending = true;
                 return;
             }
 
             _authConfirmed = true;
-            CaptureDownloadFromUri(NavigationManager.Uri);
-            await PersistPendingDownloadAsync();
+            await PendingDownloadWorkflow.CaptureFromUriAsync(NavigationManager.Uri, _timerCancellationToken.Token);
 
             await InvokeAsync(StateHasChanged);
-
-            var appSettingsTask = AppSettingsService.RefreshSettingsAsync(_timerCancellationToken.Token);
-            var preferencesTask = ApiClient.GetApplicationPreferences();
-            var versionTask = ApiClient.GetApplicationVersion();
-            var mainDataTask = ApiClient.GetMainData(_requestId);
-
-            await Task.WhenAll(appSettingsTask, preferencesTask, versionTask, mainDataTask);
-
-            AppSettingsState = await appSettingsTask;
-            Preferences = await preferencesTask;
-            await SynchronizeLocalePreferenceAsync();
-            Version = await versionTask;
-            var data = await mainDataTask;
-            MainData = DataManager.CreateMainData(data);
-            MarkTorrentsDirty();
-
-            _requestId = data.ResponseId;
-            await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, _timerCancellationToken.Token);
-            await SpeedHistoryService.InitializeAsync();
-            await RecordSpeedSampleAsync(MainData.ServerState, _timerCancellationToken.Token);
-
-            IsAuthenticated = true;
-
-            Menu?.ShowMenu(Preferences);
-
-            await TryProcessPendingDownloadAsync();
+            await ApplyLoadResultAsync(loadResult, _timerCancellationToken.Token);
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -263,7 +189,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            if (firstRender && _refreshLoopTask is null)
+            if (_refreshLoopTask is null && (IsAuthenticated || _startupRecoveryPending))
             {
                 StartRefreshLoop();
             }
@@ -273,27 +199,33 @@ namespace Lantean.QBTMud.Layout
                 _locationChangeTask = null;
             }
 
+            if (_preferencesChangeTask is not null && _preferencesChangeTask.IsCompleted)
+            {
+                _preferencesChangeTask = null;
+            }
+
             if (!_welcomeWizardLaunched && IsAuthenticated && Preferences is not null)
             {
                 _welcomeWizardLaunched = true;
                 await LaunchWelcomeWizardFlowAsync();
             }
 
-            if (!_startupUpdateCheckRequested && _authConfirmed)
+            if (!_startupUpdateCheckRequested && IsAuthenticated && _startupUpdateCheckReady)
             {
                 _startupUpdateCheckRequested = true;
-                await TryRunStartupUpdateCheckAsync();
-            }
-
-            if (MainData?.LostConnection == true)
-            {
-                await ShowLostConnectionDialogAsync();
+                await StartupExperienceWorkflow.RunUpdateCheckAsync(
+                    _startupUpdateChecksEnabled,
+                    _startupDismissedReleaseTag,
+                    _timerCancellationToken.Token);
             }
         }
 
         private async Task LaunchWelcomeWizardFlowAsync()
         {
-            var canShowPwaInstallPrompt = await ShowWelcomeWizardIfNeededAsync();
+            var canShowPwaInstallPrompt = await StartupExperienceWorkflow.RunWelcomeWizardAsync(
+                Preferences?.Locale,
+                CurrentBreakpoint == Breakpoint.None || CurrentBreakpoint <= Breakpoint.Sm,
+                _timerCancellationToken.Token);
             if (!canShowPwaInstallPrompt)
             {
                 return;
@@ -335,256 +267,56 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        private async Task<bool> ShowWelcomeWizardIfNeededAsync()
-        {
-            var plan = await WelcomeWizardPlanBuilder.BuildPlanAsync();
-            if (!plan.ShouldShowWizard)
-            {
-                return true;
-            }
-
-            await WelcomeWizardStateService.MarkShownAsync();
-            var useFullScreenWizardDialog = CurrentBreakpoint == Breakpoint.None || CurrentBreakpoint <= Breakpoint.Sm;
-
-            var parameters = new DialogParameters
-            {
-                { nameof(WelcomeWizardDialog.InitialLocale), Preferences?.Locale },
-                { nameof(WelcomeWizardDialog.PendingStepIds), plan.PendingSteps.Select(step => step.Id).ToArray() },
-                { nameof(WelcomeWizardDialog.ShowWelcomeBackIntro), plan.IsReturningUser }
-            };
-
-            var options = new DialogOptions
-            {
-                CloseOnEscapeKey = false,
-                BackdropClick = false,
-                NoHeader = false,
-                FullWidth = true,
-                FullScreen = useFullScreenWizardDialog,
-                MaxWidth = MaxWidth.Medium,
-                BackgroundClass = "background-blur background-blur-strong"
-            };
-
-            var title = LanguageLocalizer.Translate("AppWelcomeWizard", plan.IsReturningUser ? "Welcome back" : "Welcome");
-            var dialogReference = await DialogService.ShowAsync<WelcomeWizardDialog>(title, parameters, options);
-            var dialogResult = await dialogReference.Result;
-
-            return dialogResult is { Canceled: false };
-        }
-
-        private async Task ShowLostConnectionDialogAsync()
-        {
-            if (_lostConnectionDialogShown)
-            {
-                return;
-            }
-
-            _lostConnectionDialogShown = true;
-
-            var options = new DialogOptions
-            {
-                CloseOnEscapeKey = false,
-                BackdropClick = false,
-                NoHeader = true,
-                FullWidth = true,
-                MaxWidth = MaxWidth.ExtraSmall,
-                BackgroundClass = "background-blur background-blur-strong"
-            };
-
-            await DialogService.ShowAsync<LostConnectionDialog>(title: null, options);
-        }
-
-        private async Task SynchronizeLocalePreferenceAsync()
-        {
-            if (Preferences is null)
-            {
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(Preferences.Locale))
-            {
-                var storedLocaleWhenApiMissing = await SettingsStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
-                if (!string.IsNullOrWhiteSpace(storedLocaleWhenApiMissing))
-                {
-                    await SettingsStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale);
-                }
-
-                return;
-            }
-
-            var apiLocale = WebUiLocaleNormalizer.Normalize(Preferences.Locale);
-            var storedLocale = await SettingsStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
-
-            if (string.IsNullOrWhiteSpace(storedLocale))
-            {
-                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
-                return;
-            }
-
-            var normalizedStoredLocale = WebUiLocaleNormalizer.Normalize(storedLocale);
-            if (!string.Equals(storedLocale.Trim(), normalizedStoredLocale, StringComparison.Ordinal))
-            {
-                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, normalizedStoredLocale);
-            }
-
-            if (string.Equals(normalizedStoredLocale, apiLocale, StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
-
-            if (_localeMismatchWarningShown)
-            {
-                return;
-            }
-
-            _localeMismatchWarningShown = true;
-            SnackbarWorkflow.ShowActionMessage(
-                LanguageLocalizer.Translate("AppLocalization", "Language preference changed on server. Click Reload to apply it."),
-                Severity.Warning,
-                LanguageLocalizer.Translate("AppLocalization", "Reload"),
-                _ =>
-                {
-                    NavigationManager.NavigateToHome(forceLoad: true);
-                    return Task.CompletedTask;
-                },
-                configure: options =>
-                {
-                    options.CloseAfterNavigation = true;
-                });
-        }
-
-        private async Task TryRunStartupUpdateCheckAsync()
-        {
-            try
-            {
-                var settings = AppSettingsState ?? await AppSettingsService.GetSettingsAsync(_timerCancellationToken.Token);
-                if (!settings.UpdateChecksEnabled)
-                {
-                    return;
-                }
-
-                var status = await AppUpdateService.GetUpdateStatusAsync(cancellationToken: _timerCancellationToken.Token);
-                var latestTag = status.LatestRelease?.TagName;
-                if (!status.IsUpdateAvailable || string.IsNullOrWhiteSpace(latestTag))
-                {
-                    return;
-                }
-
-                if (string.Equals(settings.DismissedReleaseTag, latestTag, StringComparison.OrdinalIgnoreCase))
-                {
-                    return;
-                }
-
-                if (_updateSnackbarShown)
-                {
-                    return;
-                }
-
-                _updateSnackbarShown = true;
-
-                SnackbarWorkflow.ShowActionMessage(
-                    LanguageLocalizer.Translate("AppUpdates", "A new qbtmud build (%1) is available.", latestTag),
-                    Severity.Info,
-                    LanguageLocalizer.Translate("AppUpdates", "Dismiss"),
-                    async _ =>
-                    {
-                        await AppSettingsService.SaveDismissedReleaseTagAsync(latestTag);
-                    },
-                    key: $"qbtmud-update-{latestTag}");
-            }
-            catch (OperationCanceledException exception) when (exception.CancellationToken == _timerCancellationToken.Token)
-            {
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        private async Task TryProcessTorrentNotificationsAsync(IReadOnlyList<TorrentTransition> transitions, CancellationToken cancellationToken)
-        {
-            if (transitions.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                await TorrentCompletionNotificationService.ProcessTransitionsAsync(transitions, cancellationToken);
-            }
-            catch (OperationCanceledException exception) when (exception.CancellationToken == cancellationToken)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-            }
-        }
-
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
             if (!IsAuthenticated)
             {
+                if (_startupRecoveryPending)
+                {
+                    return await RetryStartupTickAsync(cancellationToken);
+                }
+
                 return ManagedTimerTickResult.Stop;
             }
 
-            QBitTorrentClient.Models.MainData data;
-            try
+            var refreshResult = await ShellSessionWorkflow.RefreshAsync(_requestId, MainData, cancellationToken);
+            if (refreshResult.Outcome == ShellSessionRefreshOutcome.AuthenticationRequired)
             {
-                data = await ApiClient.GetMainData(_requestId);
+                await HandleAuthenticationFailureAsync(cancellationToken);
+                return ManagedTimerTickResult.Stop;
             }
-            catch (HttpRequestException exception)
+
+            if (refreshResult.Outcome == ShellSessionRefreshOutcome.LostConnection)
             {
-                if (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                {
-                    await HandleAuthenticationFailureAsync();
-                    return ManagedTimerTickResult.Stop;
-                }
-
-                if (MainData is not null)
-                {
-                    MainData.LostConnection = true;
-                }
-
-                await InvokeAsync(ShowLostConnectionDialogAsync);
+                await LostConnectionWorkflow.MarkLostConnectionAsync();
                 _timerCancellationToken.CancelIfNotDisposed();
                 await InvokeAsync(StateHasChanged);
                 return ManagedTimerTickResult.Stop;
             }
 
-            var shouldRender = false;
-            IReadOnlyList<TorrentTransition> transitionBatch = Array.Empty<TorrentTransition>();
+            if (refreshResult.Outcome == ShellSessionRefreshOutcome.RetryableFailure)
+            {
+                return ManagedTimerTickResult.Continue;
+            }
 
-            if (MainData is null || data.FullUpdate)
-            {
-                MainData = DataManager.CreateMainData(data);
-                MarkTorrentsDirty();
-                shouldRender = true;
-            }
-            else
-            {
-                var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged, out transitionBatch);
-                if (filterChanged)
-                {
-                    MarkTorrentsDirty();
-                }
-                else if (dataChanged)
-                {
-                    IncrementTorrentsVersion();
-                }
-                shouldRender = dataChanged;
-            }
+            MainData = refreshResult.MainData;
+            _requestId = refreshResult.RequestId;
 
             if (MainData is not null)
             {
-                await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, cancellationToken);
-                await RecordSpeedSampleAsync(MainData.ServerState, cancellationToken);
-                await TryProcessTorrentNotificationsAsync(transitionBatch, cancellationToken);
+                await UpdateRefreshIntervalAsync(Preferences?.RefreshInterval ?? MainData.ServerState.RefreshInterval, cancellationToken);
             }
 
-            _requestId = data.ResponseId;
+            if (refreshResult.TorrentsDirty)
+            {
+                MarkTorrentsDirty();
+            }
+            else if (refreshResult.ShouldRender)
+            {
+                IncrementTorrentsVersion();
+            }
 
-            if (shouldRender)
+            if (refreshResult.ShouldRender)
             {
                 await InvokeAsync(StateHasChanged);
             }
@@ -592,36 +324,15 @@ namespace Lantean.QBTMud.Layout
             return ManagedTimerTickResult.Continue;
         }
 
-        private async Task HandleAuthenticationFailureAsync()
+        private async Task HandleAuthenticationFailureAsync(CancellationToken cancellationToken)
         {
             IsAuthenticated = false;
             _authConfirmed = false;
+            _startupRecoveryPending = false;
 
-            if (MainData is not null)
-            {
-                MainData.LostConnection = false;
-            }
-
-            await ClearPendingDownloadAsync();
+            await PendingDownloadWorkflow.ClearAsync(cancellationToken);
             _timerCancellationToken.CancelIfNotDisposed();
-            await InvokeAsync(() => NavigationManager.NavigateTo("login"));
-        }
-
-        private static MainData CreateDisconnectedMainData()
-        {
-            return new MainData(
-                new Dictionary<string, Torrent>(),
-                Array.Empty<string>(),
-                new Dictionary<string, Category>(),
-                new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>())
-            {
-                LostConnection = true
-            };
+            await InvokeAsync(() => NavigationManager.NavigateTo("login", forceLoad: true));
         }
 
         private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)
@@ -650,167 +361,20 @@ namespace Lantean.QBTMud.Layout
             _locationChangeTask = InvokeAsync(() => HandleLocationChangedAsync(e.Location));
         }
 
-        private void CaptureDownloadFromUri(string? uri)
+        private async Task HandleLocationChangedAsync(string? location, CancellationToken cancellationToken = default)
         {
             if (!_authConfirmed)
             {
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(uri))
-            {
-                return;
-            }
-
-            var downloadValue = MagnetLinkService.ExtractDownloadLink(uri);
-            if (string.IsNullOrWhiteSpace(downloadValue))
-            {
-                return;
-            }
-
-            if (HasAlreadyProcessed(downloadValue))
-            {
-                return;
-            }
-
-            _pendingDownloadLink = downloadValue;
-        }
-
-        private async Task RestorePendingDownloadAsync()
-        {
-            if (_pendingDownloadLink is not null)
-            {
-                return;
-            }
-
-            if (SessionStorage is null)
-            {
-                return;
-            }
-
-            var stored = await SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey);
-            if (!MagnetLinkService.IsSupportedDownloadLink(stored))
-            {
-                await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
-                return;
-            }
-
-            _pendingDownloadLink = stored;
-        }
-
-        private async Task RestoreProcessedDownloadAsync()
-        {
-            if (SessionStorage is null)
-            {
-                return;
-            }
-
-            var stored = await SessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey);
-            if (string.IsNullOrWhiteSpace(stored))
-            {
-                return;
-            }
-
-            _lastProcessedDownloadToken = stored;
-        }
-
-        private async Task PersistPendingDownloadAsync()
-        {
-            if (SessionStorage is null)
-            {
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(_pendingDownloadLink))
-            {
-                await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
-                return;
-            }
-
-            await SessionStorage.SetItemAsync(_pendingDownloadStorageKey, _pendingDownloadLink);
-        }
-
-        private async Task TryProcessPendingDownloadAsync()
-        {
-            if (!IsAuthenticated || string.IsNullOrWhiteSpace(_pendingDownloadLink))
-            {
-                return;
-            }
-
-            var magnet = _pendingDownloadLink;
-
-            if (string.Equals(_lastProcessedDownloadToken, magnet, StringComparison.Ordinal))
-            {
-                await ClearPendingDownloadAsync();
-                NavigationManager.NavigateToHome(forceLoad: true);
-                return;
-            }
-
-            try
-            {
-                await InvokeAsync(() => DialogWorkflow.InvokeAddTorrentLinkDialog(magnet));
-                await SaveLastProcessedDownloadAsync(magnet);
-                await ClearPendingDownloadAsync();
-                NavigationManager.NavigateToHome(forceLoad: true);
-            }
-            catch (Exception)
-            {
-                _pendingDownloadLink = magnet;
-                await PersistPendingDownloadAsync();
-                throw;
-            }
-        }
-
-        private async Task SaveLastProcessedDownloadAsync(string download)
-        {
-            _lastProcessedDownloadToken = download;
-
-            if (SessionStorage is null)
-            {
-                return;
-            }
-
-            await SessionStorage.SetItemAsync(_lastProcessedDownloadStorageKey, download);
-        }
-
-        private async Task ClearPendingDownloadAsync()
-        {
-            _pendingDownloadLink = null;
-            if (SessionStorage is not null)
-            {
-                await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
-            }
-        }
-
-        private async Task HandleLocationChangedAsync(string? location)
-        {
-            if (!_authConfirmed)
-            {
-                return;
-            }
-
-            CaptureDownloadFromUri(location);
-            await PersistPendingDownloadAsync();
+            await PendingDownloadWorkflow.CaptureFromUriAsync(location, cancellationToken);
 
             if (IsAuthenticated)
             {
-                await TryProcessPendingDownloadAsync();
+                await PendingDownloadWorkflow.ProcessAsync(cancellationToken);
             }
         }
-
-        protected EventCallback<string> CategoryChanged => EventCallback.Factory.Create<string>(this, OnCategoryChanged);
-
-        protected EventCallback<Status> StatusChanged => EventCallback.Factory.Create<Status>(this, OnStatusChanged);
-
-        protected EventCallback<string> TagChanged => EventCallback.Factory.Create<string>(this, OnTagChanged);
-
-        protected EventCallback<string> TrackerChanged => EventCallback.Factory.Create<string>(this, OnTrackerChanged);
-
-        protected EventCallback<FilterSearchState> SearchTermChanged => EventCallback.Factory.Create<FilterSearchState>(this, OnSearchTermChanged);
-
-        protected EventCallback<string> SortColumnChanged => EventCallback.Factory.Create<string>(this, columnId => SortColumn = columnId);
-
-        protected EventCallback<SortDirection> SortDirectionChanged => EventCallback.Factory.Create<SortDirection>(this, sortDirection => SortDirection = sortDirection);
 
         protected async Task ToggleTimerDrawerAsync()
         {
@@ -829,87 +393,6 @@ namespace Lantean.QBTMud.Layout
             return $"qBittorrent{versionPart} {webUiLabel}";
         }
 
-        private string BuildAlternativeSpeedLimitsStatusMessage(bool isEnabled)
-        {
-            return LanguageLocalizer.Translate(
-                "MainWindow",
-                isEnabled ? "Alternative speed limits: On" : "Alternative speed limits: Off");
-        }
-
-        private Task RecordSpeedSampleAsync(ServerState? serverState, CancellationToken cancellationToken)
-        {
-            if (serverState is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return SpeedHistoryService.PushSampleAsync(DateTime.UtcNow, serverState.DownloadInfoSpeed, serverState.UploadInfoSpeed, cancellationToken);
-        }
-
-        private void OnCategoryChanged(string category)
-        {
-            if (Category == category)
-            {
-                return;
-            }
-
-            Category = category;
-            MarkTorrentsDirty();
-        }
-
-        private void OnStatusChanged(Status status)
-        {
-            if (Status == status)
-            {
-                return;
-            }
-
-            Status = status;
-            MarkTorrentsDirty();
-        }
-
-        private void OnTagChanged(string tag)
-        {
-            if (Tag == tag)
-            {
-                return;
-            }
-
-            Tag = tag;
-            MarkTorrentsDirty();
-        }
-
-        private void OnTrackerChanged(string tracker)
-        {
-            if (Tracker == tracker)
-            {
-                return;
-            }
-
-            Tracker = tracker;
-            MarkTorrentsDirty();
-        }
-
-        private void OnSearchTermChanged(FilterSearchState state)
-        {
-            var hasChanges =
-                SearchText != state.Text ||
-                SearchField != state.Field ||
-                UseRegexSearch != state.UseRegex ||
-                IsRegexValid != state.IsRegexValid;
-
-            if (!hasChanges)
-            {
-                return;
-            }
-
-            SearchText = state.Text;
-            SearchField = state.Field;
-            UseRegexSearch = state.UseRegex;
-            IsRegexValid = state.IsRegexValid;
-            MarkTorrentsDirty();
-        }
-
         protected async Task ToggleAlternativeSpeedLimits()
         {
             if (_toggleAltSpeedLimitsInProgress)
@@ -920,47 +403,26 @@ namespace Lantean.QBTMud.Layout
             _toggleAltSpeedLimitsInProgress = true;
             try
             {
-                await ApiClient.ToggleAlternativeSpeedLimits();
-                var isEnabled = await ApiClient.GetAlternativeSpeedLimitsState();
-
-                if (MainData is not null)
+                var isEnabled = await StatusBarWorkflow.ToggleAlternativeSpeedLimitsAsync(_timerCancellationToken.Token);
+                if (isEnabled.HasValue && MainData is not null)
                 {
-                    MainData.ServerState.UseAltSpeedLimits = isEnabled;
+                    MainData.ServerState.UseAltSpeedLimits = isEnabled.Value;
                 }
-
-                SnackbarWorkflow.ShowTransientMessage(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(
-                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", exception.Message),
-                    Severity.Error);
             }
             finally
             {
                 _toggleAltSpeedLimitsInProgress = false;
-            }
 
-            await InvokeAsync(StateHasChanged);
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task ShowGlobalDownloadRateLimit()
         {
-            try
+            var appliedRate = await StatusBarWorkflow.ShowGlobalDownloadRateLimitAsync(MainData?.ServerState.DownloadRateLimit ?? 0, _timerCancellationToken.Token);
+            if (appliedRate.HasValue && MainData is not null)
             {
-                var appliedRate = await DialogWorkflow.InvokeGlobalDownloadRateDialog(MainData?.ServerState.DownloadRateLimit ?? 0);
-                if (!appliedRate.HasValue || MainData is null)
-                {
-                    return;
-                }
-
                 MainData.ServerState.DownloadRateLimit = appliedRate.Value;
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(
-                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to set global download rate limit: %1", exception.Message),
-                    Severity.Error);
             }
 
             await InvokeAsync(StateHasChanged);
@@ -968,21 +430,10 @@ namespace Lantean.QBTMud.Layout
 
         protected async Task ShowGlobalUploadRateLimit()
         {
-            try
+            var appliedRate = await StatusBarWorkflow.ShowGlobalUploadRateLimitAsync(MainData?.ServerState.UploadRateLimit ?? 0, _timerCancellationToken.Token);
+            if (appliedRate.HasValue && MainData is not null)
             {
-                var appliedRate = await DialogWorkflow.InvokeGlobalUploadRateDialog(MainData?.ServerState.UploadRateLimit ?? 0);
-                if (!appliedRate.HasValue || MainData is null)
-                {
-                    return;
-                }
-
                 MainData.ServerState.UploadRateLimit = appliedRate.Value;
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(
-                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to set global upload rate limit: %1", exception.Message),
-                    Severity.Error);
             }
 
             await InvokeAsync(StateHasChanged);
@@ -994,16 +445,6 @@ namespace Lantean.QBTMud.Layout
             IncrementTorrentsVersion();
         }
 
-        private bool HasAlreadyProcessed(string download)
-        {
-            if (string.IsNullOrWhiteSpace(download))
-            {
-                return true;
-            }
-
-            return string.Equals(_lastProcessedDownloadToken, download, StringComparison.Ordinal);
-        }
-
         private void IncrementTorrentsVersion()
         {
             unchecked
@@ -1012,19 +453,15 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
+        private void OnTorrentQueryStateChanged(object? sender, TorrentQueryStateChangedEventArgs args)
         {
-            AppSettingsState = args.Settings.Clone();
+            if (args.ChangeKind != TorrentQueryStateChangeKind.Filter || _disposedValue)
+            {
+                return;
+            }
+
+            MarkTorrentsDirty();
             StateHasChanged();
-        }
-
-        private async ValueTask OnPreferencesUpdated(QBitTorrentClient.Models.Preferences preferences)
-        {
-            ArgumentNullException.ThrowIfNull(preferences);
-
-            Preferences = preferences;
-            Menu?.ShowMenu(preferences);
-            await InvokeAsync(StateHasChanged);
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)
@@ -1063,8 +500,8 @@ namespace Lantean.QBTMud.Layout
                     _navigationHandlerAttached = false;
                 }
 
-                AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
-                PreferencesUpdateService.PreferencesUpdated -= OnPreferencesUpdated;
+                TorrentQueryState.Changed -= OnTorrentQueryStateChanged;
+                QBittorrentPreferencesStateService.Changed -= OnQBittorrentPreferencesChanged;
             }
 
             _disposedValue = true;
@@ -1074,6 +511,92 @@ namespace Lantean.QBTMud.Layout
         {
             await DisposeAsync(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        private async Task<ManagedTimerTickResult> RetryStartupTickAsync(CancellationToken cancellationToken)
+        {
+            var loadResult = await ShellSessionWorkflow.RecoverAsync(_requestId, cancellationToken);
+            if (loadResult.Outcome == ShellSessionLoadOutcome.AuthenticationRequired)
+            {
+                await HandleAuthenticationFailureAsync(cancellationToken);
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (loadResult.Outcome == ShellSessionLoadOutcome.LostConnection)
+            {
+                _startupRecoveryPending = false;
+                await LostConnectionWorkflow.MarkLostConnectionAsync();
+                _timerCancellationToken.CancelIfNotDisposed();
+                await InvokeAsync(StateHasChanged);
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (loadResult.Outcome == ShellSessionLoadOutcome.RetryableFailure)
+            {
+                _startupRecoveryPending = true;
+                return ManagedTimerTickResult.Continue;
+            }
+
+            _authConfirmed = true;
+            await PendingDownloadWorkflow.CaptureFromUriAsync(NavigationManager.Uri, cancellationToken);
+            await ApplyLoadResultAsync(loadResult, cancellationToken);
+            await InvokeAsync(StateHasChanged);
+
+            return ManagedTimerTickResult.Continue;
+        }
+
+        private async Task ApplyLoadResultAsync(ShellSessionLoadResult loadResult, CancellationToken cancellationToken)
+        {
+            var qBittorrentPreferences = loadResult.Preferences is not null
+                ? PreferencesDataManager.CreateQBittorrentPreferences(loadResult.Preferences)
+                : null;
+            Preferences = qBittorrentPreferences;
+            QBittorrentPreferencesStateService.SetPreferences(qBittorrentPreferences);
+            Version = loadResult.Version ?? string.Empty;
+            MainData = loadResult.MainData;
+            _startupRecoveryPending = false;
+            MarkTorrentsDirty();
+            _requestId = loadResult.RequestId;
+            _startupUpdateCheckReady = loadResult.AppSettings is not null;
+            _startupUpdateChecksEnabled = loadResult.AppSettings?.UpdateChecksEnabled ?? false;
+            _startupDismissedReleaseTag = loadResult.AppSettings?.DismissedReleaseTag;
+
+            if (MainData is not null)
+            {
+                await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, cancellationToken);
+            }
+
+            IsAuthenticated = true;
+            Menu?.ShowMenu(Preferences);
+            await PendingDownloadWorkflow.ProcessAsync(cancellationToken);
+        }
+
+        private void OnQBittorrentPreferencesChanged(object? sender, QBittorrentPreferencesChangedEventArgs args)
+        {
+            if (_disposedValue)
+            {
+                return;
+            }
+
+            _preferencesChangeTask = InvokeAsync(() => ApplyQBittorrentPreferencesChangedAsync(args));
+        }
+
+        private async Task ApplyQBittorrentPreferencesChangedAsync(QBittorrentPreferencesChangedEventArgs args)
+        {
+            Preferences = args.CurrentPreferences;
+
+            if (args.PreviousPreferences?.UseSubcategories != args.CurrentPreferences?.UseSubcategories)
+            {
+                MarkTorrentsDirty();
+            }
+
+            if (Preferences is not null)
+            {
+                await UpdateRefreshIntervalAsync(Preferences.RefreshInterval, _timerCancellationToken.Token);
+            }
+
+            Menu?.ShowMenu(Preferences);
+            StateHasChanged();
         }
     }
 }

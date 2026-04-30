@@ -1,7 +1,6 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Services;
@@ -11,7 +10,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -21,6 +21,7 @@ namespace Lantean.QBTMud.Test.Components
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
 
         public WebSeedsTabTests()
@@ -47,6 +48,34 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns((string _, string source, object[] __) => source);
             TestContext.Services.RemoveAll<ILanguageLocalizer>();
             TestContext.Services.AddSingleton(_languageLocalizer);
+
+            _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                    It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns<ApiResult<IReadOnlyList<WebSeed>>, Func<ApiFailure, ApiFeedbackCustomFailureResult>, Func<string?, string>?, MudBlazor.Severity, CancellationToken>(
+                    (result, handleCustomFailure, _, _, _) =>
+                    {
+                        if (result.IsFailure && result.Failure is not null)
+                        {
+                            handleCustomFailure(result.Failure);
+                        }
+
+                        return Task.CompletedTask;
+                    });
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(_apiFeedbackWorkflow);
         }
 
         [Fact]
@@ -59,7 +88,7 @@ namespace Lantean.QBTMud.Test.Components
 
             result.Should().Be(ManagedTimerTickResult.Continue);
             target.RenderCount.Should().Be(initialRenderCount);
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -68,13 +97,13 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderTarget();
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentWebSeeds("Hash"))
-                .ReturnsAsync(webSeeds);
+                .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
+                .ReturnsSuccessAsync(webSeeds);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
             GetSeedUrls(target).Should().BeEquivalentTo(new[] { "http://seed-1" });
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds("Hash"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync("Hash"), Times.Once);
         }
 
         [Fact]
@@ -84,7 +113,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await SetParametersAsync(target, active: true, hash: null);
 
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -94,7 +123,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await SetParametersAsync(target, active: false, hash: "Hash");
 
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -107,7 +136,7 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -115,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var target = RenderTarget();
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
                 .ReturnsAsync(new[] { new WebSeed("http://seed-2") });
 
@@ -125,7 +154,7 @@ namespace Lantean.QBTMud.Test.Components
 
             result.Should().Be(ManagedTimerTickResult.Continue);
             GetSeedUrls(target).Should().BeEquivalentTo(new[] { "http://seed-2" });
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds("Hash"), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync("Hash"), Times.Exactly(2));
         }
 
         [Fact]
@@ -133,15 +162,21 @@ namespace Lantean.QBTMud.Test.Components
         {
             var target = RenderTarget();
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
-                .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Forbidden", HttpStatusCode.Forbidden);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -149,15 +184,60 @@ namespace Lantean.QBTMud.Test.Components
         {
             var target = RenderTarget();
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
-                .ThrowsAsync(new HttpRequestException("Not Found", null, HttpStatusCode.NotFound));
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not Found", HttpStatusCode.NotFound);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_InitialLoadFails_THEN_RoutesFailureThroughWorkflow()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderTarget();
+            await SetParametersAsync(target, active: true, hash: "Hash");
+
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_TimerTickFails_THEN_RoutesFailureThroughWorkflow()
+        {
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
+                .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderTarget();
+            await SetParametersAsync(target, active: true, hash: "Hash");
+
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -202,8 +282,8 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderTarget();
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentWebSeeds("Hash"))
-                .ReturnsAsync(webSeeds);
+                .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
+                .ReturnsSuccessAsync(webSeeds);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 

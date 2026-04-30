@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -11,8 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -20,6 +21,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     {
         private readonly IKeyboardService _keyboardService;
         private readonly AddTorrentFileDialogTestDriver _target;
+        private QBittorrentPreferences? _preferences;
 
         public AddTorrentFileDialogTests()
         {
@@ -32,7 +34,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(_keyboardService);
 
-            _target = new AddTorrentFileDialogTestDriver(TestContext);
+            _target = new AddTorrentFileDialogTestDriver(TestContext, () => _preferences);
         }
 
         [Fact]
@@ -176,16 +178,40 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private Mock<IApiClient> UseApiClientMock()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetAllCategories()).ReturnsAsync(new Dictionary<string, ClientModels.Category>());
-            apiClientMock.Setup(c => c.GetAllTags()).ReturnsAsync(Array.Empty<string>());
-            apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(CreatePreferences());
+            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsSuccessAsync(new Dictionary<string, ClientModels.Category>());
+            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsSuccessAsync(Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(CreateBuildInfo());
+
+            _preferences = CreatePreferences();
+
             return apiClientMock;
         }
 
-        private static ClientModels.Preferences CreatePreferences()
+        private static ApiResult<BuildInfo> CreateBuildInfo()
         {
-            var json = "{\"auto_tmm_enabled\":false,\"save_path\":\"\",\"temp_path\":\"\",\"temp_path_enabled\":false,\"add_stopped_enabled\":false,\"add_to_top_of_queue\":true,\"torrent_stop_condition\":\"None\",\"torrent_content_layout\":\"Original\",\"max_ratio_enabled\":false,\"max_ratio\":1.0,\"max_seeding_time_enabled\":false,\"max_seeding_time\":0,\"max_inactive_seeding_time_enabled\":false,\"max_inactive_seeding_time\":0,\"max_ratio_act\":0}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return ApiResult.CreateSuccess(new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, BuildPlatform.Linux));
+        }
+
+        private static QBittorrentPreferences CreatePreferences()
+        {
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.AddStoppedEnabled = false;
+                spec.AddToTopOfQueue = true;
+                spec.AutoTmmEnabled = false;
+                spec.MaxInactiveSeedingTime = 0;
+                spec.MaxInactiveSeedingTimeEnabled = false;
+                spec.MaxRatio = 1.0f;
+                spec.MaxRatioAct = MaxRatioAction.StopTorrent;
+                spec.MaxRatioEnabled = false;
+                spec.MaxSeedingTime = 0;
+                spec.MaxSeedingTimeEnabled = false;
+                spec.SavePath = string.Empty;
+                spec.TempPath = string.Empty;
+                spec.TempPathEnabled = false;
+                spec.TorrentContentLayout = TorrentContentLayout.Original;
+                spec.TorrentStopCondition = StopCondition.None;
+            });
         }
 
         private static IBrowserFile CreateBrowserFile(string name)
@@ -199,18 +225,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     internal sealed class AddTorrentFileDialogTestDriver
     {
         private readonly ComponentTestContext _testContext;
+        private readonly Func<QBittorrentPreferences?> _getPreferences;
 
-        public AddTorrentFileDialogTestDriver(ComponentTestContext testContext)
+        public AddTorrentFileDialogTestDriver(ComponentTestContext testContext, Func<QBittorrentPreferences?> getPreferences)
         {
             _testContext = testContext;
+            _getPreferences = getPreferences;
         }
 
         public async Task<AddTorrentFileDialogRenderContext> RenderDialogAsync()
         {
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
+            var parameters = new DialogParameters();
+            var preferences = _getPreferences();
+            if (preferences is not null)
+            {
+                parameters.Add(nameof(AddTorrentFileDialog.Preferences), preferences);
+            }
 
-            var reference = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent");
+            var reference = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent", parameters);
 
             var dialog = provider.FindComponent<MudDialog>();
             var component = provider.FindComponent<AddTorrentFileDialog>();

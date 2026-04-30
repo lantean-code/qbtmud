@@ -1,4 +1,4 @@
-@using Lantean.QBitTorrentClient.Models
+@using QBittorrent.ApiClient.Models
 @using Lantean.QBTMud.Components.UI
 
 <MudDialog>
@@ -71,11 +71,11 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="string" Label="@LanguageLocalizer.Translate("AutomatedRssDownloader", "Torrent content layout:")" Value="ContentLayout" ValueChanged="ContentLayoutChanged" Disabled="@(SelectedRuleName is null)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RssRulesContentLayout")">
-                            <MudSelectItem Value="@("Default")">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Use global settings")</MudSelectItem>
-                            <MudSelectItem Value="@("Original")">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Original")</MudSelectItem>
-                            <MudSelectItem Value="@("Subfolder")">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Create subfolder")</MudSelectItem>
-                            <MudSelectItem Value="@("NoSubfolder")">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Don't create subfolder")</MudSelectItem>
+                        <MudSelect T="TorrentContentLayout?" Label="@LanguageLocalizer.Translate("AutomatedRssDownloader", "Torrent content layout:")" Value="ContentLayout" ValueChanged="ContentLayoutChanged" Disabled="@(SelectedRuleName is null)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RssRulesContentLayout")">
+                            <MudSelectItem T="TorrentContentLayout?" Value="@((TorrentContentLayout?)null)">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Use global settings")</MudSelectItem>
+                            <MudSelectItem T="TorrentContentLayout?" Value="@TorrentContentLayout.Original">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Original")</MudSelectItem>
+                            <MudSelectItem T="TorrentContentLayout?" Value="@TorrentContentLayout.Subfolder">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Create subfolder")</MudSelectItem>
+                            <MudSelectItem T="TorrentContentLayout?" Value="@TorrentContentLayout.NoSubfolder">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Don't create subfolder")</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12">

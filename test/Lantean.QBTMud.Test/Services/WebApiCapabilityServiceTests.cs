@@ -1,7 +1,7 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Services;
 using Moq;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -20,8 +20,8 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_WebApiVersionAtThreshold_WHEN_GetCapabilityStateAsync_THEN_ShouldReportClientDataSupported()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ReturnsAsync("2.13.1");
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync("2.13.1");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -34,8 +34,8 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_WebApiVersionBeforeThreshold_WHEN_GetCapabilityStateAsync_THEN_ShouldReportClientDataUnsupported()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ReturnsAsync("2.13.0");
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync("2.13.0");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -48,8 +48,8 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_MalformedWebApiVersion_WHEN_GetCapabilityStateAsync_THEN_ShouldReportUnsupported()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ReturnsAsync("not-a-version");
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync("not-a-version");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -62,8 +62,8 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ApiVersionRequestThrows_WHEN_GetCapabilityStateAsync_THEN_ShouldReportUnsupported()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ThrowsAsync(new HttpRequestException("failure"));
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "failure", System.Net.HttpStatusCode.InternalServerError);
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -77,8 +77,8 @@ namespace Lantean.QBTMud.Test.Services
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .SetupSequence(client => client.GetAPIVersion())
-                .ThrowsAsync(new HttpRequestException("failure"))
+                .SetupSequence(client => client.GetAPIVersionAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "failure", System.Net.HttpStatusCode.InternalServerError)
                 .ReturnsAsync("2.13.1");
 
             var failed = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
@@ -88,15 +88,15 @@ namespace Lantean.QBTMud.Test.Services
             failed.SupportsClientData.Should().BeFalse();
             succeeded.SupportsClientData.Should().BeTrue();
             cached.SupportsClientData.Should().BeTrue();
-            apiClientMock.Verify(client => client.GetAPIVersion(), Times.Exactly(2));
+            apiClientMock.Verify(client => client.GetAPIVersionAsync(), Times.Exactly(2));
         }
 
         [Fact]
         public async Task GIVEN_FirstResultCached_WHEN_GetCapabilityStateAsyncCalledTwice_THEN_ShouldCallApiOnce()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ReturnsAsync("2.13.1");
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync("2.13.1");
 
             var first = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
             var second = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
@@ -104,15 +104,15 @@ namespace Lantean.QBTMud.Test.Services
             first.SupportsClientData.Should().BeTrue();
             second.SupportsClientData.Should().BeTrue();
             Mock.Get(_apiClient)
-                .Verify(client => client.GetAPIVersion(), Times.Once);
+                .Verify(client => client.GetAPIVersionAsync(), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_VersionWithWhitespace_WHEN_GetCapabilityStateAsync_THEN_ShouldTrimAndParseVersion()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ReturnsAsync(" 2.13.1 ");
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync(" 2.13.1 ");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -125,8 +125,8 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_BlankVersion_WHEN_GetCapabilityStateAsync_THEN_ShouldReportUnsupportedWithNullRawValue()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .ReturnsAsync("   ");
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync("   ");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -140,8 +140,8 @@ namespace Lantean.QBTMud.Test.Services
         {
             var versionCompletion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAPIVersion())
-                .Returns(versionCompletion.Task);
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccess(versionCompletion.Task);
 
             var firstTask = _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
             var secondTask = _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
@@ -154,7 +154,7 @@ namespace Lantean.QBTMud.Test.Services
             first.SupportsClientData.Should().BeTrue();
             second.SupportsClientData.Should().BeTrue();
             Mock.Get(_apiClient)
-                .Verify(client => client.GetAPIVersion(), Times.Once);
+                .Verify(client => client.GetAPIVersionAsync(), Times.Once);
         }
     }
 }

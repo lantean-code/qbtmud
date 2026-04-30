@@ -89,7 +89,7 @@
         {
             return context => __builder =>
             {
-                var value = (float?)context.GetValue();
+                var value = (double?)context.GetValue();
                 var color = value < 1 ? Color.Success : Color.Info;
                 <MudProgressLinear title="@LanguageLocalizer.Translate("TransferListModel", "Progress")" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
                     @DisplayHelpers.Percentage(value)

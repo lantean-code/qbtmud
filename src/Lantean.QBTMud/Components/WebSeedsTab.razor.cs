@@ -1,10 +1,9 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -37,6 +36,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
 
@@ -80,16 +82,31 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                try
+                var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+                if (webSeedsResult.IsFailure)
                 {
-                    WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
+                    var failureKind = webSeedsResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult, failure =>
+                    {
+                        if (failure.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
+                WebSeeds = webSeedsResult.Value;
                 await InvokeAsync(StateHasChanged);
             }
 
@@ -113,7 +130,16 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
+            var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+            if (webSeedsResult.IsFailure)
+            {
+                WebSeeds = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
+            }
+            else
+            {
+                WebSeeds = webSeedsResult.Value;
+            }
 
             await InvokeAsync(StateHasChanged);
         }

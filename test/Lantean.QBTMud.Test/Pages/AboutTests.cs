@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -11,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -27,18 +27,19 @@ namespace Lantean.QBTMud.Test.Pages
             _appUpdateService = Mock.Of<IAppUpdateService>();
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(new BuildInfo(
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(new BuildInfo(
                     "QTVersion",
                     "LibTorrentVersion",
                     "BoostVersion",
                     "OpenSSLVersion",
                     "ZLibVersion",
-                    64));
+                    64,
+                    BuildPlatform.Linux));
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationVersion())
-                .ReturnsAsync("Version");
+                .Setup(client => client.GetApplicationVersionAsync())
+                .ReturnsSuccessAsync("Version");
 
             Mock.Get(_appBuildInfoService)
                 .Setup(service => service.GetCurrentBuildInfo())
@@ -90,26 +91,39 @@ namespace Lantean.QBTMud.Test.Pages
                 GetChildContentText(FindComponentByTestId<MudText>(target, "ZLibVersion").Instance.ChildContent).Should().Be("ZLibVersion");
             });
 
-            Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersion(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetBuildInfoAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersionAsync(), Times.Once);
         }
 
         [Fact]
-        public void GIVEN_VersionProvided_WHEN_Rendered_THEN_SkipsApplicationVersionRequest()
+        public void GIVEN_ApplicationVersionUnavailable_WHEN_Rendered_THEN_ShowsWebUiWithoutVersionText()
         {
             _apiClient.ClearInvocations();
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync())
+                .ReturnsAsync(ApiResult.CreateFailure<string>(new ApiFailure
+                {
+                    Kind = ApiFailureKind.ServerError,
+                    Operation = "test",
+                    UserMessage = "Failure",
+                    Detail = "Failure",
+                    ResponseBody = "Failure",
+                    IsTransient = true
+                }));
 
-            var target = RenderPage("Version");
+            var target = RenderPage();
 
-            GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
-                .Should()
-                .Be("qBittorrent Version WebUI (64-bit)");
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
+                    .Should().Be("qBittorrent WebUI (64-bit)");
+            });
             GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudCurrentBuild").Instance.ChildContent)
                 .Should()
                 .Be("1.0.0");
 
-            Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersion(), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetBuildInfoAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersionAsync(), Times.Once);
         }
 
         [Fact]
@@ -128,9 +142,13 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_EmptyVersionProvided_WHEN_Rendered_THEN_ShowsWebUiWithoutVersionText()
+        public void GIVEN_EmptyApplicationVersion_WHEN_Rendered_THEN_ShowsWebUiWithoutVersionText()
         {
-            var target = RenderPage(string.Empty);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync())
+                .ReturnsSuccessAsync(" ");
+
+            var target = RenderPage();
 
             GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
                 .Should()
@@ -248,15 +266,11 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private IRenderedComponent<About> RenderPage(string? version = null)
+        private IRenderedComponent<About> RenderPage()
         {
             return TestContext.Render<About>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
-                if (version is not null)
-                {
-                    parameters.AddCascadingValue("Version", version);
-                }
             });
         }
 

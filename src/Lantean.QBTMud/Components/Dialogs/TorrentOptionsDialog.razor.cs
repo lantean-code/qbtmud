@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using MudMainData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -14,10 +15,10 @@ namespace Lantean.QBTMud.Components.Dialogs
         public string Hash { get; set; } = default!;
 
         [CascadingParameter]
-        public MainData MainData { get; set; } = default!;
+        public MudMainData MainData { get; set; } = default!;
 
-        [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences Preferences { get; set; } = default!;
+        [Parameter]
+        public QBittorrentPreferences? Preferences { get; set; }
 
         protected bool AutomaticTorrentManagement { get; set; }
 
@@ -25,18 +26,18 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string? TempPath { get; set; }
 
-        protected override void OnInitialized()
+        protected override Task OnInitializedAsync()
         {
             if (!MainData.Torrents.TryGetValue(Hash, out var torrent))
             {
-                return;
+                return Task.CompletedTask;
             }
-
-            var tempPath = Preferences.TempPath;
 
             AutomaticTorrentManagement = torrent.AutomaticTorrentManagement;
             SavePath = torrent.SavePath;
-            TempPath = tempPath;
+            TempPath = Preferences?.TempPath;
+
+            return Task.CompletedTask;
         }
 
         protected void Cancel()

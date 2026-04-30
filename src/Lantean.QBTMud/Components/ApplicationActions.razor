@@ -26,14 +26,14 @@
 
     <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow"
                  IconColor="Color.Success"
-                 Disabled="@(_startAllInProgress || MainData?.LostConnection == true)"
+                 Disabled="@(_startAllInProgress)"
                  OnClick="StartAllTorrents"
                  data-test-id="@TestIdHelper.For("StartAllTorrents")">
         @LanguageLocalizer.Translate("MainWindow", "Start All")
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.Stop"
                  IconColor="Color.Warning"
-                 Disabled="@(_stopAllInProgress || MainData?.LostConnection == true)"
+                 Disabled="@(_stopAllInProgress)"
                  OnClick="StopAllTorrents"
                  data-test-id="@TestIdHelper.For("StopAllTorrents")">
         @LanguageLocalizer.Translate("MainWindow", "Stop All")

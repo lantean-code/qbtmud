@@ -1,6 +1,6 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Models
 {

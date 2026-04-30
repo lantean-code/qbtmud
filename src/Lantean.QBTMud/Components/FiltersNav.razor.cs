@@ -1,10 +1,12 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Components
 {
@@ -26,13 +28,13 @@ namespace Lantean.QBTMud.Components
         private bool _trackersExpanded = true;
         private readonly Dictionary<string, TrackerFilterItem> _trackerItems = new(StringComparer.Ordinal);
 
-        protected string Status { get; set; } = Models.Status.All.ToString();
+        protected string Status => TorrentQueryState.Status.ToString();
 
-        protected string Category { get; set; } = FilterHelper.CATEGORY_ALL;
+        protected string Category => TorrentQueryState.Category;
 
-        protected string Tag { get; set; } = FilterHelper.TAG_ALL;
+        protected string Tag => TorrentQueryState.Tag;
 
-        protected string Tracker { get; set; } = FilterHelper.TRACKER_ALL;
+        protected string Tracker => TorrentQueryState.Tracker;
 
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
@@ -43,23 +45,17 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
-        [CascadingParameter]
-        public MainData? MainData { get; set; }
+        [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public MudMainData? MainData { get; set; }
 
-        [Parameter]
-        public EventCallback<string> CategoryChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<Status> StatusChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<string> TagChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<string> TrackerChanged { get; set; }
+        [CascadingParameter]
+        public QBittorrentPreferences? Preferences { get; set; }
 
         protected Dictionary<string, int> Tags => GetTags();
 
@@ -99,36 +95,31 @@ namespace Lantean.QBTMud.Components
             var status = await SettingsStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
             if (status is not null)
             {
-                Status = status;
-                await StatusChanged.InvokeAsync(Enum.Parse<Status>(status));
+                TorrentQueryState.SetStatus(Enum.Parse<Status>(status));
             }
 
             var category = await SettingsStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
             if (category is not null)
             {
-                Category = category;
-                await CategoryChanged.InvokeAsync(category);
+                TorrentQueryState.SetCategory(category);
             }
 
             var tag = await SettingsStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
             if (tag is not null)
             {
-                Tag = tag;
-                await TagChanged.InvokeAsync(tag);
+                TorrentQueryState.SetTag(tag);
             }
 
             var tracker = await SettingsStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
             if (tracker is not null)
             {
-                Tracker = tracker;
-                await TrackerChanged.InvokeAsync(tracker);
+                TorrentQueryState.SetTracker(tracker);
             }
         }
 
         protected async Task StatusValueChanged(string value)
         {
-            Status = value;
-            await StatusChanged.InvokeAsync(Enum.Parse<Status>(value));
+            TorrentQueryState.SetStatus(Enum.Parse<Status>(value));
 
             if (value != Models.Status.All.ToString())
             {
@@ -166,8 +157,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task CategoryValueChanged(string value)
         {
-            Category = value;
-            await CategoryChanged.InvokeAsync(value);
+            TorrentQueryState.SetCategory(value);
 
             if (value != FilterHelper.CATEGORY_ALL)
             {
@@ -206,8 +196,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task TagValueChanged(string value)
         {
-            Tag = value;
-            await TagChanged.InvokeAsync(value);
+            TorrentQueryState.SetTag(value);
 
             if (value != FilterHelper.TAG_ALL)
             {
@@ -246,8 +235,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task TrackerValueChanged(string value)
         {
-            Tracker = value;
-            await TrackerChanged.InvokeAsync(value);
+            TorrentQueryState.SetTracker(value);
 
             if (value != FilterHelper.TRACKER_ALL)
             {
@@ -325,16 +313,26 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveCategories(ContextMenuCategory);
+            var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [ContextMenuCategory]);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
+            {
+                return;
+            }
 
             Categories.Remove(ContextMenuCategory);
         }
 
         protected async Task RemoveUnusedCategories()
         {
-            var removedCategories = await ApiClient.RemoveUnusedCategories();
+            var removedCategoriesResult = await ApiClient.RemoveUnusedCategoriesAsync();
+            if (removedCategoriesResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(removedCategoriesResult);
+                return;
+            }
 
-            foreach (var removedCategory in removedCategories)
+            var removedCategoryList = removedCategoriesResult.Value;
+            foreach (var removedCategory in removedCategoryList)
             {
                 Categories.Remove(removedCategory);
             }
@@ -363,7 +361,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackers(trackerItem.Urls, hashes: hashes.ToArray());
+            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
         protected async Task AddTag()
@@ -379,7 +378,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.CreateTags(tags);
+            var createResult = await ApiClient.CreateTagsAsync(tags);
+            await ApiFeedbackWorkflow.ProcessResultAsync(createResult);
         }
 
         protected async Task RemoveTag()
@@ -389,16 +389,26 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.DeleteTags(ContextMenuTag);
+            var deleteResult = await ApiClient.DeleteTagsAsync(tags: [ContextMenuTag]);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult))
+            {
+                return;
+            }
 
             Tags.Remove(ContextMenuTag);
         }
 
         protected async Task RemoveUnusedTags()
         {
-            var removedTags = await ApiClient.RemoveUnusedTags();
+            var removedTagsResult = await ApiClient.RemoveUnusedTagsAsync();
+            if (removedTagsResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(removedTagsResult);
+                return;
+            }
 
-            foreach (var removedTag in removedTags)
+            var removedTagList = removedTagsResult.Value;
+            foreach (var removedTag in removedTagList)
             {
                 Tags.Remove(removedTag);
             }
@@ -406,26 +416,40 @@ namespace Lantean.QBTMud.Components
 
         protected async Task StartTorrents(string type)
         {
-            var torrents = GetAffectedTorrentHashes(type);
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
 
-            await ApiClient.StartTorrents(hashes: torrents.ToArray());
+            var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            await ApiFeedbackWorkflow.ProcessResultAsync(startResult);
         }
 
         protected async Task StopTorrents(string type)
         {
-            var torrents = GetAffectedTorrentHashes(type);
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
 
-            await ApiClient.StopTorrents(hashes: torrents.ToArray());
+            var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            await ApiFeedbackWorkflow.ProcessResultAsync(stopResult);
         }
 
         protected async Task RemoveTorrents(string type)
         {
-            var torrents = GetAffectedTorrentHashes(type);
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
 
             await DialogWorkflow.InvokeDeleteTorrentDialog(
                 Preferences?.ConfirmTorrentDeletion ?? false,
                 Preferences?.DeleteTorrentContentFiles ?? false,
-                [.. torrents]);
+                [.. hashes]);
         }
 
         private Dictionary<string, int> GetTags()

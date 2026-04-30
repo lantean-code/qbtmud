@@ -1,7 +1,7 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -19,11 +19,11 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IAppUpdateService AppUpdateService { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
-
-        [CascadingParameter(Name = "Version")]
-        public string? Version { get; set; }
 
         protected string? QtVersion { get; private set; }
 
@@ -52,19 +52,33 @@ namespace Lantean.QBTMud.Pages
         {
             QbtMudBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
 
-            var info = await ApiClient.GetBuildInfo();
-            if (Version is null)
+            var buildInfoResult = await ApiClient.GetBuildInfoAsync();
+            if (buildInfoResult.IsFailure)
             {
-                Version = await ApiClient.GetApplicationVersion();
+                await ApiFeedbackWorkflow.HandleFailureAsync(buildInfoResult);
+                return;
             }
 
-            QtVersion = info.QTVersion;
-            LibtorrentVersion = info.LibTorrentVersion;
-            BoostVersion = info.BoostVersion;
-            OpensslVersion = info.OpenSSLVersion;
-            ZlibVersion = info.ZLibVersion;
-            QBittorrentVersion = Version;
-            Bitness = info.Bitness;
+            string? version = null;
+            var versionResult = await ApiClient.GetApplicationVersionAsync();
+            if (versionResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(versionResult);
+            }
+            else
+            {
+                version = versionResult.Value;
+            }
+
+            var buildInfo = buildInfoResult.Value;
+
+            QtVersion = buildInfo.QTVersion;
+            LibtorrentVersion = buildInfo.LibTorrentVersion;
+            BoostVersion = buildInfo.BoostVersion;
+            OpensslVersion = buildInfo.OpenSSLVersion;
+            ZlibVersion = buildInfo.ZLibVersion;
+            QBittorrentVersion = version;
+            Bitness = buildInfo.Bitness;
 
             try
             {

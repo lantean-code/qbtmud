@@ -1,15 +1,15 @@
 @inherits Options
-@using Lantean.QBitTorrentClient.Models
+@using QBittorrent.ApiClient.Models
 @using Lantean.QBTMud.Components.UI
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Peer connection protocol:")" Value="BittorrentProtocol" ValueChanged="BittorrentProtocolChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("BittorrentProtocol")">
-                    <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("OptionsDialog", "TCP and μTP")</MudSelectItem>
-                    <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("OptionsDialog", "TCP")</MudSelectItem>
-                    <MudSelectItem T="int" Value="2">@LanguageLocalizer.Translate("OptionsDialog", "μTP")</MudSelectItem>
+                <MudSelect T="BittorrentProtocol" Label="@LanguageLocalizer.Translate("OptionsDialog", "Peer connection protocol:")" Value="BittorrentProtocol" ValueChanged="BittorrentProtocolChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("BittorrentProtocol")">
+                    <MudSelectItem T="BittorrentProtocol" Value="BittorrentProtocol.TcpAndUtp">@LanguageLocalizer.Translate("OptionsDialog", "TCP and μTP")</MudSelectItem>
+                    <MudSelectItem T="BittorrentProtocol" Value="BittorrentProtocol.TcpOnly">@LanguageLocalizer.Translate("OptionsDialog", "TCP")</MudSelectItem>
+                    <MudSelectItem T="BittorrentProtocol" Value="BittorrentProtocol.UtpOnly">@LanguageLocalizer.Translate("OptionsDialog", "μTP")</MudSelectItem>
                 </MudSelect>
             </MudItem>
         </MudGrid>
@@ -98,11 +98,11 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12" md="4">
-                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Type:")" Value="ProxyType" ValueChanged="ProxyTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ProxyType")">
-                    <MudSelectItem T="string" Value="@("None")">@LanguageLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("SOCKS4")">@LanguageLocalizer.Translate("OptionsDialog", "SOCKS4")</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("SOCKS5")">@LanguageLocalizer.Translate("OptionsDialog", "SOCKS5")</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("HTTP")">@LanguageLocalizer.Translate("OptionsDialog", "HTTP")</MudSelectItem>
+                <MudSelect T="ProxyType" Label="@LanguageLocalizer.Translate("OptionsDialog", "Type:")" Value="ProxyType" ValueChanged="ProxyTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ProxyType")">
+                    <MudSelectItem T="ProxyType" Value="ProxyType.None">@LanguageLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
+                    <MudSelectItem T="ProxyType" Value="ProxyType.Socks4">@LanguageLocalizer.Translate("OptionsDialog", "SOCKS4")</MudSelectItem>
+                    <MudSelectItem T="ProxyType" Value="ProxyType.Socks5">@LanguageLocalizer.Translate("OptionsDialog", "SOCKS5")</MudSelectItem>
+                    <MudSelectItem T="ProxyType" Value="ProxyType.Http">@LanguageLocalizer.Translate("OptionsDialog", "HTTP")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="4">

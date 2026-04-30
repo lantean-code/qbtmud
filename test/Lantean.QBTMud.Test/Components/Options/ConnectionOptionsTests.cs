@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -18,7 +17,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<ConnectionOptions>(parameters =>
@@ -28,7 +27,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<int>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(2);
+            FindSelect<BittorrentProtocol>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(BittorrentProtocol.UtpOnly);
             FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(8999);
 
             FindSwitch(target, "Upnp").Instance.Value.Should().BeTrue();
@@ -58,7 +57,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<int>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSelect<BittorrentProtocol>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(BittorrentProtocol.TcpAndUtp);
             FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
@@ -67,7 +66,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -96,8 +95,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             var maxUploadsPerTorrentField = FindNumericInt(target, "MaxUploadsPerTorrent");
             await target.InvokeAsync(() => maxUploadsPerTorrentField.Instance.ValueChanged.InvokeAsync(8));
 
-            var proxyTypeSelect = FindSelect<string>(target, "ProxyType");
-            await target.InvokeAsync(() => proxyTypeSelect.Instance.ValueChanged.InvokeAsync("None"));
+            var proxyTypeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => proxyTypeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.None));
 
             update.ListenPort.Should().Be(7000);
             update.Upnp.Should().BeFalse();
@@ -105,7 +104,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.MaxConnecPerTorrent.Should().Be(120);
             update.MaxUploads.Should().Be(35);
             update.MaxUploadsPerTorrent.Should().Be(8);
-            update.ProxyType.Should().Be("None");
+            update.ProxyType.Should().Be(ProxyType.None);
 
             events.Should().NotBeEmpty();
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
@@ -116,16 +115,15 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializeCustomPreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "bittorrent_protocol": 0,
-                "listen_port": 5000,
-                "i2p_enabled": false,
-                "i2p_address": "",
-                "i2p_port": 0,
-                "i2p_mixed_mode": false
-            }
-            """);
+                spec.BittorrentProtocol = BittorrentProtocol.TcpAndUtp;
+                spec.I2pAddress = string.Empty;
+                spec.I2pEnabled = false;
+                spec.I2pMixedMode = false;
+                spec.I2pPort = 0;
+                spec.ListenPort = 5000;
+            });
 
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
@@ -171,7 +169,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -182,10 +180,10 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var typeSelect = FindSelect<string>(target, "ProxyType");
-            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync("None"));
+            var typeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.None));
 
-            update.ProxyType.Should().Be("None");
+            update.ProxyType.Should().Be(ProxyType.None);
 
             var proxyHostField = FindTextField(target, "ProxyIp");
             proxyHostField.Instance.Disabled.Should().BeTrue();
@@ -193,7 +191,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             var proxyPeerSwitch = FindSwitch(target, "ProxyPeerConnections");
             proxyPeerSwitch.Instance.Disabled.Should().BeTrue();
 
-            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync("SOCKS5"));
+            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.Socks5));
             proxyHostField.Instance.Disabled.Should().BeFalse();
 
             var authSwitch = FindSwitch(target, "ProxyAuthEnabled");
@@ -245,16 +243,15 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializeCustomPreferences("""
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                "listen_port": 6881,
-                "upnp": true,
-                "max_connec": 800,
-                "max_connec_per_torrent": 300,
-                "max_uploads": 50,
-                "max_uploads_per_torrent": 12
-            }
-            """);
+                spec.ListenPort = 6881;
+                spec.MaxConnec = 800;
+                spec.MaxConnecPerTorrent = 300;
+                spec.MaxUploads = 50;
+                spec.MaxUploadsPerTorrent = 12;
+                spec.Upnp = true;
+            });
 
             var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
@@ -285,7 +282,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -296,9 +293,9 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var protocolSelect = FindSelect<int>(target, "BittorrentProtocol");
-            await target.InvokeAsync(() => protocolSelect.Instance.ValueChanged.InvokeAsync(1));
-            update.BittorrentProtocol.Should().Be(1);
+            var protocolSelect = FindSelect<BittorrentProtocol>(target, "BittorrentProtocol");
+            await target.InvokeAsync(() => protocolSelect.Instance.ValueChanged.InvokeAsync(BittorrentProtocol.TcpOnly));
+            update.BittorrentProtocol.Should().Be(BittorrentProtocol.TcpOnly);
 
             var ipFilterSwitch = FindSwitch(target, "IpFilterEnabled");
             await target.InvokeAsync(() => ipFilterSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -325,7 +322,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<ConnectionOptions>(parameters =>
@@ -347,7 +344,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<ConnectionOptions>(parameters =>
@@ -370,7 +367,7 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
-                parameters.Add(p => p.Preferences, DeserializePreferences());
+                parameters.Add(p => p.Preferences, CreatePreferences());
                 parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
@@ -399,23 +396,23 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
-                parameters.Add(p => p.Preferences, DeserializePreferences());
+                parameters.Add(p => p.Preferences, CreatePreferences());
                 parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var proxyTypeSelect = FindSelect<string>(target, "ProxyType");
+            var proxyTypeSelect = FindSelect<ProxyType>(target, "ProxyType");
             await target.InvokeAsync(() => proxyTypeSelect.Instance.OpenMenu());
 
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<string>>()
+                var values = target.FindComponents<MudSelectItem<ProxyType>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain("None");
-                values.Should().Contain("SOCKS4");
-                values.Should().Contain("SOCKS5");
-                values.Should().Contain("HTTP");
+                values.Should().Contain(ProxyType.None);
+                values.Should().Contain(ProxyType.Socks4);
+                values.Should().Contain(ProxyType.Socks5);
+                values.Should().Contain(ProxyType.Http);
             });
         }
 
@@ -427,7 +424,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
-                parameters.Add(p => p.Preferences, DeserializePreferences());
+                parameters.Add(p => p.Preferences, CreatePreferences());
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
@@ -457,45 +454,37 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<PathAutocomplete>(target, testId);
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "bittorrent_protocol": 2,
-                "listen_port": 8999,
-                "upnp": true,
-                "max_connec": 600,
-                "max_connec_per_torrent": 0,
-                "max_uploads": 30,
-                "max_uploads_per_torrent": 5,
-                "i2p_enabled": true,
-                "i2p_address": "i2p.local",
-                "i2p_port": 4444,
-                "i2p_mixed_mode": true,
-                "proxy_type": "SOCKS5",
-                "proxy_ip": "127.0.0.1",
-                "proxy_port": 1080,
-                "proxy_auth_enabled": true,
-                "proxy_username": "user",
-                "proxy_password": "pass",
-                "proxy_hostname_lookup": true,
-                "proxy_bittorrent": true,
-                "proxy_peer_connections": false,
-                "proxy_rss": true,
-                "proxy_misc": true,
-                "ip_filter_enabled": true,
-                "ip_filter_path": "/filters/ipfilter.dat",
-                "ip_filter_trackers": true,
-                "banned_IPs": "10.0.0.1"
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        private static Preferences DeserializeCustomPreferences(string json)
-        {
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.BannedIPs = "10.0.0.1";
+                spec.BittorrentProtocol = BittorrentProtocol.UtpOnly;
+                spec.I2pAddress = "i2p.local";
+                spec.I2pEnabled = true;
+                spec.I2pMixedMode = true;
+                spec.I2pPort = 4444;
+                spec.IpFilterEnabled = true;
+                spec.IpFilterPath = "/filters/ipfilter.dat";
+                spec.IpFilterTrackers = true;
+                spec.ListenPort = 8999;
+                spec.MaxConnec = 600;
+                spec.MaxConnecPerTorrent = 0;
+                spec.MaxUploads = 30;
+                spec.MaxUploadsPerTorrent = 5;
+                spec.ProxyAuthEnabled = true;
+                spec.ProxyBittorrent = true;
+                spec.ProxyHostnameLookup = true;
+                spec.ProxyIp = "127.0.0.1";
+                spec.ProxyMisc = true;
+                spec.ProxyPassword = "pass";
+                spec.ProxyPeerConnections = false;
+                spec.ProxyPort = 1080;
+                spec.ProxyRss = true;
+                spec.ProxyType = ProxyType.Socks5;
+                spec.ProxyUsername = "user";
+                spec.Upnp = true;
+            });
         }
     }
 }

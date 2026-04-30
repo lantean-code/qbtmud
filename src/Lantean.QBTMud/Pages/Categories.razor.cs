@@ -1,9 +1,9 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -29,6 +29,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -71,8 +74,15 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var categories = await ApiClient.GetAllCategories();
-                _categories = categories.Values
+                var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+                if (categoriesResult.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
+                    return;
+                }
+
+                var categoryDictionary = categoriesResult.Value;
+                _categories = categoryDictionary.Values
                     .Select(category => new Category(category.Name, category.SavePath ?? string.Empty))
                     .ToList();
             }
@@ -89,7 +99,8 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await ApiClient.RemoveCategories(name);
+            var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [name]);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
         protected async Task AddCategory()

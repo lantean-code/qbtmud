@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -13,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -49,8 +49,8 @@ namespace Lantean.QBTMud.Test.Pages
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ReturnsAsync(new List<PeerLog>());
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsSuccessAsync(new List<PeerLog>());
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _ = RenderTarget();
 
-            Mock.Get(_apiClient).Verify(c => c.GetPeerLog(It.IsAny<int?>()), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.GetPeerLogAsync(It.IsAny<int?>()), Times.Once);
         }
 
         [Fact]
@@ -80,8 +80,8 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", true) };
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsSuccessAsync(results);
 
             await TriggerTimerTickAsync(target);
 
@@ -165,8 +165,8 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", false) };
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsSuccessAsync(results);
 
             await InvokeSubmitAsync(target);
 
@@ -205,8 +205,8 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = CreatePeerLogs(501, true);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsSuccessAsync(results);
 
             await TriggerTimerTickAsync(target);
 
@@ -222,15 +222,62 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_Forbidden_THEN_NoCrash()
         {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             var target = RenderTarget();
-            var exception = new HttpRequestException("Message", null, System.Net.HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ThrowsAsync(exception);
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", System.Net.HttpStatusCode.Forbidden);
 
-            await TriggerTimerTickAsync(target);
+            var tickResult = await TriggerTimerTickAsync(target);
 
-            Mock.Get(_apiClient).Verify(c => c.GetPeerLog(It.IsAny<int?>()), Times.AtLeastOnce);
+            tickResult.Should().Be(ManagedTimerTickResult.Stop);
+            navigationManager.Uri.Should().EndWith("/login");
+            Mock.Get(_apiClient).Verify(c => c.GetPeerLogAsync(It.IsAny<int?>()), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialLoadFails_WHEN_Rendered_THEN_RoutesFailureThroughWorkflow()
+        {
+            await using var localContext = new ComponentTestContext();
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<PeerLog>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            var apiClient = new Mock<IApiClient>(MockBehavior.Strict);
+            apiClient
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", System.Net.HttpStatusCode.InternalServerError);
+            var managedTimer = new Mock<IManagedTimer>(MockBehavior.Strict);
+            var managedTimerFactory = new Mock<IManagedTimerFactory>(MockBehavior.Strict);
+            managedTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(managedTimer.Object);
+            managedTimer
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            localContext.Services.RemoveAll<IApiClient>();
+            localContext.Services.AddSingleton(apiClient.Object);
+            localContext.Services.RemoveAll<IManagedTimerFactory>();
+            localContext.Services.AddSingleton(managedTimerFactory.Object);
+            localContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            localContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+            localContext.UseSnackbarMock(MockBehavior.Loose);
+
+            _ = localContext.Render<Blocks>(parameters =>
+            {
+                parameters.AddCascadingValue("DrawerOpen", false);
+            });
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<PeerLog>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -275,10 +322,10 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
         }
 
-        private async Task TriggerTimerTickAsync(IRenderedComponent<Blocks> target)
+        private async Task<ManagedTimerTickResult> TriggerTimerTickAsync(IRenderedComponent<Blocks> target)
         {
             var handler = GetTickHandler(target);
-            await target.InvokeAsync(() => handler(CancellationToken.None));
+            return await target.InvokeAsync(() => handler(CancellationToken.None));
         }
 
         private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<Blocks> target)

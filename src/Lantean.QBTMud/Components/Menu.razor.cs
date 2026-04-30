@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -6,11 +6,11 @@ namespace Lantean.QBTMud.Components
     {
         private bool _isVisible = false;
 
-        private Preferences? _preferences;
+        private QBittorrentPreferences? _preferences;
 
-        protected Preferences? Preferences => _preferences;
+        protected QBittorrentPreferences? Preferences => _preferences;
 
-        public void ShowMenu(Preferences? preferences = null)
+        public void ShowMenu(QBittorrentPreferences? preferences = null)
         {
             _isVisible = true;
             _preferences = preferences;

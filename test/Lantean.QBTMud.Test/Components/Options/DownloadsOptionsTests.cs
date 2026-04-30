@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -18,7 +17,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -28,9 +27,9 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<string>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be("Original");
+            FindSelect<TorrentContentLayout>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
             FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeTrue();
-            FindSwitch(target, "AutoDeleteMode").Instance.Value.Should().BeTrue();
+            FindSelect<AutoDeleteMode>(target, "AutoDeleteMode").Instance.GetState(x => x.Value).Should().Be(AutoDeleteMode.IfAdded);
             FindSwitch(target, "PreallocateAll").Instance.Value.Should().BeTrue();
             FindSelect<bool>(target, "AutoTmmEnabled").Instance.GetState(x => x.Value).Should().BeTrue();
             FindPathField(target, "TempPath").Instance.Disabled.Should().BeFalse();
@@ -55,7 +54,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<string>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().BeNull();
+            FindSelect<TorrentContentLayout>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
             FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeNull();
             update.ScanDirs.Should().BeNull();
         }
@@ -65,7 +64,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -79,8 +78,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             var addToTopSwitch = FindSwitch(target, "AddToTopOfQueue");
             await target.InvokeAsync(() => addToTopSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var layoutSelect = FindSelect<string>(target, "TorrentContentLayout");
-            await target.InvokeAsync(() => layoutSelect.Instance.ValueChanged.InvokeAsync("NoSubfolder"));
+            var layoutSelect = FindSelect<TorrentContentLayout>(target, "TorrentContentLayout");
+            await target.InvokeAsync(() => layoutSelect.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.NoSubfolder));
 
             var tempSwitch = FindSwitch(target, "TempPathEnabled");
             await target.InvokeAsync(() => tempSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -92,7 +91,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => subcategoriesSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             update.AddToTopOfQueue.Should().BeFalse();
-            update.TorrentContentLayout.Should().Be("NoSubfolder");
+            update.TorrentContentLayout.Should().Be(TorrentContentLayout.NoSubfolder);
             update.TempPathEnabled.Should().BeFalse();
             update.TempPath.Should().Be("/tmp-new");
             update.UseSubcategories.Should().BeFalse();
@@ -106,7 +105,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -120,13 +119,13 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => addStoppedSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.AddStoppedEnabled.Should().BeTrue();
 
-            var stopConditionSelect = FindSelect<string>(target, "TorrentStopCondition");
-            await target.InvokeAsync(() => stopConditionSelect.Instance.ValueChanged.InvokeAsync("FilesChecked"));
-            update.TorrentStopCondition.Should().Be("FilesChecked");
+            var stopConditionSelect = FindSelect<StopCondition>(target, "TorrentStopCondition");
+            await target.InvokeAsync(() => stopConditionSelect.Instance.ValueChanged.InvokeAsync(StopCondition.FilesChecked));
+            update.TorrentStopCondition.Should().Be(StopCondition.FilesChecked);
 
-            var autoDeleteSwitch = FindSwitch(target, "AutoDeleteMode");
-            await target.InvokeAsync(() => autoDeleteSwitch.Instance.ValueChanged.InvokeAsync(false));
-            update.AutoDeleteMode.Should().Be(0);
+            var autoDeleteSelect = FindSelect<AutoDeleteMode>(target, "AutoDeleteMode");
+            await target.InvokeAsync(() => autoDeleteSelect.Instance.ValueChanged.InvokeAsync(AutoDeleteMode.Never));
+            update.AutoDeleteMode.Should().Be(AutoDeleteMode.Never);
 
             var preallocateSwitch = FindSwitch(target, "PreallocateAll");
             await target.InvokeAsync(() => preallocateSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -142,7 +141,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -194,7 +193,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -225,7 +224,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -290,7 +289,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -332,7 +331,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -370,7 +369,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -400,7 +399,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -428,7 +427,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -438,18 +437,25 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "TorrentContentLayout").Instance.OpenMenu());
+            await target.InvokeAsync(() => FindSelect<TorrentContentLayout>(target, "TorrentContentLayout").Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("Subfolder");
+                var values = target.FindComponents<MudSelectItem<TorrentContentLayout>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(TorrentContentLayout.Subfolder);
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "TorrentStopCondition").Instance.OpenMenu());
+            await target.InvokeAsync(() => FindSelect<StopCondition>(target, "TorrentStopCondition").Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("MetadataReceived");
+                var values = target.FindComponents<MudSelectItem<StopCondition>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(StopCondition.MetadataReceived);
+            });
+
+            await target.InvokeAsync(() => FindSelect<AutoDeleteMode>(target, "AutoDeleteMode").Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<AutoDeleteMode>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(AutoDeleteMode.Always);
             });
 
             await target.InvokeAsync(() => FindExistingScanDirType(target, 0).Instance.OpenMenu());
@@ -472,7 +478,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -547,46 +553,46 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<MudIconButton>(target, $"AddedScanDirs[{index}].Remove");
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "torrent_content_layout": "Original",
-                "add_to_top_of_queue": true,
-                "add_stopped_enabled": false,
-                "torrent_stop_condition": "None",
-                "auto_delete_mode": 1,
-                "preallocate_all": true,
-                "incomplete_files_ext": false,
-                "auto_tmm_enabled": true,
-                "torrent_changed_tmm_enabled": true,
-                "save_path_changed_tmm_enabled": false,
-                "category_changed_tmm_enabled": true,
-                "use_subcategories": true,
-                "save_path": "/downloads",
-                "temp_path_enabled": true,
-                "temp_path": "/temp",
-                "export_dir": "/export",
-                "export_dir_fin": "/export_fin",
-                "scan_dirs": { "/watch": 1 },
-                "excluded_file_names_enabled": true,
-                "excluded_file_names": "*.tmp",
-                "mail_notification_enabled": true,
-                "mail_notification_sender": "noreply@example.com",
-                "mail_notification_email": "user@example.com",
-                "mail_notification_smtp": "smtp.example.com",
-                "mail_notification_ssl_enabled": true,
-                "mail_notification_auth_enabled": true,
-                "mail_notification_username": "user",
-                "mail_notification_password": "pass",
-                "autorun_on_torrent_added_enabled": true,
-                "autorun_on_torrent_added_program": "/bin/add.sh",
-                "autorun_enabled": true,
-                "autorun_program": "/bin/finish.sh"
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AddStoppedEnabled = false;
+                spec.AddToTopOfQueue = true;
+                spec.AutorunEnabled = true;
+                spec.AutorunOnTorrentAddedEnabled = true;
+                spec.AutorunOnTorrentAddedProgram = "/bin/add.sh";
+                spec.AutorunProgram = "/bin/finish.sh";
+                spec.AutoDeleteMode = AutoDeleteMode.IfAdded;
+                spec.AutoTmmEnabled = true;
+                spec.CategoryChangedTmmEnabled = true;
+                spec.ExcludedFileNames = "*.tmp";
+                spec.ExcludedFileNamesEnabled = true;
+                spec.ExportDir = "/export";
+                spec.ExportDirFin = "/export_fin";
+                spec.IncompleteFilesExt = false;
+                spec.MailNotificationAuthEnabled = true;
+                spec.MailNotificationEmail = "user@example.com";
+                spec.MailNotificationEnabled = true;
+                spec.MailNotificationPassword = "pass";
+                spec.MailNotificationSender = "noreply@example.com";
+                spec.MailNotificationSmtp = "smtp.example.com";
+                spec.MailNotificationSslEnabled = true;
+                spec.MailNotificationUsername = "user";
+                spec.PreallocateAll = true;
+                spec.SavePath = "/downloads";
+                spec.SavePathChangedTmmEnabled = false;
+                spec.ScanDirs = new Dictionary<string, SaveLocation>
+                {
+                    ["/watch"] = SaveLocation.Create(1)
+                };
+                spec.TempPath = "/temp";
+                spec.TempPathEnabled = true;
+                spec.TorrentChangedTmmEnabled = true;
+                spec.TorrentContentLayout = TorrentContentLayout.Original;
+                spec.TorrentStopCondition = StopCondition.None;
+                spec.UseSubcategories = true;
+            });
         }
     }
 }

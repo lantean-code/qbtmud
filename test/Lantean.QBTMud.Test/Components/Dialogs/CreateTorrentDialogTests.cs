@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
@@ -11,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -35,8 +35,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_NoSourcePath_WHEN_SubmitClicked_THEN_ShowsWarningAndKeepsDialogOpen()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
             var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
@@ -56,15 +56,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_FormatSupported_WHEN_SubmitClicked_THEN_ReturnsRequestWithFormat()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.1.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.1.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
             await SetSourcePathAsync(dialog.Component, "C:/Source");
             await SetTorrentFilePathAsync(dialog.Component, "C:/Out");
             await SetPieceSizeAsync(dialog.Component, 65536);
-            await SetFormatAsync(dialog.Component, "v1");
+            await SetFormatAsync(dialog.Component, TorrentFormat.V1);
             await SetFieldSwitchAsync(dialog.Component, "PrivateTorrent", true);
             await SetFieldSwitchAsync(dialog.Component, "StartSeeding", false);
             await SetTextFieldAsync(dialog.Component, "TrackerUrls", "http://a\n\n http://b ");
@@ -85,7 +85,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             request.StartSeeding.Should().BeFalse();
             request.Comment.Should().Be("Comment");
             request.Source.Should().Be("Source");
-            request.Format.Should().Be("v1");
+            request.Format.Should().Be(TorrentFormat.V1);
             request.OptimizeAlignment.Should().BeNull();
             request.PaddedFileSizeLimit.Should().BeNull();
             request.Trackers.Should().BeEquivalentTo(new[] { "http://a", "http://b" });
@@ -96,8 +96,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_FormatUnsupported_WHEN_SubmitClickedWithPaddingDisabled_THEN_RequestHasNullPadding()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("1.2.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("1.2.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -119,8 +119,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_FormatUnsupported_WHEN_SubmitClickedWithPaddingEnabled_THEN_RequestHasConvertedPadding()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("1.9.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("1.9.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -142,8 +142,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_PaddedLimitOverflow_WHEN_SubmitClicked_THEN_RequestUsesMaxValue()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("1.9.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("1.9.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -164,8 +164,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_CloseClicked_WHEN_Invoked_THEN_CancelsDialog()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
             var closeButton = FindButton(dialog.Component, "CreateTorrentClose");
@@ -205,8 +205,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.AddSingleton(keyboardMock.Object);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -234,15 +234,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 UrlSeeds = "UrlSeeds",
                 Comment = "Comment",
                 Source = "Source",
-                Format = "v2",
+                Format = TorrentFormat.V2,
                 OptimizeAlignment = false,
                 PaddedFileSizeLimit = 2048
             };
 
             await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -259,8 +259,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var seedSwitch = FindFieldSwitch(dialog.Component, "StartSeeding");
             seedSwitch.Instance.Value.Should().BeFalse();
 
-            var formatSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "TorrentFormat");
-            formatSelect.Instance.GetState(x => x.Value).Should().Be("v2");
+            var formatSelect = FindComponentByTestId<MudSelect<TorrentFormat>>(dialog.Component, "TorrentFormat");
+            formatSelect.Instance.GetState(x => x.Value).Should().Be(TorrentFormat.V2);
 
             var trackers = FindTextField(dialog.Component, "TrackerUrls");
             trackers.Instance.GetState(x => x.Value).Should().Be("Trackers");
@@ -281,19 +281,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var state = new TorrentCreationFormState
             {
                 SourcePath = "SourcePath",
-                Format = " ",
+                Format = TorrentFormat.Hybrid,
                 OptimizeAlignment = true,
                 PaddedFileSizeLimit = -1
             };
 
             await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("1.2.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("1.2.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
-            var formatSelect = dialog.Component.FindComponents<MudSelect<string>>()
+            var formatSelect = dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"));
             formatSelect.Should().BeFalse();
 
@@ -305,8 +305,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_WhitespaceOnlyTrackersAndWebSeeds_WHEN_SubmitClicked_THEN_RequestListsAreNull()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.1.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.1.0"));
 
             var dialog = await _target.RenderDialogAsync();
             await SetSourcePathAsync(dialog.Component, "C:/Source");
@@ -326,12 +326,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_InvalidVersion_WHEN_Rendered_THEN_FormatSelectHidden()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo(" "));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo(" "));
 
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.FindComponents<MudSelect<string>>()
+            dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"))
                 .Should().BeFalse();
         }
@@ -340,12 +340,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_VersionStartsWithText_WHEN_Rendered_THEN_FormatSelectHidden()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("x2.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("x2.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.FindComponents<MudSelect<string>>()
+            dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"))
                 .Should().BeFalse();
         }
@@ -354,12 +354,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_VersionTooLong_WHEN_Rendered_THEN_FormatSelectShown()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.FindComponents<MudSelect<string>>()
+            dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"))
                 .Should().BeTrue();
         }
@@ -378,8 +378,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.AddSingleton(settingsStorage.Object);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             await _target.RenderDialogAsync();
 
@@ -392,8 +392,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_SubmitValid_WHEN_Clicked_THEN_PersistsFormState()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .Setup(client => client.GetBuildInfoAsync())
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -403,7 +403,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetTextFieldAsync(dialog.Component, "WebSeedUrls", "Seed");
             await SetTextFieldAsync(dialog.Component, "Comments", "Comment");
             await SetTextFieldAsync(dialog.Component, "Source", "Source");
-            await SetFormatAsync(dialog.Component, "hybrid");
+            await SetFormatAsync(dialog.Component, TorrentFormat.Hybrid);
 
             var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
@@ -416,14 +416,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             stored.UrlSeeds.Should().Be("Seed");
             stored.Comment.Should().Be("Comment");
             stored.Source.Should().Be("Source");
-            stored.Format.Should().Be("hybrid");
+            stored.Format.Should().Be(TorrentFormat.Hybrid);
         }
 
         [Fact]
         public async Task GIVEN_BuildInfoThrows_WHEN_Rendered_THEN_UsesAlignmentFields()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ThrowsAsync(new InvalidOperationException());
 
             var dialog = await _target.RenderDialogAsync();
@@ -437,7 +437,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static BuildInfo CreateBuildInfo(string libTorrentVersion)
         {
-            return new BuildInfo("QT", libTorrentVersion, "Boost", "OpenSSL", "ZLib", 64);
+            return new BuildInfo("QT", libTorrentVersion, "Boost", "OpenSSL", "ZLib", 64, BuildPlatform.Linux);
         }
 
         private static IRenderedComponent<FieldSwitch> FindFieldSwitch(IRenderedComponent<CreateTorrentDialog> component, string testId)
@@ -473,9 +473,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetFormatAsync(IRenderedComponent<CreateTorrentDialog> component, string value)
+        private static async Task SetFormatAsync(IRenderedComponent<CreateTorrentDialog> component, TorrentFormat value)
         {
-            var select = FindComponentByTestId<MudSelect<string>>(component, "TorrentFormat");
+            var select = FindComponentByTestId<MudSelect<TorrentFormat>>(component, "TorrentFormat");
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 

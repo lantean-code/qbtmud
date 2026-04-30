@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient;
+using System.Text.RegularExpressions;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -7,7 +7,10 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
-using System.Text.RegularExpressions;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -32,34 +35,24 @@ namespace Lantean.QBTMud.Pages
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
         public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         public ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [CascadingParameter]
-        public IReadOnlyList<Torrent>? Torrents { get; set; }
+        public IReadOnlyList<MudTorrent>? Torrents { get; set; }
 
         [CascadingParameter]
-        public MainData MainData { get; set; } = default!;
-
-        [CascadingParameter(Name = "LostConnection")]
-        public bool LostConnection { get; set; }
+        public MudMainData MainData { get; set; } = default!;
 
         [CascadingParameter(Name = "TorrentsVersion")]
         public int TorrentsVersion { get; set; }
-
-        [CascadingParameter(Name = "SearchTermChanged")]
-        public EventCallback<FilterSearchState> SearchTermChanged { get; set; }
-
-        [CascadingParameter(Name = "SortColumnChanged")]
-        public EventCallback<string> SortColumnChanged { get; set; }
-
-        [CascadingParameter(Name = "SortDirectionChanged")]
-        public EventCallback<SortDirection> SortDirectionChanged { get; set; }
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -74,19 +67,18 @@ namespace Lantean.QBTMud.Pages
 
         protected string? SearchErrorText { get; set; }
 
-        protected HashSet<Torrent> SelectedItems { get; set; } = [];
+        protected HashSet<MudTorrent> SelectedItems { get; set; } = [];
 
         protected bool ToolbarButtonsEnabled => _toolbarButtonsEnabled;
 
-        protected DynamicTable<Torrent>? Table { get; set; }
+        protected DynamicTable<MudTorrent>? Table { get; set; }
 
-        protected Torrent? ContextMenuItem { get; set; }
+        protected MudTorrent? ContextMenuItem { get; set; }
 
         protected MudMenu? ContextMenu { get; set; }
 
         private object? _lastRenderedTorrents;
-        private QBitTorrentClient.Models.Preferences? _lastPreferences;
-        private bool _lastLostConnection;
+        private QBittorrentPreferences? _lastPreferences;
         private bool _hasRendered;
         private int _lastSelectionCount;
         private int _lastTorrentsVersion = -1;
@@ -94,11 +86,17 @@ namespace Lantean.QBTMud.Pages
         private Task? _locationChangeRenderTask;
 
         private bool _toolbarButtonsEnabled;
-        private IReadOnlyList<ColumnDefinition<Torrent>>? _columnsDefinitions;
+        private IReadOnlyList<ColumnDefinition<MudTorrent>>? _columnsDefinitions;
 
         protected override void OnInitialized()
         {
             base.OnInitialized();
+
+            SearchText = TorrentQueryState.SearchText;
+            SearchField = TorrentQueryState.SearchField;
+            UseRegex = TorrentQueryState.UseRegexSearch;
+            IsRegexValid = TorrentQueryState.IsRegexValid;
+            ValidateRegex();
 
             NavigationManager.LocationChanged += OnLocationChanged;
         }
@@ -123,7 +121,6 @@ namespace Lantean.QBTMud.Pages
                 _hasRendered = true;
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = LostConnection;
                 _lastTorrentsVersion = TorrentsVersion;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
@@ -143,7 +140,6 @@ namespace Lantean.QBTMud.Pages
                 _lastTorrentsVersion = TorrentsVersion;
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = LostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -153,7 +149,6 @@ namespace Lantean.QBTMud.Pages
             {
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = LostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -162,14 +157,6 @@ namespace Lantean.QBTMud.Pages
             if (!ReferenceEquals(_lastPreferences, Preferences))
             {
                 _lastPreferences = Preferences;
-                _lastSelectionCount = SelectedItems.Count;
-                _toolbarButtonsEnabled = _lastSelectionCount > 0;
-                return true;
-            }
-
-            if (_lastLostConnection != LostConnection)
-            {
-                _lastLostConnection = LostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -185,7 +172,7 @@ namespace Lantean.QBTMud.Pages
             return false;
         }
 
-        protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
+        protected void SelectedItemsChanged(HashSet<MudTorrent> selectedItems)
         {
             SelectedItems = selectedItems;
             _toolbarButtonsEnabled = SelectedItems.Count > 0;
@@ -195,12 +182,14 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
         {
-            await SortDirectionChanged.InvokeAsync(sortDirection);
+            TorrentQueryState.SetSortDirection(sortDirection);
+            await InvokeAsync(StateHasChanged);
         }
 
         protected async Task SortColumnChangedHandler(string columnId)
         {
-            await SortColumnChanged.InvokeAsync(columnId);
+            TorrentQueryState.SetSortColumn(columnId);
+            await InvokeAsync(StateHasChanged);
         }
 
         protected async Task SearchTextChanged(string text)
@@ -231,7 +220,7 @@ namespace Lantean.QBTMud.Pages
             await DialogWorkflow.InvokeAddTorrentLinkDialog();
         }
 
-        protected void RowClick(TableRowClickEventArgs<Torrent> eventArgs)
+        protected void RowClick(TableRowClickEventArgs<MudTorrent> eventArgs)
         {
             if (eventArgs.MouseEventArgs.Detail > 1)
             {
@@ -273,7 +262,8 @@ namespace Lantean.QBTMud.Pages
         private async Task PublishSearchStateAsync()
         {
             var state = new FilterSearchState(SearchText, SearchField, UseRegex, IsRegexValid);
-            await SearchTermChanged.InvokeAsync(state);
+            TorrentQueryState.SetSearch(state);
+            await InvokeAsync(StateHasChanged);
         }
 
         private void ValidateRegex()
@@ -327,7 +317,7 @@ namespace Lantean.QBTMud.Pages
             NavigateToTorrent(ContextMenuItem);
         }
 
-        protected void NavigateToTorrent(Torrent? torrent)
+        protected void NavigateToTorrent(MudTorrent? torrent)
         {
             if (torrent is null)
             {
@@ -336,17 +326,17 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateTo($"./details/{torrent.Hash}");
         }
 
-        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Torrent> eventArgs)
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<MudTorrent> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
         }
 
-        protected Task TableDataLongPress(TableDataLongPressEventArgs<Torrent> eventArgs)
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<MudTorrent> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
         }
 
-        protected async Task ShowContextMenu(Torrent? torrent, EventArgs eventArgs)
+        protected async Task ShowContextMenu(MudTorrent? torrent, EventArgs eventArgs)
         {
             if (torrent is not null)
             {
@@ -363,11 +353,11 @@ namespace Lantean.QBTMud.Pages
             await ContextMenu.OpenMenuAsync(normalizedEventArgs);
         }
 
-        protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);
+        protected IEnumerable<ColumnDefinition<MudTorrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);
 
-        private IReadOnlyList<ColumnDefinition<Torrent>> ColumnsDefinitions => _columnsDefinitions ??= BuildColumnsDefinitions(LanguageLocalizer);
+        private IReadOnlyList<ColumnDefinition<MudTorrent>> ColumnsDefinitions => _columnsDefinitions ??= BuildColumnsDefinitions(LanguageLocalizer);
 
-        internal static IReadOnlyList<ColumnDefinition<Torrent>> BuildColumnsDefinitions(ILanguageLocalizer localizer)
+        internal static IReadOnlyList<ColumnDefinition<MudTorrent>> BuildColumnsDefinitions(ILanguageLocalizer localizer)
         {
             var progressColumn = CreateProgressBarColumn(localizer);
             var iconColumn = CreateIconColumn();
@@ -409,55 +399,55 @@ namespace Lantean.QBTMud.Pages
             var reannounceLabel = localizer.Translate("TransferListModel", "Reannounce In");
             var privateLabel = localizer.Translate("TransferListModel", "Private");
 
-            return new List<ColumnDefinition<Torrent>>
+            return new List<ColumnDefinition<MudTorrent>>
             {
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("#", t => t.Priority, id: "#"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>("#", t => t.Priority, id: "#"),
                 ColumnDefinitionHelper.CreateColumnDefinition(statusIconLabel, t => t.State, iconColumn, iconOnly: true, width: 25, tdClass: "table-icon", id: "icon"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(nameLabel, t => t.Name, width: 400, id: "name"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(sizeLabel, t => t.Size, t => DisplayHelpers.Size(t.Size), id: "size"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(totalSizeLabel, t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false, id: "total_size"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(nameLabel, t => t.Name, width: 400, id: "name"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(sizeLabel, t => t.Size, t => DisplayHelpers.Size(t.Size), id: "size"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(totalSizeLabel, t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false, id: "total_size"),
                 ColumnDefinitionHelper.CreateColumnDefinition(progressLabel, t => t.Progress, progressColumn, tdClass: "table-progress", id: "done"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(statusLabel, t => t.State, t => DisplayHelpers.State(t.State), id: "status"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(seedsLabel, t => t.NumberSeeds, id: "seeds"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(peersLabel, t => t.NumberLeeches, id: "peers"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(downSpeedLabel, t => t.DownloadSpeed, t => DisplayHelpers.Speed(t.DownloadSpeed), id: "down_speed"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(upSpeedLabel, t => t.UploadSpeed, t => DisplayHelpers.Speed(t.UploadSpeed), id: "up_speed"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(etaLabel, t => t.EstimatedTimeOfArrival, t => DisplayHelpers.Duration(t.EstimatedTimeOfArrival), id: "eta"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(ratioLabel, t => t.Ratio, t => t.Ratio.ToString("0.00"), id: "ratio"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(popularityLabel, t => t.Popularity, t => t.Popularity.ToString("0.00"), id: "popularity"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(categoryLabel, t => t.Category, id: "category"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(tagsLabel, t => t.Tags, t => string.Join(", ", t.Tags), id: "tags"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(addedOnLabel, t => t.AddedOn, t => DisplayHelpers.DateTime(t.AddedOn), id: "added_on"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(completedOnLabel, t => t.CompletionOn, t => DisplayHelpers.DateTime(t.CompletionOn), enabled: false, id: "completed_on"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(trackerLabel, t => t.Tracker, enabled: false, id: "tracker"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(downLimitLabel, t => t.DownloadLimit, t => DisplayHelpers.Size(t.DownloadLimit), enabled: false, id: "down_limit"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(upLimitLabel, t => t.UploadLimit, t => DisplayHelpers.Size(t.UploadLimit), enabled: false, id: "up_limit"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(downloadedLabel, t => t.Downloaded, t => DisplayHelpers.Size(t.Downloaded), enabled: false, id: "downloaded"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(uploadedLabel, t => t.Uploaded, t => DisplayHelpers.Size(t.Uploaded), enabled: false, id: "uploaded"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(sessionDownloadLabel, t => t.DownloadedSession, t => DisplayHelpers.Size(t.DownloadedSession), enabled: false, id: "session_download"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(sessionUploadLabel, t => t.UploadedSession, t => DisplayHelpers.Size(t.UploadedSession), enabled: false, id: "session_upload"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(remainingLabel, t => t.AmountLeft, t => DisplayHelpers.Size(t.AmountLeft), enabled: false, id: "remaining"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(timeActiveLabel, t => t.TimeActive, t => DisplayHelpers.Duration(t.TimeActive), enabled: false, id: "time_active"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(savePathLabel, t => t.SavePath, enabled: false, id: "save_path"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(completedLabel, t => t.Completed, t => DisplayHelpers.Size(t.Completed), enabled: false, id: "completed"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(ratioLimitLabel, t => t.RatioLimit, t => DisplayHelpers.RatioLimit(t.RatioLimit), enabled: false, id: "ratio_limit"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(lastSeenLabel, t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false, id: "last_seen_complete"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(lastActivityLabel, t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false, id: "last_activity"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(availabilityLabel, t => t.Availability, t => t.Availability.ToString("0.##"), enabled: false, id: "availability"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(incompleteSavePathLabel, t => t.DownloadPath, t => DisplayHelpers.EmptyIfNull(t.DownloadPath), enabled: false, id: "incomplete_save_path"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(infoHashV1Label, t => t.InfoHashV1, t => DisplayHelpers.EmptyIfNull(t.InfoHashV1), enabled: false, id: "info_hash_v1"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(infoHashV2Label, t => t.InfoHashV2, t => DisplayHelpers.EmptyIfNull(t.InfoHashV2), enabled: false, id: "info_hash_v2"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(reannounceLabel, t => t.Reannounce, t => DisplayHelpers.Duration(t.Reannounce), enabled: false, id: "reannounce_in"),
-                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(privateLabel, t => t.IsPrivate, t => DisplayHelpers.Bool(t.IsPrivate), enabled: false, id: "private")
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(statusLabel, t => t.State, t => DisplayHelpers.State(t.State), id: "status"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(seedsLabel, t => t.NumberSeeds, id: "seeds"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(peersLabel, t => t.NumberLeeches, id: "peers"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(downSpeedLabel, t => t.DownloadSpeed, t => DisplayHelpers.Speed(t.DownloadSpeed), id: "down_speed"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(upSpeedLabel, t => t.UploadSpeed, t => DisplayHelpers.Speed(t.UploadSpeed), id: "up_speed"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(etaLabel, t => t.EstimatedTimeOfArrival, t => DisplayHelpers.Duration(t.EstimatedTimeOfArrival), id: "eta"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(ratioLabel, t => t.Ratio, t => t.Ratio.ToString("0.00"), id: "ratio"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(popularityLabel, t => t.Popularity, t => t.Popularity.ToString("0.00"), id: "popularity"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(categoryLabel, t => t.Category, id: "category"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(tagsLabel, t => t.Tags, t => string.Join(", ", t.Tags), id: "tags"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(addedOnLabel, t => t.AddedOn, t => DisplayHelpers.DateTime(t.AddedOn), id: "added_on"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(completedOnLabel, t => t.CompletionOn, t => DisplayHelpers.DateTime(t.CompletionOn), enabled: false, id: "completed_on"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(trackerLabel, t => t.Tracker, enabled: false, id: "tracker"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(downLimitLabel, t => t.DownloadLimit, t => DisplayHelpers.Size(t.DownloadLimit), enabled: false, id: "down_limit"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(upLimitLabel, t => t.UploadLimit, t => DisplayHelpers.Size(t.UploadLimit), enabled: false, id: "up_limit"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(downloadedLabel, t => t.Downloaded, t => DisplayHelpers.Size(t.Downloaded), enabled: false, id: "downloaded"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(uploadedLabel, t => t.Uploaded, t => DisplayHelpers.Size(t.Uploaded), enabled: false, id: "uploaded"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(sessionDownloadLabel, t => t.DownloadedSession, t => DisplayHelpers.Size(t.DownloadedSession), enabled: false, id: "session_download"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(sessionUploadLabel, t => t.UploadedSession, t => DisplayHelpers.Size(t.UploadedSession), enabled: false, id: "session_upload"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(remainingLabel, t => t.AmountLeft, t => DisplayHelpers.Size(t.AmountLeft), enabled: false, id: "remaining"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(timeActiveLabel, t => t.TimeActive, t => DisplayHelpers.Duration(t.TimeActive), enabled: false, id: "time_active"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(savePathLabel, t => t.SavePath, enabled: false, id: "save_path"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(completedLabel, t => t.Completed, t => DisplayHelpers.Size(t.Completed), enabled: false, id: "completed"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(ratioLimitLabel, t => t.RatioLimit, t => DisplayHelpers.RatioLimit(t.RatioLimit), enabled: false, id: "ratio_limit"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(lastSeenLabel, t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false, id: "last_seen_complete"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(lastActivityLabel, t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false, id: "last_activity"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(availabilityLabel, t => t.Availability, t => t.Availability.ToString("0.##"), enabled: false, id: "availability"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(incompleteSavePathLabel, t => t.DownloadPath, t => DisplayHelpers.EmptyIfNull(t.DownloadPath), enabled: false, id: "incomplete_save_path"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(infoHashV1Label, t => t.InfoHashV1, t => DisplayHelpers.EmptyIfNull(t.InfoHashV1), enabled: false, id: "info_hash_v1"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(infoHashV2Label, t => t.InfoHashV2, t => DisplayHelpers.EmptyIfNull(t.InfoHashV2), enabled: false, id: "info_hash_v2"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(reannounceLabel, t => t.Reannounce, t => DisplayHelpers.Duration(t.Reannounce), enabled: false, id: "reannounce_in"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(privateLabel, t => t.IsPrivate, t => DisplayHelpers.Bool(t.IsPrivate), enabled: false, id: "private")
             }.AsReadOnly();
         }
 
-        private static RenderFragment<RowContext<Torrent>> CreateProgressBarColumn(ILanguageLocalizer localizer)
+        private static RenderFragment<RowContext<MudTorrent>> CreateProgressBarColumn(ILanguageLocalizer localizer)
         {
             var title = localizer.Translate("TransferListModel", "Progress");
             return context => builder =>
             {
-                var value = (float?)context.GetValue();
+                var value = (double?)context.GetValue();
                 var color = value < 1 ? Color.Success : Color.Info;
 
                 builder.OpenComponent<MudProgressLinear>(0);
@@ -474,11 +464,11 @@ namespace Lantean.QBTMud.Pages
             };
         }
 
-        private static RenderFragment<RowContext<Torrent>> CreateIconColumn()
+        private static RenderFragment<RowContext<MudTorrent>> CreateIconColumn()
         {
             return context => builder =>
             {
-                var (icon, color) = DisplayHelpers.GetStateIcon((string?)context.GetValue());
+                var (icon, color) = DisplayHelpers.GetStateIcon((TorrentState?)context.GetValue());
                 builder.OpenComponent<MudIcon>(0);
                 builder.AddAttribute(1, nameof(MudIcon.Icon), icon);
                 builder.AddAttribute(2, nameof(MudIcon.Color), color);

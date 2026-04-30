@@ -9,6 +9,10 @@ on:
     branches:
       - '**'
 
+permissions:
+  contents: write
+  packages: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -68,8 +72,29 @@ jobs:
             echo "label=" >> $GITHUB_OUTPUT
           fi
 
+      - name: Select NuGet Config
+        id: nuget_config
+        shell: bash
+        run: |
+          api_client_version=$(sed -nE 's/.*<PackageReference Include="QBittorrent\.ApiClient" Version="([^"]+)".*/\1/p' src/Lantean.QBTMud/Lantean.QBTMud.csproj | head -n 1)
+          if [ -z "$api_client_version" ]; then
+            echo "::error::Could not find QBittorrent.ApiClient PackageReference version."
+            exit 1
+          fi
+
+          if [[ "$api_client_version" == *-* ]]; then
+            echo "config=nuget.github.config" >> "$GITHUB_OUTPUT"
+            echo "QBittorrent.ApiClient $api_client_version is prerelease; using GitHub Packages."
+          else
+            echo "config=nuget.config" >> "$GITHUB_OUTPUT"
+            echo "QBittorrent.ApiClient $api_client_version is stable; using nuget.org only."
+          fi
+
       - name: Restore dependencies
-        run: dotnet restore --artifacts-path=/tmp/artifacts/qbtmud
+        env:
+          GITHUB_PACKAGES_USERNAME: ${{ github.actor }}
+          GITHUB_PACKAGES_TOKEN: ${{ github.token }}
+        run: dotnet restore --configfile "${{ steps.nuget_config.outputs.config }}" --artifacts-path=/tmp/artifacts/qbtmud
 
       - name: Build
         run: dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}

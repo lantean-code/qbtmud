@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient.Models;
+using System.Globalization;
+using System.Text;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
-using System.Globalization;
-using System.Text;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -14,7 +14,7 @@ namespace Lantean.QBTMud.Components
         private const int _maximumHeatmapColumns = 96;
         private const int _heatmapColumnIncrement = 8;
         private const int _maxHeatmapCellsTarget = 2048;
-        private static readonly HeatmapSegment[] EmptyHeatmapSegments = Array.Empty<HeatmapSegment>();
+        private static readonly HeatmapSegment[] _emptyHeatmapSegments = [];
 
         private bool _showHeatmap;
         private bool _hasViewModelInitialized;
@@ -27,10 +27,10 @@ namespace Lantean.QBTMud.Components
         private string _linearAriaLabel = string.Empty;
         private string _heatmapEmptyText = string.Empty;
         private string _heatmapAriaLabel = string.Empty;
-        private IReadOnlyList<IReadOnlyList<HeatmapCellViewModel>> _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
-        private IReadOnlyList<LegendItem> _legendItems = Array.Empty<LegendItem>();
-        private PieceState[] _renderedPieces = Array.Empty<PieceState>();
-        private PieceState[] _pendingPieces = Array.Empty<PieceState>();
+        private IReadOnlyList<IReadOnlyList<HeatmapCellViewModel>> _heatmapRows = [];
+        private IReadOnlyList<LegendItem> _legendItems = [];
+        private PieceState[] _renderedPieces = [];
+        private PieceState[] _pendingPieces = [];
         private bool _cachedIsDarkMode;
         private bool _pendingIsDarkMode;
         private string _cachedThemeSignature = string.Empty;
@@ -352,7 +352,7 @@ namespace Lantean.QBTMud.Components
         {
             if (states.Count == 0)
             {
-                return EmptyHeatmapSegments;
+                return _emptyHeatmapSegments;
             }
 
             if (states.Count == 1)
@@ -535,7 +535,7 @@ namespace Lantean.QBTMud.Components
 
         protected sealed record HeatmapCellViewModel(string LayoutClass, IReadOnlyList<HeatmapSegment> Segments, string Tooltip, bool IsPlaceholder)
         {
-            public static HeatmapCellViewModel Placeholder { get; } = new HeatmapCellViewModel("pieces-progress-new__cell-inner--single", EmptyHeatmapSegments, string.Empty, true);
+            public static HeatmapCellViewModel Placeholder { get; } = new HeatmapCellViewModel("pieces-progress-new__cell-inner--single", _emptyHeatmapSegments, string.Empty, true);
 
             public bool HasSegments => Segments.Count > 0;
         }

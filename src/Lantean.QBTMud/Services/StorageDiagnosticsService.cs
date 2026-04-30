@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Microsoft.JSInterop;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Services
 {
@@ -57,21 +57,24 @@ namespace Lantean.QBTMud.Services
             var capabilityState = await _webApiCapabilityService.GetCapabilityStateAsync(cancellationToken);
             if (capabilityState.SupportsClientData)
             {
-                var clientEntries = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
-                foreach (var (key, value) in clientEntries)
+                var clientEntriesResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
+                if (clientEntriesResult.Succeeded && clientEntriesResult.Entries is not null)
                 {
-                    var displayKey = key.StartsWith(ClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal)
-                        ? key[ClientDataStorageAdapter.StorageKeyPrefix.Length..]
-                        : key;
-                    var textValue = ConvertClientValueToText(value);
+                    foreach (var (key, value) in clientEntriesResult.Entries)
+                    {
+                        var displayKey = key.StartsWith(ClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal)
+                            ? key[ClientDataStorageAdapter.StorageKeyPrefix.Length..]
+                            : key;
+                        var textValue = ConvertClientValueToText(value);
 
-                    result.Add(new AppStorageEntry(
-                        StorageType.ClientData,
-                        key,
-                        displayKey,
-                        textValue,
-                        BuildPreview(textValue),
-                        textValue?.Length ?? 0));
+                        result.Add(new AppStorageEntry(
+                            StorageType.ClientData,
+                            key,
+                            displayKey,
+                            textValue,
+                            BuildPreview(textValue),
+                            textValue?.Length ?? 0));
+                    }
                 }
             }
 
@@ -123,11 +126,16 @@ namespace Lantean.QBTMud.Services
                 var capabilityState = await _webApiCapabilityService.GetCapabilityStateAsync(cancellationToken);
                 if (capabilityState.SupportsClientData)
                 {
-                    var clientEntries = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
-                    if (clientEntries.Count > 0)
+                    var clientEntriesResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
+                    if (clientEntriesResult.Succeeded
+                        && clientEntriesResult.Entries is not null
+                        && clientEntriesResult.Entries.Count > 0)
                     {
-                        await _clientDataStorageAdapter.RemovePrefixedEntriesAsync(clientEntries.Keys, cancellationToken);
-                        removedCount += clientEntries.Count;
+                        var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync(clientEntriesResult.Entries.Keys, cancellationToken);
+                        if (removeResult.Succeeded)
+                        {
+                            removedCount += clientEntriesResult.Entries.Count;
+                        }
                     }
                 }
             }

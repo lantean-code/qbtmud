@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -17,7 +16,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<SpeedOptions>(parameters =>
@@ -40,7 +39,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTimePicker(target, "ScheduleFrom").Instance.Time.Should().Be(TimeSpan.FromHours(1));
             FindTimePicker(target, "ScheduleTo").Instance.Time.Should().Be(TimeSpan.FromHours(5));
 
-            FindSelect<int>(target, "SchedulerDays").Instance.GetState(x => x.Value).Should().Be(1);
+            FindSelect<SchedulerDays>(target, "SchedulerDays").Instance.GetState(x => x.Value).Should().Be(SchedulerDays.Weekdays);
 
             update.UpLimit.Should().BeNull();
             update.SchedulerEnabled.Should().BeNull();
@@ -51,7 +50,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -73,8 +72,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             var scheduleFrom = FindTimePicker(target, "ScheduleFrom");
             await target.InvokeAsync(() => scheduleFrom.Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(2.5)));
 
-            var daysSelect = FindSelect<int>(target, "SchedulerDays");
-            await target.InvokeAsync(() => daysSelect.Instance.ValueChanged.InvokeAsync(3));
+            var daysSelect = FindSelect<SchedulerDays>(target, "SchedulerDays");
+            await target.InvokeAsync(() => daysSelect.Instance.ValueChanged.InvokeAsync(SchedulerDays.Monday));
 
             update.UpLimit.Should().Be(75 * 1024);
             update.DlLimit.Should().Be(140 * 1024);
@@ -83,7 +82,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.SchedulerEnabled.Should().BeFalse();
             update.ScheduleFromHour.Should().Be(2);
             update.ScheduleFromMin.Should().Be(30);
-            update.SchedulerDays.Should().Be(3);
+            update.SchedulerDays.Should().Be(SchedulerDays.Monday);
 
             events.Should().NotBeEmpty();
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
@@ -94,7 +93,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<SpeedOptions>(parameters =>
@@ -120,7 +119,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -152,7 +151,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -176,7 +175,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -202,7 +201,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -226,7 +225,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -249,7 +248,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
         {
             TestContext.Render<MudPopoverProvider>();
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
 
             var target = TestContext.Render<SpeedOptions>(parameters =>
             {
@@ -289,14 +288,14 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             FindNumeric(target, "UpLimit").Instance.GetState(x => x.Value).Should().Be(0);
             FindSwitch(target, "SchedulerEnabled").Instance.Value.Should().BeNull();
-            FindSelect<int>(target, "SchedulerDays").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSelect<SchedulerDays>(target, "SchedulerDays").Instance.GetState(x => x.Value).Should().Be(SchedulerDays.EveryDay);
         }
 
         [Fact]
-        public void GIVEN_RenderedSchedulerDaysSelect_WHEN_InspectingItems_THEN_AllDayOptionsArePresent()
+        public async Task GIVEN_RenderedSchedulerDaysSelect_WHEN_InspectingItems_THEN_AllDayOptionsArePresent()
         {
             TestContext.Render<MudPopoverProvider>();
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
 
             var target = TestContext.Render<SpeedOptions>(parameters =>
             {
@@ -305,11 +304,27 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var values = target.FindComponents<MudSelectItem<int>>()
-                .Select(item => item.Instance.Value)
-                .ToList();
+            var schedulerDaysSelect = FindSelect<SchedulerDays>(target, "SchedulerDays");
+            await target.InvokeAsync(() => schedulerDaysSelect.Instance.OpenMenu());
 
-            values.Should().Equal(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<SchedulerDays>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+
+                values.Should().Equal(
+                    SchedulerDays.EveryDay,
+                    SchedulerDays.Weekdays,
+                    SchedulerDays.Weekends,
+                    SchedulerDays.Monday,
+                    SchedulerDays.Tuesday,
+                    SchedulerDays.Wednesday,
+                    SchedulerDays.Thursday,
+                    SchedulerDays.Friday,
+                    SchedulerDays.Saturday,
+                    SchedulerDays.Sunday);
+            });
         }
 
         [Fact]
@@ -317,7 +332,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -328,8 +343,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var remainingValues = new[] { 2, 4, 5, 6, 7, 8, 9 };
-            var schedulerDaysSelect = FindSelect<int>(target, "SchedulerDays");
+            var remainingValues = new[] { SchedulerDays.Weekends, SchedulerDays.Tuesday, SchedulerDays.Wednesday, SchedulerDays.Thursday, SchedulerDays.Friday, SchedulerDays.Saturday, SchedulerDays.Sunday };
+            var schedulerDaysSelect = FindSelect<SchedulerDays>(target, "SchedulerDays");
 
             foreach (var value in remainingValues)
             {
@@ -341,33 +356,30 @@ namespace Lantean.QBTMud.Test.Components.Options
                 });
             }
 
-            update.SchedulerDays.Should().Be(9);
+            update.SchedulerDays.Should().Be(SchedulerDays.Sunday);
             events.Should().HaveCount(remainingValues.Length);
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "up_limit": 51200,
-                "dl_limit": 122880,
-                "alt_up_limit": 10240,
-                "alt_dl_limit": 30720,
-                "bittorrent_protocol": 2,
-                "limit_utp_rate": true,
-                "limit_tcp_overhead": false,
-                "limit_lan_peers": true,
-                "scheduler_enabled": true,
-                "schedule_from_hour": 1,
-                "schedule_from_min": 0,
-                "schedule_to_hour": 5,
-                "schedule_to_min": 0,
-                "scheduler_days": 1
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AltDlLimit = 30720;
+                spec.AltUpLimit = 10240;
+                spec.BittorrentProtocol = BittorrentProtocol.UtpOnly;
+                spec.DlLimit = 122880;
+                spec.LimitLanPeers = true;
+                spec.LimitTcpOverhead = false;
+                spec.LimitUtpRate = true;
+                spec.ScheduleFromHour = 1;
+                spec.ScheduleFromMin = 0;
+                spec.ScheduleToHour = 5;
+                spec.ScheduleToMin = 0;
+                spec.SchedulerDays = SchedulerDays.Weekdays;
+                spec.SchedulerEnabled = true;
+                spec.UpLimit = 51200;
+            });
         }
 
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<SpeedOptions> target, string testId)

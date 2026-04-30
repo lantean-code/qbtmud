@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -9,7 +7,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -20,7 +19,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<RSSOptions>(parameters =>
@@ -47,7 +46,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -96,7 +95,7 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<RSSOptions>(parameters =>
@@ -117,7 +116,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -152,21 +151,18 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTextField(target, "RssSmartEpisodeFilters").Instance.GetState(x => x.Value).Should().BeNull();
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "rss_processing_enabled": true,
-                "rss_refresh_interval": 30,
-                "rss_fetch_delay": 5,
-                "rss_max_articles_per_feed": 200,
-                "rss_auto_downloading_enabled": true,
-                "rss_download_repack_proper_episodes": false,
-                "rss_smart_episode_filters": "filter-one\nfilter-two"
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.RssAutoDownloadingEnabled = true;
+                spec.RssDownloadRepackProperEpisodes = false;
+                spec.RssFetchDelay = 5;
+                spec.RssMaxArticlesPerFeed = 200;
+                spec.RssProcessingEnabled = true;
+                spec.RssRefreshInterval = 30;
+                spec.RssSmartEpisodeFilters = "filter-one\nfilter-two";
+            });
         }
 
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<RSSOptions> target, string testId)

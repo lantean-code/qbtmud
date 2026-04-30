@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Models
 {
     public class Peer
@@ -6,20 +8,20 @@ namespace Lantean.QBTMud.Models
             string key,
             string client,
             string clientId,
-            string connection,
+            PeerConnectionType? connection,
             string? country,
             string? countryCode,
             long downloaded,
-            long downloadSpeed,
+            int downloadSpeed,
             string files,
             string flags,
             string flagsDescription,
             string iPAddress,
             int port,
-            float progress,
-            float relevance,
+            double progress,
+            double relevance,
             long uploaded,
-            long uploadSpeed)
+            int uploadSpeed)
         {
             Key = key;
             Client = client;
@@ -43,20 +45,20 @@ namespace Lantean.QBTMud.Models
         public string Key { get; }
         public string Client { get; set; }
         public string ClientId { get; set; }
-        public string Connection { get; set; }
+        public PeerConnectionType? Connection { get; set; }
         public string? Country { get; set; }
         public string? CountryCode { get; set; }
         public long Downloaded { get; set; }
-        public long DownloadSpeed { get; set; }
+        public int DownloadSpeed { get; set; }
         public string Files { get; set; }
         public string Flags { get; set; }
         public string FlagsDescription { get; set; }
         public string IPAddress { get; set; }
         public int Port { get; set; }
-        public float Progress { get; set; }
-        public float Relevance { get; set; }
+        public double Progress { get; set; }
+        public double Relevance { get; set; }
         public long Uploaded { get; set; }
-        public long UploadSpeed { get; set; }
+        public int UploadSpeed { get; set; }
 
         public override bool Equals(object? obj)
         {

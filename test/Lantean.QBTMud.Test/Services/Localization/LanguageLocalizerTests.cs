@@ -1,12 +1,12 @@
+using System.Globalization;
+using System.Net;
+using System.Text;
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Globalization;
-using System.Net;
-using System.Text;
 
 namespace Lantean.QBTMud.Test.Services.Localization
 {
@@ -507,18 +507,18 @@ namespace Lantean.QBTMud.Test.Services.Localization
 
                 if (_responses.TryGetValue(path, out var response))
                 {
-                    return Task.FromResult(CloneResponse(response));
+                    return CloneResponse(response);
                 }
 
-                return Task.FromResult(CloneResponse(_notFoundResponse));
+                return CloneResponse(_notFoundResponse);
             }
 
-            private static HttpResponseMessage CloneResponse(HttpResponseMessage source)
+            private static async Task<HttpResponseMessage> CloneResponse(HttpResponseMessage source)
             {
                 var target = new HttpResponseMessage(source.StatusCode);
                 if (source.Content is not null)
                 {
-                    var body = source.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                    var body = await source.Content.ReadAsStringAsync();
                     target.Content = new StringContent(body, Encoding.UTF8, source.Content.Headers.ContentType?.MediaType ?? "application/json");
                 }
 

@@ -1,5 +1,3 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
@@ -9,7 +7,8 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -57,6 +56,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected IReadOnlyList<TorrentTracker>? TrackerList { get; set; }
 
         protected IEnumerable<TorrentTracker>? Trackers => GetTrackers();
@@ -81,7 +83,16 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            TrackerList = await ApiClient.GetTorrentTrackers(Hash);
+            var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
+            if (trackersResult.IsFailure)
+            {
+                TrackerList = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult);
+            }
+            else
+            {
+                TrackerList = trackersResult.Value;
+            }
 
             await InvokeAsync(StateHasChanged);
         }
@@ -184,7 +195,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.AddTrackersToTorrent(trackers, hashes: Hash);
+            var addResult = await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(Hash), trackers);
+            await ApiFeedbackWorkflow.ProcessResultAsync(addResult);
         }
 
         protected Task EditTrackerToolbar()
@@ -208,7 +220,11 @@ namespace Lantean.QBTMud.Components
                 TranslateTrackerList("Tracker editing"),
                 TranslateTrackerList("Tracker URL:"),
                 tracker.Url,
-                async value => await ApiClient.EditTracker(Hash, tracker.Url, value));
+                async value =>
+                {
+                    var editResult = await ApiClient.EditTrackerAsync(Hash, tracker.Url, value);
+                    await ApiFeedbackWorkflow.ProcessResultAsync(editResult);
+                });
         }
 
         protected Task RemoveTrackerToolbar()
@@ -228,7 +244,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackers([tracker.Url], hashes: Hash);
+            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(Hash), [tracker.Url]);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
         protected Task CopyTrackerUrlToolbar()
@@ -269,16 +286,31 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                try
+                var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
+                if (trackersResult.IsFailure)
                 {
-                    TrackerList = await ApiClient.GetTorrentTrackers(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
+                    var failureKind = trackersResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult, failure =>
+                    {
+                        if (failure.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
+                TrackerList = trackersResult.Value;
                 await InvokeAsync(StateHasChanged);
             }
 

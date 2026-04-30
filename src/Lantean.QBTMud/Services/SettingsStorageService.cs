@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Services
 {
@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class SettingsStorageService : ISettingsStorageService
     {
-        private static readonly JsonSerializerOptions SerializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
+        private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
         private readonly ILocalStorageService _localStorageService;
         private readonly IStorageRoutingService _storageRoutingService;
@@ -49,7 +49,13 @@ namespace Lantean.QBTMud.Services
             try
             {
                 var prefixedKey = ToPrefixedKey(key);
-                var loaded = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
+                var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
+                if (!loadedResult.Succeeded || loadedResult.Entries is null)
+                {
+                    return await _localStorageService.GetItemAsync<T>(key, cancellationToken);
+                }
+
+                var loaded = loadedResult.Entries;
                 if (!loaded.TryGetValue(prefixedKey, out var value)
                     || value.ValueKind == JsonValueKind.Undefined
                     || value.ValueKind == JsonValueKind.Null)
@@ -57,9 +63,9 @@ namespace Lantean.QBTMud.Services
                     return default;
                 }
 
-                return JsonSerializer.Deserialize<T>(value.GetRawText(), SerializerOptions);
+                return JsonSerializer.Deserialize<T>(value.GetRawText(), _serializerOptions);
             }
-            catch (Exception exception) when (exception is not OperationCanceledException)
+            catch (JsonException)
             {
                 return await _localStorageService.GetItemAsync<T>(key, cancellationToken);
             }
@@ -76,28 +82,27 @@ namespace Lantean.QBTMud.Services
                 return await _localStorageService.GetItemAsStringAsync(key, cancellationToken);
             }
 
-            try
-            {
-                var prefixedKey = ToPrefixedKey(key);
-                var loaded = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
-                if (!loaded.TryGetValue(prefixedKey, out var value)
-                    || value.ValueKind == JsonValueKind.Undefined
-                    || value.ValueKind == JsonValueKind.Null)
-                {
-                    return null;
-                }
-
-                if (value.ValueKind == JsonValueKind.String)
-                {
-                    return value.GetString();
-                }
-
-                return value.GetRawText();
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
+            var prefixedKey = ToPrefixedKey(key);
+            var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
+            if (!loadedResult.Succeeded || loadedResult.Entries is null)
             {
                 return await _localStorageService.GetItemAsStringAsync(key, cancellationToken);
             }
+
+            var loaded = loadedResult.Entries;
+            if (!loaded.TryGetValue(prefixedKey, out var value)
+                || value.ValueKind == JsonValueKind.Undefined
+                || value.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            if (value.ValueKind == JsonValueKind.String)
+            {
+                return value.GetString();
+            }
+
+            return value.GetRawText();
         }
 
         /// <inheritdoc />
@@ -112,18 +117,16 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            try
-            {
-                var prefixedKey = ToPrefixedKey(key);
-                var valueElement = JsonSerializer.SerializeToElement(data, SerializerOptions);
-                await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
-                    new Dictionary<string, object?>(StringComparer.Ordinal)
-                    {
-                        [prefixedKey] = valueElement
-                    },
-                    cancellationToken);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
+            var prefixedKey = ToPrefixedKey(key);
+            var valueElement = JsonSerializer.SerializeToElement(data, _serializerOptions);
+            var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
+                new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    [prefixedKey] = valueElement
+                },
+                cancellationToken);
+
+            if (!storeResult.Succeeded)
             {
                 await _localStorageService.SetItemAsync(key, data, cancellationToken);
             }
@@ -142,17 +145,15 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            try
-            {
-                var prefixedKey = ToPrefixedKey(key);
-                await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
-                    new Dictionary<string, object?>(StringComparer.Ordinal)
-                    {
-                        [prefixedKey] = data
-                    },
-                    cancellationToken);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
+            var prefixedKey = ToPrefixedKey(key);
+            var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
+                new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    [prefixedKey] = data
+                },
+                cancellationToken);
+
+            if (!storeResult.Succeeded)
             {
                 await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
             }
@@ -170,11 +171,8 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            try
-            {
-                await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
+            var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);
+            if (!removeResult.Succeeded)
             {
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
             }

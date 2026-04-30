@@ -1,12 +1,12 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -15,12 +15,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
-using System.Net;
-using System.Text.Json;
-using CategoryModel = Lantean.QBTMud.Models.Category;
-using MainDataModel = Lantean.QBTMud.Models.MainData;
-using ServerStateModel = Lantean.QBTMud.Models.ServerState;
-using TorrentModel = Lantean.QBTMud.Models.Torrent;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -69,7 +65,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrents(true)).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -80,7 +76,7 @@ namespace Lantean.QBTMud.Test.Components
             var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.StartTorrents(true), Times.Once);
+            apiClientMock.Verify(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents started", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
         }
 
@@ -89,7 +85,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StopTorrents(true)).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -100,39 +96,24 @@ namespace Lantean.QBTMud.Test.Components
             var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.StopTorrents(true), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents stopped", StringComparison.OrdinalIgnoreCase)), Severity.Info, null, null), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_LostConnection_WHEN_StartAllInvoked_THEN_ShowsWarningAndSkipsApi()
+        public async Task GIVEN_StartAll_WHEN_NoResponse_THEN_ShowsLostConnectionDialog()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-
-            var mainData = CreateMainData();
-            mainData.LostConnection = true;
-
-            var target = TestContext.Render<ApplicationActions>(parameters =>
-            {
-                parameters.Add(p => p.IsMenu, true);
-                parameters.Add(p => p.Preferences, null);
-                parameters.AddCascadingValue(mainData);
-            });
-
-            var startItem = FindMenuItem(target, "StartAllTorrents");
-            await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
-
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("not reachable", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
-            apiClientMock.Verify(c => c.StartTorrents(true, Array.Empty<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_StartAll_WHEN_HttpRequestException_THEN_ErrorShown()
-        {
-            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrents(true)).ThrowsAsync(new HttpRequestException("boom"));
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -143,15 +124,60 @@ namespace Lantean.QBTMud.Test.Components
             var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to start torrents", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_StopAll_WHEN_HttpRequestException_THEN_ErrorShown()
+        public async Task GIVEN_StartAll_WHEN_ApiError_THEN_ErrorShown()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StopTorrents(true)).ThrowsAsync(new HttpRequestException("fail"));
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "boom", HttpStatusCode.InternalServerError);
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var startItem = FindMenuItem(target, "StartAllTorrents");
+            await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("boom", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StartAll_WHEN_AuthenticationRequired_THEN_NavigatesToLoginWithoutShowingError()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var startItem = FindMenuItem(target, "StartAllTorrents");
+            await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().EndWith("/login");
+            snackbarMock.Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>?>(), It.IsAny<string?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StopAll_WHEN_ApiError_THEN_ErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "fail", HttpStatusCode.InternalServerError);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -162,7 +188,30 @@ namespace Lantean.QBTMud.Test.Components
             var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to stop torrents", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+            snackbarMock.Verify(s => s.Add("fail", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StopAll_WHEN_AuthenticationRequired_THEN_NavigatesToLoginWithoutShowingError()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var stopItem = FindMenuItem(target, "StopAllTorrents");
+            await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().EndWith("/login");
+            snackbarMock.Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -171,7 +220,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             var startSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            apiClientMock.Setup(c => c.StartTorrents(true)).Returns(() => startSource.Task);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(startSource.Task);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -188,7 +237,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await Task.WhenAll(first, second);
 
-            apiClientMock.Verify(c => c.StartTorrents(true), Times.Once);
+            apiClientMock.Verify(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents started", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
         }
 
@@ -198,7 +247,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             var stopSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            apiClientMock.Setup(c => c.StopTorrents(true)).Returns(() => stopSource.Task);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(stopSource.Task);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -215,29 +264,38 @@ namespace Lantean.QBTMud.Test.Components
 
             await Task.WhenAll(first, second);
 
-            apiClientMock.Verify(c => c.StopTorrents(true), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents stopped", StringComparison.OrdinalIgnoreCase)), Severity.Info, null, null), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_StopAllLostConnection_WHEN_Invoked_THEN_ShowsWarning()
+        public async Task GIVEN_StopAll_WHEN_NoResponse_THEN_ShowsLostConnectionDialog()
         {
-            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            TestContext.UseApiClientMock();
-            var mainData = CreateMainData();
-            mainData.LostConnection = true;
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
                 parameters.Add(p => p.IsMenu, true);
                 parameters.Add(p => p.Preferences, null);
-                parameters.AddCascadingValue(mainData);
             });
 
             var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("not reachable", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
@@ -467,7 +525,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock();
-            apiClientMock.Setup(c => c.SetApplicationPreferences(It.IsAny<UpdatePreferences>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.CreateSuccess());
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -478,18 +536,44 @@ namespace Lantean.QBTMud.Test.Components
             var resetItem = FindMenuItem(target, "ResetWebUI");
             await target.InvokeAsync(() => resetItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.SetApplicationPreferences(It.Is<UpdatePreferences>(p => p.AlternativeWebuiEnabled == false)), Times.Once);
+            apiClientMock.Verify(c => c.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(p => p.AlternativeWebuiEnabled == false)), Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be(TestContext.Services.GetRequiredService<NavigationManager>().BaseUri);
             snackbarMock.Invocations.Should().BeEmpty();
         }
 
         [Fact]
+        public async Task GIVEN_ResetWebUI_WHEN_UpdateFails_THEN_DoesNotNavigateAndShowsError()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Reset failed", HttpStatusCode.InternalServerError);
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/other");
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var resetItem = FindMenuItem(target, "ResetWebUI");
+            await target.InvokeAsync(() => resetItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().Be("http://localhost/other");
+            snackbarMock.Verify(s => s.Add("Reset failed", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_Logout_WHEN_Confirmed_THEN_LogsOutAndNavigates()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.Logout()).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.LogoutAsync()).ReturnsSuccess(Task.CompletedTask);
             speedHistoryMock.Setup(s => s.ClearAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             dialogMock.Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
@@ -503,23 +587,25 @@ namespace Lantean.QBTMud.Test.Components
             var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.Logout(), Times.Once);
+            apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
-            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
+            navigationManager.Uri.Should().EndWith("/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
         }
 
         [Fact]
-        public async Task GIVEN_Logout_WHEN_ConnectionLost_THEN_ShowsLostConnectionDialogWithoutNavigatingToLogin()
+        public async Task GIVEN_Logout_WHEN_NoResponse_THEN_MarksLostConnectionWithoutNavigatingToLogin()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
             var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
-            var mainData = CreateMainData();
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
 
             apiClientMock
-                .Setup(c => c.Logout())
-                .ThrowsAsync(new HttpRequestException("Unavailable", null, HttpStatusCode.BadGateway));
+                .Setup(c => c.LogoutAsync())
+                .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
             dialogWorkflowMock
                 .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
@@ -527,20 +613,18 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(service => service.ShowAsync<LostConnectionDialog>(
                     It.IsAny<string?>(),
                     It.IsAny<DialogOptions>()))
-                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+                .ReturnsAsync(dialogReference.Object);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
                 parameters.Add(p => p.IsMenu, true);
                 parameters.Add(p => p.Preferences, null);
-                parameters.AddCascadingValue(mainData);
             });
 
             var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
-            mainData.LostConnection.Should().BeTrue();
-            apiClientMock.Verify(c => c.Logout(), Times.Once);
+            apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
             dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
@@ -551,15 +635,15 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_Logout_WHEN_AlreadyUnauthorized_THEN_NavigatesToLoginWithoutLostConnectionDialog()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
             var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
-            var mainData = CreateMainData();
 
             apiClientMock
-                .Setup(c => c.Logout())
-                .ThrowsAsync(new HttpRequestException("Unauthorized", null, HttpStatusCode.Unauthorized));
+                .Setup(c => c.LogoutAsync())
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
             speedHistoryMock
                 .Setup(s => s.ClearAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
@@ -571,19 +655,81 @@ namespace Lantean.QBTMud.Test.Components
             {
                 parameters.Add(p => p.IsMenu, true);
                 parameters.Add(p => p.Preferences, null);
-                parameters.AddCascadingValue(mainData);
             });
 
             var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
-            mainData.LostConnection.Should().BeFalse();
-            apiClientMock.Verify(c => c.Logout(), Times.Once);
+            apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
             dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
-            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
+            navigationManager.Uri.Should().EndWith("/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ResetWebUi_WHEN_AuthenticationRequired_THEN_NavigatesToLoginWithForceLoad()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+
+            apiClientMock
+                .Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
+            dialogWorkflowMock
+                .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
+                .Returns<string, string, Func<Task>>((_, _, callback) => callback());
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var resetItem = FindMenuItem(target, "ResetWebUI");
+            await target.InvokeAsync(() => resetItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().EndWith("/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_Logout_WHEN_ApiError_THEN_ShowsErrorWithoutNavigatingToLogin()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+
+            apiClientMock
+                .Setup(c => c.LogoutAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError);
+            dialogWorkflowMock
+                .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
+                .Returns<string, string, Func<Task>>((_, _, callback) => callback());
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var logoutItem = FindMenuItem(target, "Logout");
+            await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
+
+            apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
+            speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
+            snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    "Server",
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
+            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().NotEndWith("/login");
         }
 
         [Fact]
@@ -591,7 +737,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.Shutdown()).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.ShutdownAsync()).ReturnsSuccess(Task.CompletedTask);
             dialogMock.Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
 
@@ -604,7 +750,7 @@ namespace Lantean.QBTMud.Test.Components
             var exitItem = FindMenuItem(target, "Exit");
             await target.InvokeAsync(() => exitItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.Shutdown(), Times.Once);
+            apiClientMock.Verify(c => c.ShutdownAsync(), Times.Once);
         }
 
         [Fact]
@@ -670,26 +816,36 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be(TestContext.Services.GetRequiredService<NavigationManager>().BaseUri);
         }
 
-        private static Preferences CreatePreferences(bool rssEnabled)
+        private static QBittorrentPreferences CreatePreferences(bool rssEnabled)
         {
-            var json = $"{{\"rss_processing_enabled\":{(rssEnabled ? "true" : "false")}}}";
-            return JsonSerializer.Deserialize<Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.RssProcessingEnabled = rssEnabled;
+            });
         }
 
-        private static MainDataModel CreateMainData()
+        private TestNavigationManager UseTestNavigationManager()
         {
-            var serverState = JsonSerializer.Deserialize<ServerStateModel>("{}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            var navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<NavigationManager>();
+            TestContext.Services.AddSingleton<NavigationManager>(navigationManager);
+            return navigationManager;
+        }
 
-            return new MainDataModel(
-                new Dictionary<string, TorrentModel>(),
-                Array.Empty<string>(),
-                new Dictionary<string, CategoryModel>(),
-                new Dictionary<string, IReadOnlyList<string>>(),
-                serverState,
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>());
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            public bool LastForceLoad { get; private set; }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                LastForceLoad = forceLoad;
+                Uri = ToAbsoluteUri(uri).ToString();
+            }
         }
     }
 }

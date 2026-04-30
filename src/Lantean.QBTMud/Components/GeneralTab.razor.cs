@@ -1,8 +1,7 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -40,6 +39,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected IReadOnlyList<PieceState> Pieces { get; set; } = [];
 
         protected TorrentProperties Properties { get; set; } = default!;
@@ -66,32 +68,41 @@ namespace Lantean.QBTMud.Components
                 _piecesFailed = false;
             }
 
-            try
-            {
-                Properties = await ApiClient.GetTorrentProperties(Hash);
-            }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
+            if (propertiesResult.IsFailure)
             {
                 MarkPiecesFailed();
-                _timerCancellationToken.CancelIfNotDisposed();
-                await InvokeAsync(StateHasChanged);
-                return;
-            }
-            catch (HttpRequestException)
-            {
-                MarkPiecesFailed();
+                if (propertiesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                {
+                    _timerCancellationToken.CancelIfNotDisposed();
+                }
+                else
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult);
+                }
+
                 await InvokeAsync(StateHasChanged);
                 return;
             }
 
-            try
+            Properties = propertiesResult.Value;
+
+            var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
+            if (piecesResult.IsFailure)
             {
-                Pieces = await ApiClient.GetTorrentPieceStates(Hash);
-                MarkPiecesLoaded();
+                if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                {
+                    MarkPiecesFailed();
+                }
+                else
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult);
+                }
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            else
             {
-                MarkPiecesFailed();
+                Pieces = piecesResult.Value;
+                MarkPiecesLoaded();
             }
 
             await InvokeAsync(StateHasChanged);
@@ -115,35 +126,59 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                try
-                {
-                    Properties = await ApiClient.GetTorrentProperties(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
+                if (propertiesResult.IsFailure)
                 {
                     MarkPiecesFailed();
-                    _timerCancellationToken.CancelIfNotDisposed();
                     await InvokeAsync(StateHasChanged);
-                    return ManagedTimerTickResult.Stop;
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
-                {
-                    MarkPiecesFailed();
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    await InvokeAsync(StateHasChanged);
-                    return ManagedTimerTickResult.Stop;
+                    var failureKind = propertiesResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult, failure =>
+                    {
+                        if (failure.Kind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                    {
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
-                try
+                Properties = propertiesResult.Value;
+
+                var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
+                if (piecesResult.IsFailure)
                 {
-                    Pieces = await ApiClient.GetTorrentPieceStates(Hash);
-                    MarkPiecesLoaded();
+                    var failureKind = piecesResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult, failure =>
+                    {
+                        if (failure.Kind == ApiFailureKind.NotFound)
+                        {
+                            MarkPiecesFailed();
+                            return ApiFeedbackCustomFailureResult.StopHandling;
+                        }
+
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind == ApiFailureKind.NotFound)
+                    {
+                        await InvokeAsync(StateHasChanged);
+                        return ManagedTimerTickResult.Stop;
+                    }
                 }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                else
                 {
-                    MarkPiecesFailed();
-                    await InvokeAsync(StateHasChanged);
-                    return ManagedTimerTickResult.Stop;
+                    Pieces = piecesResult.Value;
+                    MarkPiecesLoaded();
                 }
 
                 await InvokeAsync(StateHasChanged);

@@ -1,11 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -55,6 +55,24 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderComponent(pieces, loading: true);
 
             GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLoadingText").Instance.ChildContent).Should().Be("Loading pieces...");
+        }
+
+        [Fact]
+        public void GIVEN_LoadingState_WHEN_Expanded_THEN_DoesNotRenderGridCells()
+        {
+            var pieces = Enumerable.Repeat(PieceState.Downloaded, 5).ToList();
+
+            var target = RenderComponent(pieces, loading: true);
+
+            var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
+            toggleElement.Click();
+
+            target.WaitForAssertion(() =>
+            {
+                HasGridSvg(target).Should().BeFalse();
+                target.FindAll("rect").Should().BeEmpty();
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLoadingText").Instance.ChildContent).Should().Be("Loading pieces...");
+            });
         }
 
         [Fact]
@@ -144,6 +162,15 @@ namespace Lantean.QBTMud.Test.Components
             {
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesEmptyText").Instance.ChildContent).Should().Be("Pieces data unavailable.");
             });
+        }
+
+        [Fact]
+        public void GIVEN_NoPieces_WHEN_RenderedCollapsed_THEN_UsesPendingOverlayWithoutGradient()
+        {
+            var target = RenderComponent(Array.Empty<PieceState>());
+            var summary = FindComponentByTestId<MudText>(target, "PiecesLinearSummary");
+
+            GetChildContentText(summary.Instance.ChildContent).Should().Be("Pieces data unavailable");
         }
 
         [Fact]

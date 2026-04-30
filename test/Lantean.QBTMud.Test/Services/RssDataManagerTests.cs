@@ -1,6 +1,7 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
+using QBittorrent.ApiClient.Models;
+using ClientRssArticle = QBittorrent.ApiClient.Models.RssArticle;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -20,20 +21,20 @@ namespace Lantean.QBTMud.Test.Services
             var items = new Dictionary<string, RssItem>
             {
                 // key != uid on purpose in another test; here keep them equal
-                ["feed-a"] = new RssItem(
+                ["feed-a"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "cat-1", comments: "c1", date: "2025-01-01",
                             description: "d1", id: "a1", link: "http://a/1",
                             thumbnail: "http://a/t1", title: "t1",
                             torrentURL: "http://a.torrent/1", isRead: false),
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "cat-2", comments: "c2", date: "2025-01-02",
                             description: "d2", id: "a2", link: "http://a/2",
                             thumbnail: "http://a/t2", title: "t2",
                             torrentURL: "http://a.torrent/2", isRead: true),
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "cat-3", comments: "c3", date: "2025-01-03",
                             description: "d3", id: "a3", link: "http://a/3",
                             thumbnail: "http://a/t3", title: "t3",
@@ -47,10 +48,10 @@ namespace Lantean.QBTMud.Test.Services
                     url: "http://feed/a"),
 
                 // feed with one read article
-                ["feed-b"] = new RssItem(
+                ["feed-b"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "movies", comments: null, date: "2025-02-01",
                             description: null, id: "b1", link: "http://b/1",
                             thumbnail: null, title: "m1",
@@ -64,7 +65,7 @@ namespace Lantean.QBTMud.Test.Services
                     url: "http://feed/b"),
 
                 // feed with null article list -> should create feed only
-                ["feed-c"] = new RssItem(
+                ["feed-c"] = CreateFeed(
                     articles: null,
                     hasError: false,
                     isLoading: false,
@@ -127,10 +128,10 @@ namespace Lantean.QBTMud.Test.Services
             // arrange: provide nulls in fields (the implementation uses '!' but does not normalize)
             var items = new Dictionary<string, RssItem>
             {
-                ["feed-null"] = new RssItem(
+                ["feed-null"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: null, comments: null, date: null,
                             description: null, id: null, link: null,
                             thumbnail: null, title: null,
@@ -178,10 +179,10 @@ namespace Lantean.QBTMud.Test.Services
             // arrange: key != uid
             var items = new Dictionary<string, RssItem>
             {
-                ["dict-key"] = new RssItem(
+                ["dict-key"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "x", comments: "c", date: "d",
                             description: "desc", id: "id1", link: "l",
                             thumbnail: "t", title: "title",
@@ -211,15 +212,15 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var items = new Dictionary<string, RssItem>
             {
-                ["fa"] = new RssItem(
+                ["fa"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d1",
                             description: "d", id: "a1", link: "l",
                             thumbnail: "t", title: "t",
                             torrentURL: "u", isRead: false),
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d2",
                             description: "d", id: "a2", link: "l",
                             thumbnail: "t", title: "t",
@@ -228,10 +229,10 @@ namespace Lantean.QBTMud.Test.Services
                     hasError: false, isLoading: false,
                     lastBuildDate: "lb", title: "TA", uid: "fa", url: "http://fa"),
 
-                ["fb"] = new RssItem(
+                ["fb"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d3",
                             description: "d", id: "b1", link: "l",
                             thumbnail: "t", title: "t",
@@ -260,15 +261,15 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var items = new Dictionary<string, RssItem>
             {
-                ["fa"] = new RssItem(
+                ["fa"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d1",
                             description: "d", id: "a1", link: "l",
                             thumbnail: "t", title: "t",
                             torrentURL: "u", isRead: false),
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d2",
                             description: "d", id: "a2", link: "l",
                             thumbnail: "t", title: "t",
@@ -277,10 +278,10 @@ namespace Lantean.QBTMud.Test.Services
                     hasError: false, isLoading: false,
                     lastBuildDate: "lb", title: "TA", uid: "fa", url: "http://fa"),
 
-                ["fb"] = new RssItem(
+                ["fb"] = CreateFeed(
                     articles: new[]
                     {
-                        new Lantean.QBitTorrentClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d3",
                             description: "d", id: "b1", link: "l",
                             thumbnail: "t", title: "t",
@@ -301,6 +302,18 @@ namespace Lantean.QBTMud.Test.Services
             list.Feeds["fa"].UnreadCount.Should().Be(0);
             list.Feeds["fb"].UnreadCount.Should().Be(1);
             list.UnreadCount.Should().Be(1);
+        }
+
+        private static RssFeedItem CreateFeed(
+            IReadOnlyList<ClientRssArticle>? articles,
+            bool? hasError,
+            bool? isLoading,
+            string? lastBuildDate,
+            string? title,
+            string uid,
+            string url)
+        {
+            return new RssFeedItem(articles, hasError, isLoading, lastBuildDate, null, title, uid, url);
         }
     }
 }
