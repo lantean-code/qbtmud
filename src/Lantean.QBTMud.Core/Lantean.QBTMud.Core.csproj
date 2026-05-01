@@ -18,7 +18,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Lantean.QBTMud.Presentation" />
-    <InternalsVisibleTo Include="Lantean.QBTMud.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Application.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Core.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Presentation.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.TestSupport" />
   </ItemGroup>
 
 </Project>

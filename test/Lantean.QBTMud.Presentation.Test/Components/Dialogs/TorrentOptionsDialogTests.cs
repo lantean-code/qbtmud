@@ -1,0 +1,233 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.TestSupport.Infrastructure;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using MudBlazor;
+using ClientModels = QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Core.Models.Category;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using MudServerState = Lantean.QBTMud.Core.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
+
+namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
+{
+    public sealed class TorrentOptionsDialogTests : RazorComponentTestBase<TorrentOptionsDialog>
+    {
+        private readonly IKeyboardService _keyboardService;
+
+        public TorrentOptionsDialogTests()
+        {
+            _keyboardService = Mock.Of<IKeyboardService>(service =>
+                service.Focus() == Task.CompletedTask
+                && service.UnFocus() == Task.CompletedTask
+                && service.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()) == Task.CompletedTask
+                && service.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()) == Task.CompletedTask);
+
+            TestContext.Services.RemoveAll<IKeyboardService>();
+            TestContext.Services.AddSingleton(_keyboardService);
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentMissing_WHEN_SaveClicked_THEN_ResultOk()
+        {
+            var mainData = CreateMainData(new Dictionary<string, MudTorrent>());
+            var preferences = CreatePreferences("TempPath");
+
+            var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "TorrentOptionsSave");
+            await dialog.Component.InvokeAsync(() => saveButton.Find("button").Click());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentPresent_WHEN_CancelClicked_THEN_ResultCanceled()
+        {
+            var torrent = CreateTorrent("Hash", true, "SavePath");
+            var mainData = CreateMainData(new Dictionary<string, MudTorrent>
+            {
+                { "Hash", torrent },
+            });
+            var preferences = CreatePreferences("TempPath");
+
+            var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
+
+            var cancelButton = FindComponentByTestId<MudButton>(dialog.Component, "TorrentOptionsCancel");
+            await dialog.Component.InvokeAsync(() => cancelButton.Find("button").Click());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_KeyboardSubmit_WHEN_EnterPressed_THEN_ResultOk()
+        {
+            Func<KeyboardEvent, Task>? submitHandler = null;
+            var keyboardMock = Mock.Get(_keyboardService);
+            keyboardMock
+                .Setup(service => service.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Enter" && !e.CtrlKey), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    submitHandler = handler;
+                })
+                .Returns(Task.CompletedTask);
+
+            var mainData = CreateMainData(new Dictionary<string, MudTorrent>());
+            var preferences = CreatePreferences("TempPath");
+
+            var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
+
+            dialog.Component.WaitForAssertion(() => submitHandler.Should().NotBeNull());
+
+            await dialog.Component.InvokeAsync(() => submitHandler!(new KeyboardEvent("Enter")));
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+        }
+
+        private static MudMainData CreateMainData(Dictionary<string, MudTorrent> torrents)
+        {
+            return new MudMainData(
+                torrents,
+                Array.Empty<string>(),
+                new Dictionary<string, MudCategory>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                new MudServerState(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>());
+        }
+
+        private static QBittorrentPreferences CreatePreferences(string tempPath)
+        {
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.TempPath = tempPath;
+            });
+        }
+
+        private static MudTorrent CreateTorrent(string hash, bool automaticTorrentManagement, string savePath)
+        {
+            return new MudTorrent(
+                hash,
+                1,
+                2,
+                automaticTorrentManagement,
+                0.5f,
+                "Category",
+                3,
+                4,
+                "ContentPath",
+                5,
+                6,
+                7,
+                8,
+                9,
+                true,
+                false,
+                "InfoHashV1",
+                "InfoHashV2",
+                10,
+                "MagnetUri",
+                1.5f,
+                11,
+                "Name",
+                12,
+                13,
+                14,
+                15,
+                1,
+                0.5f,
+                1.0f,
+                2.0f,
+                savePath,
+                16,
+                17,
+                18,
+                false,
+                19,
+                ClientModels.TorrentState.Downloading,
+                false,
+                new[] { "Tag" },
+                20,
+                21,
+                "Tracker",
+                1,
+                false,
+                false,
+                false,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                1.0f,
+                "DownloadPath",
+                "RootPath",
+                false,
+                ClientModels.ShareLimitAction.Default,
+                "Comment");
+        }
+
+        private async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MudMainData mainData, QBittorrentPreferences preferences, string hash)
+        {
+            var provider = TestContext.Render((RenderFragment)(builder =>
+            {
+                builder.OpenComponent<CascadingValue<MudMainData>>(0);
+                builder.AddAttribute(1, nameof(CascadingValue<>.Value), mainData);
+                builder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
+                builder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(mainDataBuilder =>
+                {
+                    mainDataBuilder.OpenComponent<MudDialogProvider>(0);
+                    mainDataBuilder.CloseComponent();
+                }));
+                builder.CloseComponent();
+            }));
+
+            var dialogService = TestContext.Services.GetRequiredService<IDialogService>();
+
+            var dialogParameters = new DialogParameters
+            {
+                { nameof(TorrentOptionsDialog.Hash), hash },
+                { nameof(TorrentOptionsDialog.Preferences), preferences },
+            };
+
+            var reference = await dialogService.ShowAsync<TorrentOptionsDialog>("MudTorrent Options", dialogParameters);
+
+            var dialog = provider.FindComponent<MudDialog>();
+            var component = provider.FindComponent<TorrentOptionsDialog>();
+
+            return new TorrentOptionsDialogRenderContext(dialog, component, reference);
+        }
+    }
+
+    internal sealed class TorrentOptionsDialogRenderContext
+    {
+        public TorrentOptionsDialogRenderContext(
+            IRenderedComponent<MudDialog> dialog,
+            IRenderedComponent<TorrentOptionsDialog> component,
+            IDialogReference reference)
+        {
+            Dialog = dialog;
+            Component = component;
+            Reference = reference;
+        }
+
+        public IRenderedComponent<MudDialog> Dialog { get; }
+
+        public IRenderedComponent<TorrentOptionsDialog> Component { get; }
+
+        public IDialogReference Reference { get; }
+    }
+}

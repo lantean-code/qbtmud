@@ -1,0 +1,719 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Pages;
+using Lantean.QBTMud.Services;
+using Lantean.QBTMud.TestSupport.Infrastructure;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Core.Models.Category;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using MudServerState = Lantean.QBTMud.Core.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
+
+namespace Lantean.QBTMud.Presentation.Test.Pages
+{
+    public sealed class TorrentListTests : RazorComponentTestBase<TorrentList>
+    {
+        private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
+        private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
+        private readonly TestNavigationManager _navigationManager;
+        private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
+
+        public TorrentListTests()
+        {
+            var keyboardServiceMock = Mock.Get(_keyboardService);
+            keyboardServiceMock.Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>())).Returns(Task.CompletedTask);
+            keyboardServiceMock.Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>())).Returns(Task.CompletedTask);
+
+            var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
+            dialogWorkflowMock.Setup(w => w.InvokeAddTorrentFileDialog()).Returns(Task.CompletedTask);
+            dialogWorkflowMock.Setup(w => w.InvokeAddTorrentLinkDialog(It.IsAny<string?>())).Returns(Task.CompletedTask);
+
+            _navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<IKeyboardService>();
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
+            TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
+            TestContext.Services.AddSingleton(_keyboardService);
+            TestContext.Services.AddSingleton(_dialogWorkflow);
+            _popoverProvider = TestContext.Render<MudPopoverProvider>();
+        }
+
+        [Fact]
+        public void GIVEN_RenderedTorrentList_WHEN_NavigateAway_THEN_UnregistersShortcuts()
+        {
+            var mainData = new MudMainData(
+                new Dictionary<string, MudTorrent>(),
+                new List<string>(),
+                new Dictionary<string, MudCategory>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                new MudServerState(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>());
+
+            var target = TestContext.Render<TorrentList>(parameters =>
+            {
+                parameters.AddCascadingValue(mainData);
+                parameters.AddCascadingValue("TorrentsVersion", 1);
+                parameters.AddCascadingValue("DrawerOpen", false);
+            });
+
+            Mock.Get(_keyboardService).Verify(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Exactly(8));
+
+            _navigationManager.TriggerLocationChanged("http://localhost/details/test");
+
+            target.WaitForAssertion(() =>
+                Mock.Get(_keyboardService).Verify(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()), Times.Exactly(2)));
+
+            target.Render();
+        }
+
+        [Fact]
+        public async Task GIVEN_SearchText_WHEN_Changed_THEN_PublishesFilterStateAndValidatesRegex()
+        {
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
+
+            var searchTextField = target.FindComponent<MudTextField<string>>();
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("test"));
+
+            queryState.SearchText.Should().Be("test");
+            queryState.UseRegexSearch.Should().BeFalse();
+            queryState.IsRegexValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidRegexPattern_WHEN_RegexEnabledAndTextChanged_THEN_PublishesInvalidRegexState()
+        {
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
+            var regexCheckbox = FindComponentByTestId<MudCheckBox<bool>>(target, "TorrentListUseRegex");
+            await target.InvokeAsync(() => regexCheckbox.Instance.ValueChanged.InvokeAsync(true));
+
+            var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("["));
+
+            queryState.SearchText.Should().Be("[");
+            queryState.UseRegexSearch.Should().BeTrue();
+            queryState.IsRegexValid.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_RegexEnabled_WHEN_ValidPatternProvided_THEN_PublishesValidRegexState()
+        {
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
+            var regexCheckbox = FindComponentByTestId<MudCheckBox<bool>>(target, "TorrentListUseRegex");
+            await target.InvokeAsync(() => regexCheckbox.Instance.ValueChanged.InvokeAsync(true));
+
+            var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("^ubuntu.*$"));
+
+            queryState.SearchText.Should().Be("^ubuntu.*$");
+            queryState.UseRegexSearch.Should().BeTrue();
+            queryState.IsRegexValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentsVersionChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderVersionBranchExecutes()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashVersion", "Version MudTorrent") });
+            target.Instance.TorrentsVersion = 2;
+
+            var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("version-filter"));
+
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashVersion");
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentsReferenceChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderReferenceBranchExecutes()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashReferenceOld", "Reference Old") });
+            target.Instance.Torrents = new List<MudTorrent> { CreateTorrent("HashReferenceNew", "Reference New") };
+
+            var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("reference-filter"));
+
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashReferenceNew");
+        }
+
+        [Fact]
+        public async Task GIVEN_LostConnectionChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderLostConnectionBranchExecutes()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLostConn", "Lost Connection MudTorrent") });
+            await TestContext.Services.GetRequiredService<ILostConnectionWorkflow>().MarkLostConnectionAsync();
+
+            var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("lost-connection-filter"));
+
+            target.FindComponent<DynamicTable<MudTorrent>>().Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_LocationChangedTaskCompleted_WHEN_ComponentRerenders_THEN_AfterRenderClearsTask()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLocation", "Location MudTorrent") });
+
+            _navigationManager.TriggerLocationChanged("http://localhost/details/location");
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_keyboardService).Verify(service => service.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()), Times.AtLeast(2));
+            });
+
+            var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("location-filter"));
+        }
+
+        [Fact]
+        public async Task GIVEN_SearchFieldChanged_WHEN_NewFieldSelected_THEN_PublishesUpdatedSearchField()
+        {
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
+            var searchFieldSelect = FindComponentByTestId<MudSelect<TorrentFilterField>>(target, "TorrentListSearchField");
+
+            await target.InvokeAsync(() => searchFieldSelect.Instance.ValueChanged.InvokeAsync(TorrentFilterField.SavePath));
+
+            queryState.SearchField.Should().Be(TorrentFilterField.SavePath);
+        }
+
+        [Fact]
+        public async Task GIVEN_SearchFieldSelect_WHEN_MenuOpened_THEN_SavePathOptionIsRendered()
+        {
+            var target = RenderWithDefaults();
+            var searchFieldSelect = FindComponentByTestId<MudSelect<TorrentFilterField>>(target, "TorrentListSearchField");
+
+            await target.InvokeAsync(() => searchFieldSelect.Instance.OpenMenu());
+
+            _popoverProvider.WaitForAssertion(() =>
+            {
+                var values = _popoverProvider.FindComponents<MudSelectItem<TorrentFilterField>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+
+                values.Should().Contain(TorrentFilterField.SavePath);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_RowDoubleClick_WHEN_TorrentExists_THEN_NavigatesToDetails()
+        {
+            var torrent = CreateTorrent("HashRow", "Row MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var row = target.FindComponents<MudTr>().First();
+            var args = new TableRowClickEventArgs<MudTorrent>(new MouseEventArgs { Detail = 2 }, row.Instance, torrent);
+
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+
+            _navigationManager.Uri.Should().EndWith("/details/HashRow");
+        }
+
+        [Fact]
+        public async Task GIVEN_RowDoubleClickWithoutTorrent_WHEN_RowClickInvoked_THEN_DoesNotNavigate()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashNull", "Null MudTorrent") });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var row = target.FindComponents<MudTr>().First();
+            var args = new TableRowClickEventArgs<MudTorrent>(new MouseEventArgs { Detail = 2 }, row.Instance, null);
+
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+
+            _navigationManager.Uri.Should().Be("http://localhost/");
+        }
+
+        [Fact]
+        public async Task GIVEN_ContextMenuSelectionMissing_WHEN_ViewDetailsClicked_THEN_DoesNotNavigate()
+        {
+            var target = RenderWithDefaults();
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var args = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), null);
+
+            await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
+
+            var viewDetails = FindPopoverByTestId<MudMenuItem>("TorrentListContextViewDetails");
+            await target.InvokeAsync(() => viewDetails.Instance.OnClick.InvokeAsync());
+
+            _navigationManager.Uri.Should().Be("http://localhost/");
+        }
+
+        [Fact]
+        public async Task GIVEN_ContextMenuSelectionWithTorrent_WHEN_ViewDetailsClicked_THEN_NavigatesToDetails()
+        {
+            var torrent = CreateTorrent("HashCtx", "Context MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var args = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrent);
+
+            await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
+
+            var viewDetails = FindPopoverByTestId<MudMenuItem>("TorrentListContextViewDetails");
+            await target.InvokeAsync(() => viewDetails.Instance.OnClick.InvokeAsync());
+
+            _navigationManager.Uri.Should().EndWith("/details/HashCtx");
+        }
+
+        [Fact]
+        public async Task GIVEN_LongPressSelectionWithTorrent_WHEN_ViewDetailsClicked_THEN_NavigatesToDetails()
+        {
+            var torrent = CreateTorrent("HashLong", "Long Press MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var longPressArgs = new LongPressEventArgs
+            {
+                ClientX = 10,
+                ClientY = 20,
+                OffsetX = 5,
+                OffsetY = 6,
+                PageX = 15,
+                PageY = 16,
+                ScreenX = 25,
+                ScreenY = 26,
+                Type = "contextmenu"
+            };
+            var args = new TableDataLongPressEventArgs<MudTorrent>(longPressArgs, new MudTd(), torrent);
+
+            await target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
+
+            var viewDetails = FindPopoverByTestId<MudMenuItem>("TorrentListContextViewDetails");
+            await target.InvokeAsync(() => viewDetails.Instance.OnClick.InvokeAsync());
+
+            _navigationManager.Uri.Should().EndWith("/details/HashLong");
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsContainContextTorrent_WHEN_ContextMenuOpened_THEN_MenuActionsUseSelectedHashes()
+        {
+            var torrentA = CreateTorrent("HashSelectedA", "Selected A");
+            var torrentB = CreateTorrent("HashSelectedB", "Selected B");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrentA, torrentB });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrentA, torrentB }));
+
+            var contextArgs = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrentA);
+            await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
+
+            var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
+                .Single(component => component.Instance.RenderType == RenderType.MenuItems);
+
+            menuActions.Instance.Hashes.Should().BeEquivalentTo(new[] { "HashSelectedA", "HashSelectedB" });
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsContainDifferentInstancesWithSameHash_WHEN_ContextMenuOpened_THEN_SelectionUsesTorrentEquality()
+        {
+            var torrentA = CreateTorrent("HashDuplicate", "Duplicate A");
+            var duplicateHashTorrent = CreateTorrent("HashDuplicate", "Duplicate B");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrentA });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrentA, duplicateHashTorrent }));
+
+            var contextArgs = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrentA);
+            await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
+
+            var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
+                .Single(component => component.Instance.RenderType == RenderType.MenuItems);
+
+            menuActions.Instance.Hashes.Should().Equal("HashDuplicate");
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsChanged_WHEN_SelectionUpdated_THEN_ToolbarDetailsBecomesEnabled()
+        {
+            var torrent = CreateTorrent("HashSelect", "Selected MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var toolbarButton = FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails");
+            toolbarButton.Instance.Disabled.Should().BeTrue();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrent }));
+
+            target.WaitForAssertion(() =>
+            {
+                FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails").Instance.Disabled.Should().BeFalse();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsReferenceMutated_WHEN_Rendered_THEN_ToolbarStateTracksSelectionCount()
+        {
+            var torrent = CreateTorrent("HashMutate", "Mutate MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var selected = new HashSet<MudTorrent> { torrent };
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(selected));
+
+            target.WaitForAssertion(() =>
+            {
+                FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails").Instance.Disabled.Should().BeFalse();
+            });
+
+            selected.Clear();
+            target.Render();
+
+            target.WaitForAssertion(() =>
+            {
+                FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails").Instance.Disabled.Should().BeTrue();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_ToolbarViewDetails_WHEN_SelectedItemExists_THEN_NavigatesToDetails()
+        {
+            var torrent = CreateTorrent("HashToolbar", "Toolbar MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrent }));
+
+            var toolbarButton = FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails");
+            await target.InvokeAsync(() => toolbarButton.Instance.OnClick.InvokeAsync());
+
+            _navigationManager.Uri.Should().EndWith("/details/HashToolbar");
+        }
+
+        [Fact]
+        public async Task GIVEN_ColumnOptionsButton_WHEN_Clicked_THEN_DelegatesToDialogWorkflow()
+        {
+            var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
+            dialogWorkflowMock.Setup(workflow => workflow.ShowColumnsOptionsDialog(
+                    It.IsAny<List<ColumnDefinition<MudTorrent>>>(),
+                    It.IsAny<HashSet<string>>(),
+                    It.IsAny<Dictionary<string, int?>>(),
+                    It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync(default((HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths, Dictionary<string, int> ColumnOrder)))
+                .Verifiable();
+
+            var target = RenderWithDefaults();
+            var columnOptionsButton = FindComponentByTestId<MudIconButton>(target, "TorrentListColumnOptions");
+
+            await target.InvokeAsync(() => columnOptionsButton.Instance.OnClick.InvokeAsync());
+
+            dialogWorkflowMock.Verify();
+        }
+
+        [Fact]
+        public void GIVEN_QueueingPreferenceDisabled_WHEN_Rendered_THEN_QueueColumnHidden()
+        {
+            var torrents = new List<MudTorrent> { CreateTorrent("HashQueue", "Queue MudTorrent") };
+            var queueDisabledPreferences = CreatePreferences(queueingEnabled: false);
+
+            var target = TestContext.Render<TorrentList>(parameters =>
+            {
+                parameters.AddCascadingValue(CreateMainData(torrents));
+                parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents);
+                parameters.AddCascadingValue("TorrentsVersion", 1);
+                parameters.AddCascadingValue("DrawerOpen", false);
+                parameters.Add(p => p.Preferences, queueDisabledPreferences);
+            });
+
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            table.Instance.ColumnDefinitions.Select(column => column.Id).Should().NotContain("#");
+        }
+
+        [Fact]
+        public void GIVEN_QueueingPreferenceEnabled_WHEN_Rendered_THEN_QueueColumnShown()
+        {
+            var torrents = new List<MudTorrent> { CreateTorrent("HashQueue", "Queue MudTorrent") };
+            var queueEnabledPreferences = CreatePreferences(queueingEnabled: true);
+
+            var target = TestContext.Render<TorrentList>(parameters =>
+            {
+                parameters.AddCascadingValue(CreateMainData(torrents));
+                parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents);
+                parameters.AddCascadingValue("TorrentsVersion", 1);
+                parameters.AddCascadingValue("DrawerOpen", false);
+                parameters.Add(p => p.Preferences, queueEnabledPreferences);
+            });
+
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            table.Instance.ColumnDefinitions.Select(column => column.Id).Should().Contain("#");
+        }
+
+        [Fact]
+        public void GIVEN_BuildColumnsDefinitions_WHEN_Invoked_THEN_ReturnsExpectedTailColumns()
+        {
+            var columns = TorrentList.BuildColumnsDefinitions(Mock.Of<ILanguageLocalizer>());
+            var ids = columns.Select(column => column.Id).ToList();
+
+            ids.Should().Contain("completed_on");
+            ids.Should().Contain("tracker");
+            ids.Should().Contain("down_limit");
+            ids.Should().Contain("up_limit");
+            ids.Should().Contain("downloaded");
+            ids.Should().Contain("uploaded");
+            ids.Should().Contain("session_download");
+            ids.Should().Contain("session_upload");
+            ids.Should().Contain("remaining");
+            ids.Should().Contain("time_active");
+            ids.Should().Contain("save_path");
+            ids.Should().Contain("completed");
+            ids.Should().Contain("ratio_limit");
+            ids.Should().Contain("last_seen_complete");
+            ids.Should().Contain("last_activity");
+            ids.Should().Contain("availability");
+            ids.Should().Contain("incomplete_save_path");
+            ids.Should().Contain("info_hash_v1");
+            ids.Should().Contain("info_hash_v2");
+            ids.Should().Contain("reannounce_in");
+            ids.Should().Contain("private");
+        }
+
+        [Fact]
+        public void GIVEN_BuildColumnsDefinitions_WHEN_FormattersEvaluated_THEN_HiddenColumnsAndProgressColorPathsAreCovered()
+        {
+            var localizer = Mock.Of<ILanguageLocalizer>();
+            Mock.Get(localizer)
+                .Setup(value => value.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Returns((string _, string source, object[] __) => source);
+
+            var columns = TorrentList.BuildColumnsDefinitions(localizer);
+            var torrent = CreateTorrent("HashFormatters", "Formatter MudTorrent", progress: 1);
+
+            var idsToEvaluate = new[]
+            {
+                "total_size",
+                "completed_on",
+                "tracker",
+                "down_limit",
+                "up_limit",
+                "downloaded",
+                "uploaded",
+                "session_download",
+                "session_upload",
+                "remaining",
+                "time_active",
+                "save_path",
+                "completed",
+                "ratio_limit",
+                "last_seen_complete",
+                "last_activity",
+                "availability",
+                "incomplete_save_path",
+                "info_hash_v1",
+                "info_hash_v2",
+                "reannounce_in",
+                "private"
+            };
+
+            foreach (var id in idsToEvaluate)
+            {
+                var column = columns.Single(value => value.Id == id);
+                var context = column.GetRowContext(torrent);
+                context.GetValue().Should().NotBeNull();
+            }
+
+            var progressColumn = columns.Single(value => value.Id == "done");
+            var progressFragment = progressColumn.RowTemplate(progressColumn.GetRowContext(torrent));
+            var progressRender = TestContext.Render(progressFragment);
+            var progressBar = progressRender.FindComponent<MudProgressLinear>();
+            progressBar.Instance.Color.Should().Be(Color.Info);
+        }
+
+        [Fact]
+        public void GIVEN_TorrentsVersionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesVersionBranch()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashVersion1", "Version One") });
+            target.Instance.TorrentsVersion = 2;
+
+            target.Render();
+
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashVersion1");
+        }
+
+        [Fact]
+        public void GIVEN_PreferencesChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesPreferencesBranch()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashPreferences", "Preferences MudTorrent") });
+            target.Instance.Preferences = CreatePreferences(queueingEnabled: true);
+
+            target.Render();
+
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.ColumnDefinitions.Select(column => column.Id).Should().Contain("#");
+        }
+
+        [Fact]
+        public async Task GIVEN_LostConnectionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesLostConnectionBranch()
+        {
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLost", "Lost MudTorrent") });
+            await TestContext.Services.GetRequiredService<ILostConnectionWorkflow>().MarkLostConnectionAsync();
+
+            target.Render();
+
+            target.FindComponent<DynamicTable<MudTorrent>>().Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_AddTorrentCommands_WHEN_Invoked_THEN_DelegatesToWorkflow()
+        {
+            var target = RenderWithDefaults();
+
+            var buttons = target.FindComponents<MudIconButton>();
+            var linkButton = buttons.First();
+            var fileButton = buttons.Skip(1).First();
+
+            await target.InvokeAsync(() => linkButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => fileButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(w => w.InvokeAddTorrentFileDialog(), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(w => w.InvokeAddTorrentLinkDialog(null), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_Torrent_WHEN_ComparedOrStringified_THEN_UsesHash()
+        {
+            var torrent = CreateTorrent("Hash", "Name");
+            var torrentText = torrent.ToString();
+
+            torrent.Equals(null).Should().BeFalse();
+            torrentText.Should().Be("Hash");
+        }
+
+        private IRenderedComponent<TorrentList> RenderWithDefaults(IReadOnlyList<MudTorrent>? torrents = null)
+        {
+            var mainData = CreateMainData(torrents);
+
+            return TestContext.Render<TorrentList>(parameters =>
+            {
+                parameters.AddCascadingValue(mainData);
+                parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents ?? Array.Empty<MudTorrent>());
+                parameters.AddCascadingValue("TorrentsVersion", 1);
+                parameters.AddCascadingValue("DrawerOpen", false);
+            });
+        }
+
+        private static MudMainData CreateMainData(IReadOnlyList<MudTorrent>? torrents = null)
+        {
+            var torrentMap = (torrents ?? Array.Empty<MudTorrent>()).ToDictionary(t => t.Hash, t => t);
+            return new MudMainData(
+                torrentMap,
+                new List<string>(),
+                new Dictionary<string, MudCategory>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                new MudServerState(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>());
+        }
+
+        private static QBittorrentPreferences CreatePreferences(bool queueingEnabled)
+        {
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.QueueingEnabled = queueingEnabled;
+            });
+        }
+
+        private static MudTorrent CreateTorrent(string hash, string name, float progress = 0)
+        {
+            return new MudTorrent(
+                hash,
+                addedOn: 0,
+                amountLeft: 0,
+                automaticTorrentManagement: false,
+                availability: 1,
+                category: string.Empty,
+                completed: 0,
+                completionOn: 0,
+                contentPath: string.Empty,
+                downloadLimit: 0,
+                downloadSpeed: 0,
+                downloaded: 0,
+                downloadedSession: 0,
+                estimatedTimeOfArrival: 0,
+                firstLastPiecePriority: false,
+                forceStart: false,
+                infoHashV1: string.Empty,
+                infoHashV2: string.Empty,
+                lastActivity: 0,
+                magnetUri: string.Empty,
+                maxRatio: 0,
+                maxSeedingTime: 0,
+                name,
+                numberComplete: 0,
+                numberIncomplete: 0,
+                numberLeeches: 0,
+                numberSeeds: 0,
+                priority: 0,
+                progress,
+                ratio: 0,
+                ratioLimit: 0,
+                savePath: string.Empty,
+                seedingTime: 0,
+                seedingTimeLimit: 0,
+                seenComplete: 0,
+                sequentialDownload: false,
+                size: 0,
+                state: TorrentState.Downloading,
+                superSeeding: false,
+                tags: Array.Empty<string>(),
+                timeActive: 0,
+                totalSize: 0,
+                tracker: string.Empty,
+                trackersCount: 0,
+                hasTrackerError: false,
+                hasTrackerWarning: false,
+                hasOtherAnnounceError: false,
+                uploadLimit: 0,
+                uploaded: 0,
+                uploadedSession: 0,
+                uploadSpeed: 0,
+                reannounce: 0,
+                inactiveSeedingTimeLimit: 0,
+                maxInactiveSeedingTime: 0,
+                popularity: 0,
+                downloadPath: string.Empty,
+                rootPath: string.Empty,
+                isPrivate: false,
+                ShareLimitAction.Default,
+                comment: string.Empty);
+        }
+
+        private IRenderedComponent<TComponent> FindPopoverByTestId<TComponent>(string testId)
+            where TComponent : IComponent
+        {
+            return _popoverProvider.FindComponents<TComponent>().First(component =>
+            {
+                var element = component.FindAll($"[data-test-id='{TestIdHelper.For(testId)}']");
+                return element.Count > 0;
+            });
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            public void TriggerLocationChanged(string uri, bool isIntercepted = false)
+            {
+                Uri = uri;
+                NotifyLocationChanged(isIntercepted);
+            }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                Uri = ToAbsoluteUri(uri).ToString();
+                NotifyLocationChanged(false);
+            }
+        }
+    }
+}

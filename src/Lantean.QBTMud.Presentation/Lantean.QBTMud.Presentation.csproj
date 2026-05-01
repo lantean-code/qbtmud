@@ -22,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Lantean.QBTMud.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Presentation.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.TestSupport" />
   </ItemGroup>
 
 </Project>

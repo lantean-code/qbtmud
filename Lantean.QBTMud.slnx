@@ -23,7 +23,12 @@
   </Folder>
   <Folder Name="/Test/">
     <File Path="test/AGENTS.md" />
+    <Project Path="test/Lantean.QBTMud.Application.Test/Lantean.QBTMud.Application.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Core.Test/Lantean.QBTMud.Core.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Infrastructure.Test/Lantean.QBTMud.Infrastructure.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Presentation.Test/Lantean.QBTMud.Presentation.Test.csproj" />
     <Project Path="test/Lantean.QBTMud.Test/Lantean.QBTMud.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.TestSupport/Lantean.QBTMud.TestSupport.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />

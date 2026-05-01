@@ -1,0 +1,3025 @@
+using System.Diagnostics;
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services;
+using Lantean.QBTMud.TestSupport.Infrastructure;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using MudBlazor;
+
+namespace Lantean.QBTMud.Presentation.Test.Components.UI
+{
+    public sealed class DynamicTableTests : RazorComponentTestBase
+    {
+        [Fact]
+        public void GIVEN_DefaultDefinitions_WHEN_Rendered_THEN_ShouldRenderColumnsAndRows()
+        {
+            var selectedColumns = new HashSet<string>();
+            var sortColumn = string.Empty;
+            var sortDirection = SortDirection.None;
+
+            var settingsStorageMock = TestContext.AddSingletonMock<ISettingsStorageService>(MockBehavior.Loose);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.SelectedColumnsChanged, EventCallback.Factory.Create<HashSet<string>>(this, value => selectedColumns = value));
+                builder.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortColumn = value));
+                builder.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirection = value));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<MudTh>().Count.Should().Be(3);
+            });
+
+            target.FindComponents<MudTr>().Count.Should().Be(2);
+
+            selectedColumns.Should().Contain("id");
+            selectedColumns.Should().Contain("name");
+            selectedColumns.Should().Contain("value");
+            sortColumn.Should().Be("id");
+            sortDirection.Should().Be(SortDirection.Ascending);
+
+            settingsStorageMock.Verify(service => service.GetItemAsync<HashSet<string>>(It.IsAny<string>()), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionRows_WHEN_Clicked_THEN_ShouldRespectModifierKeys()
+        {
+            var items = CreateItems();
+            var selectedItemsChanged = new HashSet<SampleItem>();
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<SampleItem>>(this, _ => Task.CompletedTask));
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsChanged = value));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            var firstItem = items[0];
+            var secondItem = items[1];
+
+            await target.InvokeAsync(() => rows[0].Click());
+            selectedItemsChanged.Should().Contain(firstItem);
+
+            await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
+            selectedItemsChanged.Should().Contain(firstItem);
+            selectedItemsChanged.Should().Contain(secondItem);
+
+            await target.InvokeAsync(() => rows[0].Click(new MouseEventArgs { AltKey = true }));
+            selectedItemsChanged.Should().HaveCount(1);
+            selectedItemsChanged.Should().Contain(firstItem);
+
+            await target.InvokeAsync(() => target.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<SampleItem> { firstItem }));
+            selectedItemsChanged.Should().HaveCount(1);
+            selectedItemsChanged.Should().Contain(firstItem);
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelection_WHEN_EnterPressed_THEN_ShouldInvokeSelectedItemEnter()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItem = items[0];
+            SampleItem? enteredItem = null;
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.SelectedItem, selectedItem);
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, item => enteredItem = item));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            enteredItem.Should().Be(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultipleSelection_WHEN_EnterPressed_THEN_ShouldNotInvokeSelectedItemEnter()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+            var invoked = false;
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, _ => invoked = true));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[0].Click());
+            await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            invoked.Should().BeFalse();
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoEnterHandler_WHEN_EnterPressed_THEN_ShouldNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItem = items[0];
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.SelectedItem, selectedItem);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            target.Instance.SelectedItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoSelection_WHEN_ShiftArrowPressed_THEN_ShouldSelectFirstItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelection_WHEN_ShiftArrowDownPressed_THEN_ShouldAddNextItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = new List<SampleItem>
+            {
+                new SampleItem(1, "Name", 1),
+                new SampleItem(2, "Name", 2),
+                new SampleItem(3, "Name", 3),
+                new SampleItem(4, "Name", 4),
+                new SampleItem(5, "Name", 5),
+                new SampleItem(6, "Name", 6)
+            };
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[1].Click());
+            await target.InvokeAsync(() => rows[3].Click(new MouseEventArgs { CtrlKey = true }));
+            await target.InvokeAsync(() => rows[4].Click(new MouseEventArgs { CtrlKey = true }));
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().HaveCount(4);
+            selectedItemsEvents.Last().Should().Contain(items[5]);
+        }
+
+        [Fact]
+        public async Task GIVEN_TopBoundarySelection_WHEN_ShiftArrowUpPressed_THEN_ShouldNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = new List<SampleItem>
+            {
+                new SampleItem(1, "Name", 1),
+                new SampleItem(2, "Name", 2),
+                new SampleItem(3, "Name", 3)
+            };
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[0].Click());
+            await target.InvokeAsync(() => rows[2].Click(new MouseEventArgs { CtrlKey = true }));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            var originalSelection = new HashSet<SampleItem>(selectedItemsEvents.Last());
+
+            var handler = FindKeyboardHandler(handlers, "ArrowUp", true);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowUp") { ShiftKey = true }));
+
+            selectedItemsEvents.Last().Should().BeEquivalentTo(originalSelection);
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionDisabled_WHEN_ArrowPressed_THEN_ShouldNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItem = items[0];
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, false);
+                builder.Add(p => p.SelectOnRowClick, false);
+                builder.Add(p => p.SelectedItem, selectedItem);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            target.Instance.SelectedItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectOnRowClickDisabled_WHEN_ItemNotSelected_THEN_NoSelectionChange()
+        {
+            var items = CreateItems();
+            var selectedItemEvents = new List<SampleItem>();
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.SelectOnRowClick, false);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() => target.FindComponents<MudTr>().Should().NotBeEmpty());
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_TestContextActions_WHEN_Triggered_THEN_ShouldInvokeHandlers()
+        {
+            var contextInvoked = false;
+            var longPressInvoked = false;
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.OnTableDataContextMenu, EventCallback.Factory.Create<TableDataContextMenuEventArgs<SampleItem>>(this, _ =>
+                {
+                    contextInvoked = true;
+                    return Task.CompletedTask;
+                }));
+                builder.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<SampleItem>>(this, _ =>
+                {
+                    longPressInvoked = true;
+                    return Task.CompletedTask;
+                }));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<TdExtended>();
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+
+            await cell.Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
+            await cell.Find("td").TriggerEventAsync("onlongpress", new LongPressEventArgs());
+
+            contextInvoked.Should().BeTrue();
+            longPressInvoked.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_MultipleRows_WHEN_ContextOrLongPressTriggered_THEN_ShouldProvideCorrectCell()
+        {
+            var contextArgs = new List<TableDataContextMenuEventArgs<SampleItem>>();
+            var longPressArgs = new List<TableDataLongPressEventArgs<SampleItem>>();
+
+            var target = TestContext.Render<DynamicTable<SampleItem>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, new[] { new ColumnDefinition<SampleItem>("Name", item => item.Name) });
+                parameters.Add(p => p.TableId, "CellLookup");
+                parameters.Add(p => p.Items, CreateItems());
+                parameters.Add(p => p.OnTableDataContextMenu, EventCallback.Factory.Create<TableDataContextMenuEventArgs<SampleItem>>(this, args =>
+                {
+                    contextArgs.Add(args);
+                    return Task.CompletedTask;
+                }));
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<SampleItem>>(this, args =>
+                {
+                    longPressArgs.Add(args);
+                    return Task.CompletedTask;
+                }));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<TdExtended>().Count.Should().Be(2);
+            });
+
+            var cells = target.FindComponents<TdExtended>();
+
+            await cells[0].Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
+            await cells[1].Find("td").TriggerEventAsync("onlongpress", new LongPressEventArgs());
+
+            contextArgs.Should().ContainSingle();
+            contextArgs[0].Data.Should().BeSameAs(cells[0].Instance);
+
+            longPressArgs.Should().ContainSingle();
+            longPressArgs[0].Data.Should().BeSameAs(cells[1].Instance);
+        }
+
+        [Fact]
+        public async Task GIVEN_ShowColumnOptionsDialog_WHEN_ResultReturned_THEN_ShouldPersistState()
+        {
+            var dialogServiceMock = new Mock<IDialogService>(MockBehavior.Strict);
+            var dialogReferenceMock = new Mock<IDialogReference>(MockBehavior.Strict);
+            var dialogData = (new HashSet<string> { "name" }, new Dictionary<string, int?> { { "name", 64 } }, new Dictionary<string, int> { { "name", 1 } });
+            var dialogResult = DialogResult.Ok(dialogData);
+
+            dialogReferenceMock.SetupGet(d => d.Result).Returns(Task.FromResult<DialogResult?>(dialogResult));
+            dialogServiceMock
+                .Setup(d => d.ShowAsync<ColumnOptionsDialog<SampleItem>>(
+                    It.IsAny<string>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReferenceMock.Object);
+
+            var settingsStorageMock = new Mock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorageMock.Setup(s => s.GetItemAsync<HashSet<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<HashSet<string>?>(result: null));
+            settingsStorageMock.Setup(s => s.GetItemAsync<Dictionary<string, int?>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<Dictionary<string, int?>?>(result: null));
+            settingsStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<HashSet<string>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
+            settingsStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
+            settingsStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
+
+            TestContext.Services.RemoveAll<IDialogService>();
+            TestContext.Services.AddSingleton(dialogServiceMock.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton(settingsStorageMock.Object);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            dialogServiceMock.VerifyAll();
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnSelection", StringComparison.Ordinal)), It.Is<HashSet<string>>(value => value.Contains("name")), It.IsAny<CancellationToken>()), Times.Once);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnWidths", StringComparison.Ordinal)), It.Is<Dictionary<string, int?>>(value => value["name"] == 64), It.IsAny<CancellationToken>()), Times.Once);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnOrder", StringComparison.Ordinal)), It.Is<Dictionary<string, int>>(value => value["name"] == 1), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_ColumnFilterRemovesAll_WHEN_Rendered_THEN_ShouldReturnEmptyColumns()
+        {
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.ColumnFilter, new Func<ColumnDefinition<SampleItem>, bool>(_ => false));
+            });
+
+            target.FindComponents<MudTh>().Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void GIVEN_ColumnFilterStateChanges_WHEN_ParametersUpdated_THEN_RendersUpdatedColumns()
+        {
+            var filterState = false;
+
+            Func<ColumnDefinition<SampleItem>, bool> columnFilter = column =>
+            {
+                return filterState || column.Id != "name";
+            };
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.ColumnFilter, columnFilter);
+                builder.Add(p => p.ColumnFilterState, filterState);
+            });
+
+            target.FindComponents<MudTh>().Count.Should().Be(2);
+
+            filterState = true;
+
+            target.Render(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.ColumnFilter, columnFilter);
+                builder.Add(p => p.ColumnFilterState, filterState);
+            });
+
+            target.FindComponents<MudTh>().Count.Should().Be(3);
+        }
+
+        [Fact]
+        public async Task GIVEN_EmptyPersistedSelection_WHEN_Rendered_THEN_NoSelectionChangeRaised()
+        {
+            var tableId = "NoSelectionChange";
+            var selectionKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSelection.{tableId}";
+            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>(), Xunit.TestContext.Current.CancellationToken);
+
+            var selectionEvents = new List<HashSet<string>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Only", Age = 1, Score = 1 } });
+                parameters.Add(p => p.SelectedColumnsChanged, EventCallback.Factory.Create<HashSet<string>>(this, value => selectionEvents.Add(new HashSet<string>(value))));
+            });
+
+            target.FindComponents<MudTh>().Should().BeEmpty();
+            selectionEvents.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedState_WHEN_Render_THEN_RestoresSelectionSortAndWidths()
+        {
+            var tableId = "Main";
+            var columnSelectionKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSelection.{tableId}";
+            var columnSortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
+            var columnWidthsKey = $"DynamicTable{typeof(TestRow).Name}.ColumnWidths.{tableId}";
+            var columnOrderKey = $"DynamicTable{typeof(TestRow).Name}.ColumnOrder.{tableId}";
+
+            await TestContext.LocalStorage.SetItemAsync(columnSelectionKey, new HashSet<string>(new[] { "score", "age" }, StringComparer.Ordinal), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(columnSortKey, "{\"SortColumn\":\"age\",\"SortDirection\":2}", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(columnWidthsKey, new Dictionary<string, int?> { ["age"] = 120, ["score"] = 90 }, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, new Dictionary<string, int> { ["score"] = 0, ["age"] = 1 }, Xunit.TestContext.Current.CancellationToken);
+
+            var selectedColumnsChanges = new List<HashSet<string>>();
+            var sortColumnChanges = new List<string?>();
+            var sortDirectionChanges = new List<SortDirection>();
+            var columns = CreateColumns();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "Name", Age = 20, Score = 50 },
+                    new TestRow { Name = "Name", Age = 30, Score = 90 }
+                });
+                parameters.Add(p => p.SelectedColumnsChanged, EventCallback.Factory.Create<HashSet<string>>(this, value => selectedColumnsChanges.Add(new HashSet<string>(value, StringComparer.Ordinal))));
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortColumnChanges.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionChanges.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                selectedColumnsChanges.Should().ContainSingle();
+                selectedColumnsChanges[0].Should().BeEquivalentTo(new[] { "score", "age" });
+            });
+
+            sortColumnChanges.Should().ContainSingle();
+            sortColumnChanges[0].Should().Be("age");
+
+            sortDirectionChanges.Should().ContainSingle();
+            sortDirectionChanges[0].Should().Be(SortDirection.Descending);
+
+            var ageSortLabel = FindSortLabel(target, "Age");
+            ageSortLabel.Instance.SortDirection.Should().Be(SortDirection.Descending);
+
+            columns.Single(c => c.Header == "Age").Width.Should().Be(120);
+            columns.Single(c => c.Header == "Score").Width.Should().Be(90);
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedColumnOrder_WHEN_Rendered_THEN_OrderRestored()
+        {
+            var tableId = "PersistedOrder";
+            var columnOrderKey = $"DynamicTable{typeof(TestRow).Name}.ColumnOrder.{tableId}";
+            var columnOrder = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { "score", 0 },
+                { "name", 1 },
+                { "age", 2 }
+            };
+
+            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, columnOrder, Xunit.TestContext.Current.CancellationToken);
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "First", Age = 10, Score = 20 }
+                });
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                var headers = target.FindComponents<MudTh>()
+                    .Select(component => GetChildContentText(component.Instance.ChildContent)?.Trim() ?? string.Empty)
+                    .ToList();
+                headers.Should().HaveCount(3);
+                headers[0].Should().Be("Score");
+                headers[1].Should().Be("Name");
+                headers[2].Should().Be("Age");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SortableColumn_WHEN_HeaderClicked_THEN_PersistsSortAndRaisesEvents()
+        {
+            var tableId = "SortHeader";
+            var columnSortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
+
+            var sortColumnEvents = new List<string?>();
+            var sortDirectionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "First", Age = 25, Score = 10 },
+                    new TestRow { Name = "Second", Age = 30, Score = 20 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortColumnEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            var header = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => header.Find("span").Click());
+
+            target.WaitForAssertion(() =>
+            {
+                sortColumnEvents.Should().NotBeEmpty();
+                sortColumnEvents.Last().Should().Be("age");
+                sortDirectionEvents.Should().NotBeEmpty();
+                sortDirectionEvents.Last().Should().NotBe(SortDirection.None);
+                TestContext.LocalStorage.Snapshot().Should().ContainKey(columnSortKey);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SortDirectionNone_WHEN_SortLabelInvoked_THEN_DoesNotPersist()
+        {
+            var tableId = "NoSortPersist";
+            var sortColumnEvents = new List<string?>();
+            var sortDirectionEvents = new List<SortDirection>();
+
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            dialogWorkflowMock.Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync(default((HashSet<string>, Dictionary<string, int?>, Dictionary<string, int>)));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Only", Age = 5, Score = 5 } });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortColumnEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            var initialColumnEvents = sortColumnEvents.Count;
+            var initialDirectionEvents = sortDirectionEvents.Count;
+
+            var ageSortLabel = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageSortLabel.Instance.SortDirectionChanged.InvokeAsync(SortDirection.None));
+
+            sortColumnEvents.Count.Should().Be(initialColumnEvents);
+            sortDirectionEvents.Count.Should().Be(initialDirectionEvents);
+            var storedSort = await TestContext.LocalStorage.GetItemAsync<object>($"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}", Xunit.TestContext.Current.CancellationToken);
+            storedSort.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_RepeatedSorts_WHEN_ClickDifferentHeaders_THEN_SortColumnUpdates()
+        {
+            var sortColumnEvents = new List<string?>();
+            var sortDirectionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "MultiSort");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "First", Age = 25, Score = 10 },
+                    new TestRow { Name = "Second", Age = 30, Score = 20 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortColumnEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            var ageHeader = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
+
+            var scoreHeader = FindSortLabel(target, "Score");
+            await target.InvokeAsync(() => scoreHeader.Find("span").Click());
+
+            sortColumnEvents.Should().ContainInOrder("age", "score");
+            sortDirectionEvents.Should().NotBeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_RepeatedSorts_WHEN_ClickSameHeaderTwice_THEN_SortDirectionChangesOncePerClick()
+        {
+            var sortDirectionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "ToggleSort");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "First", Age = 25, Score = 10 },
+                    new TestRow { Name = "Second", Age = 30, Score = 20 }
+                });
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            var ageHeader = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
+
+            sortDirectionEvents.Should().HaveCount(2);
+            sortDirectionEvents[0].Should().NotBe(SortDirection.None);
+            sortDirectionEvents[1].Should().NotBe(SortDirection.None);
+        }
+
+        [Fact]
+        public async Task GIVEN_ShowColumnsDialogReturnsDefault_WHEN_Invoked_THEN_NoStateChanges()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync(default((HashSet<string>, Dictionary<string, int?>, Dictionary<string, int>)));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "DialogDefault");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            var before = TestContext.LocalStorage.Snapshot();
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+            var after = TestContext.LocalStorage.Snapshot();
+
+            after.Should().BeEquivalentTo(before);
+            dialogWorkflowMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_ShowColumnsDialogWidthChangedOnly_WHEN_Invoked_THEN_WidthPersisted()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var columns = CreateColumns();
+            var selected = columns.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+            var widths = new Dictionary<string, int?>(StringComparer.Ordinal);
+            var order = new Dictionary<string, int>(StringComparer.Ordinal);
+            var changedWidths = new Dictionary<string, int?>(widths, StringComparer.Ordinal)
+            {
+                [columns[0].Id] = 200
+            };
+
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((selected, changedWidths, order));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "WidthOnly");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            var snapshot = TestContext.LocalStorage.Snapshot();
+            var widthsKey = snapshot.Keys.Single(k => k.Contains("ColumnWidths", StringComparison.Ordinal));
+            var storedWidths = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int?>>(widthsKey, Xunit.TestContext.Current.CancellationToken);
+            storedWidths.Should().BeEquivalentTo(changedWidths);
+            dialogWorkflowMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_DisabledColumnAddedFromChooser_WHEN_SortHeaderClicked_THEN_SortUsesAddedColumn()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var columns = CreateColumns();
+            columns[1].Enabled = false;
+
+            var selectedColumns = new HashSet<string>(new[] { "name", "age", "score" }, StringComparer.Ordinal);
+            var columnOrder = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { "name", 0 },
+                { "age", 1 },
+                { "score", 2 }
+            };
+
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((selectedColumns, new Dictionary<string, int?>(), columnOrder));
+
+            var sortEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "AddedColumnSort");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 1 },
+                    new TestRow { Name = "A", Age = 1, Score = 2 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+            target.Render();
+
+            target.FindComponents<SortLabel>()
+                .Any(component => HasTestId(component, GetSortLabelTestId("Age")))
+                .Should()
+                .BeTrue();
+
+            var ageHeader = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
+
+            sortEvents.Last().Should().Be("age");
+        }
+
+        [Fact]
+        public async Task GIVEN_ShowColumnsDialogUnchanged_WHEN_Invoked_THEN_NoPersistence()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var settingsStorageMock = TestContext.AddSingletonMock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorageMock.Setup(s => s.GetItemAsync<HashSet<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<HashSet<string>?>(result: null));
+            settingsStorageMock.Setup(s => s.GetItemAsync<Dictionary<string, int?>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<Dictionary<string, int?>?>(result: null));
+
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((List<ColumnDefinition<TestRow>> cols, HashSet<string> selected, Dictionary<string, int?> widths, Dictionary<string, int> order) => (selected, widths, order));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "Unchanged");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<HashSet<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>()), Times.Never);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>()), Times.Never);
+            dialogWorkflowMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelection_WHEN_RowClicksWithModifiers_THEN_UpdatesSelectedItems()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "Name", Age = 10, Score = 1 },
+                new TestRow { Name = "Name", Age = 20, Score = 2 }
+            };
+            var selections = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "Selection");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(component => component.Find("tr")).ToList();
+            rows.Count.Should().Be(2);
+
+            await target.InvokeAsync(() => rows[0].Click());
+            target.WaitForAssertion(() =>
+            {
+                selections.Should().NotBeEmpty();
+                selections.Last().Should().ContainSingle().And.Contain(items[0]);
+            });
+
+            await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
+            target.WaitForAssertion(() =>
+            {
+                selections.Last().Should().HaveCount(2);
+                selections.Last().Should().Contain(items[0]);
+                selections.Last().Should().Contain(items[1]);
+            });
+
+            await target.InvokeAsync(() => rows[0].Click(new MouseEventArgs { CtrlKey = true }));
+            target.WaitForAssertion(() =>
+            {
+                selections.Last().Should().ContainSingle().And.Contain(items[1]);
+            });
+
+            await target.InvokeAsync(() => rows[0].Click(new MouseEventArgs { AltKey = true }));
+            target.WaitForAssertion(() =>
+            {
+                selections.Last().Should().ContainSingle().And.Contain(items[0]);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SuppressClickWindow_WHEN_RowClickedWithinWindow_THEN_Ignored()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow> { new TestRow { Name = "N", Age = 1, Score = 1 } };
+            var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+            var selectedItemEvents = new List<TestRow>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "Suppress");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, _ => Task.CompletedTask));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            var cell = target.FindComponent<TdExtended>();
+
+            await target.InvokeAsync(() => cell.Find("td").TriggerEventAsync("onlongpress", new LongPressEventArgs()));
+            await target.InvokeAsync(() => row.Click());
+
+            rowClicks.Should().BeEmpty();
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectOnRowClickEnabled_WHEN_ItemPreviouslySelected_THEN_SelectionNotDuplicated()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "One", Age = 1, Score = 1 };
+            var items = new List<TestRow> { item };
+            var selectedItemsEvents = new List<HashSet<TestRow>>();
+            var selectedItemEvents = new List<TestRow>();
+            var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "SingleSelect");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+                parameters.Add(p => p.SelectedItem, item);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsEvents.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            selectedItemsEvents.Should().BeEmpty();
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().Be(item);
+            rowClicks.Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectOnRowClickEnabled_WHEN_ItemNotSelected_THEN_SelectedItemChangedRaised()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Two", Age = 2, Score = 2 };
+            var items = new List<TestRow> { item };
+            var selectedItemsEvents = new List<HashSet<TestRow>>();
+            var selectedItemEvents = new List<TestRow>();
+            var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "SingleSelectNew");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsEvents.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            selectedItemsEvents.Should().BeEmpty();
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(item);
+            target.Instance.SelectedItem.Should().Be(item);
+            rowClicks.Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectOnRowClickDisabled_WHEN_ItemAlreadySelected_THEN_NoChange()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Persist", Age = 2, Score = 2 };
+            var selectedEvents = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "NoSelectChange");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value =>
+                {
+                    selectedEvents.Add(new HashSet<TestRow>(value));
+                }));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+            selectedEvents.Clear();
+            await target.InvokeAsync(() => row.Click());
+
+            selectedEvents.Should().NotBeEmpty();
+            selectedEvents.Last().Should().ContainSingle().And.Contain(item);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionAndItemSelected_WHEN_ClickWithoutModifiers_THEN_SelectionUnchanged()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "KeepSelected", Age = 3, Score = 3 };
+            var items = new List<TestRow> { item };
+            var selectionEvents = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "KeepSelected");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectionEvents.Add(new HashSet<TestRow>(value))));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+            selectionEvents.Clear();
+            await target.InvokeAsync(() => row.Click());
+
+            selectionEvents.Should().NotBeEmpty();
+            selectionEvents.Last().Should().ContainSingle().And.Contain(item);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionAndNewItem_WHEN_ClickWithoutModifiers_THEN_ReplacesSelection()
+        {
+            var columns = CreateColumns();
+            var first = new TestRow { Name = "First", Age = 1, Score = 1 };
+            var second = new TestRow { Name = "Second", Age = 2, Score = 2 };
+            var selectedEvents = new List<HashSet<TestRow>>();
+            var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "ReplaceSelection");
+                parameters.Add(p => p.Items, new List<TestRow> { first, second });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedEvents.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[0].Click());
+            selectedEvents.Clear();
+            rowClicks.Clear();
+            await target.InvokeAsync(() => rows[1].Click());
+
+            selectedEvents.Should().NotBeEmpty();
+            selectedEvents.Last().Should().ContainSingle().And.Contain(second);
+            rowClicks.Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogOrderChangedOnly_WHEN_ShowColumnsOptionsDialog_THEN_OrderPersisted()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var columns = CreateColumns();
+            var selected = columns.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+            var widths = columns.ToDictionary(c => c.Id, _ => (int?)null, StringComparer.Ordinal);
+            var originalOrder = columns.Select((c, i) => (c.Id, i)).ToDictionary(t => t.Id, t => t.i, StringComparer.Ordinal);
+            var changedOrder = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { columns[1].Id, 0 },
+                { columns[0].Id, 1 },
+                { columns[2].Id, 2 }
+            };
+
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((selected, widths, changedOrder));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "OrderOnly");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            var snapshot = TestContext.LocalStorage.Snapshot();
+            snapshot.Keys.Should().Contain(k => k.Contains("ColumnOrder", StringComparison.Ordinal));
+            var orderKey = snapshot.Keys.Single(k => k.Contains("ColumnOrder", StringComparison.Ordinal));
+            var storedOrder = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int>>(orderKey, Xunit.TestContext.Current.CancellationToken);
+            storedOrder.Should().BeEquivalentTo(changedOrder);
+            dialogWorkflowMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_LongPress_WHEN_RowClickBeforeTimeout_THEN_RowClickSuppressed()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "Name", Age = 5, Score = 3 }
+            };
+            var longPressEvents = new List<TableDataLongPressEventArgs<TestRow>>();
+            var selections = new List<HashSet<TestRow>>();
+            var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "LongPress");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, args => longPressEvents.Add(args)));
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
+            });
+
+            var cell = target.FindComponents<TdExtended>().First().Find("td");
+            await target.InvokeAsync(() => cell.TriggerEventAsync("onlongpress", new LongPressEventArgs { ClientX = 1, ClientY = 2 }));
+
+            target.WaitForAssertion(() =>
+            {
+                longPressEvents.Should().ContainSingle();
+                longPressEvents[0].Item.Should().Be(items[0]);
+                longPressEvents[0].Data.Should().NotBeNull();
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            target.WaitForAssertion(() =>
+            {
+                selections.Should().NotBeEmpty();
+                selections.Last().Should().ContainSingle().And.Contain(items[0]);
+                rowClicks.Should().BeEmpty();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SuppressWindowExpired_WHEN_RowClicked_THEN_RowClickProcessed()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow> { new TestRow { Name = "Delayed", Age = 4, Score = 4 } };
+            var selectedItemEvents = new List<TestRow>();
+            var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+            var rowClickInvocation = new TaskCompletionSource<TableRowClickEventArgs<TestRow>>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "SuppressExpired");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, _ => Task.CompletedTask));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args =>
+                {
+                    rowClicks.Add(args);
+                    rowClickInvocation.TrySetResult(args);
+                }));
+            });
+
+            var cell = target.FindComponents<TdExtended>().First().Find("td");
+            await target.InvokeAsync(() => cell.TriggerEventAsync("onlongpress", new LongPressEventArgs()));
+            await WaitForSuppressWindowToExpireAsync();
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.TriggerEventAsync("onclick", new MouseEventArgs()));
+            await rowClickInvocation.Task.WaitAsync(TimeSpan.FromSeconds(2), Xunit.TestContext.Current.CancellationToken);
+
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
+            rowClicks.Should().ContainSingle();
+        }
+
+        private static async Task WaitForSuppressWindowToExpireAsync()
+        {
+            var targetDuration = TimeSpan.FromMilliseconds(800);
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.Elapsed < targetDuration)
+            {
+                await Task.Yield();
+            }
+        }
+
+        [Fact]
+        public void GIVEN_PreSortedItems_WHEN_Rendered_THEN_OrderRemainsUnchanged()
+        {
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "B", Age = 2, Score = 2 },
+                new TestRow { Name = "A", Age = 1, Score = 1 }
+            };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "PreSorted");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.PreSorted, true);
+            });
+
+            var firstCell = target.FindComponent<TdExtended>();
+            firstCell.Find("td").TextContent.Trim().Should().Be("B");
+        }
+
+        [Fact]
+        public void GIVEN_SelectedRowAndSelectOnRowClick_WHEN_Rendered_THEN_RowStyleHighlighted()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyle");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, true);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Instance.Style;
+            style.Should().Contain("background-color");
+        }
+
+        [Fact]
+        public void GIVEN_SelectedRowAndNoHighlightFlags_WHEN_Rendered_THEN_RowStyleNotHighlighted()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleNoHighlight");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Instance.Style;
+            style.Should().NotContain("background-color");
+        }
+
+        [Fact]
+        public void GIVEN_SelectedRowAndHighlightSelectedItem_WHEN_Rendered_THEN_RowStyleHighlighted()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleHighlightSelectedItem");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.HighlightSelectedItem, true);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Instance.Style;
+            style.Should().Contain("background-color");
+        }
+
+        [Fact]
+        public void GIVEN_RowNotInteractive_WHEN_Rendered_THEN_RowStyleDoesNotContainPointerCursor()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleNoInteraction");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.MultiSelection, false);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Instance.Style;
+            style.Should().NotContain("cursor: pointer");
+            row.Instance.Class.Should().NotContain("mud-table-row-clickable");
+        }
+
+        [Fact]
+        public void GIVEN_NoLongPressHandler_WHEN_Rendered_THEN_RowStyleAllowsTextSelectionAndCellDoesNotAttachLongPress()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleSelectableText");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var cell = target.FindComponent<TdExtended>();
+
+            row.Instance.Style.Should().NotContain("user-select: none");
+            cell.Instance.Class.Should().NotContain("unselectable");
+            cell.Instance.OnLongPress.HasDelegate.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_LongPressHandler_WHEN_Rendered_THEN_RowStyleDisablesTextSelectionAndCellAttachesLongPress()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleUnselectableText");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, _ => Task.CompletedTask));
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var cell = target.FindComponent<TdExtended>();
+
+            row.Instance.Style.Should().Contain("user-select: none");
+            cell.Instance.Class.Should().Contain("unselectable");
+            cell.Instance.OnLongPress.HasDelegate.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_NoContextMenuHandlerEvenWithCodeBehindSelection_WHEN_Rendered_THEN_CellDoesNotAttachContextMenu()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "NoContextMenuHandler");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, _ => Task.CompletedTask));
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+
+            cell.Instance.Class.Should().NotContain("no-default-context-menu");
+            cell.Instance.OnContextMenu.HasDelegate.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_MultiSelectionEnabled_WHEN_Rendered_THEN_RowClassContainsClickableClass()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleMultiSelection");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            row.Instance.Class.Should().Contain("mud-table-row-clickable");
+        }
+
+        [Fact]
+        public void GIVEN_RowClassFuncProvided_WHEN_Rendered_THEN_RowClassApplied()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowClassFunc");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.RowClassFunc, new Func<TestRow, int, string>((_, index) => $"row-{index}"));
+            });
+
+            var row = target.FindComponents<MudTr>().Single();
+            row.Instance.Class.Should().Contain("row-0");
+        }
+
+        [Fact]
+        public void GIVEN_ClassFuncOnly_WHEN_Rendered_THEN_FuncClassApplied()
+        {
+            var columns = new[]
+            {
+                new ColumnDefinition<TestRow>("Name", row => row.Name)
+                {
+                    ClassFunc = _ => "func-class"
+                }
+            };
+            var items = new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "FuncClassOnly");
+                parameters.Add(p => p.Items, items);
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+            cell.Instance.Class.Should().Contain("func-class");
+        }
+
+        [Fact]
+        public void GIVEN_ClassFuncWidthAndContextMenu_WHEN_Rendered_THEN_ClassesComposed()
+        {
+            var column = new ColumnDefinition<TestRow>("WithClass", r => r.Name, context => builder =>
+            {
+                builder.AddContent(0, context.Data.Name);
+            })
+            {
+                Class = "base",
+                ClassFunc = _ => "extra",
+                Width = 120
+            };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, new[] { column });
+                parameters.Add(p => p.TableId, "ClassFunc");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Cell", Age = 1, Score = 1 } });
+                parameters.Add(p => p.OnTableDataContextMenu, EventCallback.Factory.Create<TableDataContextMenuEventArgs<TestRow>>(this, _ => Task.CompletedTask));
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+            cell.Instance.Class.Should().Contain("base");
+            cell.Instance.Class.Should().Contain("extra");
+            cell.Instance.Class.Should().Contain("overflow-cell");
+            cell.Instance.Class.Should().Contain("no-default-context-menu");
+        }
+
+        [Fact]
+        public void GIVEN_IconOnlyColumn_WHEN_Rendered_THEN_HeaderEmptyAndSortable()
+        {
+            var columns = new[]
+            {
+                new ColumnDefinition<TestRow>("Icon", row => row.Score, context => builder =>
+                {
+                    builder.AddContent(0, context.Data.Score);
+                })
+                {
+                    IconOnly = true
+                }
+            };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "IconOnly");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            var header = target.FindComponents<MudTh>().Single();
+            GetChildContentText(header.Instance.ChildContent).Should().NotContain("Icon");
+            target.FindComponents<SortLabel>().Should().HaveCount(1);
+        }
+
+        [Fact]
+        public void GIVEN_NoRowClassFunc_WHEN_Rendered_THEN_RowClassEmpty()
+        {
+            var column = new ColumnDefinition<TestRow>("Plain", r => r.Name, context => builder =>
+            {
+                builder.AddContent(0, context.Data.Name);
+            })
+            {
+                Class = null,
+                ClassFunc = null,
+                Width = null
+            };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, new[] { column });
+                parameters.Add(p => p.TableId, "RowClassEmpty");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Empty", Age = 1, Score = 1 } });
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+            string.IsNullOrEmpty(cell.Instance.Class).Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ItemsNull_WHEN_Rendered_THEN_TableHandlesNullItems()
+        {
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "NullItems");
+                parameters.Add(p => p.Items, null);
+            });
+
+            target.FindComponents<MudTr>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_NoPersistedSelectionOrSort_WHEN_Rendered_THEN_DefaultSortApplied()
+        {
+            var columns = CreateColumns();
+            var sortEvents = new List<string?>();
+            var directionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "DefaultSort");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 2 },
+                    new TestRow { Name = "A", Age = 1, Score = 1 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionEvents.Add(value)));
+            });
+
+            sortEvents.Should().Contain("name");
+            directionEvents.Should().Contain(SortDirection.Ascending);
+        }
+
+        [Fact]
+        public void GIVEN_AllColumnsFilteredOut_WHEN_Rendered_THEN_NoSortApplied()
+        {
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "FilteredOut");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Only", Age = 1, Score = 1 } });
+                parameters.Add(p => p.ColumnFilter, new Func<ColumnDefinition<TestRow>, bool>(_ => false));
+            });
+
+            target.FindComponents<MudTh>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoPersistedSortAndFirstColumnHidden_WHEN_Rendered_THEN_DefaultSortUsesFirstVisible()
+        {
+            var tableId = "VisibleDefaultSort";
+            var selectionKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSelection.{tableId}";
+            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>(new[] { "age", "score" }, StringComparer.Ordinal), Xunit.TestContext.Current.CancellationToken);
+
+            var columns = CreateColumns();
+            var sortEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 2 },
+                    new TestRow { Name = "A", Age = 1, Score = 1 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+            });
+
+            sortEvents.Should().Contain("age");
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedSortOnHiddenColumn_WHEN_ColumnOptionsDeselectedColumn_THEN_SortFallsBackToVisible()
+        {
+            var tableId = "HiddenSort";
+            var sortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
+            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"name\",\"SortDirection\":1}", Xunit.TestContext.Current.CancellationToken);
+
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((new HashSet<string>(new[] { "age" }, StringComparer.Ordinal), new Dictionary<string, int?>(), new Dictionary<string, int> { { "age", 0 } }));
+
+            var sortEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Only", Age = 1, Score = 1 } });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            sortEvents.Should().Contain("age");
+            var storedSort = await TestContext.LocalStorage.GetItemAsStringAsync(sortKey, Xunit.TestContext.Current.CancellationToken);
+            storedSort.Should().Contain("\"sortColumn\":\"age\"");
+        }
+
+        [Fact]
+        public void GIVEN_InitialDescendingDirection_WHEN_Rendered_THEN_DefaultSortUsesInitialDirection()
+        {
+            var columns = CreateColumns();
+            columns[0].InitialDirection = SortDirection.Descending;
+
+            var sortEvents = new List<string?>();
+            var directionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "InitialDirection");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 2 },
+                    new TestRow { Name = "A", Age = 1, Score = 1 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionEvents.Add(value)));
+            });
+
+            sortEvents.Should().Contain("name");
+            directionEvents.Should().Contain(SortDirection.Descending);
+
+            var sortLabel = FindSortLabel(target, "Name");
+            sortLabel.Instance.SortDirection.Should().Be(SortDirection.Descending);
+        }
+
+        [Fact]
+        public void GIVEN_NonSortableColumn_WHEN_Rendered_THEN_HeaderHasNoSortLabelAndItemsUnsorted()
+        {
+            var columns = CreateColumns().ToArray();
+            columns[0].SortSelector = null!;
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "NonSortable");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "Second", Age = 2, Score = 2 },
+                    new TestRow { Name = "First", Age = 1, Score = 1 }
+                });
+            });
+
+            target.FindComponents<SortLabel>()
+                .Should()
+                .NotContain(component => HasTestId(component, GetSortLabelTestId("Name")));
+
+            var rows = target.FindComponents<MudTr>();
+            rows[0].Find("tr").TextContent.Should().Contain("Second");
+            rows[1].Find("tr").TextContent.Should().Contain("First");
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedSortWithMissingColumn_WHEN_Rendered_THEN_ItemsReturnedUnsorted()
+        {
+            var tableId = "MissingSort";
+            var sortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
+            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"missing\",\"SortDirection\":2}", Xunit.TestContext.Current.CancellationToken);
+
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "First", Age = 1, Score = 1 },
+                new TestRow { Name = "Second", Age = 2, Score = 2 }
+            };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, items);
+            });
+
+            var rows = target.FindComponents<MudTr>();
+            rows[0].Find("tr").TextContent.Should().Contain("First");
+            rows[1].Find("tr").TextContent.Should().Contain("Second");
+        }
+
+        [Fact]
+        public async Task GIVEN_StoredColumnOrderWithMissingId_WHEN_ReRendered_THEN_MissingSkippedAndRemainingAppended()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var columns = CreateColumns();
+            var selected = columns.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+            var widths = columns.ToDictionary(c => c.Id, _ => (int?)null, StringComparer.Ordinal);
+            var changedOrder = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { "missing", 0 },
+                { columns[1].Id, 1 }
+            };
+
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((selected, widths, changedOrder));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "OrderWithMissing");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+            target.Render();
+
+            var headers = target.FindComponents<MudTh>()
+                .Select(h => GetChildContentText(h.Instance.ChildContent) ?? string.Empty)
+                .ToList();
+            headers.Should().HaveCount(3);
+            headers[0].Should().Contain("Age");
+            headers[1].Should().Contain("Name");
+            headers[2].Should().Contain("Score");
+            dialogWorkflowMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_ColumnDefinitionsUpdated_WHEN_ParametersSet_THEN_ColumnsRegenerated()
+        {
+            var originalColumns = CreateColumns();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, originalColumns);
+                parameters.Add(p => p.TableId, "UpdateColumns");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 2 } });
+                parameters.Add(p => p.Hover, true);
+            });
+
+            target.FindComponents<MudTh>().Should().HaveCount(3);
+            target.Instance.Hover.Should().BeTrue();
+
+            var updatedColumns = originalColumns.Take(2).ToArray();
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, updatedColumns);
+                parameters.Add(p => p.TableId, "UpdateColumns");
+                parameters.Add(p => p.Items, target.Instance.Items);
+                parameters.Add(p => p.Hover, target.Instance.Hover);
+            });
+
+            var headers = target.FindComponents<MudTh>();
+            headers.Should().HaveCount(2);
+            headers.Should().OnlyContain(h =>
+                HasTestId(h, "ColumnHeader-name")
+                || HasTestId(h, "ColumnHeader-age"));
+        }
+
+        [Fact]
+        public void GIVEN_SortColumnRemovedAfterInitialization_WHEN_ColumnsUpdated_THEN_SortFallsBackToVisibleColumn()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "Later", Age = 5, Score = 1 },
+                new TestRow { Name = "Early", Age = 10, Score = 2 },
+            };
+
+            var sortChanges = new List<string>();
+            var directionChanges = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "SortFallbackColumnsUpdate");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortChanges.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionChanges.Add(value)));
+            });
+
+            var initialAges = target.FindComponents<TdExtended>()
+                .Select(cell => cell.Markup)
+                .Where(markup => markup.Contains("AgeCell", StringComparison.Ordinal))
+                .Select(markup => markup.Contains(">10<", StringComparison.Ordinal) ? "10" : markup.Contains(">5<", StringComparison.Ordinal) ? "5" : string.Empty)
+                .Where(value => !string.IsNullOrEmpty(value))
+                .ToList();
+            initialAges.Should().ContainInOrder("10", "5");
+            sortChanges.Should().Contain("name");
+
+            var updatedColumns = new[] { columns[1], columns[2] };
+
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, updatedColumns);
+                parameters.Add(p => p.TableId, "SortFallbackColumnsUpdate");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortChanges.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionChanges.Add(value)));
+            });
+
+            target.WaitForState(() =>
+            {
+                var firstAgeCellMarkup = target.FindComponents<TdExtended>()
+                    .Select(cell => cell.Markup)
+                    .First(markup => markup.Contains("AgeCell", StringComparison.Ordinal));
+
+                return firstAgeCellMarkup.Contains(">5<", StringComparison.Ordinal);
+            });
+
+            var updatedAges = target.FindComponents<TdExtended>()
+                .Select(cell => cell.Markup)
+                .Where(markup => markup.Contains("AgeCell", StringComparison.Ordinal))
+                .Select(markup => markup.Contains(">10<", StringComparison.Ordinal) ? "10" : markup.Contains(">5<", StringComparison.Ordinal) ? "5" : string.Empty)
+                .Where(value => !string.IsNullOrEmpty(value))
+                .ToList();
+            updatedAges.Should().ContainInOrder("5", "10");
+            sortChanges.Should().Contain("age");
+        }
+
+        [Fact]
+        public void GIVEN_HoverDisabled_WHEN_Rendered_THEN_TableHoverIsFalse()
+        {
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "HoverDisabled");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+                parameters.Add(p => p.Hover, false);
+            });
+
+            var mudTable = target.FindComponent<MudTable<TestRow>>();
+            mudTable.Instance.Hover.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_NullRowClickEvent_WHEN_Raised_THEN_Ignored()
+        {
+            var rowClicks = new List<TableRowClickEventArgs<SampleItem>>();
+
+            var target = TestContext.Render<DynamicTable<SampleItem>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                parameters.Add(p => p.TableId, "NullRowClick");
+                parameters.Add(p => p.Items, CreateItems());
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<SampleItem>>(this, args => { rowClicks.Add(args); return Task.CompletedTask; }));
+            });
+
+            var table = target.FindComponent<MudTable<SampleItem>>();
+            var row = target.FindComponents<MudTr>().First();
+            var args = new TableRowClickEventArgs<SampleItem>(new MouseEventArgs(), row.Instance, item: null);
+
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+
+            rowClicks.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_MultiSelectionAndSelectedItem_WHEN_Rendered_THEN_SelectedItemIsCleared()
+        {
+            var item = new TestRow { Name = "Name", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "MultiSelectionClearsSelectedItem");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelection_WHEN_CtrlShiftAndShiftClicks_THEN_AppliesRangeSelection()
+        {
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "A", Age = 1, Score = 1 },
+                new TestRow { Name = "B", Age = 2, Score = 2 },
+                new TestRow { Name = "C", Age = 3, Score = 3 },
+                new TestRow { Name = "D", Age = 4, Score = 4 }
+            };
+            var selections = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "RangeSelectionModifiers");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(component => component.Find("tr")).ToList();
+
+            await target.InvokeAsync(() => rows[0].Click());
+            await target.InvokeAsync(() => rows[3].Click(new MouseEventArgs { CtrlKey = true, ShiftKey = true }));
+
+            target.WaitForAssertion(() =>
+            {
+                selections.Should().NotBeEmpty();
+                selections.Last().Should().HaveCount(4);
+            });
+
+            await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { ShiftKey = true }));
+
+            target.WaitForAssertion(() =>
+            {
+                selections.Last().Should().HaveCount(3);
+                selections.Last().Should().Contain(items[1]);
+                selections.Last().Should().Contain(items[2]);
+                selections.Last().Should().Contain(items[3]);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionWithoutAnchor_WHEN_ShiftClickingRow_THEN_SelectsClickedRowOnly()
+        {
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "A", Age = 1, Score = 1 },
+                new TestRow { Name = "B", Age = 2, Score = 2 }
+            };
+            var selections = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "ShiftWithoutAnchor");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+            });
+
+            var rows = target.FindComponents<MudTr>().Select(component => component.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { ShiftKey = true }));
+
+            selections.Should().NotBeEmpty();
+            selections.Last().Should().ContainSingle().And.Contain(items[1]);
+        }
+
+        [Fact]
+        public async Task GIVEN_ShiftClickItemMissingFromOrderedItems_WHEN_RowClickRaised_THEN_SelectsMissingItem()
+        {
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "A", Age = 1, Score = 1 },
+                new TestRow { Name = "B", Age = 2, Score = 2 }
+            };
+            var missingItem = new TestRow { Name = "Missing", Age = 3, Score = 3 };
+            var selections = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "ShiftMissingItem");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+            });
+
+            var table = target.FindComponent<MudTable<TestRow>>();
+            var row = target.FindComponents<MudTr>().First();
+            var args = new TableRowClickEventArgs<TestRow>(new MouseEventArgs { ShiftKey = true }, row.Instance, missingItem);
+
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+
+            selections.Should().NotBeEmpty();
+            selections.Last().Should().ContainSingle().And.Contain(missingItem);
+        }
+
+        [Fact]
+        public async Task GIVEN_ShiftClickAndNoItems_WHEN_RowClickRaised_THEN_SelectsClickedItem()
+        {
+            var clickedItem = new TestRow { Name = "Clicked", Age = 1, Score = 1 };
+            var selections = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "ShiftNoItems");
+                parameters.Add(p => p.Items, null);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+            });
+
+            var table = target.FindComponent<MudTable<TestRow>>();
+            var args = new TableRowClickEventArgs<TestRow>(new MouseEventArgs { ShiftKey = true }, null!, clickedItem);
+
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+
+            selections.Should().NotBeEmpty();
+            selections.Last().Should().ContainSingle().And.Contain(clickedItem);
+        }
+
+        [Fact]
+        public void GIVEN_DarkModeSelectedRow_WHEN_Rendered_THEN_UsesDarkHighlightStyle()
+        {
+            var item = new TestRow { Name = "Dark", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.AddCascadingValue("IsDarkMode", true);
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "DarkModeStyle");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, true);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            row.Instance.Style.Should().Contain("primary-darken");
+        }
+
+        [Fact]
+        public void GIVEN_RowKeyWhitespace_WHEN_Rendered_THEN_RowDataTestIdNotAssigned()
+        {
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "RowKeyWhitespace");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+                parameters.Add(p => p.RowKeyFunc, _ => " ");
+                parameters.Add(p => p.RowTestIdFunc, _ => "RowTestId");
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+            cell.Find("td").HasAttribute("data-test-id").Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionSingleItem_WHEN_EnterPressed_THEN_InvokesSelectedItemEnter()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            SampleItem? enteredItem = null;
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "MultiEnterSingle");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, item => enteredItem = item));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            enteredItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionNoSelectedItem_WHEN_EnterPressed_THEN_DoesNotInvokeSelectedItemEnter()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var invoked = false;
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.TableId, "SingleEnterNoSelection");
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, _ => invoked = true));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            invoked.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionNoCurrentItem_WHEN_ArrowDownPressed_THEN_SelectsFirstItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemEvents = new List<SampleItem>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "ArrowDownSingleNoSelection");
+                builder.Add(p => p.SelectOnRowClick, true);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionWithMissingCurrentItem_WHEN_ArrowDownPressed_THEN_SelectsFirstItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemEvents = new List<SampleItem>();
+            var missing = new SampleItem(999, "Missing", 999);
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "ArrowDownSingleMissingSelection");
+                builder.Add(p => p.SelectOnRowClick, true);
+                builder.Add(p => p.SelectedItem, missing);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionAtTop_WHEN_ArrowUpPressed_THEN_SelectionDoesNotChange()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemEvents = new List<SampleItem>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "ArrowUpSingleTop");
+                builder.Add(p => p.SelectOnRowClick, true);
+                builder.Add(p => p.SelectedItem, items[0]);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowUp", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowUp")));
+
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionWithStaleSelection_WHEN_ArrowDownPressed_THEN_SelectsFirstVisibleItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var initialItems = new List<SampleItem>
+            {
+                new SampleItem(1, "Item1", 1),
+                new SampleItem(2, "Item2", 2)
+            };
+            var updatedItems = new List<SampleItem>
+            {
+                new SampleItem(3, "Item3", 3),
+                new SampleItem(4, "Item4", 4)
+            };
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, initialItems);
+                builder.Add(p => p.TableId, "StaleSelectionKeyboard");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
+            });
+
+            var initialRow = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => initialRow.Click());
+
+            target.Render(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, updatedItems);
+                builder.Add(p => p.TableId, "StaleSelectionKeyboard");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(updatedItems[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelection_WHEN_ArrowDownWithoutShift_THEN_SelectsNextItemOnly()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "ArrowDownMultiSingleMove");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(items[1]);
+        }
+
+        [Fact]
+        public async Task GIVEN_UnsupportedKeyboardKey_WHEN_Pressed_THEN_DoesNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItemEvents = new List<SampleItem>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "UnsupportedKey");
+                builder.Add(p => p.SelectOnRowClick, true);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var arrowHandler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => arrowHandler(new KeyboardEvent("Escape")));
+
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoItems_WHEN_ArrowKeyPressed_THEN_DoesNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var selectedItemEvents = new List<SampleItem>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, null);
+                builder.Add(p => p.TableId, "NoItemsArrow");
+                builder.Add(p => p.SelectOnRowClick, true);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_ContextMenuOnAlreadySelectedItem_WHEN_Triggered_THEN_SelectionRemainsUnchanged()
+        {
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "One", Age = 1, Score = 1 },
+                new TestRow { Name = "Two", Age = 2, Score = 2 }
+            };
+            var contextMenuEvents = new List<TableDataContextMenuEventArgs<TestRow>>();
+            var selectionEvents = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "ContextSelected");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectionEvents.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.OnTableDataContextMenu, EventCallback.Factory.Create<TableDataContextMenuEventArgs<TestRow>>(this, args => contextMenuEvents.Add(args)));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+            selectionEvents.Clear();
+
+            var firstCell = target.FindComponents<TdExtended>().First().Find("td");
+            await target.InvokeAsync(() => firstCell.TriggerEventAsync("oncontextmenu", new MouseEventArgs()));
+
+            contextMenuEvents.Should().ContainSingle();
+            selectionEvents.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_ContextMenuWithNullItem_WHEN_Triggered_THEN_DoesNotSelectItem()
+        {
+            var contextMenuEvents = new List<TableDataContextMenuEventArgs<string?>>();
+            var selectedItemEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<string?>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, new[]
+                {
+                    new ColumnDefinition<string?>("Value", value => value ?? string.Empty)
+                });
+                parameters.Add(p => p.TableId, "NullContextItem");
+                parameters.Add(p => p.Items, new List<string?> { null });
+                parameters.Add(p => p.OnTableDataContextMenu, EventCallback.Factory.Create<TableDataContextMenuEventArgs<string?>>(this, args => contextMenuEvents.Add(args)));
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<string?>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+            await target.InvokeAsync(() => cell.Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs()));
+
+            contextMenuEvents.Should().ContainSingle();
+            contextMenuEvents[0].Item.Should().BeNull();
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_ShowColumnsDialogWithEqualWidthCountButDifferentKeys_WHEN_Invoked_THEN_PersistsUpdatedWidths()
+        {
+            var tableId = "WidthsDifferentKeys";
+            var widthsKey = $"DynamicTable{typeof(TestRow).Name}.ColumnWidths.{tableId}";
+            await TestContext.LocalStorage.SetItemAsync(widthsKey, new Dictionary<string, int?> { ["name"] = 120 }, Xunit.TestContext.Current.CancellationToken);
+
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((
+                    new HashSet<string>(new[] { "name", "age", "score" }, StringComparer.Ordinal),
+                    new Dictionary<string, int?> { ["age"] = 88 },
+                    new Dictionary<string, int>()));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            var storedWidths = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int?>>(widthsKey, Xunit.TestContext.Current.CancellationToken);
+            storedWidths.Should().NotBeNull();
+            storedWidths.Should().ContainSingle();
+            storedWidths!.ContainsKey("age").Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_FallbackSortColumnWithDescendingInitialDirection_WHEN_ColumnSelectionChanges_THEN_SortDirectionFallsBackToDescending()
+        {
+            var tableId = "DescendingFallback";
+            var columns = CreateColumns();
+            columns[1].InitialDirection = SortDirection.Descending;
+
+            var sortDirectionEvents = new List<SortDirection>();
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((new HashSet<string>(new[] { "age" }, StringComparer.Ordinal), new Dictionary<string, int?>(), new Dictionary<string, int> { ["age"] = 0 }));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            sortDirectionEvents.Should().NotBeEmpty();
+            sortDirectionEvents.Last().Should().Be(SortDirection.Descending);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionWithExistingSelection_WHEN_ReRenderedAsSingleSelection_THEN_ClearsMultiSelectionState()
+        {
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "First", Age = 1, Score = 1 },
+                new TestRow { Name = "Second", Age = 2, Score = 2 }
+            };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectionModeSwitch");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, true);
+            });
+
+            var firstRow = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => firstRow.Click());
+
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectionModeSwitch");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+            });
+
+            target.Instance.MultiSelection.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionWithMiddleItemSelected_WHEN_ArrowDownPressed_THEN_SelectsNextItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = new List<SampleItem>
+            {
+                new SampleItem(1, "Item1", 1),
+                new SampleItem(2, "Item2", 2),
+                new SampleItem(3, "Item3", 3)
+            };
+            var selectedItemEvents = new List<SampleItem>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "ArrowDownSingleMiddle");
+                builder.Add(p => p.SelectOnRowClick, true);
+                builder.Add(p => p.SelectedItem, items[1]);
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[2]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelectionWithExternalSelectionMutation_WHEN_ArrowDownPressed_THEN_SelectsFirstItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            HashSet<SampleItem>? selectedItemsReference = null;
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "ExternalSelectionMutation");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value =>
+                {
+                    selectedItemsReference = value;
+                    selectedItemsEvents.Add(new HashSet<SampleItem>(value));
+                }));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
+            });
+
+            var firstRow = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => firstRow.Click());
+
+            selectedItemsReference.Should().NotBeNull();
+            selectedItemsReference!.Clear();
+            selectedItemsReference.Add(new SampleItem(999, "Missing", 999));
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_ShowColumnsDialogWithEqualWidthValues_WHEN_Invoked_THEN_LeavesWidthsUnchanged()
+        {
+            var tableId = "WidthsSameValues";
+            var widthsKey = $"DynamicTable{typeof(TestRow).Name}.ColumnWidths.{tableId}";
+            var storedWidths = new Dictionary<string, int?> { ["name"] = 140 };
+            await TestContext.LocalStorage.SetItemAsync(widthsKey, storedWidths, Xunit.TestContext.Current.CancellationToken);
+
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((
+                    new HashSet<string>(new[] { "name", "age", "score" }, StringComparer.Ordinal),
+                    new Dictionary<string, int?> { ["name"] = 140 },
+                    new Dictionary<string, int>()));
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            var widthsAfterDialog = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int?>>(widthsKey, Xunit.TestContext.Current.CancellationToken);
+            widthsAfterDialog.Should().BeEquivalentTo(storedWidths);
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedMissingSortColumnAndDescendingDefault_WHEN_Rendered_THEN_UsesDescendingFallbackDirection()
+        {
+            var tableId = "MissingSortDescendingFallback";
+            var sortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
+            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"missing\",\"SortDirection\":1}", Xunit.TestContext.Current.CancellationToken);
+
+            var columns = CreateColumns();
+            columns[0].InitialDirection = SortDirection.Descending;
+            var sortDirectionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            target.FindComponents<MudTh>().Should().NotBeEmpty();
+            sortDirectionEvents.Should().Contain(SortDirection.Descending);
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsCallbackCaptured_WHEN_InvokedInSingleSelectionMode_THEN_ClearsSelectedItems()
+        {
+            var item = new TestRow { Name = "Row", Age = 1, Score = 1 };
+            HashSet<TestRow>? selectedItemsReference = null;
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "CapturedSelectedItemsCallbackSingleMode");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsReference = value));
+            });
+
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
+
+            var table = target.FindComponent<MudTable<TestRow>>();
+            var selectedItemsChangedCallback = table.Instance.SelectedItemsChanged;
+
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "CapturedSelectedItemsCallbackSingleMode");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, false);
+            });
+
+            selectedItemsReference.Should().NotBeNull();
+            selectedItemsReference!.Add(new TestRow { Name = "Extra", Age = 2, Score = 2 });
+
+            await target.InvokeAsync(() => selectedItemsChangedCallback.InvokeAsync(selectedItemsReference));
+
+            selectedItemsReference.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemCallbackAndSelectedItems_WHEN_InvokedInSingleSelectionMode_THEN_ClearsSelectedItemsBeforeSelectingItem()
+        {
+            var first = new TestRow { Name = "First", Age = 1, Score = 1 };
+            var second = new TestRow { Name = "Second", Age = 2, Score = 2 };
+            HashSet<TestRow>? selectedItemsReference = null;
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectedItemCallbackClearsSelectedItems");
+                parameters.Add(p => p.Items, new List<TestRow> { first, second });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsReference = value));
+            });
+
+            var firstRow = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => firstRow.Click());
+
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectedItemCallbackClearsSelectedItems");
+                parameters.Add(p => p.Items, new List<TestRow> { first, second });
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+            });
+
+            var table = target.FindComponent<MudTable<TestRow>>();
+            var selectedItemChangedCallback = table.Instance.SelectedItemChanged;
+
+            selectedItemsReference.Should().NotBeNull();
+            selectedItemsReference!.Add(second);
+
+            await target.InvokeAsync(() => selectedItemChangedCallback.InvokeAsync(second));
+
+            selectedItemsReference.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().Be(second);
+        }
+
+        [Fact]
+        public void GIVEN_NoColumnsDefined_WHEN_Rendered_THEN_RendersWithoutSortableColumns()
+        {
+            var sortColumnEvents = new List<string?>();
+            var sortDirectionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, Array.Empty<ColumnDefinition<TestRow>>());
+                parameters.Add(p => p.TableId, "NoColumnsDefined");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortColumnEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
+            });
+
+            target.FindComponents<MudTh>().Should().BeEmpty();
+            sortColumnEvents.Should().BeEmpty();
+            sortDirectionEvents.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsCallback_WHEN_InvokedInMultiSelectionMode_THEN_ProcessesSelection()
+        {
+            var item = new TestRow { Name = "Row", Age = 1, Score = 1 };
+            var selectedItemsEvents = new List<HashSet<TestRow>>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectedItemsCallbackMultiMode");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsEvents.Add(new HashSet<TestRow>(value))));
+            });
+
+            var table = target.FindComponent<MudTable<TestRow>>();
+            var selectedItemsChangedCallback = table.Instance.SelectedItemsChanged;
+            var selectedItems = new HashSet<TestRow> { item };
+
+            await target.InvokeAsync(() => selectedItemsChangedCallback.InvokeAsync(selectedItems));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(item);
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemCallbackCapturedFromSingleMode_WHEN_InvokedAfterSwitchToMultiMode_THEN_ReturnsWithoutSelectingItem()
+        {
+            var item = new TestRow { Name = "Row", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectedItemCallbackSwitchToMulti");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, false);
+                parameters.Add(p => p.SelectOnRowClick, true);
+            });
+
+            var table = target.FindComponent<MudTable<TestRow>>();
+            var selectedItemChangedCallback = table.Instance.SelectedItemChanged;
+
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "SelectedItemCallbackSwitchToMulti");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+                parameters.Add(p => p.SelectOnRowClick, true);
+            });
+
+            await target.InvokeAsync(() => selectedItemChangedCallback.InvokeAsync(item));
+
+            target.Instance.SelectedItem.Should().BeNull();
+        }
+
+        private IRenderedComponent<DynamicTable<SampleItem>> RenderDynamicTable(Action<ComponentParameterCollectionBuilder<DynamicTable<SampleItem>>> configure)
+        {
+            return TestContext.Render<DynamicTable<SampleItem>>(configure);
+        }
+
+        private static Func<KeyboardEvent, Task> FindKeyboardHandler(IReadOnlyList<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> handlers, string key, bool shiftKey)
+        {
+            foreach (var (criteria, handler) in handlers)
+            {
+                if (criteria.Key == key && criteria.ShiftKey == shiftKey)
+                {
+                    return handler;
+                }
+            }
+
+            throw new InvalidOperationException("Handler not found.");
+        }
+
+        private static IReadOnlyList<ColumnDefinition<SampleItem>> CreateColumnDefinitions()
+        {
+            var columns = new[]
+            {
+                new ColumnDefinition<SampleItem>("Id", item => item.Id) { Width = 80 },
+                new ColumnDefinition<SampleItem>("Name", item => item.Name) { Class = "name-class", ClassFunc = item => item.Value > 5 ? "highlight" : null },
+                new ColumnDefinition<SampleItem>("Value", item => item.Value) { IconOnly = false }
+            };
+
+            return columns;
+        }
+
+        private static IReadOnlyList<SampleItem> CreateItems()
+        {
+            return
+            [
+                new SampleItem(1, "Item1", 3),
+                new SampleItem(2, "Item2", 7)
+            ];
+        }
+
+        private static IRenderedComponent<SortLabel> FindSortLabel(IRenderedComponent<DynamicTable<TestRow>> target, string header)
+        {
+            return target.FindComponents<SortLabel>()
+                .First(component => HasTestId(component, GetSortLabelTestId(header)));
+        }
+
+        private static string GetSortLabelTestId(string header)
+        {
+            return $"SortLabel-{header.ToLowerInvariant().Replace(' ', '_')}";
+        }
+
+        private static ColumnDefinition<TestRow>[] CreateColumns()
+        {
+            RenderFragment<RowContext<TestRow>> nameTemplate = context => builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "data-test-id", TestIdHelper.For("NameCell"));
+                builder.AddContent(2, context.Data.Name);
+                builder.CloseElement();
+            };
+
+            RenderFragment<RowContext<TestRow>> ageTemplate = context => builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "data-test-id", TestIdHelper.For("AgeCell"));
+                builder.AddContent(2, context.Data.Age);
+                builder.CloseElement();
+            };
+
+            RenderFragment<RowContext<TestRow>> scoreTemplate = context => builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "data-test-id", TestIdHelper.For("ScoreCell"));
+                builder.AddContent(2, context.Data.Score);
+                builder.CloseElement();
+            };
+
+            return
+            [
+                new ColumnDefinition<TestRow>("Name", row => row.Name, nameTemplate),
+                new ColumnDefinition<TestRow>("Age", row => row.Age, ageTemplate),
+                new ColumnDefinition<TestRow>("Score", row => row.Score, scoreTemplate)
+            ];
+        }
+
+        private sealed record SampleItem(int Id, string Name, int Value);
+
+        public sealed class TestRow
+        {
+            public string Name { get; set; } = string.Empty;
+
+            public int Age { get; set; }
+
+            public int Score { get; set; }
+        }
+    }
+}

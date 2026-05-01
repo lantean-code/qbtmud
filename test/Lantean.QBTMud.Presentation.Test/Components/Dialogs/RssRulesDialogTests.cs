@@ -1,0 +1,522 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Services;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
+{
+    public sealed class RssRulesDialogTests : RazorComponentTestBase<RssRulesDialog>
+    {
+        private readonly IApiClient _apiClient;
+        private readonly IDialogWorkflow _dialogWorkflow;
+        private readonly RssRulesDialogTestDriver _target;
+
+        public RssRulesDialogTests()
+        {
+            _apiClient = Mock.Of<IApiClient>();
+            _dialogWorkflow = Mock.Of<IDialogWorkflow>();
+
+            TestContext.Services.RemoveAll<IApiClient>();
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
+            TestContext.Services.AddSingleton(_apiClient);
+            TestContext.Services.AddSingleton(_dialogWorkflow);
+
+            _target = new RssRulesDialogTestDriver(TestContext);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoSelection_WHEN_SaveClicked_THEN_DoesNotCallApi()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRuleAsync(It.IsAny<string>(), It.IsAny<AutoDownloadingRule>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoSelection_WHEN_RemoveClicked_THEN_DoesNotCallApi()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            await dialog.Component.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoSelection_WHEN_CloseClicked_THEN_ResultCanceled()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var closeButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesClose");
+            await closeButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_AddRuleCanceled_WHEN_Clicked_THEN_NoRuleAdded()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Action action = () => FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-NewRule");
+            action.Should().Throw<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_AddRuleExisting_WHEN_Clicked_THEN_RemoveEnabled()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleA", CreateRule(enabled: true) },
+            });
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            removeButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_UnsavedRule_WHEN_Removed_THEN_DoesNotCallApi()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("NewRule");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var newRuleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-NewRule");
+            await newRuleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            await removeButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync(It.IsAny<string>()), Times.Never);
+
+            Action action = () => FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-NewRule");
+            action.Should().Throw<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_SavedRule_WHEN_Removed_THEN_CallsApi()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleA", CreateRule(enabled: false) },
+            });
+            Mock.Get(_apiClient)
+                .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            await removeButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_SavedRuleRemoveFails_WHEN_Removed_THEN_ShowsErrorAndKeepsSelection()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleA", CreateRule(enabled: false) },
+            });
+            Mock.Get(_apiClient)
+                .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "remove failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            await removeButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("remove failure", Severity.Error, null, null), Times.Once);
+            FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidSelection_WHEN_SelectedValueChanged_THEN_DoesNotCallApi()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var list = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesList");
+            await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("MissingRule"));
+
+            Mock.Get(_apiClient).Verify(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_RulesWithOptions_WHEN_Selected_THEN_UpdatesFields()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleDefault", CreateRule(enabled: true, stopped: null, contentLayout: null, savePath: "C:/Downloads", affectedFeeds: new[] { "http://feed-a" }) },
+                { "RuleAlways", CreateRule(enabled: true, stopped: true, contentLayout: TorrentContentLayout.Original, savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleNever", CreateRule(enabled: true, stopped: false, contentLayout: TorrentContentLayout.Subfolder, savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleNoSubfolder", CreateRule(enabled: true, stopped: null, contentLayout: TorrentContentLayout.NoSubfolder, savePath: "", affectedFeeds: Array.Empty<string>()) },
+            });
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var list = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesList");
+            var addStopped = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesAddStopped");
+            var contentLayout = FindComponentByTestId<MudSelect<TorrentContentLayout?>>(dialog.Component, "RssRulesContentLayout");
+            var feeds = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
+            var saveToField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
+
+            await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleDefault"));
+            addStopped.Instance.GetState(x => x.Value).Should().Be("default");
+            contentLayout.Instance.GetState(x => x.Value).Should().BeNull();
+            feeds.Instance.GetState(x => x.SelectedValues).Should().Contain("FeedA");
+            saveToField.Instance.Value.Should().Be("C:/Downloads");
+
+            await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleAlways"));
+            addStopped.Instance.GetState(x => x.Value).Should().Be("always");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
+
+            await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNever"));
+            addStopped.Instance.GetState(x => x.Value).Should().Be("never");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Subfolder);
+
+            await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNoSubfolder"));
+            addStopped.Instance.GetState(x => x.Value).Should().Be("default");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.NoSubfolder);
+        }
+
+        [Fact]
+        public async Task GIVEN_SavePathChanged_WHEN_Saved_THEN_UpdatesSavePath()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveToDiff = FindComponentByTestId<FieldSwitch>(dialog.Component, "RssRulesSaveToDifferentDirectory");
+            await dialog.Component.InvokeAsync(() => saveToDiff.Instance.ValueChanged.InvokeAsync(true));
+
+            var saveTo = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
+            await dialog.Component.InvokeAsync(() => saveTo.Instance.ValueChanged.InvokeAsync("C:/Downloads/RuleA"));
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRuleAsync(
+                    "RuleA",
+                    It.Is<AutoDownloadingRule>(rule => rule.TorrentParams.SavePath == "C:/Downloads/RuleA")),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RuleSelected_WHEN_FieldsChangedAndSaved_THEN_UpdatesRule()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>>
+                {
+                    { "FeedA", new List<string> { "ArticleA" } },
+                });
+
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var useRegex = FindComponentByTestId<FieldSwitch>(dialog.Component, "RssRulesUseRegex");
+            await dialog.Component.InvokeAsync(() => useRegex.Instance.ValueChanged.InvokeAsync(true));
+
+            var mustContain = FindComponentByTestId<MudTextField<string>>(dialog.Component, "RssRulesMustContain");
+            await dialog.Component.InvokeAsync(() => mustContain.Instance.ValueChanged.InvokeAsync("MustContain"));
+
+            var mustNotContain = FindComponentByTestId<MudTextField<string>>(dialog.Component, "RssRulesMustNotContain");
+            await dialog.Component.InvokeAsync(() => mustNotContain.Instance.ValueChanged.InvokeAsync("MustNotContain"));
+
+            var episodeFilter = FindComponentByTestId<MudTextField<string>>(dialog.Component, "RssRulesEpisodeFilter");
+            await dialog.Component.InvokeAsync(() => episodeFilter.Instance.ValueChanged.InvokeAsync("EpisodeFilter"));
+
+            var smartFilter = FindComponentByTestId<FieldSwitch>(dialog.Component, "RssRulesSmartFilter");
+            await dialog.Component.InvokeAsync(() => smartFilter.Instance.ValueChanged.InvokeAsync(true));
+
+            var categorySelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesCategory");
+            await dialog.Component.InvokeAsync(() => categorySelect.Instance.ValueChanged.InvokeAsync("CatA"));
+
+            var tagsField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "RssRulesTags");
+            await dialog.Component.InvokeAsync(() => tagsField.Instance.ValueChanged.InvokeAsync("alpha, beta, , gamma"));
+
+            var saveToDiff = FindComponentByTestId<FieldSwitch>(dialog.Component, "RssRulesSaveToDifferentDirectory");
+            await dialog.Component.InvokeAsync(() => saveToDiff.Instance.ValueChanged.InvokeAsync(true));
+            await dialog.Component.InvokeAsync(() => saveToDiff.Instance.ValueChanged.InvokeAsync(false));
+
+            var ignoreDays = FindComponentByTestId<MudNumericField<int>>(dialog.Component, "RssRulesIgnoreDays");
+            await dialog.Component.InvokeAsync(() => ignoreDays.Instance.ValueChanged.InvokeAsync(3));
+
+            var addStopped = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesAddStopped");
+            await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("default"));
+            await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("always"));
+            await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("never"));
+
+            var contentLayout = FindComponentByTestId<MudSelect<TorrentContentLayout?>>(dialog.Component, "RssRulesContentLayout");
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(null));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.Original));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.Subfolder));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.NoSubfolder));
+
+            var feedsList = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
+            await dialog.Component.InvokeAsync(() => feedsList.Instance.SelectedValuesChanged.InvokeAsync(new List<string> { "FeedA" }));
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            apiClientMock.Verify(client => client.SetRssAutoDownloadingRuleAsync(
+                    "RuleA",
+                    It.Is<AutoDownloadingRule>(rule =>
+                        rule.UseRegex == true
+                        && rule.MustContain == "MustContain"
+                        && rule.MustNotContain == "MustNotContain"
+                        && rule.EpisodeFilter == "EpisodeFilter"
+                        && rule.SmartFilter == true
+                        && rule.IgnoreDays == 3
+                        && rule.TorrentParams.Category == "CatA"
+                        && rule.TorrentParams.Tags != null
+                        && rule.TorrentParams.Tags.SequenceEqual(new[] { "alpha", "beta", "gamma" })
+                        && rule.TorrentParams.SavePath == string.Empty
+                        && rule.TorrentParams.Stopped == false
+                        && rule.TorrentParams.ContentLayout == TorrentContentLayout.NoSubfolder
+                        && rule.AffectedFeeds.Count == 1
+                        && rule.AffectedFeeds.Contains("http://feed-a"))),
+                Times.Once);
+
+            FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRulesArticle-ArticleA").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_SaveFails_WHEN_SaveClicked_THEN_ShowsErrorAndDoesNotLoadMatchingArticles()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "save failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("save failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_MatchingArticlesLoadFailsAfterSave_WHEN_SaveClicked_THEN_ShowsError()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            apiClientMock
+                .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, IReadOnlyList<string>>>(ApiFailureKind.ServerError, "matching failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("matching failure", Severity.Error, null, null), Times.Once);
+        }
+
+        private void SetupApiClient(Dictionary<string, AutoDownloadingRule> rules)
+        {
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.GetAllRssAutoDownloadingRulesAsync())
+                .ReturnsSuccessAsync(rules);
+            apiClientMock
+                .Setup(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>>());
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
+                {
+                    { "CatA", new Category("CatA", null, null) },
+                });
+            apiClientMock
+                .Setup(client => client.GetAllRssItemsAsync(false))
+                .ReturnsSuccessAsync(new Dictionary<string, RssItem>
+                {
+                    { "FeedA", CreateFeed("FeedA", "http://feed-a") },
+                });
+        }
+
+        private static AutoDownloadingRule CreateRule(bool? enabled)
+        {
+            return CreateRule(enabled, null, null, null, null);
+        }
+
+        private static AutoDownloadingRule CreateRule(
+            bool? enabled,
+            bool? stopped,
+            TorrentContentLayout? contentLayout,
+            string? savePath,
+            IReadOnlyList<string>? affectedFeeds)
+        {
+            return new AutoDownloadingRule
+            {
+                Enabled = enabled,
+                AffectedFeeds = affectedFeeds ?? Array.Empty<string>(),
+                TorrentParams = new AutoDownloadingRuleTorrentParams
+                {
+                    Stopped = stopped,
+                    ContentLayout = contentLayout,
+                    SavePath = savePath ?? string.Empty,
+                },
+            };
+        }
+
+        private static RssFeedItem CreateFeed(string title, string url)
+        {
+            return new RssFeedItem(null, false, false, null, null, title, title, url);
+        }
+    }
+
+    internal sealed class RssRulesDialogTestDriver
+    {
+        private readonly ComponentTestContext _testContext;
+
+        public RssRulesDialogTestDriver(ComponentTestContext testContext)
+        {
+            _testContext = testContext;
+        }
+
+        public async Task<RssRulesDialogRenderContext> RenderDialogAsync()
+        {
+            var provider = _testContext.Render<MudDialogProvider>();
+            var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
+
+            var reference = await dialogService.ShowAsync<RssRulesDialog>("Rss Rules");
+
+            var dialog = provider.FindComponent<MudDialog>();
+            var component = provider.FindComponent<RssRulesDialog>();
+
+            return new RssRulesDialogRenderContext(provider, dialog, component, reference);
+        }
+    }
+
+    internal sealed class RssRulesDialogRenderContext
+    {
+        public RssRulesDialogRenderContext(
+            IRenderedComponent<MudDialogProvider> provider,
+            IRenderedComponent<MudDialog> dialog,
+            IRenderedComponent<RssRulesDialog> component,
+            IDialogReference reference)
+        {
+            Provider = provider;
+            Dialog = dialog;
+            Component = component;
+            Reference = reference;
+        }
+
+        public IRenderedComponent<MudDialogProvider> Provider { get; }
+
+        public IRenderedComponent<MudDialog> Dialog { get; }
+
+        public IRenderedComponent<RssRulesDialog> Component { get; }
+
+        public IDialogReference Reference { get; }
+    }
+}

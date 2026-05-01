@@ -1,0 +1,490 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Components.Options;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.TestSupport.Infrastructure;
+using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+namespace Lantean.QBTMud.Presentation.Test.Components.Options
+{
+    public sealed class ConnectionOptionsTests : RazorComponentTestBase<ConnectionOptions>
+    {
+        [Fact]
+        public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSelect<BittorrentProtocol>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(BittorrentProtocol.UtpOnly);
+            FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(8999);
+
+            FindSwitch(target, "Upnp").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "MaxConnecEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "MaxConnecPerTorrentEnabled").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "MaxUploadsEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "I2pEnabled").Instance.Value.Should().BeTrue();
+
+            FindTextField(target, "I2pAddress").Instance.Disabled.Should().BeFalse();
+
+            FindSwitch(target, "ProxyPeerConnections").Instance.Disabled.Should().BeTrue();
+            FindTextField(target, "ProxyIp").Instance.Disabled.Should().BeFalse();
+            FindTextField(target, "ProxyUsername").Instance.Disabled.Should().BeFalse();
+
+            FindSwitch(target, "IpFilterEnabled").Instance.Value.Should().BeTrue();
+            FindPathField(target, "IpFilterPath").Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaultValues()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSelect<BittorrentProtocol>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(BittorrentProtocol.TcpAndUtp);
+            FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_SwitchesAndInputs_WHEN_Changed_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var listenField = FindNumericInt(target, "ListenPort");
+            await target.InvokeAsync(() => listenField.Instance.ValueChanged.InvokeAsync(7000));
+
+            var upnpSwitch = FindSwitch(target, "Upnp");
+            await target.InvokeAsync(() => upnpSwitch.Instance.ValueChanged.InvokeAsync(false));
+
+            var maxConnField = FindNumericInt(target, "MaxConnec");
+            await target.InvokeAsync(() => maxConnField.Instance.ValueChanged.InvokeAsync(450));
+
+            var maxConnecPerTorrentField = FindNumericInt(target, "MaxConnecPerTorrent");
+            await target.InvokeAsync(() => maxConnecPerTorrentField.Instance.ValueChanged.InvokeAsync(120));
+
+            var maxUploadsField = FindNumericInt(target, "MaxUploads");
+            await target.InvokeAsync(() => maxUploadsField.Instance.ValueChanged.InvokeAsync(35));
+
+            var maxUploadsPerTorrentField = FindNumericInt(target, "MaxUploadsPerTorrent");
+            await target.InvokeAsync(() => maxUploadsPerTorrentField.Instance.ValueChanged.InvokeAsync(8));
+
+            var proxyTypeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => proxyTypeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.None));
+
+            update.ListenPort.Should().Be(7000);
+            update.Upnp.Should().BeFalse();
+            update.MaxConnec.Should().Be(450);
+            update.MaxConnecPerTorrent.Should().Be(120);
+            update.MaxUploads.Should().Be(35);
+            update.MaxUploadsPerTorrent.Should().Be(8);
+            update.ProxyType.Should().Be(ProxyType.None);
+
+            events.Should().NotBeEmpty();
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
+        [Fact]
+        public async Task GIVEN_I2PSettings_WHEN_EnabledAndValuesChanged_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.BittorrentProtocol = BittorrentProtocol.TcpAndUtp;
+                spec.I2pAddress = string.Empty;
+                spec.I2pEnabled = false;
+                spec.I2pMixedMode = false;
+                spec.I2pPort = 0;
+                spec.ListenPort = 5000;
+            });
+
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var i2pHostField = FindTextField(target, "I2pAddress");
+            i2pHostField.Instance.Disabled.Should().BeTrue();
+
+            var i2pPortField = FindNumericInt(target, "I2pPort");
+            i2pPortField.Instance.Disabled.Should().BeTrue();
+
+            var i2pSwitch = FindSwitch(target, "I2pEnabled");
+            await target.InvokeAsync(() => i2pSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            update.I2pEnabled.Should().BeTrue();
+
+            i2pHostField.Instance.Disabled.Should().BeFalse();
+            i2pPortField = FindNumericInt(target, "I2pPort");
+            i2pPortField.Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => i2pHostField.Instance.ValueChanged.InvokeAsync("i2p.example"));
+            update.I2pAddress.Should().Be("i2p.example");
+
+            await target.InvokeAsync(() => i2pPortField.Instance.ValueChanged.InvokeAsync(7654));
+            update.I2pPort.Should().Be(7654);
+
+            var mixedSwitch = FindSwitch(target, "I2pMixedMode");
+            await target.InvokeAsync(() => mixedSwitch.Instance.ValueChanged.InvokeAsync(true));
+            update.I2pMixedMode.Should().BeTrue();
+
+            events.Should().HaveCount(4);
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
+        [Fact]
+        public async Task GIVEN_ProxySettings_WHEN_TypeAuthAndFlagsChanged_THEN_ShouldRespectRules()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var typeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.None));
+
+            update.ProxyType.Should().Be(ProxyType.None);
+
+            var proxyHostField = FindTextField(target, "ProxyIp");
+            proxyHostField.Instance.Disabled.Should().BeTrue();
+
+            var proxyPeerSwitch = FindSwitch(target, "ProxyPeerConnections");
+            proxyPeerSwitch.Instance.Disabled.Should().BeTrue();
+
+            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.Socks5));
+            proxyHostField.Instance.Disabled.Should().BeFalse();
+
+            var authSwitch = FindSwitch(target, "ProxyAuthEnabled");
+            await target.InvokeAsync(() => authSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.ProxyAuthEnabled.Should().BeFalse();
+
+            proxyPeerSwitch = FindSwitch(target, "ProxyPeerConnections");
+            proxyPeerSwitch.Instance.Disabled.Should().BeFalse();
+            await target.InvokeAsync(() => proxyPeerSwitch.Instance.ValueChanged.InvokeAsync(true));
+            update.ProxyPeerConnections.Should().BeTrue();
+
+            await target.InvokeAsync(() => proxyHostField.Instance.ValueChanged.InvokeAsync("10.0.0.5"));
+            update.ProxyIp.Should().Be("10.0.0.5");
+
+            var proxyPortField = FindNumericInt(target, "ProxyPort");
+            await target.InvokeAsync(() => proxyPortField.Instance.ValueChanged.InvokeAsync(8888));
+            update.ProxyPort.Should().Be(8888);
+
+            var proxyUserField = FindTextField(target, "ProxyUsername");
+            await target.InvokeAsync(() => proxyUserField.Instance.ValueChanged.InvokeAsync("proxyuser"));
+            update.ProxyUsername.Should().Be("proxyuser");
+
+            var proxyPasswordField = FindTextField(target, "ProxyPassword");
+            await target.InvokeAsync(() => proxyPasswordField.Instance.ValueChanged.InvokeAsync("proxypass"));
+            update.ProxyPassword.Should().Be("proxypass");
+
+            var hostLookupSwitch = FindSwitch(target, "ProxyHostnameLookup");
+            await target.InvokeAsync(() => hostLookupSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.ProxyHostnameLookup.Should().BeFalse();
+
+            var proxyBittorrentSwitch = FindSwitch(target, "ProxyBittorrent");
+            await target.InvokeAsync(() => proxyBittorrentSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.ProxyBittorrent.Should().BeFalse();
+
+            var proxyRssSwitch = FindSwitch(target, "ProxyRss");
+            await target.InvokeAsync(() => proxyRssSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.ProxyRss.Should().BeFalse();
+
+            var proxyMiscSwitch = FindSwitch(target, "ProxyMisc");
+            await target.InvokeAsync(() => proxyMiscSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.ProxyMisc.Should().BeFalse();
+
+            events.Should().HaveCount(12);
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
+        [Fact]
+        public async Task GIVEN_ConnectionLimitSwitches_WHEN_Disabled_THEN_ShouldDisableInputs()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.ListenPort = 6881;
+                spec.MaxConnec = 800;
+                spec.MaxConnecPerTorrent = 300;
+                spec.MaxUploads = 50;
+                spec.MaxUploadsPerTorrent = 12;
+                spec.Upnp = true;
+            });
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var maxConnectionsSwitch = FindSwitch(target, "MaxConnecEnabled");
+            await target.InvokeAsync(() => maxConnectionsSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxConnec").Instance.Disabled.Should().BeTrue();
+
+            var perTorrentSwitch = FindSwitch(target, "MaxConnecPerTorrentEnabled");
+            await target.InvokeAsync(() => perTorrentSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxConnecPerTorrent").Instance.Disabled.Should().BeTrue();
+
+            var maxUploadsSwitch = FindSwitch(target, "MaxUploadsEnabled");
+            await target.InvokeAsync(() => maxUploadsSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxUploads").Instance.Disabled.Should().BeTrue();
+
+            var uploadsPerTorrentSwitch = FindSwitch(target, "MaxUploadsPerTorrentEnabled");
+            await target.InvokeAsync(() => uploadsPerTorrentSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxUploadsPerTorrent").Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ProtocolAndIpFilter_WHEN_Changed_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var protocolSelect = FindSelect<BittorrentProtocol>(target, "BittorrentProtocol");
+            await target.InvokeAsync(() => protocolSelect.Instance.ValueChanged.InvokeAsync(BittorrentProtocol.TcpOnly));
+            update.BittorrentProtocol.Should().Be(BittorrentProtocol.TcpOnly);
+
+            var ipFilterSwitch = FindSwitch(target, "IpFilterEnabled");
+            await target.InvokeAsync(() => ipFilterSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.IpFilterEnabled.Should().BeFalse();
+
+            var filterPathField = FindPathField(target, "IpFilterPath");
+            await target.InvokeAsync(() => filterPathField.Instance.ValueChanged.InvokeAsync("/new/filter.dat"));
+            update.IpFilterPath.Should().Be("/new/filter.dat");
+
+            var trackersSwitch = FindSwitch(target, "IpFilterTrackers");
+            await target.InvokeAsync(() => trackersSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.IpFilterTrackers.Should().BeFalse();
+
+            var bannedField = FindTextField(target, "BannedIPs");
+            await target.InvokeAsync(() => bannedField.Instance.ValueChanged.InvokeAsync("10.0.0.2"));
+            update.BannedIPs.Should().Be("10.0.0.2");
+
+            events.Should().HaveCount(5);
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
+        [Fact]
+        public async Task GIVEN_GenericPopoverTrigger_WHEN_Clicked_THEN_ShouldUpdatePort()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var numericField = FindNumericInt(target, "ListenPort");
+            await target.InvokeAsync(() => numericField.Instance.OnAdornmentClick.InvokeAsync());
+
+            update.ListenPort.Should().BeGreaterThanOrEqualTo(1024);
+            update.ListenPort.Should().BeLessThanOrEqualTo(65535);
+        }
+
+        [Fact]
+        public void GIVEN_ListenPortValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnValidationMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var listenValidation = FindNumericInt(target, "ListenPort").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            listenValidation(-1).Should().Be("The port used for incoming connections must be between 0 and 65535.");
+            listenValidation(6881).Should().BeNull();
+            listenValidation(65536).Should().Be("The port used for incoming connections must be between 0 and 65535.");
+        }
+
+        [Fact]
+        public void GIVEN_ConnectionLimitsValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnExpectedValidationMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, CreatePreferences());
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var maxConnecValidation = FindNumericInt(target, "MaxConnec").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxConnecValidation(-1).Should().Be("Maximum number of connections limit must be greater than 0 or disabled.");
+            maxConnecValidation(0).Should().BeNull();
+
+            var maxConnecPerTorrentValidation = FindNumericInt(target, "MaxConnecPerTorrent").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxConnecPerTorrentValidation(-1).Should().Be("Maximum number of connections per torrent limit must be greater than 0 or disabled.");
+            maxConnecPerTorrentValidation(0).Should().BeNull();
+
+            var maxUploadsValidation = FindNumericInt(target, "MaxUploads").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxUploadsValidation(-1).Should().Be("Global number of upload slots limit must be greater than 0 or disabled.");
+            maxUploadsValidation(0).Should().BeNull();
+
+            var maxUploadsPerTorrentValidation = FindNumericInt(target, "MaxUploadsPerTorrent").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxUploadsPerTorrentValidation(-1).Should().Be("Maximum number of upload slots per torrent limit must be greater than 0 or disabled.");
+            maxUploadsPerTorrentValidation(0).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_ProxyTypeSelect_WHEN_MenuOpened_THEN_ShouldRenderAllProxyOptions()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, CreatePreferences());
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var proxyTypeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => proxyTypeSelect.Instance.OpenMenu());
+
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<ProxyType>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain(ProxyType.None);
+                values.Should().Contain(ProxyType.Socks4);
+                values.Should().Contain(ProxyType.Socks5);
+                values.Should().Contain(ProxyType.Http);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_IpFilterPath_WHEN_NullValueChanged_THEN_ShouldPersistEmptyString()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var update = new UpdatePreferences();
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, CreatePreferences());
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await target.InvokeAsync(() => FindPathField(target, "IpFilterPath").Instance.ValueChanged.InvokeAsync(null));
+
+            update.IpFilterPath.Should().Be(string.Empty);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumericInt(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        private static IRenderedComponent<PathAutocomplete> FindPathField(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<PathAutocomplete>(target, testId);
+        }
+
+        private static Preferences CreatePreferences()
+        {
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.BannedIPs = "10.0.0.1";
+                spec.BittorrentProtocol = BittorrentProtocol.UtpOnly;
+                spec.I2pAddress = "i2p.local";
+                spec.I2pEnabled = true;
+                spec.I2pMixedMode = true;
+                spec.I2pPort = 4444;
+                spec.IpFilterEnabled = true;
+                spec.IpFilterPath = "/filters/ipfilter.dat";
+                spec.IpFilterTrackers = true;
+                spec.ListenPort = 8999;
+                spec.MaxConnec = 600;
+                spec.MaxConnecPerTorrent = 0;
+                spec.MaxUploads = 30;
+                spec.MaxUploadsPerTorrent = 5;
+                spec.ProxyAuthEnabled = true;
+                spec.ProxyBittorrent = true;
+                spec.ProxyHostnameLookup = true;
+                spec.ProxyIp = "127.0.0.1";
+                spec.ProxyMisc = true;
+                spec.ProxyPassword = "pass";
+                spec.ProxyPeerConnections = false;
+                spec.ProxyPort = 1080;
+                spec.ProxyRss = true;
+                spec.ProxyType = ProxyType.Socks5;
+                spec.ProxyUsername = "user";
+                spec.Upnp = true;
+            });
+        }
+    }
+}
