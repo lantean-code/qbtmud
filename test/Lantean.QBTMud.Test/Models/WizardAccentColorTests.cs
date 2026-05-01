@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Models

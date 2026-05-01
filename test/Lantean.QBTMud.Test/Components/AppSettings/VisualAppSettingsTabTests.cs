@@ -1,11 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.AppSettingsTabs;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
+using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
 
 namespace Lantean.QBTMud.Test.Components.AppSettings
 {

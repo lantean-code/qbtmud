@@ -1,16 +1,16 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using QBittorrent.ApiClient.Models;
 
 using ClientModels = QBittorrent.ApiClient.Models;
 
-using MudCategory = Lantean.QBTMud.Models.Category;
-using MudMainData = Lantean.QBTMud.Models.MainData;
-using MudServerState = Lantean.QBTMud.Models.ServerState;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using MudCategory = Lantean.QBTMud.Core.Models.Category;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using MudServerState = Lantean.QBTMud.Core.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {

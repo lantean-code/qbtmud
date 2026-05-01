@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using MudBlazor;
-using FilterOperator = Lantean.QBTMud.Filter.FilterOperator;
+using FilterOperator = Lantean.QBTMud.Core.Filter.FilterOperator;
 
 namespace Lantean.QBTMud.Test.Filter
 {

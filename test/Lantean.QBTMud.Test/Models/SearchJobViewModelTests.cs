@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Models

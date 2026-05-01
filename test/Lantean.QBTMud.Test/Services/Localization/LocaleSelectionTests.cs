@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Models;
 
 namespace Lantean.QBTMud.Test.Services.Localization
 {

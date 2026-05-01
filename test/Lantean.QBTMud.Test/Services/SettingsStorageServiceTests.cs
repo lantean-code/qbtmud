@@ -1,7 +1,7 @@
 using System.Text.Json;
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Moq;
 using MudBlazor;

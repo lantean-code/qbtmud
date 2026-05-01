@@ -1,4 +1,4 @@
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Infrastructure.Services;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 using Moq;

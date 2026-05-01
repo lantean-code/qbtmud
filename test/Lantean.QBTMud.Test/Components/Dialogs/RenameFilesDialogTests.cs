@@ -1,10 +1,11 @@
 using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,7 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using MudPriority = Lantean.QBTMud.Models.Priority;
+using MudPriority = Lantean.QBTMud.Core.Models.Priority;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -535,13 +536,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static (string OldPath, string NewPath) GetReplaceAllPaths(FileRow row)
         {
-            var parentPath = global::Lantean.QBTMud.Extensions.GetDirectoryPath(row.Name);
+            var parentPath = global::Lantean.QBTMud.Core.Extensions.GetDirectoryPath(row.Name);
             var oldPath = string.IsNullOrEmpty(parentPath)
                 ? row.OriginalName!
-                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, row.OriginalName!);
+                : string.Concat(parentPath, global::Lantean.QBTMud.Core.Extensions.DirectorySeparator, row.OriginalName!);
             var newPath = string.IsNullOrEmpty(parentPath)
                 ? row.NewName!
-                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, row.NewName!);
+                : string.Concat(parentPath, global::Lantean.QBTMud.Core.Extensions.DirectorySeparator, row.NewName!);
             return (oldPath, newPath);
         }
     }

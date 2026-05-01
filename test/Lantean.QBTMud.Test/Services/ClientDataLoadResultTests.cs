@@ -1,6 +1,6 @@
 using System.Text.Json;
 using AwesomeAssertions;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Application.Services;
 using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Services

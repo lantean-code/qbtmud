@@ -1,9 +1,9 @@
 using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.AppSettingsTabs;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;

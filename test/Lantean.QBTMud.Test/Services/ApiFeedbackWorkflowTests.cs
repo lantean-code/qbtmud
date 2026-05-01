@@ -1,6 +1,7 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;

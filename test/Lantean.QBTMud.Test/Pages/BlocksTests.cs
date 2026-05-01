@@ -1,8 +1,8 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Pages;
-using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;

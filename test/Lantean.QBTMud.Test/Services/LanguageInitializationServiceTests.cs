@@ -1,7 +1,8 @@
 using System.Globalization;
 using AwesomeAssertions;
-using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 

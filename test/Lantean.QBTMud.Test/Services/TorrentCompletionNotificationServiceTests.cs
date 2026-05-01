@@ -1,10 +1,11 @@
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Core.Models;
 using Moq;
 using QBittorrent.ApiClient.Models;
-using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -30,7 +31,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(true);
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Lantean.QBTMud.Interop.BrowserNotificationPermission.Granted);
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.ShowNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
@@ -106,7 +107,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Lantean.QBTMud.Interop.BrowserNotificationPermission.Denied);
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
 
             await _target.ProcessTransitionsAsync(
                 [

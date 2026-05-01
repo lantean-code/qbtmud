@@ -1,8 +1,9 @@
 using System.Net;
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
@@ -10,8 +11,8 @@ using MudBlazor;
 using QBittorrent.ApiClient;
 using ClientMainData = QBittorrent.ApiClient.Models.MainData;
 using ClientPreferences = QBittorrent.ApiClient.Models.Preferences;
-using MudMainData = Lantean.QBTMud.Models.MainData;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -678,9 +679,9 @@ namespace Lantean.QBTMud.Test.Services
             return new MudMainData(
                 new Dictionary<string, MudTorrent>(),
                 Array.Empty<string>(),
-                new Dictionary<string, Lantean.QBTMud.Models.Category>(),
+                new Dictionary<string, Category>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new Lantean.QBTMud.Models.ServerState
+                new Lantean.QBTMud.Core.Models.ServerState
                 {
                     DownloadInfoSpeed = downloadSpeed,
                     UploadInfoSpeed = uploadSpeed

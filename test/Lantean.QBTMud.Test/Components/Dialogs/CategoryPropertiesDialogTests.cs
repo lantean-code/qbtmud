@@ -1,9 +1,9 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,7 +72,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
-            var category = (Lantean.QBTMud.Models.Category)result.Data!;
+            var category = (Category)result.Data!;
             category.Name.Should().Be("Category");
             category.SavePath.Should().Be("SavePath");
         }
@@ -95,7 +95,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
-            var category = (Lantean.QBTMud.Models.Category)result.Data!;
+            var category = (Category)result.Data!;
             category.Name.Should().Be("Category");
             category.SavePath.Should().Be("SavePath");
         }
@@ -137,7 +137,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
-            var category = (Lantean.QBTMud.Models.Category)result.Data!;
+            var category = (Category)result.Data!;
             category.Name.Should().Be("Category");
             category.SavePath.Should().Be("SavePath");
         }

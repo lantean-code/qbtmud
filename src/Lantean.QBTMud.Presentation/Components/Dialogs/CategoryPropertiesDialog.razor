@@ -1,0 +1,26 @@
+@inherits SubmittableDialog
+@using QBittorrent.ApiClient.Models
+@using Lantean.QBTMud.Components.UI
+@inject Lantean.QBTMud.Application.Services.Localization.ILanguageLocalizer LanguageLocalizer
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField Label="@LanguageLocalizer.Translate("TransferListWidget", "Category:")" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
+            </MudItem>
+            <MudItem xs="12">
+                <PathAutocomplete Label="@LanguageLocalizer.Translate("TransferListWidget", "Save path:")"
+                                  @bind-Value="SavePath"
+                                  Required="true"
+                                  RequiredErrorText="@LanguageLocalizer.Translate("TorrentsController", "Save path is empty")"
+                                  Mode="DirectoryContentMode.Directories"
+                                  data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CategoryPropertiesCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CategoryPropertiesSave")">@LanguageLocalizer.Translate("Category", "OK")</MudButton>
+    </DialogActions>
+</MudDialog>

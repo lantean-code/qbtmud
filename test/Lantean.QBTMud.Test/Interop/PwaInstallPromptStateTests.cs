@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Core.Interop;
 
 namespace Lantean.QBTMud.Test.Interop
 {

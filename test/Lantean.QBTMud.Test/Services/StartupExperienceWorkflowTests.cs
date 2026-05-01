@@ -1,8 +1,9 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components.Dialogs;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Moq;
 using MudBlazor;
 

@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Infrastructure.Services;
 using Moq;
 using QBittorrent.ApiClient;
 

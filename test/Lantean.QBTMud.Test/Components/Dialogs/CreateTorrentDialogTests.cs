@@ -1,8 +1,9 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;

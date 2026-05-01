@@ -7,8 +7,6 @@ using Bunit;
 
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Components.AppSettingsTabs;
-using Lantean.QBTMud.Interop;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -23,8 +21,11 @@ using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
 using System.Text.Json;
-using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
+using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
 using AppSettingsPage = Lantean.QBTMud.Pages.AppSettings;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Core.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {

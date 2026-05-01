@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Lantean.QBTMud</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BlazorFlags" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
+    <PackageReference Include="MudBlazor" Version="9.4.0" />
+    <PackageReference Include="QBittorrent.ApiClient" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lantean.QBTMud.Application\Lantean.QBTMud.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lantean.QBTMud.Test" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;

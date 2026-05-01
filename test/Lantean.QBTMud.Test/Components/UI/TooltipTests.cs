@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Blazor.BrowserCapabilities;
 using Bunit;
+using Lantean.QBTMud.BrowserCapabilities;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -327,7 +327,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var browserCapabilitiesServiceMock = Mock.Get(_browserCapabilitiesService);
             browserCapabilitiesServiceMock.Setup(service => service.IsInitialized).Returns(isInitialized);
-            browserCapabilitiesServiceMock.Setup(service => service.Capabilities).Returns(new BrowserCapabilities(
+            browserCapabilitiesServiceMock.Setup(service => service.Capabilities).Returns(new Lantean.QBTMud.BrowserCapabilities.BrowserCapabilities(
                 SupportsHoverPointer: supportsHoverPointer,
                 SupportsHover: supportsHoverPointer,
                 SupportsFinePointer: supportsHoverPointer,

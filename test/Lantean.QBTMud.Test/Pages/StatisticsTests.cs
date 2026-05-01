@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;

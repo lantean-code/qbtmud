@@ -1,16 +1,16 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
-using Lantean.QBTMud.Filter;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Core.Filter;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using FilterOperator = Lantean.QBTMud.Filter.FilterOperator;
+using FilterOperator = Lantean.QBTMud.Core.Filter.FilterOperator;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {

@@ -1,0 +1,56 @@
+@page "/cookies"
+@layout OtherLayout
+
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to torrent list")" data-test-id="@TestIdHelper.For("CookiesBack")" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("CookiesDialog", "Manage Cookies")</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="@LanguageLocalizer.Translate("CookiesDialog", "Add Cookie")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesAdd")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="@Translate("Refresh")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesRefresh")" />
+        </MudToolBar>
+    </div>
+    <div class="content-panel__body">
+        <DynamicTable @ref="Table"
+                      TableId="Cookies"
+                      T="CookieRow"
+                      ColumnDefinitions="Columns"
+                      Items="CookieRows"
+                      MultiSelection="false"
+                      SelectOnRowClick="false"
+                      Class="details-list content-panel__table" />
+    </div>
+</div>
+
+@code {
+    private RenderFragment<RowContext<CookieRow>> ActionsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var row = context.Data;
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Warning"
+                                   Disabled="@IsBusy"
+                                   OnClick="@(async _ => await EditCookie(row))"
+                                   title="@Translate("Edit Cookie")"
+                                   data-test-id="@TestIdHelper.For($"CookieEdit-{row.Id}")" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Disabled="@IsBusy"
+                                   OnClick="@(async _ => await DeleteCookie(row))"
+                                   title="@LanguageLocalizer.Translate("CookiesDialog", "Remove")"
+                                   data-test-id="@TestIdHelper.For($"CookieDelete-{row.Id}")" />
+                </MudButtonGroup>
+                ;
+            };
+        }
+    }
+}

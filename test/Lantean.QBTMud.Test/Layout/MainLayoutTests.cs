@@ -1,12 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Core.Theming;
 using Lantean.QBTMud.Layout;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
-using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;

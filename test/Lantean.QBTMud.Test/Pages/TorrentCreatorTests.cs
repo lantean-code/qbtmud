@@ -1,10 +1,11 @@
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Infrastructure.Services;
 using Lantean.QBTMud.Pages;
-using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +46,10 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.RemoveAll<IApiUrlResolver>();
-            TestContext.Services.AddSingleton<IApiUrlResolver>(new ApiUrlResolver(new Uri("https://api.example/qbt/api/v2/")));
+            TestContext.Services
+                .AddOptions<ApiUrlResolverOptions>()
+                .Configure(options => options.ApiBaseAddress = new Uri("https://api.example/qbt/api/v2/"));
+            TestContext.Services.AddSingleton<IApiUrlResolver, ApiUrlResolver>();
             TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.RemoveAll<ISnackbar>();

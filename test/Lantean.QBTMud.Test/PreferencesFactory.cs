@@ -1,16 +1,17 @@
+using Lantean.QBTMud.Core.Models;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test
 {
     internal static class PreferencesFactory
     {
-        internal static Lantean.QBTMud.Models.QBittorrentPreferences CreateQBittorrentPreferences(Action<PreferencesSpec> configure)
+        internal static QBittorrentPreferences CreateQBittorrentPreferences(Action<PreferencesSpec> configure)
         {
             var spec = new PreferencesSpec();
 
             configure.Invoke(spec);
 
-            return new Lantean.QBTMud.Models.QBittorrentPreferences
+            return new Lantean.QBTMud.Core.Models.QBittorrentPreferences
             {
                 Locale = spec.Locale,
                 AutoTmmEnabled = spec.AutoTmmEnabled,

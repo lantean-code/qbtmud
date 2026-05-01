@@ -77,6 +77,7 @@
 
 ## Communication & assumptions
 - Do not guess. If any requirement, API contract, or behavior is unclear, ask for clarification.
+- When linking to files in responses, use paths relative to the repository root so links work from the user's host environment.
 - When reviewing pull request feedback, only unresolved review threads/comments are actionable by default; resolved or dismissed threads are informational unless the user explicitly asks to revisit them.
 - Prefer concise diffs and explicit rationale in commit messages and PR descriptions.
 

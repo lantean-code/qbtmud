@@ -1,9 +1,10 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;

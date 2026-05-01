@@ -1,11 +1,12 @@
 using System.Net;
 using System.Text.Json;
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Core.Theming;
+using Lantean.QBTMud.Infrastructure.Services;
 using Lantean.QBTMud.Test.Infrastructure;
-using Lantean.QBTMud.Theming;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;

@@ -1,0 +1,717 @@
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.EventHandlers;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+
+namespace Lantean.QBTMud.Components
+{
+    public partial class FiltersNav
+    {
+        private const string _statusSelectionStorageKey = "FiltersNav.Selection.Status";
+        private const string _categorySelectionStorageKey = "FiltersNav.Selection.Category";
+        private const string _tagSelectionStorageKey = "FiltersNav.Selection.Tag";
+        private const string _trackerSelectionStorageKey = "FiltersNav.Selection.Tracker";
+
+        private const string _statusType = nameof(_statusType);
+        private const string _categoryType = nameof(_categoryType);
+        private const string _tagType = nameof(_tagType);
+        private const string _trackerType = nameof(_trackerType);
+
+        private bool _statusExpanded = true;
+        private bool _categoriesExpanded = true;
+        private bool _tagsExpanded = true;
+        private bool _trackersExpanded = true;
+        private readonly Dictionary<string, TrackerFilterItem> _trackerItems = new(StringComparer.Ordinal);
+
+        protected string Status => TorrentQueryState.Status.ToString();
+
+        protected string Category => TorrentQueryState.Category;
+
+        protected string Tag => TorrentQueryState.Tag;
+
+        protected string Tracker => TorrentQueryState.Tracker;
+
+        [Inject]
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        [CascadingParameter]
+        public MudMainData? MainData { get; set; }
+
+        [CascadingParameter]
+        public QBittorrentPreferences? Preferences { get; set; }
+
+        protected Dictionary<string, int> Tags => GetTags();
+
+        protected Dictionary<string, int> Categories => GetCategories();
+
+        private IReadOnlyList<TrackerFilterItem> Trackers => GetTrackers();
+
+        protected Dictionary<string, int> Statuses => GetStatuses();
+
+        protected MudMenu? StatusContextMenu { get; set; }
+
+        protected MudMenu? CategoryContextMenu { get; set; }
+
+        protected MudMenu? TagContextMenu { get; set; }
+
+        protected MudMenu? TrackerContextMenu { get; set; }
+
+        protected string? ContextMenuStatus { get; set; }
+
+        protected bool IsCategoryTarget { get; set; }
+
+        protected string? ContextMenuCategory { get; set; }
+
+        protected bool IsTagTarget { get; set; }
+
+        protected string? ContextMenuTag { get; set; }
+
+        protected string? ContextMenuTracker { get; set; }
+
+        private bool CanRemoveTracker => ContextMenuTracker is not null
+            && _trackerItems.TryGetValue(ContextMenuTracker, out var trackerItem)
+            && !trackerItem.IsSynthetic
+            && trackerItem.Urls.Count > 0;
+
+        protected override async Task OnInitializedAsync()
+        {
+            var status = await SettingsStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
+            if (status is not null)
+            {
+                TorrentQueryState.SetStatus(Enum.Parse<Status>(status));
+            }
+
+            var category = await SettingsStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
+            if (category is not null)
+            {
+                TorrentQueryState.SetCategory(category);
+            }
+
+            var tag = await SettingsStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
+            if (tag is not null)
+            {
+                TorrentQueryState.SetTag(tag);
+            }
+
+            var tracker = await SettingsStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
+            if (tracker is not null)
+            {
+                TorrentQueryState.SetTracker(tracker);
+            }
+        }
+
+        protected async Task StatusValueChanged(string value)
+        {
+            TorrentQueryState.SetStatus(Enum.Parse<Status>(value));
+
+            if (value != Core.Models.Status.All.ToString())
+            {
+                await SettingsStorage.SetItemAsStringAsync(_statusSelectionStorageKey, value);
+            }
+            else
+            {
+                await SettingsStorage.RemoveItemAsync(_statusSelectionStorageKey);
+            }
+        }
+
+        protected Task StatusOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowStatusContextMenu(args, value);
+        }
+
+        protected Task StatusOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowStatusContextMenu(args, value);
+        }
+
+        protected Task ShowStatusContextMenu(EventArgs args, string value)
+        {
+            if (StatusContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            ContextMenuStatus = value;
+
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return StatusContextMenu.OpenMenuAsync(normalizedArgs);
+        }
+
+        protected async Task CategoryValueChanged(string value)
+        {
+            TorrentQueryState.SetCategory(value);
+
+            if (value != FilterHelper.CATEGORY_ALL)
+            {
+                await SettingsStorage.SetItemAsStringAsync(_categorySelectionStorageKey, value);
+            }
+            else
+            {
+                await SettingsStorage.RemoveItemAsync(_categorySelectionStorageKey);
+            }
+        }
+
+        protected Task CategoryOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowCategoryContextMenu(args, value);
+        }
+
+        protected Task CategoryOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowCategoryContextMenu(args, value);
+        }
+
+        protected Task ShowCategoryContextMenu(EventArgs args, string value)
+        {
+            if (CategoryContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            IsCategoryTarget = value != FilterHelper.CATEGORY_ALL && value != FilterHelper.CATEGORY_UNCATEGORIZED;
+            ContextMenuCategory = value;
+
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return CategoryContextMenu.OpenMenuAsync(normalizedArgs);
+        }
+
+        protected async Task TagValueChanged(string value)
+        {
+            TorrentQueryState.SetTag(value);
+
+            if (value != FilterHelper.TAG_ALL)
+            {
+                await SettingsStorage.SetItemAsStringAsync(_tagSelectionStorageKey, value);
+            }
+            else
+            {
+                await SettingsStorage.RemoveItemAsync(_tagSelectionStorageKey);
+            }
+        }
+
+        protected Task TagOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowTagContextMenu(args, value);
+        }
+
+        protected Task TagOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowTagContextMenu(args, value);
+        }
+
+        protected Task ShowTagContextMenu(EventArgs args, string value)
+        {
+            if (TagContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            IsTagTarget = value != FilterHelper.TAG_ALL && value != FilterHelper.TAG_UNTAGGED;
+            ContextMenuTag = value;
+
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return TagContextMenu.OpenMenuAsync(normalizedArgs);
+        }
+
+        protected async Task TrackerValueChanged(string value)
+        {
+            TorrentQueryState.SetTracker(value);
+
+            if (value != FilterHelper.TRACKER_ALL)
+            {
+                await SettingsStorage.SetItemAsStringAsync(_trackerSelectionStorageKey, value);
+            }
+            else
+            {
+                await SettingsStorage.RemoveItemAsync(_trackerSelectionStorageKey);
+            }
+        }
+
+        protected Task TrackerOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowTrackerContextMenu(args, value);
+        }
+
+        protected Task TrackerOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowTrackerContextMenu(args, value);
+        }
+
+        protected Task ShowTrackerContextMenu(EventArgs args, string value)
+        {
+            if (TrackerContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            ContextMenuTracker = value;
+
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return TrackerContextMenu.OpenMenuAsync(normalizedArgs);
+        }
+
+        protected async Task AddCategory()
+        {
+            await DialogWorkflow.InvokeAddCategoryDialog();
+        }
+
+        protected async Task AddSubcategory()
+        {
+            if (ContextMenuCategory is null || ContextMenuCategory == FilterHelper.CATEGORY_ALL || ContextMenuCategory == FilterHelper.CATEGORY_UNCATEGORIZED)
+            {
+                return;
+            }
+
+            var prefix = ContextMenuCategory.EndsWith("\\", StringComparison.Ordinal)
+                ? ContextMenuCategory
+                : $"{ContextMenuCategory}\\";
+
+            string? initialSavePath = null;
+            if (MainData?.Categories.TryGetValue(ContextMenuCategory, out var category) == true)
+            {
+                initialSavePath = category.SavePath;
+            }
+
+            await DialogWorkflow.InvokeAddCategoryDialog(prefix, initialSavePath);
+        }
+
+        protected async Task EditCategory()
+        {
+            if (ContextMenuCategory is null)
+            {
+                return;
+            }
+
+            await DialogWorkflow.InvokeEditCategoryDialog(ContextMenuCategory);
+        }
+
+        protected async Task RemoveCategory()
+        {
+            if (ContextMenuCategory is null)
+            {
+                return;
+            }
+
+            var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [ContextMenuCategory]);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
+            {
+                return;
+            }
+
+            Categories.Remove(ContextMenuCategory);
+        }
+
+        protected async Task RemoveUnusedCategories()
+        {
+            var removedCategoriesResult = await ApiClient.RemoveUnusedCategoriesAsync();
+            if (removedCategoriesResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(removedCategoriesResult);
+                return;
+            }
+
+            var removedCategoryList = removedCategoriesResult.Value;
+            foreach (var removedCategory in removedCategoryList)
+            {
+                Categories.Remove(removedCategory);
+            }
+        }
+
+        private async Task RemoveTracker()
+        {
+            if (ContextMenuTracker is null)
+            {
+                return;
+            }
+
+            if (!_trackerItems.TryGetValue(ContextMenuTracker, out var trackerItem) || trackerItem.IsSynthetic)
+            {
+                return;
+            }
+
+            if (trackerItem.Urls.Count == 0)
+            {
+                return;
+            }
+
+            var hashes = GetAffectedTorrentHashes(_trackerType);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
+
+            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
+        }
+
+        protected async Task AddTag()
+        {
+            if (ContextMenuTag is null)
+            {
+                return;
+            }
+
+            var tags = await DialogWorkflow.ShowAddTagsDialog();
+            if (tags is null || tags.Count == 0)
+            {
+                return;
+            }
+
+            var createResult = await ApiClient.CreateTagsAsync(tags);
+            await ApiFeedbackWorkflow.ProcessResultAsync(createResult);
+        }
+
+        protected async Task RemoveTag()
+        {
+            if (ContextMenuTag is null)
+            {
+                return;
+            }
+
+            var deleteResult = await ApiClient.DeleteTagsAsync(tags: [ContextMenuTag]);
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult))
+            {
+                return;
+            }
+
+            Tags.Remove(ContextMenuTag);
+        }
+
+        protected async Task RemoveUnusedTags()
+        {
+            var removedTagsResult = await ApiClient.RemoveUnusedTagsAsync();
+            if (removedTagsResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(removedTagsResult);
+                return;
+            }
+
+            var removedTagList = removedTagsResult.Value;
+            foreach (var removedTag in removedTagList)
+            {
+                Tags.Remove(removedTag);
+            }
+        }
+
+        protected async Task StartTorrents(string type)
+        {
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
+
+            var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            await ApiFeedbackWorkflow.ProcessResultAsync(startResult);
+        }
+
+        protected async Task StopTorrents(string type)
+        {
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
+
+            var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            await ApiFeedbackWorkflow.ProcessResultAsync(stopResult);
+        }
+
+        protected async Task RemoveTorrents(string type)
+        {
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
+
+            await DialogWorkflow.InvokeDeleteTorrentDialog(
+                Preferences?.ConfirmTorrentDeletion ?? false,
+                Preferences?.DeleteTorrentContentFiles ?? false,
+                [.. hashes]);
+        }
+
+        private Dictionary<string, int> GetTags()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.TagState.ToDictionary(d => d.Key, d => d.Value.Count);
+        }
+
+        private Dictionary<string, int> GetCategories()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.CategoriesState.ToDictionary(d => d.Key, d => d.Value.Count);
+        }
+
+        private IReadOnlyList<TrackerFilterItem> GetTrackers()
+        {
+            if (MainData is null)
+            {
+                _trackerItems.Clear();
+                return Array.Empty<TrackerFilterItem>();
+            }
+
+            var items = new List<TrackerFilterItem>();
+            _trackerItems.Clear();
+
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_ALL, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_TRACKERLESS, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_ERROR, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_WARNING, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_ANNOUNCE_ERROR, items);
+
+            if (MainData.Trackers.Count > 0)
+            {
+                var hostGroups = new Dictionary<string, TrackerHostGroup>(StringComparer.OrdinalIgnoreCase);
+                foreach (var (url, hashes) in MainData.Trackers)
+                {
+                    var host = GetHostName(url);
+                    if (!hostGroups.TryGetValue(host, out var group))
+                    {
+                        group = new TrackerHostGroup(host);
+                        hostGroups[host] = group;
+                    }
+
+                    if (hashes is not null)
+                    {
+                        foreach (var hash in hashes)
+                        {
+                            if (MainData.Torrents.ContainsKey(hash))
+                            {
+                                group.Hashes.Add(hash);
+                            }
+                        }
+                    }
+
+                    group.Urls.Add(url);
+                }
+
+                foreach (var group in hostGroups.Values.OrderBy(g => g.Host, StringComparer.OrdinalIgnoreCase))
+                {
+                    var urls = group.Urls.Distinct(StringComparer.Ordinal).ToArray();
+                    var item = new TrackerFilterItem(group.Host, group.Host, group.Hashes.Count, false, urls);
+                    items.Add(item);
+                    _trackerItems[item.Key] = item;
+                }
+            }
+
+            return items;
+        }
+
+        private Dictionary<string, int> GetStatuses()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.StatusState.ToDictionary(d => d.Key, d => d.Value.Count);
+        }
+
+        private string GetStatusDisplayName(string status, int count)
+        {
+            if (!Enum.TryParse<Status>(status, out var parsed))
+            {
+                return status;
+            }
+
+            return parsed switch
+            {
+                Core.Models.Status.All => LanguageLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
+                Core.Models.Status.Downloading => LanguageLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
+                Core.Models.Status.Seeding => LanguageLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
+                Core.Models.Status.Completed => LanguageLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
+                Core.Models.Status.Stopped => LanguageLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
+                Core.Models.Status.Active => LanguageLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
+                Core.Models.Status.Inactive => LanguageLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
+                Core.Models.Status.Stalled => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
+                Core.Models.Status.StalledUploading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
+                Core.Models.Status.StalledDownloading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
+                Core.Models.Status.Checking => LanguageLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
+                Core.Models.Status.Errored => LanguageLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
+                _ => status
+            };
+        }
+
+        private string GetCategoryDisplayName(string category)
+        {
+            if (string.Equals(category, FilterHelper.CATEGORY_ALL, StringComparison.Ordinal))
+            {
+                return LanguageLocalizer.Translate("CategoryFilterModel", "All");
+            }
+
+            if (string.Equals(category, FilterHelper.CATEGORY_UNCATEGORIZED, StringComparison.Ordinal))
+            {
+                return LanguageLocalizer.Translate("CategoryFilterModel", "Uncategorized");
+            }
+
+            return category;
+        }
+
+        private string GetTagDisplayName(string tag)
+        {
+            if (string.Equals(tag, FilterHelper.TAG_ALL, StringComparison.Ordinal))
+            {
+                return LanguageLocalizer.Translate("TagFilterModel", "All");
+            }
+
+            if (string.Equals(tag, FilterHelper.TAG_UNTAGGED, StringComparison.Ordinal))
+            {
+                return LanguageLocalizer.Translate("TagFilterModel", "Untagged");
+            }
+
+            return tag;
+        }
+
+        private string GetTrackerDisplayName(TrackerFilterItem tracker)
+        {
+            if (!tracker.IsSynthetic)
+            {
+                return tracker.DisplayName;
+            }
+
+            return tracker.Key switch
+            {
+                FilterHelper.TRACKER_ALL => LanguageLocalizer.Translate("TrackerFiltersList", "All"),
+                FilterHelper.TRACKER_TRACKERLESS => LanguageLocalizer.Translate("TrackerFiltersList", "Trackerless"),
+                FilterHelper.TRACKER_ERROR => LanguageLocalizer.Translate("TrackerFiltersList", "Tracker error"),
+                FilterHelper.TRACKER_WARNING => LanguageLocalizer.Translate("TrackerFiltersList", "Warning"),
+                FilterHelper.TRACKER_ANNOUNCE_ERROR => LanguageLocalizer.Translate("TrackerFiltersList", "Other error"),
+                _ => tracker.DisplayName
+            };
+        }
+
+        private List<string> GetAffectedTorrentHashes(string type)
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            switch (type)
+            {
+                case _statusType:
+                    if (ContextMenuStatus is null)
+                    {
+                        return [];
+                    }
+
+                    var status = Enum.Parse<Status>(ContextMenuStatus);
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterStatus(t.Value, status)).Select(t => t.Value.Hash).ToList();
+
+                case _categoryType:
+                    if (ContextMenuCategory is null)
+                    {
+                        return [];
+                    }
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterCategory(t.Value, ContextMenuCategory, Preferences?.UseSubcategories ?? false)).Select(t => t.Value.Hash).ToList();
+
+                case _tagType:
+                    if (ContextMenuTag is null)
+                    {
+                        return [];
+                    }
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterTag(t.Value, ContextMenuTag)).Select(t => t.Value.Hash).ToList();
+
+                case _trackerType:
+                    if (ContextMenuTracker is null)
+                    {
+                        return [];
+                    }
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterTracker(t.Value, ContextMenuTracker)).Select(t => t.Value.Hash).ToList();
+
+                default:
+                    return [];
+            }
+        }
+
+        private void AppendSpecialTrackerItem(string key, List<TrackerFilterItem> items)
+        {
+            if (MainData is null)
+            {
+                return;
+            }
+
+            var count = MainData.TrackersState.TryGetValue(key, out var set) ? set.Count : 0;
+            var item = new TrackerFilterItem(key, key, count, true, Array.Empty<string>());
+            items.Add(item);
+            _trackerItems[key] = item;
+        }
+
+        private sealed class TrackerHostGroup
+        {
+            public TrackerHostGroup(string host)
+            {
+                Host = host;
+                Hashes = new HashSet<string>(StringComparer.Ordinal);
+                Urls = new List<string>();
+            }
+
+            public string Host { get; }
+
+            public HashSet<string> Hashes { get; }
+
+            public List<string> Urls { get; }
+        }
+
+        private sealed record TrackerFilterItem(string Key, string DisplayName, int Count, bool IsSynthetic, IReadOnlyList<string> Urls);
+
+        private static string GetFilterContext(string type)
+        {
+            return type switch
+            {
+                _statusType => "StatusFilterWidget",
+                _categoryType => "CategoryFilterWidget",
+                _tagType => "TagFilterWidget",
+                _trackerType => "TrackerFiltersList",
+                _ => string.Empty
+            };
+        }
+
+        private static string GetHostName(string tracker)
+        {
+            if (Uri.TryCreate(tracker, UriKind.Absolute, out var uri))
+            {
+                return uri.Host;
+            }
+
+            return tracker;
+        }
+    }
+}

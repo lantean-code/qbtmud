@@ -2,11 +2,11 @@ using System.Globalization;
 using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components.Dialogs;
-using Lantean.QBTMud.Interop;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +16,7 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
+using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {

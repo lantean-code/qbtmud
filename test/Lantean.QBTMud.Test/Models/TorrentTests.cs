@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using QBittorrent.ApiClient.Models;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Models
 {

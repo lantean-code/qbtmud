@@ -1,7 +1,7 @@
 using Bunit;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

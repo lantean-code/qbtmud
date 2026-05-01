@@ -1,11 +1,13 @@
 using System.Net;
-using Blazor.BrowserCapabilities;
 using Bunit;
-using Lantean.QBTMud.Configuration;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.BrowserCapabilities;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Infrastructure.Configuration;
+using Lantean.QBTMud.Infrastructure.Services;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -64,10 +66,14 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             // Deterministic infrastructure shims
             Services.AddSingleton<ILocalStorageService>(_localStorage);
+            Services.AddSingleton<ILocalStorageEntryAdapter, LocalStorageEntryAdapter>();
             Services.AddSingleton<ISettingsStorageService>(_localStorage);
             Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
-            Services.AddSingleton<IApiUrlResolver>(new ApiUrlResolver(new Uri(_baseAddress, "/api/v2/")));
+            Services
+                .AddOptions<ApiUrlResolverOptions>()
+                .Configure(options => options.ApiBaseAddress = new Uri(_baseAddress, "/api/v2/"));
+            Services.AddSingleton<IApiUrlResolver, ApiUrlResolver>();
             Services.AddSingleton(typeof(RoutingMode), RoutingMode.Path);
             Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
             Services.AddScoped<IMagnetLinkService, MagnetLinkService>();
@@ -88,8 +94,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             // App services
             Services.AddQBittorrentApiClient(_apiClientName);
-            Services.AddScoped<LostConnectionWorkflow>();
-            Services.AddScoped<ILostConnectionWorkflow>(serviceProvider => serviceProvider.GetRequiredService<LostConnectionWorkflow>());
+            Services.AddScoped<ILostConnectionWorkflow, LostConnectionWorkflow>();
             Services.AddScoped<IShellSessionWorkflow, ShellSessionWorkflow>();
             Services.AddScoped<IPendingDownloadWorkflow, PendingDownloadWorkflow>();
             Services.AddScoped<IStartupExperienceWorkflow, StartupExperienceWorkflow>();
@@ -97,8 +102,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<ITorrentQueryState, TorrentQueryState>();
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<IApiFeedbackWorkflow, ApiFeedbackWorkflow>();
-            Services.AddScoped<AppSettingsService>();
-            Services.AddScoped<IAppSettingsService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
+            Services.AddScoped<IAppSettingsService, AppSettingsService>();
             Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
             Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
             Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
@@ -123,7 +127,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             var browserCapabilitiesService = Mock.Of<IBrowserCapabilitiesService>();
             var browserCapabilitiesMock = Mock.Get(browserCapabilitiesService);
             browserCapabilitiesMock.Setup(service => service.IsInitialized).Returns(true);
-            browserCapabilitiesMock.Setup(service => service.Capabilities).Returns(new BrowserCapabilities(
+            browserCapabilitiesMock.Setup(service => service.Capabilities).Returns(new Lantean.QBTMud.BrowserCapabilities.BrowserCapabilities(
                 SupportsHoverPointer: true,
                 SupportsHover: true,
                 SupportsFinePointer: true,

@@ -1,0 +1,29 @@
+
+@inherits SubmittableDialog
+@using Lantean.QBTMud.Helpers
+@inject Lantean.QBTMud.Application.Services.Localization.ILanguageLocalizer LanguageLocalizer
+
+<MudDialog>
+    <DialogContent>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td style="width: 100%"><MudTextField T="string" Label="@LanguageLocalizer.Translate("TagFilterWidget", "Tag:")" Value="@Tag" ValueChanged="SetTag" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddTagInput")" /></td>
+                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTag" data-test-id="@TestIdHelper.For("AddTagAdd")" /></td>
+                </tr>
+                @foreach (var tag in Tags)
+                {
+                    var tagRef = tag;
+                    <tr>
+                        <td>@tag</td>
+                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeleteTag(tagRef))" data-test-id="@TestIdHelper.For($"DeleteTag-{tagRef}")" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTagCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTagSave")">@LanguageLocalizer.Translate("HttpServer", "Add")</MudButton>
+    </DialogActions>
+</MudDialog>

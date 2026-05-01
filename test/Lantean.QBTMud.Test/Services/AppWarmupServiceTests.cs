@@ -1,8 +1,9 @@
 using AwesomeAssertions;
-using Blazor.BrowserCapabilities;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.BrowserCapabilities;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
 

@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Theming;
+using Lantean.QBTMud.Core.Theming;
 using MudBlazor;
 using MudBlazor.Utilities;
 

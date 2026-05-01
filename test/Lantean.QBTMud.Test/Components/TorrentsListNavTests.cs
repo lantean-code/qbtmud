@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient.Models;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {

@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Infrastructure.Services;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Test.Services
 
         public AssemblyResourceAccessorTests()
         {
-            _target = new AssemblyResourceAccessor();
+            _target = new AssemblyResourceAccessor(typeof(Program).Assembly);
         }
 
         [Fact]

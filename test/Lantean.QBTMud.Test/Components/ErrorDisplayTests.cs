@@ -1,8 +1,8 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
-using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;

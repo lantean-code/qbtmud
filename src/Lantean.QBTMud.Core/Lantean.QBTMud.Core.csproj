@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ByteSize" Version="2.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
+    <PackageReference Include="MudBlazor" Version="9.4.0" />
+    <PackageReference Include="QBittorrent.ApiClient" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lantean.QBTMud.Presentation" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Test" />
+  </ItemGroup>
+
+</Project>

@@ -27,6 +27,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lantean.QBTMud\Lantean.QBTMud.csproj" />
+    <ProjectReference Include="..\..\src\Lantean.QBTMud.Application\Lantean.QBTMud.Application.csproj" />
+    <ProjectReference Include="..\..\src\Lantean.QBTMud.Core\Lantean.QBTMud.Core.csproj" />
+    <ProjectReference Include="..\..\src\Lantean.QBTMud.Infrastructure\Lantean.QBTMud.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Lantean.QBTMud.Presentation\Lantean.QBTMud.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

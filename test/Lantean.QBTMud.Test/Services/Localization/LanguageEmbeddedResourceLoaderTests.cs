@@ -1,7 +1,8 @@
 using System.Text;
 using AwesomeAssertions;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Infrastructure.Services.Localization;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -49,7 +50,7 @@ namespace Lantean.QBTMud.Test.Services.Localization
         [Fact]
         public async Task GIVEN_EmbeddedEnglishResource_WHEN_LoadDictionaryAsync_THEN_ShouldReturnDeserializedDictionary()
         {
-            var resourceAccessor = new AssemblyResourceAccessor();
+            var resourceAccessor = new AssemblyResourceAccessor(typeof(Program).Assembly);
             var target = new LanguageEmbeddedResourceLoader(resourceAccessor, _logger);
 
             var result = await target.LoadDictionaryAsync("webui_en.json", TestContext.Current.CancellationToken);
@@ -61,7 +62,7 @@ namespace Lantean.QBTMud.Test.Services.Localization
         [Fact]
         public async Task GIVEN_UppercaseResourceName_WHEN_LoadDictionaryAsync_THEN_ShouldResolveCaseInsensitively()
         {
-            var resourceAccessor = new AssemblyResourceAccessor();
+            var resourceAccessor = new AssemblyResourceAccessor(typeof(Program).Assembly);
             var target = new LanguageEmbeddedResourceLoader(resourceAccessor, _logger);
 
             var result = await target.LoadDictionaryAsync("WEBUI_EN.JSON", TestContext.Current.CancellationToken);

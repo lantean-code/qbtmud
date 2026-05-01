@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Configuration;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Infrastructure.Configuration;
+using Lantean.QBTMud.Infrastructure.Services;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Test.Services

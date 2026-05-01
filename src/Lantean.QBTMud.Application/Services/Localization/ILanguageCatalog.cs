@@ -1,0 +1,22 @@
+using Lantean.QBTMud.Core.Models;
+
+namespace Lantean.QBTMud.Application.Services.Localization
+{
+    /// <summary>
+    /// Provides access to available WebUI languages.
+    /// </summary>
+    public interface ILanguageCatalog
+    {
+        /// <summary>
+        /// Gets the available WebUI languages.
+        /// </summary>
+        IReadOnlyList<LanguageCatalogItem> Languages { get; }
+
+        /// <summary>
+        /// Ensures the language catalog has been loaded.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous initialization operation.</returns>
+        Task EnsureInitialized(CancellationToken cancellationToken = default);
+    }
+}

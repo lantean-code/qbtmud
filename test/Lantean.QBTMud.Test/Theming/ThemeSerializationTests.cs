@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Theming;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Core.Theming;
 using MudBlazor;
 using MudBlazor.Utilities;
 

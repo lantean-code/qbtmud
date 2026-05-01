@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using AwesomeAssertions;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Infrastructure.Services.Localization;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.Logging;
@@ -448,7 +450,7 @@ namespace Lantean.QBTMud.Test.Services.Localization
             var resourceLoaderLogger = Mock.Of<ILogger<LanguageResourceLoader>>();
 
             var fileProvider = new LanguageFileLoader(factory, fileProviderLogger, options);
-            var assemblyResourceAccessor = new AssemblyResourceAccessor();
+            var assemblyResourceAccessor = new AssemblyResourceAccessor(typeof(Program).Assembly);
             var assemblyProvider = new LanguageEmbeddedResourceLoader(assemblyResourceAccessor, assemblyProviderLogger);
             var resourceProvider = new LanguageResourceProvider();
             var resourceLoader = new LanguageResourceLoader(fileProvider, assemblyProvider, resourceProvider, resourceLoaderLogger, options);

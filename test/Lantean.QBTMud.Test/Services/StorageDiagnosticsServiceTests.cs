@@ -1,7 +1,8 @@
 using System.Text.Json;
 using AwesomeAssertions;
-using Lantean.QBTMud.Interop;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
@@ -34,7 +35,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Returns(Task.CompletedTask);
 
             _target = new StorageDiagnosticsService(
-                _jsRuntime.Object,
+                new LocalStorageEntryAdapter(_jsRuntime.Object),
                 _clientDataStorageAdapter,
                 _webApiCapabilityService,
                 _apiFeedbackWorkflow);
@@ -92,6 +93,25 @@ namespace Lantean.QBTMud.Test.Services
                     It.IsAny<CancellationToken>(),
                     It.IsAny<object?[]?>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LocalStorageTypeEntry_WHEN_RemoveEntryInvoked_THEN_ShouldUseLocalStorageEntryAdapter()
+        {
+            var localStorageEntryAdapter = Mock.Of<ILocalStorageEntryAdapter>();
+            Mock.Get(localStorageEntryAdapter)
+                .Setup(adapter => adapter.RemoveEntryAsync("QbtMud.Key", It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            var target = new StorageDiagnosticsService(
+                localStorageEntryAdapter,
+                _clientDataStorageAdapter,
+                _webApiCapabilityService,
+                _apiFeedbackWorkflow);
+
+            await target.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.Key", TestContext.Current.CancellationToken);
+
+            Mock.Get(localStorageEntryAdapter)
+                .Verify(adapter => adapter.RemoveEntryAsync("QbtMud.Key", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

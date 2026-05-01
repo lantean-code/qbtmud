@@ -1,10 +1,11 @@
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
@@ -15,10 +16,10 @@ using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 using ClientCategory = QBittorrent.ApiClient.Models.Category;
 using ClientTorrent = QBittorrent.ApiClient.Models.Torrent;
-using MudCategory = Lantean.QBTMud.Models.Category;
-using MudMainData = Lantean.QBTMud.Models.MainData;
-using MudServerState = Lantean.QBTMud.Models.ServerState;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using MudCategory = Lantean.QBTMud.Core.Models.Category;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using MudServerState = Lantean.QBTMud.Core.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {

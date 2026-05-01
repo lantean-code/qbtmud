@@ -1,7 +1,8 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -12,8 +13,8 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using CategoryModel = Lantean.QBTMud.Models.Category;
-using TorrentModel = Lantean.QBTMud.Models.Torrent;
+using CategoryModel = Lantean.QBTMud.Core.Models.Category;
+using TorrentModel = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {

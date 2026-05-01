@@ -1,7 +1,8 @@
 using System.Text.Json;
 using AwesomeAssertions;
-using Lantean.QBTMud.Interop;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.JSInterop;
@@ -48,7 +49,7 @@ namespace Lantean.QBTMud.Test.Services
                 _clientDataStorageAdapter,
                 _webApiCapabilityService,
                 _storageCatalogService,
-                _jsRuntime.Object,
+                new LocalStorageEntryAdapter(_jsRuntime.Object),
                 _apiFeedbackWorkflow);
         }
 
@@ -593,7 +594,7 @@ namespace Lantean.QBTMud.Test.Services
                 clientDataStorageAdapter.Object,
                 webApiCapabilityService.Object,
                 customCatalogService.Object,
-                jsRuntime.Object,
+                new LocalStorageEntryAdapter(jsRuntime.Object),
                 apiFeedbackWorkflow.Object);
 
             await customTarget.SaveSettingsAsync(new StorageRoutingSettings
@@ -789,7 +790,7 @@ namespace Lantean.QBTMud.Test.Services
                 clientDataStorageAdapter.Object,
                 webApiCapabilityService.Object,
                 storageCatalogService,
-                jsRuntime.Object,
+                new LocalStorageEntryAdapter(jsRuntime.Object),
                 apiFeedbackWorkflow.Object);
 
             var firstTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);

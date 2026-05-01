@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Filter;
+using Lantean.QBTMud.Core.Filter;
 
 namespace Lantean.QBTMud.Test.Filter
 {

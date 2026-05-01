@@ -1,10 +1,11 @@
 using System.ComponentModel;
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
 using QBittorrent.ApiClient.Models;
-using ContentPriority = Lantean.QBTMud.Models.Priority;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using ContentPriority = Lantean.QBTMud.Core.Models.Priority;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test
 {

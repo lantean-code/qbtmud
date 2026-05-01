@@ -1,9 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -15,10 +17,10 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using MudCategory = Lantean.QBTMud.Models.Category;
-using MudMainData = Lantean.QBTMud.Models.MainData;
-using MudServerState = Lantean.QBTMud.Models.ServerState;
-using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using MudCategory = Lantean.QBTMud.Core.Models.Category;
+using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using MudServerState = Lantean.QBTMud.Core.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -447,7 +449,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_BuildColumnsDefinitions_WHEN_Invoked_THEN_ReturnsExpectedTailColumns()
         {
-            var columns = TorrentList.BuildColumnsDefinitions(Mock.Of<Lantean.QBTMud.Services.Localization.ILanguageLocalizer>());
+            var columns = TorrentList.BuildColumnsDefinitions(Mock.Of<ILanguageLocalizer>());
             var ids = columns.Select(column => column.Id).ToList();
 
             ids.Should().Contain("completed_on");
@@ -476,7 +478,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_BuildColumnsDefinitions_WHEN_FormattersEvaluated_THEN_HiddenColumnsAndProgressColorPathsAreCovered()
         {
-            var localizer = Mock.Of<Lantean.QBTMud.Services.Localization.ILanguageLocalizer>();
+            var localizer = Mock.Of<ILanguageLocalizer>();
             Mock.Get(localizer)
                 .Setup(value => value.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] __) => source);

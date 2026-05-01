@@ -1,0 +1,20 @@
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core;
+using Microsoft.AspNetCore.Components;
+
+namespace Lantean.QBTMud.Components.Dialogs
+{
+    public partial class LostConnectionDialog
+    {
+        [Inject]
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
+
+        protected void Reconnect()
+        {
+            NavigationManager.NavigateToHome(forceLoad: true);
+        }
+    }
+}

@@ -1,7 +1,7 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Services

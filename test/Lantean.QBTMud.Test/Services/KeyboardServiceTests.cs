@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Infrastructure.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;

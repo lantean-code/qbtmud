@@ -2,9 +2,10 @@ using System.Net;
 using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -16,10 +17,10 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using UiCategory = Lantean.QBTMud.Models.Category;
-using UiMainData = Lantean.QBTMud.Models.MainData;
-using UiServerState = Lantean.QBTMud.Models.ServerState;
-using UiTorrent = Lantean.QBTMud.Models.Torrent;
+using UiCategory = Lantean.QBTMud.Core.Models.Category;
+using UiMainData = Lantean.QBTMud.Core.Models.MainData;
+using UiServerState = Lantean.QBTMud.Core.Models.ServerState;
+using UiTorrent = Lantean.QBTMud.Core.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {

@@ -1,4 +1,4 @@
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Application.Services;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {

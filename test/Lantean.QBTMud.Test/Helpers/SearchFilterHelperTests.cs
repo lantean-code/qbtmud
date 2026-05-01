@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Helpers

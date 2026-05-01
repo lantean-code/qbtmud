@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Application.Services;
 using Moq;
 
 namespace Lantean.QBTMud.Test.Services

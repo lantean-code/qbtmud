@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;

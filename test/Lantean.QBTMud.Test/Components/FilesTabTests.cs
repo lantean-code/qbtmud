@@ -1,11 +1,12 @@
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Filter;
+using Lantean.QBTMud.Core.Filter;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -17,9 +18,9 @@ using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 using ClientPriority = QBittorrent.ApiClient.Models.Priority;
-using ContentItem = Lantean.QBTMud.Models.ContentItem;
-using FilterOperator = Lantean.QBTMud.Filter.FilterOperator;
-using UiPriority = Lantean.QBTMud.Models.Priority;
+using ContentItem = Lantean.QBTMud.Core.Models.ContentItem;
+using FilterOperator = Lantean.QBTMud.Core.Filter.FilterOperator;
+using UiPriority = Lantean.QBTMud.Core.Models.Priority;
 
 namespace Lantean.QBTMud.Test.Components
 {

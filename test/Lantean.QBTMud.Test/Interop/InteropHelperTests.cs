@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
