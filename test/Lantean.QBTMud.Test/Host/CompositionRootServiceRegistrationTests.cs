@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Test.Host
             services.AddSingleton(typeof(RoutingMode), RoutingMode.Path);
 
             services.AddQbtMudApplication();
-            services.AddQbtMudInfrastructure(apiBaseAddress, applicationBaseAddress, typeof(Lantean.QBTMud.Program).Assembly);
+            services.AddQbtMudInfrastructure(apiBaseAddress, applicationBaseAddress, typeof(Program).Assembly);
             services.AddQbtMudPresentation();
 
             var action = () =>

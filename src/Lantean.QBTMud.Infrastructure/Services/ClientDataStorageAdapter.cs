@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
             var normalizedKeys = prefixedKeys
                 .Where(key => !string.IsNullOrWhiteSpace(key))
                 .Select(key => key.Trim())
-                .Where(key => key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+                .Where(key => key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
 
@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
 
             var loadedData = loadedResult.Value;
             var entries = loadedData
-                .Where(entry => entry.Key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+                .Where(entry => entry.Key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
             return ClientDataLoadResult.FromEntries(entries);
         }
@@ -65,7 +65,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
 
             var loadedData = loadedResult.Value;
             var entries = loadedData
-                .Where(entry => entry.Key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+                .Where(entry => entry.Key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
             return ClientDataLoadResult.FromEntries(entries);
         }
@@ -79,7 +79,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
             var normalizedValues = prefixedValues
                 .Where(entry => !string.IsNullOrWhiteSpace(entry.Key))
                 .Select(entry => new KeyValuePair<string, object?>(entry.Key.Trim(), entry.Value))
-                .Where(entry => entry.Key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+                .Where(entry => entry.Key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
 
             if (normalizedValues.Count == 0)
@@ -111,7 +111,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
             var removalKeys = prefixedKeys
                 .Where(key => !string.IsNullOrWhiteSpace(key))
                 .Select(key => key.Trim())
-                .Where(key => key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+                .Where(key => key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
 

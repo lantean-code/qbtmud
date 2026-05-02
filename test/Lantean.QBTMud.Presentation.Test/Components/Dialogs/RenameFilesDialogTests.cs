@@ -12,6 +12,7 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
+using CoreExtensions = Lantean.QBTMud.Core.Extensions;
 using MudPriority = Lantean.QBTMud.Core.Models.Priority;
 
 namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
@@ -535,13 +536,13 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
         private static (string OldPath, string NewPath) GetReplaceAllPaths(FileRow row)
         {
-            var parentPath = global::Lantean.QBTMud.Core.Extensions.GetDirectoryPath(row.Name);
+            var parentPath = CoreExtensions.GetDirectoryPath(row.Name);
             var oldPath = string.IsNullOrEmpty(parentPath)
                 ? row.OriginalName!
-                : string.Concat(parentPath, global::Lantean.QBTMud.Core.Extensions.DirectorySeparator, row.OriginalName!);
+                : string.Concat(parentPath, CoreExtensions.DirectorySeparator, row.OriginalName!);
             var newPath = string.IsNullOrEmpty(parentPath)
                 ? row.NewName!
-                : string.Concat(parentPath, global::Lantean.QBTMud.Core.Extensions.DirectorySeparator, row.NewName!);
+                : string.Concat(parentPath, CoreExtensions.DirectorySeparator, row.NewName!);
             return (oldPath, newPath);
         }
     }

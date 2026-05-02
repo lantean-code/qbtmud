@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.TestSupport.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -65,7 +66,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             Mock.Get(_dialogService).Verify(service => service.ShowAsync<ExceptionDialog>(
                 "Error Details",
                 It.Is<DialogParameters>(parameters => HasExceptionDialogParameters(parameters, exception)),
-                Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions), Times.Once);
+                DialogWorkflow.FormDialogOptions), Times.Once);
             _languageLocalizerMock.Verify(
                 localizer => localizer.Translate("AppErrorDisplay", "Error Details", It.IsAny<object[]>()),
                 Times.Once);

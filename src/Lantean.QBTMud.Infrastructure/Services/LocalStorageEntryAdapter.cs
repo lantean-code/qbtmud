@@ -21,9 +21,9 @@ namespace Lantean.QBTMud.Infrastructure.Services
         }
 
         /// <inheritdoc />
-        public async Task<IReadOnlyList<BrowserStorageEntry>> GetEntriesByPrefixAsync(string prefix, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<BrowserStorageEntry>> GetEntriesAsync(CancellationToken cancellationToken = default)
         {
-            return await _jsRuntime.GetLocalStorageEntriesByPrefix(prefix, cancellationToken);
+            return await _jsRuntime.GetLocalStorageEntriesByPrefix(StorageKeys.Prefix, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -33,9 +33,9 @@ namespace Lantean.QBTMud.Infrastructure.Services
         }
 
         /// <inheritdoc />
-        public async Task<int> ClearEntriesByPrefixAsync(string prefix, CancellationToken cancellationToken = default)
+        public async Task<int> ClearEntriesAsync(CancellationToken cancellationToken = default)
         {
-            return await _jsRuntime.ClearLocalStorageEntriesByPrefix(prefix, cancellationToken);
+            return await _jsRuntime.ClearLocalStorageEntriesByPrefix(StorageKeys.Prefix, cancellationToken);
         }
     }
 }

@@ -302,8 +302,7 @@ namespace Lantean.QBTMud.Application.Services
 
         private async Task<IReadOnlyDictionary<string, string?>> GetLocalEntriesByPrefixAsync(string keyPrefix, CancellationToken cancellationToken)
         {
-            var prefixedPrefix = ToPrefixedKey(keyPrefix);
-            var entries = await _localStorageEntryAdapter.GetEntriesByPrefixAsync(prefixedPrefix, cancellationToken);
+            var entries = await _localStorageEntryAdapter.GetEntriesAsync(cancellationToken);
             var result = new Dictionary<string, string?>(StringComparer.Ordinal);
 
             foreach (var entry in entries)
@@ -315,6 +314,11 @@ namespace Lantean.QBTMud.Application.Services
 
                 var unprefixedKey = ToUnprefixedKey(entry.Key);
                 if (unprefixedKey is null)
+                {
+                    continue;
+                }
+
+                if (!unprefixedKey.StartsWith(keyPrefix, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -425,22 +429,22 @@ namespace Lantean.QBTMud.Application.Services
 
         private static string ToPrefixedKey(string key)
         {
-            if (key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+            if (key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
             {
                 return key;
             }
 
-            return string.Concat(IClientDataStorageAdapter.StorageKeyPrefix, key);
+            return string.Concat(StorageKeys.Prefix, key);
         }
 
         private static string? ToUnprefixedKey(string prefixedKey)
         {
-            if (!prefixedKey.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+            if (!prefixedKey.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
             {
                 return null;
             }
 
-            return prefixedKey[IClientDataStorageAdapter.StorageKeyPrefix.Length..];
+            return prefixedKey[StorageKeys.Prefix.Length..];
         }
     }
 }

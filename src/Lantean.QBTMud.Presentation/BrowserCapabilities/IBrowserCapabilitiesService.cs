@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.BrowserCapabilities
         /// <summary>
         /// Gets the current capability snapshot.
         /// </summary>
-        BrowserCapabilities Capabilities { get; }
+        BrowserCapabilityState Capabilities { get; }
 
         /// <summary>
         /// Initializes browser capability detection if it has not already completed.

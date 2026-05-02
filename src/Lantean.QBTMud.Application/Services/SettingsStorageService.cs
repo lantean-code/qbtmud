@@ -213,12 +213,12 @@ namespace Lantean.QBTMud.Application.Services
 
         private static string ToPrefixedKey(string key)
         {
-            if (key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+            if (key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
             {
                 return key;
             }
 
-            return string.Concat(IClientDataStorageAdapter.StorageKeyPrefix, key);
+            return string.Concat(StorageKeys.Prefix, key);
         }
     }
 }

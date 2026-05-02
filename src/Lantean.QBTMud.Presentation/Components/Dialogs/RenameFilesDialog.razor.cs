@@ -152,13 +152,13 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var newName = match.NewName!;
 
-            var parentPath = global::Lantean.QBTMud.Core.Extensions.GetDirectoryPath(match.Name);
+            var parentPath = Extensions.GetDirectoryPath(match.Name);
             var oldPath = string.IsNullOrEmpty(parentPath)
                 ? match.OriginalName
-                : string.Concat(parentPath, global::Lantean.QBTMud.Core.Extensions.DirectorySeparator, match.OriginalName);
+                : string.Concat(parentPath, Extensions.DirectorySeparator, match.OriginalName);
             var newPath = string.IsNullOrEmpty(parentPath)
                 ? newName
-                : string.Concat(parentPath, global::Lantean.QBTMud.Core.Extensions.DirectorySeparator, newName);
+                : string.Concat(parentPath, Extensions.DirectorySeparator, newName);
 
             ApiResult renameResult;
             if (match.IsFolder)

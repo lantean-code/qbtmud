@@ -10,6 +10,7 @@ using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 using MudMainData = Lantean.QBTMud.Core.Models.MainData;
+using TorrentStatus = Lantean.QBTMud.Core.Models.Status;
 
 namespace Lantean.QBTMud.Components
 {
@@ -122,9 +123,9 @@ namespace Lantean.QBTMud.Components
 
         protected async Task StatusValueChanged(string value)
         {
-            TorrentQueryState.SetStatus(Enum.Parse<Status>(value));
+            TorrentQueryState.SetStatus(Enum.Parse<TorrentStatus>(value));
 
-            if (value != Core.Models.Status.All.ToString())
+            if (value != TorrentStatus.All.ToString())
             {
                 await SettingsStorage.SetItemAsStringAsync(_statusSelectionStorageKey, value);
             }
@@ -549,18 +550,18 @@ namespace Lantean.QBTMud.Components
 
             return parsed switch
             {
-                Core.Models.Status.All => LanguageLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
-                Core.Models.Status.Downloading => LanguageLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
-                Core.Models.Status.Seeding => LanguageLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
-                Core.Models.Status.Completed => LanguageLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
-                Core.Models.Status.Stopped => LanguageLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
-                Core.Models.Status.Active => LanguageLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
-                Core.Models.Status.Inactive => LanguageLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
-                Core.Models.Status.Stalled => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
-                Core.Models.Status.StalledUploading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
-                Core.Models.Status.StalledDownloading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
-                Core.Models.Status.Checking => LanguageLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
-                Core.Models.Status.Errored => LanguageLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
+                TorrentStatus.All => LanguageLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
+                TorrentStatus.Downloading => LanguageLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
+                TorrentStatus.Seeding => LanguageLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
+                TorrentStatus.Completed => LanguageLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
+                TorrentStatus.Stopped => LanguageLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
+                TorrentStatus.Active => LanguageLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
+                TorrentStatus.Inactive => LanguageLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
+                TorrentStatus.Stalled => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
+                TorrentStatus.StalledUploading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
+                TorrentStatus.StalledDownloading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
+                TorrentStatus.Checking => LanguageLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
+                TorrentStatus.Errored => LanguageLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
                 _ => status
             };
         }

@@ -1,4 +1,4 @@
-@inject Lantean.QBTMud.Application.Services.Localization.ILanguageLocalizer LanguageLocalizer
+@inject ILanguageLocalizer LanguageLocalizer
 
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu" data-test-id="@TestIdHelper.For("ContextMenuRename")">@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")</MudMenuItem>

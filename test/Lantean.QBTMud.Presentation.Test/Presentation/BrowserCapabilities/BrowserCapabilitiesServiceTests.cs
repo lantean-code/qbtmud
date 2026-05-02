@@ -3,7 +3,6 @@ using Lantean.QBTMud.BrowserCapabilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
-using BrowserCapabilitiesModel = Lantean.QBTMud.BrowserCapabilities.BrowserCapabilities;
 
 namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
 {
@@ -32,7 +31,7 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         [Fact]
         public async Task GIVEN_NotInitialized_WHEN_EnsureInitialized_THEN_LoadsCapabilitiesAndSetsState()
         {
-            var capabilities = new BrowserCapabilitiesModel(
+            var capabilities = new BrowserCapabilityState(
                 SupportsHoverPointer: true,
                 SupportsHover: true,
                 SupportsFinePointer: true,
@@ -53,8 +52,8 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
                 IsStandaloneDisplayMode: false);
 
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>(capabilities));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>(capabilities));
 
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
 
@@ -64,7 +63,7 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
             Mock.Get(_jSRuntime)
                 .Verify(runtime => runtime.InvokeAsync<IJSObjectReference>(_jsImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))), Times.Once);
             Mock.Get(_jSModule)
-                .Verify(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Once);
+                .Verify(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Once);
             Mock.Get(_jSModule)
                 .Verify(module => module.InvokeAsync<bool>("supportsHoverPointer", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Never);
         }
@@ -73,8 +72,8 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         public async Task GIVEN_AlreadyInitialized_WHEN_EnsureInitializedInvokedAgain_THEN_DoesNotInvokeInteropTwice()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>(BrowserCapabilitiesModel.Default));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>(BrowserCapabilityState.Default));
 
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
@@ -83,14 +82,14 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
             Mock.Get(_jSRuntime)
                 .Verify(runtime => runtime.InvokeAsync<IJSObjectReference>(_jsImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))), Times.Once);
             Mock.Get(_jSModule)
-                .Verify(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Once);
+                .Verify(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_PrimaryInteropThrows_WHEN_EnsureInitialized_THEN_UsesFallbackInterop()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
                 .ThrowsAsync(new JSException("PrimaryFailure"));
             Mock.Get(_jSModule)
                 .Setup(module => module.InvokeAsync<bool>("supportsHoverPointer", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
@@ -99,7 +98,7 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             _target.IsInitialized.Should().BeTrue();
-            _target.Capabilities.Should().BeEquivalentTo(new BrowserCapabilitiesModel(
+            _target.Capabilities.Should().BeEquivalentTo(new BrowserCapabilityState(
                 SupportsHoverPointer: true,
                 SupportsHover: true,
                 SupportsFinePointer: true,
@@ -126,7 +125,7 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         public async Task GIVEN_BothInteropCallsThrow_WHEN_EnsureInitialized_THEN_FallsBackToConservativeDefaults()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
                 .ThrowsAsync(new JSException("PrimaryFailure"));
             Mock.Get(_jSModule)
                 .Setup(module => module.InvokeAsync<bool>("supportsHoverPointer", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
@@ -135,20 +134,20 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             _target.IsInitialized.Should().BeTrue();
-            _target.Capabilities.Should().Be(BrowserCapabilitiesModel.Default);
+            _target.Capabilities.Should().Be(BrowserCapabilityState.Default);
         }
 
         [Fact]
         public async Task GIVEN_InteropReturnsNull_WHEN_EnsureInitialized_THEN_UsesConservativeDefaults()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>((BrowserCapabilitiesModel?)null));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>((BrowserCapabilityState?)null));
 
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             _target.IsInitialized.Should().BeTrue();
-            _target.Capabilities.Should().Be(BrowserCapabilitiesModel.Default);
+            _target.Capabilities.Should().Be(BrowserCapabilityState.Default);
             Mock.Get(_jSModule)
                 .Verify(module => module.InvokeAsync<bool>("supportsHoverPointer", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Never);
         }
@@ -157,8 +156,8 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         public async Task GIVEN_Initialized_WHEN_Disposed_THEN_ShouldDisposeJavaScriptModule()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>(BrowserCapabilitiesModel.Default));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>(BrowserCapabilityState.Default));
 
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
             await _target.DisposeAsync();
@@ -171,8 +170,8 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         public async Task GIVEN_InitializedAndAlreadyDisposed_WHEN_DisposeCalledAgain_THEN_ShouldReturnWithoutThrowing()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>(BrowserCapabilitiesModel.Default));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>(BrowserCapabilityState.Default));
 
             await _target.EnsureInitialized(TestContext.Current.CancellationToken);
             await _target.DisposeAsync();
@@ -185,8 +184,8 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         public async Task GIVEN_ModuleDisposeThrowsJsDisconnectedException_WHEN_Disposed_THEN_ShouldSwallowException()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>(BrowserCapabilitiesModel.Default));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>(BrowserCapabilityState.Default));
             Mock.Get(_jSModule)
                 .Setup(module => module.DisposeAsync())
                 .Throws(new JSDisconnectedException("Disconnected"));
@@ -205,8 +204,8 @@ namespace Lantean.QBTMud.Presentation.Test.Presentation.BrowserCapabilities
         public async Task GIVEN_ModuleDisposeThrowsObjectDisposedException_WHEN_Disposed_THEN_ShouldSwallowException()
         {
             Mock.Get(_jSModule)
-                .Setup(module => module.InvokeAsync<BrowserCapabilitiesModel?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
-                .Returns(new ValueTask<BrowserCapabilitiesModel?>(BrowserCapabilitiesModel.Default));
+                .Setup(module => module.InvokeAsync<BrowserCapabilityState?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilityState?>(BrowserCapabilityState.Default));
             Mock.Get(_jSModule)
                 .Setup(module => module.DisposeAsync())
                 .Throws(new ObjectDisposedException("JSModule"));

@@ -127,7 +127,7 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
             var browserCapabilitiesService = Mock.Of<IBrowserCapabilitiesService>();
             var browserCapabilitiesMock = Mock.Get(browserCapabilitiesService);
             browserCapabilitiesMock.Setup(service => service.IsInitialized).Returns(true);
-            browserCapabilitiesMock.Setup(service => service.Capabilities).Returns(new Lantean.QBTMud.BrowserCapabilities.BrowserCapabilities(
+            browserCapabilitiesMock.Setup(service => service.Capabilities).Returns(new BrowserCapabilityState(
                 SupportsHoverPointer: true,
                 SupportsHover: true,
                 SupportsFinePointer: true,

@@ -8,12 +8,11 @@ namespace Lantean.QBTMud.Application.Services
     public interface ILocalStorageEntryAdapter
     {
         /// <summary>
-        /// Gets local storage entries that match a key prefix.
+        /// Gets qbtmud-owned local storage entries.
         /// </summary>
-        /// <param name="prefix">The key prefix.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The matching local storage entries.</returns>
-        Task<IReadOnlyList<BrowserStorageEntry>> GetEntriesByPrefixAsync(string prefix, CancellationToken cancellationToken = default);
+        /// <returns>The qbtmud-owned local storage entries.</returns>
+        Task<IReadOnlyList<BrowserStorageEntry>> GetEntriesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Removes a local storage entry by key.
@@ -24,11 +23,10 @@ namespace Lantean.QBTMud.Application.Services
         Task RemoveEntryAsync(string key, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Clears local storage entries that match a key prefix.
+        /// Clears qbtmud-owned local storage entries.
         /// </summary>
-        /// <param name="prefix">The key prefix.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The number of removed entries.</returns>
-        Task<int> ClearEntriesByPrefixAsync(string prefix, CancellationToken cancellationToken = default);
+        Task<int> ClearEntriesAsync(CancellationToken cancellationToken = default);
     }
 }

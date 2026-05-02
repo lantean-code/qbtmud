@@ -13,6 +13,7 @@ using MudBlazor.Extensions;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 using ClientPriority = QBittorrent.ApiClient.Models.Priority;
+using CoreFilterExpressionGenerator = Lantean.QBTMud.Core.Filter.FilterExpressionGenerator;
 using MudPriority = Lantean.QBTMud.Core.Models.Priority;
 
 namespace Lantean.QBTMud.Components
@@ -110,7 +111,7 @@ namespace Lantean.QBTMud.Components
             var filters = new List<Func<ContentItem, bool>>();
             foreach (var filterDefinition in _filterDefinitions)
             {
-                var expression = Core.Filter.FilterExpressionGenerator.GenerateExpression(filterDefinition, false);
+                var expression = CoreFilterExpressionGenerator.GenerateExpression(filterDefinition, false);
                 filters.Add(expression.Compile());
             }
 

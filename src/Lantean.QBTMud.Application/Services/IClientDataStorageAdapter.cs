@@ -6,11 +6,6 @@ namespace Lantean.QBTMud.Application.Services
     public interface IClientDataStorageAdapter
     {
         /// <summary>
-        /// The qbtmud key prefix used in browser and ClientData storage.
-        /// </summary>
-        const string StorageKeyPrefix = "QbtMud.";
-
-        /// <summary>
         /// Loads qbtmud-prefixed entries for specific prefixed keys.
         /// </summary>
         /// <param name="prefixedKeys">The full prefixed keys to load.</param>

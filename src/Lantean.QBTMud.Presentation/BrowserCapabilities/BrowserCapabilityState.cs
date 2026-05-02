@@ -63,7 +63,7 @@ namespace Lantean.QBTMud.BrowserCapabilities
     /// <param name="IsStandaloneDisplayMode">
     /// <see langword="true"/> when running in standalone display mode (for example, an installed PWA shell).
     /// </param>
-    public sealed record BrowserCapabilities(
+    public sealed record BrowserCapabilityState(
         bool SupportsHoverPointer,
         bool SupportsHover,
         bool SupportsFinePointer,
@@ -89,11 +89,11 @@ namespace Lantean.QBTMud.BrowserCapabilities
         /// <remarks>
         /// All feature flags are disabled and values are zeroed to avoid optimistic assumptions.
         /// </remarks>
-        public static BrowserCapabilities Default
+        public static BrowserCapabilityState Default
         {
             get
             {
-                return new BrowserCapabilities(
+                return new BrowserCapabilityState(
                     SupportsHoverPointer: false,
                     SupportsHover: false,
                     SupportsFinePointer: false,

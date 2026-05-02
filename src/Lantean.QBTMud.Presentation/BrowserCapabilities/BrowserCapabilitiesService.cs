@@ -18,7 +18,7 @@ namespace Lantean.QBTMud.BrowserCapabilities
         private readonly ILogger<BrowserCapabilitiesService> _logger;
 
         private IJSObjectReference? _module;
-        private BrowserCapabilities _capabilities = BrowserCapabilities.Default;
+        private BrowserCapabilityState _capabilities = BrowserCapabilityState.Default;
         private bool _isInitialized;
         private bool _disposed;
 
@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.BrowserCapabilities
         }
 
         /// <inheritdoc />
-        public BrowserCapabilities Capabilities
+        public BrowserCapabilityState Capabilities
         {
             get
             {
@@ -108,13 +108,13 @@ namespace Lantean.QBTMud.BrowserCapabilities
             GC.SuppressFinalize(this);
         }
 
-        private async Task<BrowserCapabilities> LoadCapabilities(CancellationToken cancellationToken)
+        private async Task<BrowserCapabilityState> LoadCapabilities(CancellationToken cancellationToken)
         {
             try
             {
                 var module = await GetModule(cancellationToken);
-                var capabilities = await module.InvokeAsync<BrowserCapabilities?>(_browserCapabilitiesExport, cancellationToken);
-                return capabilities ?? BrowserCapabilities.Default;
+                var capabilities = await module.InvokeAsync<BrowserCapabilityState?>(_browserCapabilitiesExport, cancellationToken);
+                return capabilities ?? BrowserCapabilityState.Default;
             }
             catch (JSException ex)
             {
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.BrowserCapabilities
             {
                 var module = await GetModule(cancellationToken);
                 var supportsHoverPointer = await module.InvokeAsync<bool>(_supportsHoverPointerExport, cancellationToken);
-                return new BrowserCapabilities(
+                return new BrowserCapabilityState(
                     SupportsHoverPointer: supportsHoverPointer,
                     SupportsHover: supportsHoverPointer,
                     SupportsFinePointer: supportsHoverPointer,
@@ -148,7 +148,7 @@ namespace Lantean.QBTMud.BrowserCapabilities
             catch (JSException ex)
             {
                 _logger.LogWarning(ex, "Could not determine browser capabilities. Falling back to conservative defaults.");
-                return BrowserCapabilities.Default;
+                return BrowserCapabilityState.Default;
             }
         }
 

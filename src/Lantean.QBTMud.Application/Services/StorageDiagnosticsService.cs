@@ -39,12 +39,12 @@ namespace Lantean.QBTMud.Application.Services
         public async Task<IReadOnlyList<AppStorageEntry>> GetEntriesAsync(CancellationToken cancellationToken = default)
         {
             var result = new List<AppStorageEntry>();
-            var localEntries = await _localStorageEntryAdapter.GetEntriesByPrefixAsync(IClientDataStorageAdapter.StorageKeyPrefix, cancellationToken);
+            var localEntries = await _localStorageEntryAdapter.GetEntriesAsync(cancellationToken);
 
             foreach (var entry in localEntries.Where(entry => entry is not null && !string.IsNullOrWhiteSpace(entry.Key)))
             {
-                var displayKey = entry.Key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal)
-                    ? entry.Key[IClientDataStorageAdapter.StorageKeyPrefix.Length..]
+                var displayKey = entry.Key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal)
+                    ? entry.Key[StorageKeys.Prefix.Length..]
                     : entry.Key;
                 var value = entry.Value;
 
@@ -65,8 +65,8 @@ namespace Lantean.QBTMud.Application.Services
                 {
                     foreach (var (key, value) in clientEntriesResult.Entries)
                     {
-                        var displayKey = key.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal)
-                            ? key[IClientDataStorageAdapter.StorageKeyPrefix.Length..]
+                        var displayKey = key.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal)
+                            ? key[StorageKeys.Prefix.Length..]
                             : key;
                         var textValue = ConvertClientValueToText(value);
 
@@ -99,7 +99,7 @@ namespace Lantean.QBTMud.Application.Services
                 return;
             }
 
-            if (!prefixedKey.StartsWith(IClientDataStorageAdapter.StorageKeyPrefix, StringComparison.Ordinal))
+            if (!prefixedKey.StartsWith(StorageKeys.Prefix, StringComparison.Ordinal))
             {
                 return;
             }
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Application.Services
             var removedCount = 0;
             if (storageType is null || storageType == StorageType.LocalStorage)
             {
-                removedCount += await _localStorageEntryAdapter.ClearEntriesByPrefixAsync(IClientDataStorageAdapter.StorageKeyPrefix, cancellationToken);
+                removedCount += await _localStorageEntryAdapter.ClearEntriesAsync(cancellationToken);
             }
 
             if (storageType is null || storageType == StorageType.ClientData)

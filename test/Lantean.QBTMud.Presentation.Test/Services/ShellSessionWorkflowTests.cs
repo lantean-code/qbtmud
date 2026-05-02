@@ -680,7 +680,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 Array.Empty<string>(),
                 new Dictionary<string, Category>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new Lantean.QBTMud.Core.Models.ServerState
+                new ServerState
                 {
                     DownloadInfoSpeed = downloadSpeed,
                     UploadInfoSpeed = uploadSpeed

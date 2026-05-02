@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.BrowserCapabilities;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -327,7 +326,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
         {
             var browserCapabilitiesServiceMock = Mock.Get(_browserCapabilitiesService);
             browserCapabilitiesServiceMock.Setup(service => service.IsInitialized).Returns(isInitialized);
-            browserCapabilitiesServiceMock.Setup(service => service.Capabilities).Returns(new Lantean.QBTMud.BrowserCapabilities.BrowserCapabilities(
+            browserCapabilitiesServiceMock.Setup(service => service.Capabilities).Returns(new BrowserCapabilityState(
                 SupportsHoverPointer: supportsHoverPointer,
                 SupportsHover: supportsHoverPointer,
                 SupportsFinePointer: supportsHoverPointer,

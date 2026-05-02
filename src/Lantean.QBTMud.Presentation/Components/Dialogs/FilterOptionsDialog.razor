@@ -1,6 +1,7 @@
 @typeparam T
 @inherits SubmittableDialog
-@inject Lantean.QBTMud.Application.Services.Localization.ILanguageLocalizer LanguageLocalizer
+@using CoreFilterOperator = Lantean.QBTMud.Core.Filter.FilterOperator
+@inject ILanguageLocalizer LanguageLocalizer
 
 <MudDialog Style="min-width: 400px;">
     <DialogContent>
@@ -12,7 +13,7 @@
                 </MudItem>
                 <MudItem xs="3">
                     <MudSelect Label="@LanguageLocalizer.Translate("AppFilterOptionsDialog", "Operator")" T="string" Value="@definition.Operator" ValueChanged="@(v => DefinitionOperatorChanged(definition, v))" data-test-id="@TestIdHelper.For($"FilterOperator-{definition.Column}")">
-                        @foreach (var op in Lantean.QBTMud.Core.Filter.FilterOperator.GetOperatorByDataType(definition.ColumnType))
+                        @foreach (var op in CoreFilterOperator.GetOperatorByDataType(definition.ColumnType))
                         {
                             <MudSelectItem T="string" Value="op">@LanguageLocalizer.Translate("AppFilterOptionsDialog", op)</MudSelectItem>
                         }
@@ -42,7 +43,7 @@
                     }
                     else
                     {
-                        foreach (var op in Lantean.QBTMud.Core.Filter.FilterOperator.GetOperatorByDataType(ColumnType))
+                        foreach (var op in CoreFilterOperator.GetOperatorByDataType(ColumnType))
                         {
                             <MudSelectItem T="string" Value="op">@LanguageLocalizer.Translate("AppFilterOptionsDialog", op)</MudSelectItem>
                         }

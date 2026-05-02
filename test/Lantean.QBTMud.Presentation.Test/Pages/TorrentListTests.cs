@@ -307,7 +307,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var contextArgs = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrentA);
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
 
-            var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
+            var menuActions = _popoverProvider.FindComponents<TorrentActions>()
                 .Single(component => component.Instance.RenderType == RenderType.MenuItems);
 
             menuActions.Instance.Hashes.Should().BeEquivalentTo(new[] { "HashSelectedA", "HashSelectedB" });
@@ -326,7 +326,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var contextArgs = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrentA);
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
 
-            var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
+            var menuActions = _popoverProvider.FindComponents<TorrentActions>()
                 .Single(component => component.Instance.RenderType == RenderType.MenuItems);
 
             menuActions.Instance.Hashes.Should().Equal("HashDuplicate");
