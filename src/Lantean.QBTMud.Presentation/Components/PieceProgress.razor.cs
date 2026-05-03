@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
+using MudBlazor.Utilities;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
@@ -45,15 +46,15 @@ namespace Lantean.QBTMud.Components
             string borderColor;
             if (IsDarkMode)
             {
-                downloadingColor = Theme.PaletteDark.Success.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
-                haveColor = Theme.PaletteDark.Info.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
-                borderColor = Theme.PaletteDark.White.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                downloadingColor = Theme.PaletteDark.Success.ToString(MudColorOutputFormats.RGBA);
+                haveColor = Theme.PaletteDark.Info.ToString(MudColorOutputFormats.RGBA);
+                borderColor = Theme.PaletteDark.White.ToString(MudColorOutputFormats.RGBA);
             }
             else
             {
-                downloadingColor = Theme.PaletteLight.Success.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
-                haveColor = Theme.PaletteLight.Info.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
-                borderColor = Theme.PaletteLight.Black.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                downloadingColor = Theme.PaletteLight.Success.ToString(MudColorOutputFormats.RGBA);
+                haveColor = Theme.PaletteLight.Info.ToString(MudColorOutputFormats.RGBA);
+                borderColor = Theme.PaletteLight.Black.ToString(MudColorOutputFormats.RGBA);
             }
             await JSRuntime.RenderPiecesBar("progress", Hash, Pieces.Select(s => (int)s).ToArray(), downloadingColor, haveColor, borderColor);
         }

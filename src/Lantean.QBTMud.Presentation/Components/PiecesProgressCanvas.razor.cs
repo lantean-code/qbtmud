@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Interop;
 using Microsoft.AspNetCore.Components;
@@ -262,7 +263,7 @@ namespace Lantean.QBTMud.Components
                 return $"background-color: {PendingColor};";
             }
 
-            var builder = new System.Text.StringBuilder();
+            var builder = new StringBuilder();
             builder.Append("background-color: ").Append(PendingColor).Append(';');
             builder.Append("background-image: linear-gradient(to right");
 
@@ -284,7 +285,7 @@ namespace Lantean.QBTMud.Components
             return builder.ToString();
         }
 
-        private void AppendGradientSegment(System.Text.StringBuilder builder, PieceState state, int startIndex, int endIndex, int totalPieces)
+        private void AppendGradientSegment(StringBuilder builder, PieceState state, int startIndex, int endIndex, int totalPieces)
         {
             var color = state switch
             {

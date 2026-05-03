@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Core.Filter;
 using Lantean.QBTMud.Core.Models;
+using MudBlazor;
 using QBittorrent.ApiClient.Models;
 using MudCategory = Lantean.QBTMud.Core.Models.Category;
 using MudTorrent = Lantean.QBTMud.Core.Models.Torrent;
@@ -237,6 +238,6 @@ namespace Lantean.QBTMud.Services
         /// </summary>
         /// <param name="theme">The theme to preview.</param>
         /// <param name="isDarkMode">Whether to start the preview in dark mode.</param>
-        Task ShowThemePreviewDialog(MudBlazor.MudTheme theme, bool isDarkMode);
+        Task ShowThemePreviewDialog(MudTheme theme, bool isDarkMode);
     }
 }

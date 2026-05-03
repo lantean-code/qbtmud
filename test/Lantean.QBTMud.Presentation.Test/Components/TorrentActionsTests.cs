@@ -1,6 +1,6 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
@@ -55,9 +55,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
-            apiClientMock.Setup(c => c.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
-            apiClientMock.Setup(c => c.SetForceStartAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+            apiClientMock.Setup(c => c.SetForceStartAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var torrents = Torrents(
                 CreateTorrent("One", state: TorrentState.StoppedDownloading),
@@ -180,7 +180,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), false, It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var torrents = Torrents(
                 CreateTorrent("One", automaticTorrentManagement: true),
@@ -202,7 +202,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), true, It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var torrents = Torrents(
                 CreateTorrent("One", automaticTorrentManagement: false),
@@ -299,7 +299,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.ToggleSequentialDownloadAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             TestContext.AddSingletonMock<IDialogWorkflow>();
 
             var torrents = Torrents(CreateTorrent("Hash", sequentialDownload: true));
@@ -319,7 +319,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.SetFirstLastPiecePriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             TestContext.AddSingletonMock<IDialogWorkflow>();
 
             var torrents = Torrents(CreateTorrent("Hash", firstLastPiecePriority: true));
@@ -377,7 +377,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 {
                     Kind = ApiFailureKind.ServerError,
                     Operation = "test",
-                    StatusCode = System.Net.HttpStatusCode.InternalServerError,
+                    StatusCode = HttpStatusCode.InternalServerError,
                     UserMessage = "Failure",
                     Detail = "Failure",
                     ResponseBody = "Failure",
@@ -506,10 +506,10 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.RemoveTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.AddTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Other" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             TestContext.AddSingletonMock<IDialogWorkflow>();
 
             var removeTagTarget = TestContext.Render<TorrentActions>(parameters =>
@@ -553,10 +553,10 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), string.Empty, It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "New" }), "Category", It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             TestContext.AddSingletonMock<IDialogWorkflow>();
 
             var categoryRemoveTarget = TestContext.Render<TorrentActions>(parameters =>
@@ -644,7 +644,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var torrents = Torrents(
                 CreateTorrent("Done", progress: 1f, superSeeding: true),
@@ -669,7 +669,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 .ReturnsSuccess(Task.CompletedTask);
             apiClientMock
                 .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Other")), true, It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var torrents = Torrents(
                 CreateTorrent("Done", progress: 1f, superSeeding: true),
@@ -728,19 +728,19 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.ReannounceTorrentsAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), null, It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.MaxTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.IncreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.DecreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.MinTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             TestContext.AddSingletonMock<IDialogWorkflow>();
 
             var menuTarget = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash")), Tags("Tag"), Categories("Category"));

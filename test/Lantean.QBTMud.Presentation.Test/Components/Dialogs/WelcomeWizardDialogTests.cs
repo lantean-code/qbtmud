@@ -2,11 +2,10 @@ using System.Globalization;
 using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -37,8 +36,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         public WelcomeWizardDialogTests()
         {
             _navigationManager = new TestNavigationManager();
-            TestContext.Services.RemoveAll<Microsoft.AspNetCore.Components.NavigationManager>();
-            TestContext.Services.AddSingleton<Microsoft.AspNetCore.Components.NavigationManager>(_navigationManager);
+            TestContext.Services.RemoveAll<NavigationManager>();
+            TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
 
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
@@ -2002,7 +2001,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
     }
 
-    internal sealed class TestNavigationManager : Microsoft.AspNetCore.Components.NavigationManager
+    internal sealed class TestNavigationManager : NavigationManager
     {
         public TestNavigationManager()
         {
@@ -2011,7 +2010,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
         public string LastUri { get; private set; } = "http://localhost/";
 
-        protected override void NavigateToCore(string uri, Microsoft.AspNetCore.Components.NavigationOptions options)
+        protected override void NavigateToCore(string uri, NavigationOptions options)
         {
             var absolute = ToAbsoluteUri(uri).ToString();
             LastUri = absolute;

@@ -1,14 +1,13 @@
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 
@@ -54,9 +53,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                     It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
                     It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
                     It.IsAny<Func<string?, string>?>(),
-                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<Severity>(),
                     It.IsAny<CancellationToken>()))
-                .Returns<ApiResult<IReadOnlyList<WebSeed>>, Func<ApiFailure, ApiFeedbackCustomFailureResult>, Func<string?, string>?, MudBlazor.Severity, CancellationToken>(
+                .Returns<ApiResult<IReadOnlyList<WebSeed>>, Func<ApiFailure, ApiFeedbackCustomFailureResult>, Func<string?, string>?, Severity, CancellationToken>(
                     (result, handleCustomFailure, _, _, _) =>
                     {
                         if (result.IsFailure && result.Failure is not null)
@@ -70,7 +69,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 .Setup(workflow => workflow.HandleFailureAsync(
                     It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
                     It.IsAny<Func<string?, string>?>(),
-                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<Severity>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
@@ -174,7 +173,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
                 It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
                 It.IsAny<Func<string?, string>?>(),
-                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<Severity>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -196,7 +195,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
                 It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
                 It.IsAny<Func<string?, string>?>(),
-                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<Severity>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -213,7 +212,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
                 It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
                 It.IsAny<Func<string?, string>?>(),
-                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<Severity>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -235,7 +234,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
                 It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
                 It.IsAny<Func<string?, string>?>(),
-                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<Severity>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 

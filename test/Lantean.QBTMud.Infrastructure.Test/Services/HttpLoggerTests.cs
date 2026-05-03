@@ -1,5 +1,5 @@
+using System.Net;
 using AwesomeAssertions;
-using Lantean.QBTMud.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
         public void GIVEN_RequestAndResponse_WHEN_LogRequestStop_THEN_ShouldNotThrow()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com");
-            var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
 
             _target.LogRequestStop(null, request, response, TimeSpan.FromMilliseconds(5));
         }

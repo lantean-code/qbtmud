@@ -1,13 +1,12 @@
+using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Core.Theming;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -1141,7 +1140,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             public TestBrowserFile(string name, string content)
             {
                 Name = name;
-                _content = System.Text.Encoding.UTF8.GetBytes(content);
+                _content = Encoding.UTF8.GetBytes(content);
             }
 
             public string Name { get; }

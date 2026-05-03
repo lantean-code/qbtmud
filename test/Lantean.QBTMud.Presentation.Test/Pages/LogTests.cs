@@ -1,6 +1,6 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Microsoft.AspNetCore.Components;
@@ -316,7 +316,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var target = RenderTarget();
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", System.Net.HttpStatusCode.Forbidden);
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", HttpStatusCode.Forbidden);
 
             var tickResult = await TriggerTimerTickAsync(target);
 
@@ -340,7 +340,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var apiClient = new Mock<IApiClient>(MockBehavior.Strict);
             apiClient
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Message", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
             var managedTimer = new Mock<IManagedTimer>(MockBehavior.Strict);
             var managedTimerFactory = new Mock<IManagedTimerFactory>(MockBehavior.Strict);
             managedTimerFactory

@@ -1,7 +1,6 @@
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core.Helpers;
@@ -737,10 +736,10 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             apiClientMock
                 .Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash3" })), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash2" })), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var target = RenderFiltersNav(mainData, preferences);
 

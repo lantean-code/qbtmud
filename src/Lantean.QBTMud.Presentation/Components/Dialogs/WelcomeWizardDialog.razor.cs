@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private const string _notificationSynchronizationErrorText = "Unable to synchronize notification settings.";
 
         [Inject]
-        protected QBittorrent.ApiClient.IApiClient ApiClient { get; set; } = default!;
+        protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
         protected ILanguageCatalog LanguageCatalog { get; set; } = default!;

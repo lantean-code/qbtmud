@@ -1,10 +1,9 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.AppSettingsTabs;
 using Lantean.QBTMud.Core.Interop;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
 using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
@@ -136,7 +135,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
         {
             _notificationServiceMock
                 .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new Microsoft.JSInterop.JSException("Failure"));
+                .ThrowsAsync(new JSException("Failure"));
 
             var target = RenderTarget();
             var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");

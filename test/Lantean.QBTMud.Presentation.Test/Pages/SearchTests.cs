@@ -2,7 +2,6 @@ using System.Net;
 using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core.Models;
@@ -1746,7 +1745,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var backButton = FindIconButton(target, Icons.Material.Outlined.NavigateBefore);
             await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            var navigationManager = TestContext.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.Uri.Should().Be(navigationManager.BaseUri);
         }
 

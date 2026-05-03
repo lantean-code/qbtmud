@@ -3,6 +3,7 @@ using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Core.Theming;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Infrastructure.Services
 {
@@ -746,7 +747,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
             var name = string.IsNullOrWhiteSpace(definition.Name) ? TranslateApp("Untitled Theme") : definition.Name.Trim();
             var id = string.IsNullOrWhiteSpace(definition.Id) ? Guid.NewGuid().ToString("N") : definition.Id.Trim();
             var description = string.IsNullOrWhiteSpace(definition.Description) ? string.Empty : definition.Description.Trim();
-            var theme = definition.Theme ?? new MudBlazor.MudTheme();
+            var theme = definition.Theme ?? new MudTheme();
 
             var fontFamily = string.IsNullOrWhiteSpace(definition.FontFamily) ? "Nunito Sans" : definition.FontFamily;
             if (!_themeFontCatalog.TryGetFontUrl(fontFamily, out _))

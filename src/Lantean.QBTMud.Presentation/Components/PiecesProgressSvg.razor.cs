@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Lantean.QBTMud.Application.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -381,7 +382,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var segments = BuildSegments();
-            var builder = new System.Text.StringBuilder();
+            var builder = new StringBuilder();
             builder.Append("background-color: ").Append(PendingColor).Append(';');
             builder.Append("background-image: linear-gradient(to right");
 

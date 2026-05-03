@@ -1,5 +1,5 @@
+using System.Net;
 using AwesomeAssertions;
-using Lantean.QBTMud.Infrastructure.Services;
 using Moq;
 using QBittorrent.ApiClient;
 
@@ -63,7 +63,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsFailure(ApiFailureKind.ServerError, "failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "failure", HttpStatusCode.InternalServerError);
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .SetupSequence(client => client.GetAPIVersionAsync())
-                .ReturnsFailure(ApiFailureKind.ServerError, "failure", System.Net.HttpStatusCode.InternalServerError)
+                .ReturnsFailure(ApiFailureKind.ServerError, "failure", HttpStatusCode.InternalServerError)
                 .ReturnsAsync("2.13.1");
 
             var failed = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);

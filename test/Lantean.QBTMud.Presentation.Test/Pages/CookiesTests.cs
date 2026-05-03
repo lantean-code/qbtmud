@@ -1,6 +1,6 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationCookiesAsync())
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
 
@@ -84,7 +84,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationCookiesAsync())
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
 
@@ -264,7 +264,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .ReturnsAsync(newCookie);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>());
             var addButton = FindIconButton(target, Icons.Material.Filled.Add);

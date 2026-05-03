@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Lantean.QBTMud.Core.Filter
 {
@@ -72,7 +73,7 @@ namespace Lantean.QBTMud.Core.Filter
         public static (Expression<Func<T, object?>>, Type) CreatePropertySelector<T>(string propertyName)
         {
             var type = typeof(T);
-            var propertyInfo = type.GetProperty(propertyName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
             if (propertyInfo is null)
             {
                 throw new InvalidOperationException($"Unable to match property {propertyName} for {type.Name}");

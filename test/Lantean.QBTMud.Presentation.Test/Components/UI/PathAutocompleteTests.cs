@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
@@ -171,7 +172,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", HttpStatusCode.InternalServerError);
 
             var component = _target.RenderComponent();
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();

@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
@@ -81,7 +82,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(client => client.GetAllTagsAsync())
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             await _target.RenderDialogAsync(new[] { "Hash" });
 
@@ -124,7 +125,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -276,7 +277,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent(null) });
             apiClientMock
                 .Setup(client => client.AddTorrentTagsAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -399,7 +400,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent(["Tag"]), CreateTorrent(["Tag"]) });
             apiClientMock
                 .Setup(client => client.RemoveTorrentTagsAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -495,7 +496,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent(["Tag"]) });
             apiClientMock
                 .Setup(client => client.AddTorrentTagsAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
             dialogWorkflowMock
@@ -590,7 +591,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent(["Tag"]) });
             apiClientMock
                 .Setup(client => client.RemoveTorrentTagsAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 

@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
@@ -37,7 +38,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", HttpStatusCode.InternalServerError);
 
             var snackbarMock = Mock.Get(_snackbar);
 
@@ -366,7 +367,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 .ReturnsAsync(ApiResult.CreateSuccess<IReadOnlyList<SearchPlugin>>(plugins));
             apiClientMock
                 .Setup(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", System.Net.HttpStatusCode.InternalServerError);
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", HttpStatusCode.InternalServerError);
             apiClientMock
                 .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ApiResult.CreateSuccess());
