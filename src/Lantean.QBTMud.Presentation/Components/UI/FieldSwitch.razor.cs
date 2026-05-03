@@ -1,30 +1,31 @@
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
 {
     public partial class FieldSwitch
     {
-        /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.Value"/>
+        /// <inheritdoc cref="MudBooleanInput{T}.Value"/>
         [Parameter]
         public bool? Value { get; set; }
 
-        /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.ValueChanged"/>
+        /// <inheritdoc cref="MudBooleanInput{T}.ValueChanged"/>
         [Parameter]
         public EventCallback<bool> ValueChanged { get; set; }
 
-        /// <inheritdoc cref="MudBlazor.MudField.Label"/>
+        /// <inheritdoc cref="MudField.Label"/>
         [Parameter]
         public string? Label { get; set; }
 
-        /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.Disabled"/>
+        /// <inheritdoc cref="MudBooleanInput{T}.Disabled"/>
         [Parameter]
         public bool Disabled { get; set; }
 
-        /// <inheritdoc cref="MudBlazor.MudFormComponent{T}.Validation"/>
+        /// <inheritdoc cref="MudFormComponent{T}.Validation"/>
         [Parameter]
         public object? Validation { get; set; }
 
-        /// <inheritdoc cref="MudBlazor.MudField.HelperText"/>
+        /// <inheritdoc cref="MudField.HelperText"/>
         [Parameter]
         public string? HelperText { get; set; }
 
