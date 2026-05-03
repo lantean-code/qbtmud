@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

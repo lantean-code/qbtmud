@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace Lantean.QBTMud.BrowserCapabilities

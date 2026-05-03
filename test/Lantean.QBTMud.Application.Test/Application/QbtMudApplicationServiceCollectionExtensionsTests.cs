@@ -1,6 +1,4 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application;
-using Lantean.QBTMud.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lantean.QBTMud.Application.Test.Application

@@ -1,7 +1,5 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Models;
-using Lantean.QBTMud.Services;
 
 namespace Lantean.QBTMud.Application.Test.Services
 {

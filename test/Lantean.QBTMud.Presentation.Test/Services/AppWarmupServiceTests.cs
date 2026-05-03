@@ -1,6 +1,4 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.BrowserCapabilities;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;

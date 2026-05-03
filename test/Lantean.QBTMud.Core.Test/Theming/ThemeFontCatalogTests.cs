@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Core.Theming;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Moq;
 
 namespace Lantean.QBTMud.Core.Test.Theming

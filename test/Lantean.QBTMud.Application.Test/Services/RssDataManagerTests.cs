@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services;
 using QBittorrent.ApiClient.Models;
 using ClientRssArticle = QBittorrent.ApiClient.Models.RssArticle;
 

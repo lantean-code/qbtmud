@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services;
 using Moq;
 
 namespace Lantean.QBTMud.Application.Test.Services

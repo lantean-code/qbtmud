@@ -1,10 +1,8 @@
 using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Core;
 using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;

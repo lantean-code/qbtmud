@@ -1,5 +1,4 @@
 using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Services;
 using Microsoft.JSInterop;
 
 namespace Lantean.QBTMud.Infrastructure.Services

@@ -1,5 +1,3 @@
-using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
 using Moq;

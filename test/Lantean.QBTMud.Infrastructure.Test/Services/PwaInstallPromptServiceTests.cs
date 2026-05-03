@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Core.Interop;
-using Lantean.QBTMud.Infrastructure.Services;
 using Microsoft.JSInterop;
 using Moq;
 

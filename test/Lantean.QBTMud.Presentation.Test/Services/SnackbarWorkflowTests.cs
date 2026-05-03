@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Moq;

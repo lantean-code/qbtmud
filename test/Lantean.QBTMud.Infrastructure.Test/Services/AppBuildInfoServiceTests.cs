@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using AwesomeAssertions;
-using Lantean.QBTMud.Services;
 using Moq;
 
 namespace Lantean.QBTMud.Infrastructure.Test.Services

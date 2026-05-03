@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Helpers;

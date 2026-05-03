@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Models;
 using QBittorrent.ApiClient.Models;
 using MudPeer = Lantean.QBTMud.Core.Models.Peer;

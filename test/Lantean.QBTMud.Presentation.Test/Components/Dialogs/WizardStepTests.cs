@@ -4,7 +4,6 @@ using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Moq;

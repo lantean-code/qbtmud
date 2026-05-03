@@ -1,9 +1,7 @@
 using System.Text.Json;
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
-using Lantean.QBTMud.Services;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 using Moq;

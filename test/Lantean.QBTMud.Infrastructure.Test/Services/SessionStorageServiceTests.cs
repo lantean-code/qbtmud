@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Infrastructure.Services;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 using Moq;
 
 namespace Lantean.QBTMud.Infrastructure.Test.Services

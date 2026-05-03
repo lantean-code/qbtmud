@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.TestSupport.Infrastructure;
 
 namespace Lantean.QBTMud.Presentation.Test.Components.UI
 {

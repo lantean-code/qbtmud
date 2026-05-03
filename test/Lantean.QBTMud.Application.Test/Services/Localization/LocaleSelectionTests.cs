@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Models;
 
 namespace Lantean.QBTMud.Application.Test.Services.Localization

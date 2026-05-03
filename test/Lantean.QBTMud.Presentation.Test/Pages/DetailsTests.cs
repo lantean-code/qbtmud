@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Microsoft.AspNetCore.Components;

@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBTMud.Application.Services;
-using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
