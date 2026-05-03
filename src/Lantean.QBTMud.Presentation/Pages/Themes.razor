@@ -1,0 +1,162 @@
+@page "/themes"
+@layout OtherLayout
+@using Lantean.QBTMud.Core.Theming
+
+<div class="content-panel themes">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to torrent list")" data-test-id="@TestIdHelper.For("ThemesBack")" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">@Translate("Themes")</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="CreateTheme" title="@Translate("New theme")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesCreate")" />
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="ImportThemes" Accept=".json" MaximumFileCount="1" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesImportUpload")">
+                <CustomContent>
+                    <MudIconButton Icon="@Icons.Material.Filled.FileUpload"
+                                   title="@Translate("Import theme")"
+                                   Disabled="@IsBusy"
+                                   OnClick="@context.OpenFilePickerAsync"
+                                   data-test-id="@TestIdHelper.For("ThemesImport")" />
+                </CustomContent>
+            </MudFileUpload>
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="@Translate("Reload theme sources")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
+            <MudSpacer />
+        </MudToolBar>
+    </div>
+
+    <div class="content-panel__body themes__body">
+        <DynamicTable @ref="Table"
+                      TableId="Themes"
+                      T="ThemeCatalogItem"
+                      ColumnDefinitions="Columns"
+                      Items="ThemeEntries"
+                      SelectedItem="SelectedThemeEntry"
+                      MultiSelection="false"
+                      HighlightSelectedItem="true"
+                      SelectOnRowClick="false"
+                      RowClassFunc="RowClassFunc"
+                      Class="details-list content-panel__table" />
+    </div>
+</div>
+
+@code {
+    private RenderFragment<RowContext<ThemeCatalogItem>> NameColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                <div class="theme-name-cell">
+                    <MudText Typo="Typo.body2">@theme.Name</MudText>
+                </div>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ThemeCatalogItem>> DescriptionColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                var description = theme.Theme.Description;
+                if (string.IsNullOrWhiteSpace(description))
+                {
+                    return;
+                }
+
+                <MudText Typo="Typo.caption" Class="theme-description-cell">@description</MudText>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ThemeCatalogItem>> ColorsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                <div class="theme-colors-cell">
+                    <div class="theme-colors-row" title="@Translate("Light Colors")">
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Background, false)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Surface, false)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Primary, false)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Secondary, false)"></span>
+                    </div>
+                    <div class="theme-colors-row theme-colors-row--dark" title="@Translate("Dark Colors")">
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Background, true)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Surface, true)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Primary, true)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Secondary, true)"></span>
+                    </div>
+                </div>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ThemeCatalogItem>> SourceColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                <MudChip T="string" Size="Size.Small" Color="@GetSourceChipColor(theme)" Variant="Variant.Outlined">@GetSourceLabel(theme)</MudChip>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ThemeCatalogItem>> ActionsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                <div class="no-wrap" @onclick:stopPropagation="true">
+                    <MudButtonGroup Variant="Variant.Outlined">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Info"
+                                       title="@Translate("Details")"
+                                       OnClick="@(e => OpenThemeDetails(theme))"
+                                       Disabled="@IsBusy"
+                                       data-test-id="@TestIdHelper.For($"ThemeDetails-{theme.Id}")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                       Color="Color.Primary"
+                                       title="@Translate("Apply")"
+                                       OnClick="@(e => ApplyTheme(theme))"
+                                       Disabled="@(!CanApplyTheme(theme) || IsBusy)"
+                                       data-test-id="@TestIdHelper.For($"ThemeApply-{theme.Id}")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                       title="@Translate("Duplicate")"
+                                       OnClick="@(e => DuplicateTheme(theme))"
+                                       Disabled="@IsBusy"
+                                       data-test-id="@TestIdHelper.For($"ThemeDuplicate-{theme.Id}")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.FileDownload"
+                                       title="@Translate("Export")"
+                                       OnClick="@(e => ExportTheme(theme))"
+                                       Disabled="@IsBusy"
+                                       data-test-id="@TestIdHelper.For($"ThemeExport-{theme.Id}")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       title="@Translate("Rename")"
+                                       OnClick="@(e => RenameTheme(theme))"
+                                       Disabled="@(!CanEditTheme(theme) || IsBusy)"
+                                       data-test-id="@TestIdHelper.For($"ThemeRename-{theme.Id}")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       title="@Translate("Delete")"
+                                       OnClick="@(e => DeleteTheme(theme))"
+                                       Disabled="@(!CanEditTheme(theme) || IsBusy)"
+                                       data-test-id="@TestIdHelper.For($"ThemeDelete-{theme.Id}")" />
+                    </MudButtonGroup>
+                </div>;
+            };
+        }
+    }
+
+}

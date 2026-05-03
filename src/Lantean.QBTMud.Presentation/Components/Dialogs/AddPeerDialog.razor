@@ -1,0 +1,29 @@
+@inherits SubmittableDialog
+@using Lantean.QBTMud.Helpers
+@inject ILanguageLocalizer LanguageLocalizer
+
+<MudDialog>
+    <DialogContent>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td style="width: 70%"><MudTextField T="string" Label="@LanguageLocalizer.Translate("PeerListWidget", "IP")" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerIp")" /></td>
+                    <td style="width: 30%"><MudNumericField T="int?" Label="@LanguageLocalizer.Translate("PeerListWidget", "Port")" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerPort")" /></td>
+                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" data-test-id="@TestIdHelper.For("AddPeerAdd")" /></td>
+                </tr>
+                @foreach (var peer in Peers)
+                {
+                    var peerRef = peer;
+                    <tr>
+                        <td>@peer</td>
+                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeletePeer(peerRef))" data-test-id="@TestIdHelper.For($"DeletePeer-{peerRef.Host}-{peerRef.Port}")" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddPeerCancel")">@LanguageLocalizer.Translate("PeersAdditionDialog", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddPeerSave")">@LanguageLocalizer.Translate("PeersAdditionDialog", "Ok")</MudButton>
+    </DialogActions>
+</MudDialog>

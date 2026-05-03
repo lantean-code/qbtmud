@@ -1,0 +1,387 @@
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Core.Theming;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using MudBlazor;
+
+namespace Lantean.QBTMud.Layout
+{
+    public partial class MainLayout : IDisposable
+    {
+        private const string _drawerOpenStorageKey = "MainLayout.DrawerOpen";
+        private const string _bootstrapThemeCssLightStorageKey = "ThemeManager.BootstrapCss.Light";
+        private const string _bootstrapThemeCssDarkStorageKey = "ThemeManager.BootstrapCss.Dark";
+        private const string _bootstrapThemeIsDarkStorageKey = "ThemeManager.BootstrapIsDark";
+        private const string _bootstrapThemeFontFamilyStorageKey = "ThemeManager.BootstrapFontFamily";
+
+        private static readonly char[] _pathEndCharacters = ['?', '#'];
+
+        [Inject]
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
+
+        [Inject]
+        protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
+        protected IThemeFontCatalog ThemeFontCatalog { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [CascadingParameter]
+        public Breakpoint CurrentBreakpoint { get; set; }
+
+        protected bool DrawerOpen { get; set; } = true;
+
+        protected bool ErrorDrawerOpen { get; set; } = false;
+
+        protected bool TimerDrawerOpen { get; set; }
+
+        protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
+
+        protected string AppBarTitle => IsLoginPage ? BuildFullTitle() : (UseShortTitle ? "qBittorrent" : BuildFullTitle());
+
+        protected bool ShowMenuButton => !IsLoginPage;
+
+        protected string AppBarTitleClass => ShowMenuButton ? "ml-3" : string.Empty;
+
+        protected bool IsDarkMode { get; set; }
+
+        protected MudThemeProvider MudThemeProvider { get; set; } = default!;
+
+        private int _lastErrorCount;
+        private bool _pendingThemeUpdate;
+        private bool _pendingThemeModeUpdate = true;
+        private bool _pendingBootstrapThemeUpdate;
+        private bool _pendingBootstrapThemeRemoval;
+        private bool _bootstrapThemeRemoved;
+        private bool _contextMenuPopoverPatchInstalled;
+        private string? _pendingFontFamily;
+        private bool _themeInitialized;
+        private bool _hasAppliedTheme;
+        private ThemeModePreference _themeModePreference = ThemeModePreference.System;
+
+        private Menu Menu { get; set; } = default!;
+
+        protected MudTheme Theme { get; set; }
+
+        private bool UseShortTitle => CurrentBreakpoint <= Breakpoint.Sm;
+
+        private bool IsLoginPage => IsLoginRoute(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+
+        public MainLayout()
+        {
+            Theme = QbtMudThemeFactory.CreateDefaultTheme();
+        }
+
+        protected string BuildPageTitle()
+        {
+            return BuildFullTitle();
+        }
+
+        private string BuildFullTitle()
+        {
+            return LanguageLocalizer.Translate("Login", "qBittorrent WebUI");
+        }
+
+        private static bool IsLoginRoute(string? relativeUri)
+        {
+            if (string.IsNullOrWhiteSpace(relativeUri))
+            {
+                return false;
+            }
+
+            var queryIndex = relativeUri.IndexOfAny(_pathEndCharacters);
+            var path = queryIndex >= 0
+                ? relativeUri[..queryIndex]
+                : relativeUri;
+            var normalized = path.Trim('/');
+
+            return string.Equals(normalized, "login", StringComparison.OrdinalIgnoreCase);
+        }
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            ThemeManagerService.ThemeChanged += OnThemeChanged;
+            ThemeManagerService.ThemeModePreferenceChanged += OnThemeModePreferenceChanged;
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            await ThemeManagerService.EnsureInitialized();
+            _themeModePreference = NormalizeThemeModePreference(ThemeManagerService.CurrentThemeModePreference);
+            EnsureThemeApplied();
+            _themeInitialized = true;
+        }
+
+        protected EventCallback<bool> DrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetDrawerOpenAsync);
+
+        protected EventCallback<bool> TimerDrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetTimerDrawerOpenAsync);
+
+        protected async Task ToggleDrawer()
+        {
+            await SetDrawerOpenAsync(!DrawerOpen);
+            await SettingsStorage.SetItemAsync(_drawerOpenStorageKey, DrawerOpen);
+        }
+
+        protected override void OnParametersSet()
+        {
+            var currentErrorCount = ErrorBoundary?.Errors.Count ?? 0;
+
+            if (currentErrorCount != _lastErrorCount)
+            {
+                if (currentErrorCount > _lastErrorCount && currentErrorCount > 0)
+                {
+                    ErrorDrawerOpen = true;
+                    TimerDrawerOpen = false;
+                }
+                else if (currentErrorCount == 0)
+                {
+                    ErrorDrawerOpen = false;
+                }
+
+                _lastErrorCount = currentErrorCount;
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!_contextMenuPopoverPatchInstalled)
+            {
+                _contextMenuPopoverPatchInstalled = await JSRuntime.InvokeAsync<bool>("qbt.installContextMenuPopoverPatch");
+            }
+
+            if (firstRender)
+            {
+                var storedDrawerOpen = await SettingsStorage.GetItemAsync<bool?>(_drawerOpenStorageKey);
+
+                if (storedDrawerOpen.GetValueOrDefault())
+                {
+                    DrawerOpen = true;
+                }
+                else
+                {
+                    DrawerOpen = CurrentBreakpoint > Breakpoint.Sm;
+                }
+
+                await MudThemeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
+                StateHasChanged();
+            }
+
+            if (_pendingThemeModeUpdate && _themeInitialized)
+            {
+                _pendingThemeModeUpdate = false;
+                await ApplyThemeModePreferenceAsync();
+            }
+
+            if (_pendingThemeUpdate && _themeInitialized)
+            {
+                _pendingThemeUpdate = false;
+                await LoadPendingFontAsync();
+            }
+
+            if (_pendingBootstrapThemeUpdate && _themeInitialized)
+            {
+                _pendingBootstrapThemeUpdate = false;
+                await PersistBootstrapThemeAsync();
+            }
+
+            if (_pendingBootstrapThemeRemoval && _themeInitialized && !_bootstrapThemeRemoved)
+            {
+                _pendingBootstrapThemeRemoval = false;
+                _bootstrapThemeRemoved = true;
+                await JSRuntime.RemoveBootstrapTheme();
+            }
+        }
+
+        protected Task OnSystemDarkModeChanged(bool value)
+        {
+            if (_themeModePreference != ThemeModePreference.System || IsDarkMode == value)
+            {
+                return Task.CompletedTask;
+            }
+
+            IsDarkMode = value;
+            _pendingBootstrapThemeUpdate = true;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+
+        protected void ToggleErrorDrawer()
+        {
+            ErrorDrawerOpen = !ErrorDrawerOpen;
+            if (ErrorDrawerOpen)
+            {
+                TimerDrawerOpen = false;
+            }
+        }
+
+        protected void Cleared()
+        {
+            ErrorDrawerOpen = false;
+            _lastErrorCount = 0;
+        }
+
+        public void Dispose()
+        {
+            ThemeManagerService.ThemeChanged -= OnThemeChanged;
+            ThemeManagerService.ThemeModePreferenceChanged -= OnThemeModePreferenceChanged;
+        }
+
+        private void BreakpointChanged(Breakpoint value)
+        {
+            CurrentBreakpoint = value;
+
+            if (value <= Breakpoint.Sm && DrawerOpen)
+            {
+                DrawerOpen = false;
+            }
+
+            if (ErrorDrawerOpen && (ErrorBoundary?.Errors.Count ?? 0) == 0)
+            {
+                ErrorDrawerOpen = false;
+                StateHasChanged();
+            }
+            else
+            {
+                StateHasChanged();
+            }
+        }
+
+        private Task SetDrawerOpenAsync(bool value)
+        {
+            if (DrawerOpen == value)
+            {
+                return Task.CompletedTask;
+            }
+
+            DrawerOpen = value;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        private Task SetTimerDrawerOpenAsync(bool value)
+        {
+            if (TimerDrawerOpen == value)
+            {
+                return Task.CompletedTask;
+            }
+
+            TimerDrawerOpen = value;
+            if (TimerDrawerOpen)
+            {
+                ErrorDrawerOpen = false;
+            }
+
+            return InvokeAsync(StateHasChanged);
+        }
+
+        private void OnThemeChanged(object? sender, ThemeChangedEventArgs args)
+        {
+            Theme = args.Theme;
+            _pendingFontFamily = args.FontFamily;
+            _pendingThemeUpdate = true;
+            _pendingBootstrapThemeUpdate = true;
+            _pendingBootstrapThemeRemoval = true;
+            _hasAppliedTheme = true;
+            StateHasChanged();
+        }
+
+        private void OnThemeModePreferenceChanged(object? sender, ThemeModePreferenceChangedEventArgs args)
+        {
+            var themeModePreference = NormalizeThemeModePreference(args.ThemeModePreference);
+            if (_themeModePreference == themeModePreference)
+            {
+                return;
+            }
+
+            _themeModePreference = themeModePreference;
+            _pendingThemeModeUpdate = true;
+            StateHasChanged();
+        }
+
+        private void EnsureThemeApplied()
+        {
+            if (_hasAppliedTheme)
+            {
+                return;
+            }
+
+            var current = ThemeManagerService.CurrentTheme;
+            if (current is null)
+            {
+                return;
+            }
+
+            OnThemeChanged(this, new ThemeChangedEventArgs(current.Theme.Theme, ThemeManagerService.CurrentFontFamily, current.Id));
+        }
+
+        private async Task LoadPendingFontAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_pendingFontFamily))
+            {
+                return;
+            }
+
+            if (!ThemeFontCatalog.TryGetFontUrl(_pendingFontFamily, out var url))
+            {
+                return;
+            }
+
+            var fontId = ThemeFontCatalog.BuildFontId(_pendingFontFamily);
+            await JSRuntime.LoadGoogleFont(url, fontId);
+        }
+
+        private async Task ApplyThemeModePreferenceAsync()
+        {
+            var resolvedIsDarkMode = _themeModePreference switch
+            {
+                ThemeModePreference.Dark => true,
+                ThemeModePreference.Light => false,
+                _ => await MudThemeProvider.GetSystemDarkModeAsync()
+            };
+            var darkModeChanged = IsDarkMode != resolvedIsDarkMode;
+
+            IsDarkMode = resolvedIsDarkMode;
+            _pendingBootstrapThemeUpdate = true;
+
+            if (darkModeChanged)
+            {
+                StateHasChanged();
+            }
+        }
+
+        private async Task PersistBootstrapThemeAsync()
+        {
+            var lightCss = ThemeCssBuilder.BuildCssVariables(Theme, false);
+            var darkCss = ThemeCssBuilder.BuildCssVariables(Theme, true);
+
+            await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
+            await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
+            await SettingsStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
+
+            var fontFamily = ThemeManagerService.CurrentFontFamily;
+            if (!string.IsNullOrWhiteSpace(fontFamily))
+            {
+                await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
+            }
+        }
+
+        private static ThemeModePreference NormalizeThemeModePreference(ThemeModePreference value)
+        {
+            return Enum.IsDefined(value)
+                ? value
+                : ThemeModePreference.System;
+        }
+    }
+}

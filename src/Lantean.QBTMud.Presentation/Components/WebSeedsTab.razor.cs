@@ -1,0 +1,167 @@
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Models;
+using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+namespace Lantean.QBTMud.Components
+{
+    public partial class WebSeedsTab : IAsyncDisposable
+    {
+        private const string _httpServerContext = "HttpServer";
+
+        private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
+        private bool _disposedValue;
+        private IReadOnlyList<ColumnDefinition<WebSeed>>? _columnDefinitions;
+
+        [Parameter]
+        public bool Active { get; set; }
+
+        [Parameter, EditorRequired]
+        public string? Hash { get; set; }
+
+        [CascadingParameter(Name = "RefreshInterval")]
+        public int RefreshInterval { get; set; }
+
+        [Inject]
+        protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected ITorrentDataManager DataManager { get; set; } = default!;
+
+        [Inject]
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
+
+        public async ValueTask DisposeAsync()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual async Task DisposeAsync(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    _timerCancellationToken.Cancel();
+                    _timerCancellationToken.Dispose();
+                    if (_refreshTimer is not null)
+                    {
+                        await _refreshTimer.DisposeAsync();
+                    }
+
+                    await Task.CompletedTask;
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _refreshTimer ??= ManagedTimerFactory.Create("WebSeedsTabRefresh", TimeSpan.FromMilliseconds(RefreshInterval));
+                await _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
+            }
+        }
+
+        private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
+        {
+            if (Active && Hash is not null)
+            {
+                var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+                if (webSeedsResult.IsFailure)
+                {
+                    var failureKind = webSeedsResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult, failure =>
+                    {
+                        if (failure.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
+                }
+
+                WebSeeds = webSeedsResult.Value;
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            return ManagedTimerTickResult.Continue;
+        }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            if (Hash is null)
+            {
+                return;
+            }
+
+            if (!Active)
+            {
+                return;
+            }
+
+            var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+            if (webSeedsResult.IsFailure)
+            {
+                WebSeeds = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
+            }
+            else
+            {
+                WebSeeds = webSeedsResult.Value;
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        protected IEnumerable<ColumnDefinition<WebSeed>> Columns => GetColumnDefinitions();
+
+        private IReadOnlyList<ColumnDefinition<WebSeed>> GetColumnDefinitions()
+        {
+            _columnDefinitions ??= BuildColumnDefinitions();
+
+            return _columnDefinitions;
+        }
+
+        private IReadOnlyList<ColumnDefinition<WebSeed>> BuildColumnDefinitions()
+        {
+            var urlLabel = LanguageLocalizer.Translate(_httpServerContext, "URL");
+
+            return
+            [
+                new ColumnDefinition<WebSeed>(urlLabel, w => w.Url, w => w.Url, id: "url"),
+            ];
+        }
+    }
+}

@@ -1,0 +1,194 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Components.Options;
+using Lantean.QBTMud.Services;
+using Lantean.QBTMud.TestSupport.Infrastructure;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Moq;
+using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
+namespace Lantean.QBTMud.Presentation.Test.Components.Options
+{
+    public sealed class RSSOptionsTests : RazorComponentTestBase<RSSOptions>
+    {
+        [Fact]
+        public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<RSSOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSwitch(target, "RssProcessingEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "RssAutoDownloadingEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "RssDownloadRepackProperEpisodes").Instance.Value.Should().BeFalse();
+
+            FindNumeric(target, "RssRefreshInterval").Instance.GetState(x => x.Value).Should().Be(30);
+            FindNumeric(target, "RssMaxArticlesPerFeed").Instance.GetState(x => x.Value).Should().Be(200);
+
+            FindTextField(target, "RssSmartEpisodeFilters").Instance.GetState(x => x.Value).Should().Be("filter-one\nfilter-two");
+
+            update.RssProcessingEnabled.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_Settings_WHEN_Changed_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<RSSOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var processingSwitch = FindSwitch(target, "RssProcessingEnabled");
+            await target.InvokeAsync(() => processingSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.RssProcessingEnabled.Should().BeFalse();
+
+            var refreshField = FindNumeric(target, "RssRefreshInterval");
+            await target.InvokeAsync(() => refreshField.Instance.ValueChanged.InvokeAsync(45));
+            update.RssRefreshInterval.Should().Be(45);
+
+            var maxField = FindNumeric(target, "RssMaxArticlesPerFeed");
+            await target.InvokeAsync(() => maxField.Instance.ValueChanged.InvokeAsync(250));
+            update.RssMaxArticlesPerFeed.Should().Be(250);
+
+            var autoSwitch = FindSwitch(target, "RssAutoDownloadingEnabled");
+            await target.InvokeAsync(() => autoSwitch.Instance.ValueChanged.InvokeAsync(false));
+            update.RssAutoDownloadingEnabled.Should().BeFalse();
+
+            var repackSwitch = FindSwitch(target, "RssDownloadRepackProperEpisodes");
+            await target.InvokeAsync(() => repackSwitch.Instance.ValueChanged.InvokeAsync(true));
+            update.RssDownloadRepackProperEpisodes.Should().BeTrue();
+
+            var filtersField = FindTextField(target, "RssSmartEpisodeFilters");
+            await target.InvokeAsync(() => filtersField.Instance.ValueChanged.InvokeAsync("updated"));
+            update.RssSmartEpisodeFilters.Should().Be("updated");
+
+            events.Should().NotBeEmpty();
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
+        [Fact]
+        public async Task GIVEN_EditRulesButton_WHEN_Clicked_THEN_ShouldOpenDialog()
+        {
+            var workflowMock = TestContext.AddSingletonMock<IDialogWorkflow>();
+            workflowMock
+                .Setup(w => w.InvokeRssRulesDialog())
+                .Returns(Task.CompletedTask);
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<RSSOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var button = FindComponentByTestId<MudButton>(target, "EditRssRules");
+            await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            workflowMock.Verify(w => w.InvokeRssRulesDialog(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_FetchDelay_WHEN_Changed_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<TestableRssOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            await target.InvokeAsync(() => target.Instance.InvokeFetchDelayChanged(90));
+
+            target.Instance.FetchDelay.Should().Be(90);
+            update.RssFetchDelay.Should().Be(90);
+            events.Should().ContainSingle().Which.Should().BeSameAs(update);
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldNotPopulateValuesOrThrow()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<RSSOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSwitch(target, "RssProcessingEnabled").Instance.Value.Should().BeNull();
+            FindNumeric(target, "RssRefreshInterval").Instance.GetState(x => x.Value).Should().Be(0);
+            FindTextField(target, "RssSmartEpisodeFilters").Instance.GetState(x => x.Value).Should().BeNull();
+        }
+
+        private static Preferences CreatePreferences()
+        {
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.RssAutoDownloadingEnabled = true;
+                spec.RssDownloadRepackProperEpisodes = false;
+                spec.RssFetchDelay = 5;
+                spec.RssMaxArticlesPerFeed = 200;
+                spec.RssProcessingEnabled = true;
+                spec.RssRefreshInterval = 30;
+                spec.RssSmartEpisodeFilters = "filter-one\nfilter-two";
+            });
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<RSSOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<RSSOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        private sealed class TestableRssOptions : RSSOptions
+        {
+            public long FetchDelay
+            {
+                get
+                {
+                    return RssFetchDelay;
+                }
+            }
+
+            public Task InvokeFetchDelayChanged(int value)
+            {
+                return RssFetchDelayChanged(value);
+            }
+        }
+    }
+}

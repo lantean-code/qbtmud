@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Configuration;
+using Lantean.QBTMud.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace Lantean.QBTMud.Test.Configuration

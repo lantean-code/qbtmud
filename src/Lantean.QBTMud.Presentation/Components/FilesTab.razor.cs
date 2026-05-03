@@ -1,0 +1,686 @@
+using System.Collections.ObjectModel;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Filter;
+using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services;
+using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using MudBlazor.Extensions;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using ClientPriority = QBittorrent.ApiClient.Models.Priority;
+using CoreFilterExpressionGenerator = Lantean.QBTMud.Core.Filter.FilterExpressionGenerator;
+using MudPriority = Lantean.QBTMud.Core.Models.Priority;
+
+namespace Lantean.QBTMud.Components
+{
+    public partial class FilesTab : IAsyncDisposable
+    {
+        private const string _expandedNodesStorageKey = "FilesTab.ExpandedNodes";
+
+        private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
+        private bool _disposedValue;
+        private static readonly ReadOnlyCollection<ContentItem> _emptyContentItems = [];
+        private ReadOnlyCollection<ContentItem> _visibleFiles = _emptyContentItems;
+        private bool _filesDirty = true;
+
+        private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
+        private IReadOnlyList<ColumnDefinition<ContentItem>>? _columnDefinitions;
+
+        private string? _previousHash;
+        private string? _sortColumn;
+        private SortDirection _sortDirection;
+
+        [Parameter]
+        public bool Active { get; set; }
+
+        [Parameter, EditorRequired]
+        public string Hash { get; set; } = "";
+
+        [CascadingParameter(Name = "RefreshInterval")]
+        public int RefreshInterval { get; set; }
+
+        [Inject]
+        protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected ISessionStorageService SessionStorage { get; set; } = default!;
+
+        [Inject]
+        protected ITorrentDataManager DataManager { get; set; } = default!;
+
+        [Inject]
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        protected HashSet<string> ExpandedNodes { get; set; } = [];
+
+        protected Dictionary<string, ContentItem>? FileList { get; set; }
+
+        protected IEnumerable<ContentItem> Files => GetFiles();
+
+        protected ContentItem? SelectedItem { get; set; }
+
+        protected ContentItem? ContextMenuItem { get; set; }
+
+        protected string? SearchText { get; set; }
+
+        public IEnumerable<Func<ContentItem, bool>>? Filters { get; set; }
+
+        private DynamicTable<ContentItem>? Table { get; set; }
+
+        private MudMenu? ContextMenu { get; set; }
+
+        private MudTextField<string>? SearchInput { get; set; }
+
+        protected async Task ColumnOptions()
+        {
+            if (Table is null)
+            {
+                return;
+            }
+
+            await Table.ShowColumnOptionsDialog();
+        }
+
+        protected async Task ShowFilterDialog()
+        {
+            var filterDefinitions = await DialogWorkflow.ShowFilterOptionsDialog(_filterDefinitions);
+            if (filterDefinitions is null)
+            {
+                _filterDefinitions = null;
+                Filters = null;
+                MarkFilesDirty();
+                return;
+            }
+            else
+            {
+                _filterDefinitions = filterDefinitions;
+            }
+
+            var filters = new List<Func<ContentItem, bool>>();
+            foreach (var filterDefinition in _filterDefinitions)
+            {
+                var expression = CoreFilterExpressionGenerator.GenerateExpression(filterDefinition, false);
+                filters.Add(expression.Compile());
+            }
+
+            Filters = filters;
+            MarkFilesDirty();
+        }
+
+        protected void RemoveFilter()
+        {
+            Filters = null;
+            MarkFilesDirty();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual async Task DisposeAsync(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing && Files is not null)
+                {
+                    await _timerCancellationToken.CancelAsync();
+                    _timerCancellationToken.Dispose();
+                    if (_refreshTimer is not null)
+                    {
+                        await _refreshTimer.DisposeAsync();
+                    }
+
+                    await Task.CompletedTask;
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        protected void SearchTextChanged(string value)
+        {
+            SearchText = value;
+            MarkFilesDirty();
+        }
+
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<ContentItem> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
+        }
+
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<ContentItem> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+        }
+
+        private async Task ShowContextMenu(ContentItem? contentItem, EventArgs eventArgs)
+        {
+            ContextMenuItem = contentItem;
+
+            if (ContextMenu is null)
+            {
+                return;
+            }
+
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!firstRender)
+            {
+                return;
+            }
+
+            _refreshTimer ??= ManagedTimerFactory.Create("FilesTabRefresh", TimeSpan.FromMilliseconds(RefreshInterval));
+            await _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
+        }
+
+        private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
+        {
+            var hasUpdates = false;
+            if (Active && Hash is not null)
+            {
+                var filesResult = await ApiClient.GetTorrentContentsAsync(Hash);
+                if (filesResult.IsFailure)
+                {
+                    var failureKind = filesResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(filesResult, failure =>
+                    {
+                        if (failure.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
+                }
+
+                IReadOnlyList<FileData>? files = filesResult.Value;
+                if (FileList is null)
+                {
+                    FileList = DataManager.CreateContentsList(files);
+                    hasUpdates = true;
+                }
+                else
+                {
+                    hasUpdates = DataManager.MergeContentsList(files, FileList);
+                }
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (hasUpdates)
+            {
+                MarkFilesDirty();
+                PruneSelectionIfMissing();
+                await InvokeAsync(() =>
+                {
+                    SyncSearchTextFromInput();
+                    StateHasChanged();
+                });
+            }
+
+            return ManagedTimerTickResult.Continue;
+        }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            if (string.IsNullOrEmpty(Hash))
+            {
+                return;
+            }
+
+            if (!Active)
+            {
+                return;
+            }
+
+            if (Hash == _previousHash)
+            {
+                return;
+            }
+
+            _previousHash = Hash;
+
+            var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
+            if (contentsResult.IsFailure)
+            {
+                FileList = null;
+                MarkFilesDirty();
+                await ApiFeedbackWorkflow.HandleFailureAsync(contentsResult);
+                return;
+            }
+
+            FileList = DataManager.CreateContentsList(contentsResult.Value);
+            MarkFilesDirty();
+            PruneSelectionIfMissing();
+
+            var expandedNodes = await SessionStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{Hash}");
+            if (expandedNodes is not null)
+            {
+                ExpandedNodes = expandedNodes;
+            }
+            else
+            {
+                ExpandedNodes.Clear();
+            }
+
+            MarkFilesDirty();
+        }
+
+        protected async Task PriorityValueChanged(ContentItem contentItem, MudPriority priority)
+        {
+            IEnumerable<int> fileIndexes;
+            if (contentItem.IsFolder)
+            {
+                fileIndexes = GetDescendants(contentItem).Where(c => !c.IsFolder).Select(c => c.Index);
+            }
+            else
+            {
+                fileIndexes = [contentItem.Index];
+            }
+
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, fileIndexes, MapPriority(priority));
+            await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
+        }
+
+        protected Task RenameFileToolbar()
+        {
+            if (SelectedItem is null)
+            {
+                return RenameFiles();
+            }
+
+            return RenameFiles(SelectedItem);
+        }
+
+        protected Task RenameFileContextMenu()
+        {
+            if (ContextMenuItem is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return RenameFiles(ContextMenuItem);
+        }
+
+        private async Task RenameFiles(params ContentItem[] contentItems)
+        {
+            if (contentItems.Length == 1)
+            {
+                var contentItem = contentItems[0];
+                var name = contentItem.GetFileName();
+                await DialogWorkflow.InvokeStringFieldDialog(
+                    LanguageLocalizer.Translate("TorrentContentTreeView", "Renaming"),
+                    LanguageLocalizer.Translate("TorrentContentTreeView", "New name:"),
+                    name,
+                    async value =>
+                    {
+                        var renameResult = await ApiClient.RenameFileAsync(Hash, contentItem.Name, contentItem.Path + value);
+                        await ApiFeedbackWorkflow.ProcessResultAsync(renameResult);
+                    });
+            }
+            else
+            {
+                await DialogWorkflow.InvokeRenameFilesDialog(Hash);
+            }
+        }
+
+        protected void SortColumnChanged(string sortColumn)
+        {
+            _sortColumn = sortColumn;
+            MarkFilesDirty();
+        }
+
+        protected void SortDirectionChanged(SortDirection sortDirection)
+        {
+            _sortDirection = sortDirection;
+            MarkFilesDirty();
+        }
+
+        protected void SelectedItemChanged(ContentItem item)
+        {
+            SelectedItem = item;
+        }
+
+        protected async Task ToggleNode(ContentItem contentItem)
+        {
+            if (ExpandedNodes.Contains(contentItem.Name))
+            {
+                ExpandedNodes.Remove(contentItem.Name);
+            }
+            else
+            {
+                ExpandedNodes.Add(contentItem.Name);
+            }
+
+            MarkFilesDirty();
+            await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
+        }
+
+        private static ClientPriority MapPriority(MudPriority priority)
+        {
+            return (ClientPriority)(int)priority;
+        }
+
+        private Func<ContentItem, object?> GetSortSelector()
+        {
+            var sortSelector = GetColumnDefinitions().FirstOrDefault(c => c.Id == _sortColumn)?.SortSelector;
+
+            return sortSelector ?? (i => i.Name);
+        }
+
+        private IEnumerable<ContentItem> GetDescendants(ContentItem contentItem)
+        {
+            return FileList!.Values.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
+        }
+
+        private bool FilterContentItem(ContentItem item)
+        {
+            if (Filters is not null)
+            {
+                foreach (var filter in Filters)
+                {
+                    var result = filter(item);
+                    if (!result)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if (!FilterHelper.FilterTerms(item.Name, SearchText))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private ReadOnlyCollection<ContentItem> GetFiles()
+        {
+            if (SyncSearchTextFromInput())
+            {
+                _filesDirty = true;
+            }
+
+            if (!_filesDirty)
+            {
+                return _visibleFiles;
+            }
+
+            _visibleFiles = BuildVisibleFiles();
+            _filesDirty = false;
+
+            return _visibleFiles;
+        }
+
+        private ReadOnlyCollection<ContentItem> BuildVisibleFiles()
+        {
+            if (FileList is null || FileList.Values.Count == 0)
+            {
+                return _emptyContentItems;
+            }
+
+            var lookup = BuildChildrenLookup();
+            if (!lookup.TryGetValue(string.Empty, out var roots))
+            {
+                return _emptyContentItems;
+            }
+
+            var sortSelector = GetSortSelector();
+            var orderedRoots = roots.OrderByDirection(_sortDirection, sortSelector).ToList();
+            var result = new List<ContentItem>(FileList.Values.Count);
+
+            foreach (var item in orderedRoots)
+            {
+                if (item.IsFolder)
+                {
+                    result.Add(item);
+
+                    if (!ExpandedNodes.Contains(item.Name))
+                    {
+                        continue;
+                    }
+
+                    var descendants = GetVisibleDescendants(item, lookup, sortSelector);
+                    result.AddRange(descendants);
+                }
+                else
+                {
+                    if (FilterContentItem(item))
+                    {
+                        result.Add(item);
+                    }
+                }
+            }
+
+            return new ReadOnlyCollection<ContentItem>(result);
+        }
+
+        private Dictionary<string, List<ContentItem>> BuildChildrenLookup()
+        {
+            var lookup = new Dictionary<string, List<ContentItem>>(FileList!.Count);
+
+            foreach (var item in FileList!.Values)
+            {
+                var parentPath = item.Level == 0 ? string.Empty : item.Name.GetDirectoryPath();
+                if (!lookup.TryGetValue(parentPath, out var children))
+                {
+                    children = [];
+                    lookup[parentPath] = children;
+                }
+
+                children.Add(item);
+            }
+
+            return lookup;
+        }
+
+        private List<ContentItem> GetVisibleDescendants(ContentItem folder, Dictionary<string, List<ContentItem>> lookup, Func<ContentItem, object?> sortSelector)
+        {
+            if (!lookup.TryGetValue(folder.Name, out var children))
+            {
+                return [];
+            }
+
+            var orderedChildren = children.OrderByDirection(_sortDirection, sortSelector).ToList();
+            var visible = new List<ContentItem>();
+
+            foreach (var child in orderedChildren)
+            {
+                if (child.IsFolder)
+                {
+                    var descendants = GetVisibleDescendants(child, lookup, sortSelector);
+                    if (descendants.Count != 0)
+                    {
+                        visible.Add(child);
+
+                        if (ExpandedNodes.Contains(child.Name))
+                        {
+                            visible.AddRange(descendants);
+                        }
+                    }
+                }
+                else if (FilterContentItem(child))
+                {
+                    visible.Add(child);
+                }
+            }
+
+            return visible;
+        }
+
+        private bool SyncSearchTextFromInput()
+        {
+            if (SearchInput is null)
+            {
+                return false;
+            }
+
+            var currentValue = SearchInput.GetState(x => x.Value);
+            if (string.Equals(SearchText, currentValue, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            SearchText = currentValue;
+            return true;
+        }
+
+        private void MarkFilesDirty()
+        {
+            _filesDirty = true;
+        }
+
+        private void PruneSelectionIfMissing()
+        {
+            if (SelectedItem is not null && (FileList is null || !FileList.ContainsKey(SelectedItem.Name)))
+            {
+                SelectedItem = null;
+            }
+
+            if (ContextMenuItem is not null && (FileList is null || !FileList.ContainsKey(ContextMenuItem.Name)))
+            {
+                ContextMenuItem = null;
+            }
+        }
+
+        protected async Task DoNotDownloadLessThan100PercentAvailability()
+        {
+            await LessThanXAvailability(1f, ClientPriority.DoNotDownload);
+        }
+
+        protected async Task DoNotDownloadLessThan80PercentAvailability()
+        {
+            await LessThanXAvailability(0.8f, ClientPriority.DoNotDownload);
+        }
+
+        protected async Task DoNotDownloadCurrentlyFilteredFiles()
+        {
+            await CurrentlyFilteredFiles(ClientPriority.DoNotDownload);
+        }
+
+        protected async Task NormalPriorityLessThan100PercentAvailability()
+        {
+            await LessThanXAvailability(1f, ClientPriority.Normal);
+        }
+
+        protected async Task NormalPriorityLessThan80PercentAvailability()
+        {
+            await LessThanXAvailability(0.8f, ClientPriority.Normal);
+        }
+
+        protected async Task NormalPriorityCurrentlyFilteredFiles()
+        {
+            await CurrentlyFilteredFiles(ClientPriority.Normal);
+        }
+
+        private async Task LessThanXAvailability(float value, ClientPriority priority)
+        {
+            if (Hash is null || FileList is null)
+            {
+                return;
+            }
+
+            var files = FileList.Values.Where(f => !f.IsFolder && f.Availability < value).Select(f => f.Index);
+
+            if (!files.Any())
+            {
+                return;
+            }
+
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
+        }
+
+        protected async Task CurrentlyFilteredFiles(ClientPriority priority)
+        {
+            if (Hash is null || FileList is null)
+            {
+                return;
+            }
+
+            var files = GetFiles().Where(f => !f.IsFolder).Select(f => f.Index);
+
+            if (!files.Any())
+            {
+                return;
+            }
+
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
+        }
+
+        protected IEnumerable<ColumnDefinition<ContentItem>> Columns => GetColumnDefinitions();
+
+        private IReadOnlyList<ColumnDefinition<ContentItem>> GetColumnDefinitions()
+        {
+            _columnDefinitions ??= BuildColumnDefinitions();
+
+            return _columnDefinitions;
+        }
+
+        private static string CreateKey(ContentItem item)
+        {
+            return item.Name.Replace("/", "_");
+        }
+
+        private IReadOnlyList<ColumnDefinition<ContentItem>> BuildColumnDefinitions()
+        {
+            var nameLabel = LanguageLocalizer.Translate("TransferListModel", "Name");
+            var totalSizeLabel = LanguageLocalizer.Translate("TransferListModel", "Total Size");
+            var progressLabel = LanguageLocalizer.Translate("TransferListModel", "Progress");
+            var priorityLabel = LanguageLocalizer.Translate("PropertiesWidget", "Priority");
+            var remainingLabel = LanguageLocalizer.Translate("TransferListModel", "Remaining");
+            var availabilityLabel = LanguageLocalizer.Translate("TransferListModel", "Availability");
+
+            return
+            [
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(
+                    nameLabel,
+                    c => c.Name,
+                    NameColumn,
+                    width: 400,
+                    initialDirection: SortDirection.Ascending,
+                    classFunc: c => c.IsFolder ? "pa-0" : "pa-2",
+                    id: "name"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(totalSizeLabel, c => c.Size, c => DisplayHelpers.Size(c.Size), id: "total_size"),
+                ColumnDefinitionHelper.CreateColumnDefinition(progressLabel, c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2", id: "progress"),
+                ColumnDefinitionHelper.CreateColumnDefinition(priorityLabel, c => c.Priority, PriorityColumn, tdClass: "table-select pa-0", id: "priority"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(remainingLabel, c => c.Remaining, c => DisplayHelpers.Size(c.Remaining), id: "remaining"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(availabilityLabel, c => c.Availability, c => c.Availability.ToString("0.00"), id: "availability"),
+            ];
+        }
+    }
+}

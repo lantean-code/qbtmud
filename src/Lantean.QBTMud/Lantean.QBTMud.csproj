@@ -170,7 +170,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Blazor.BrowserCapabilities\Blazor.BrowserCapabilities.csproj" />
+    <ProjectReference Include="..\Lantean.QBTMud.Infrastructure\Lantean.QBTMud.Infrastructure.csproj" />
+    <ProjectReference Include="..\Lantean.QBTMud.Presentation\Lantean.QBTMud.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

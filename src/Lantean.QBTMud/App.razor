@@ -1,6 +1,10 @@
-@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
+@using Lantean.QBTMud.Layout
+@using Lantean.QBTMud.Application.Services.Localization
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@inject ILanguageLocalizer LanguageLocalizer
 
-<Router AppAssembly="@typeof(App).Assembly">
+<Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="new[] { typeof(PresentationAssemblyMarker).Assembly }">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />

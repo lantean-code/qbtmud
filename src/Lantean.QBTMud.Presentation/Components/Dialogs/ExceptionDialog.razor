@@ -1,0 +1,40 @@
+@inject ILanguageLocalizer LanguageLocalizer
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            @if (Exception is null)
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Error"
+                              data-test-id="@TestIdHelper.For("ExceptionMissingMessage")">
+                        @LanguageLocalizer.Translate("AppExceptionDialog", "Missing error information.")
+                    </MudAlert>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12">
+                    <MudField Label="@LanguageLocalizer.Translate("AppExceptionDialog", "Message")"
+                              data-test-id="@TestIdHelper.For("ExceptionMessage")">@Exception.Message</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="@LanguageLocalizer.Translate("AppExceptionDialog", "Source")"
+                              data-test-id="@TestIdHelper.For("ExceptionSource")">@Exception.Source</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="@LanguageLocalizer.Translate("AppExceptionDialog", "Stack Trace")"
+                              data-test-id="@TestIdHelper.For("ExceptionStackTrace")">
+                        <pre class="overflow">
+                            @Exception.StackTrace
+                        </pre>
+                    </MudField>
+                </MudItem>
+            }
+        </MudGrid>
+        
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Close" data-test-id="@TestIdHelper.For("ExceptionClose")">@LanguageLocalizer.Translate("AppExceptionDialog", "Close")</MudButton>
+    </DialogActions>
+</MudDialog>

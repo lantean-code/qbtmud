@@ -1,3 +1,5 @@
+using Lantean.QBTMud.Infrastructure.Configuration;
+
 namespace Lantean.QBTMud.Configuration
 {
     internal static class RoutingModeConfiguration

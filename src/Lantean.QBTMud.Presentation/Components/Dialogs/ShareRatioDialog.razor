@@ -1,0 +1,54 @@
+@inherits SubmittableDialog
+@using QBittorrent.ApiClient.Models
+@inject ILanguageLocalizer LanguageLocalizer
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudRadioGroup T="int" Value="ShareRatioType" ValueChanged="ShareRatioTypeChanged" data-test-id="@TestIdHelper.For("ShareRatioType")">
+                    <MudItem xs="12">
+                    <MudRadio T="int" Value="-2">@LanguageLocalizer.Translate("UpDownRatioDialog", "Use global share limit")</MudRadio>
+                    </MudItem>
+                    <MudItem xs="12">
+                    <MudRadio T="int" Value="-1">@LanguageLocalizer.Translate("UpDownRatioDialog", "Set no share limit")</MudRadio>
+                    </MudItem>
+                    <MudItem xs="12">
+                    <MudRadio T="int" Value="0">@LanguageLocalizer.Translate("UpDownRatioDialog", "Set share limit to")</MudRadio>
+                    </MudItem>
+                </MudRadioGroup>
+            </MudItem>
+            <MudItem xs="3">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "ratio")" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("RatioEnabled")" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("Ratio")" />
+            </MudItem>
+            <MudItem xs="3">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "total minutes")" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("TotalMinutesEnabled")" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Value="TotalMinutes" ValueChanged="TotalMinutesChanged" Disabled="@(!(CustomEnabled && TotalMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "minutes")" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("TotalMinutes")" />
+            </MudItem>
+            <MudItem xs="3">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "inactive minutes")" Value="InactiveMinutesEnabled" ValueChanged="InactiveMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("InactiveMinutesEnabled")" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!(CustomEnabled && InactiveMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "minutes")" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("InactiveMinutes")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="ShareLimitAction" Label="@LanguageLocalizer.Translate("OptionsDialog", "then")" Value="SelectedShareLimitAction" ValueChanged="ShareLimitActionChanged" Disabled="@(!CustomEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SelectedShareLimitAction")">
+                    <MudSelectItem Value="ShareLimitAction.Default">@LanguageLocalizer.Translate("OptionsDialog", "Default")</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.Stop">@LanguageLocalizer.Translate("OptionsDialog", "Stop torrent")</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.Remove">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent")</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.RemoveWithContent">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent and its files")</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.EnableSuperSeeding">@LanguageLocalizer.Translate("OptionsDialog", "Enable super seeding for torrent")</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("ShareRatioCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("ShareRatioSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
+    </DialogActions>
+</MudDialog>

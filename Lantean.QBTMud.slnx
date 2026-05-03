@@ -15,13 +15,20 @@
   </Folder>
   <Folder Name="/Source/">
     <File Path="src/AGENTS.md" />
-    <Project Path="src/Blazor.BrowserCapabilities/Blazor.BrowserCapabilities.csproj" />
     <Project Path="src/Lantean.QBTMud/Lantean.QBTMud.csproj" />
+    <Project Path="src/Lantean.QBTMud.Application/Lantean.QBTMud.Application.csproj" />
+    <Project Path="src/Lantean.QBTMud.Core/Lantean.QBTMud.Core.csproj" />
+    <Project Path="src/Lantean.QBTMud.Infrastructure/Lantean.QBTMud.Infrastructure.csproj" />
+    <Project Path="src/Lantean.QBTMud.Presentation/Lantean.QBTMud.Presentation.csproj" />
   </Folder>
   <Folder Name="/Test/">
     <File Path="test/AGENTS.md" />
-    <Project Path="test/Blazor.BrowserCapabilities.Test/Blazor.BrowserCapabilities.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Application.Test/Lantean.QBTMud.Application.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Core.Test/Lantean.QBTMud.Core.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Infrastructure.Test/Lantean.QBTMud.Infrastructure.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.Presentation.Test/Lantean.QBTMud.Presentation.Test.csproj" />
     <Project Path="test/Lantean.QBTMud.Test/Lantean.QBTMud.Test.csproj" />
+    <Project Path="test/Lantean.QBTMud.TestSupport/Lantean.QBTMud.TestSupport.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />

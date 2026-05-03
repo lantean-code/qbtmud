@@ -1,0 +1,14 @@
+@inherits SubmittableDialog
+@inject ILanguageLocalizer LanguageLocalizer
+
+<MudDialog Style="min-width: 400px;">
+    <DialogContent>
+        <MudGrid>
+            
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("TorrentOptionsCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("TorrentOptionsSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
+    </DialogActions>
+</MudDialog>

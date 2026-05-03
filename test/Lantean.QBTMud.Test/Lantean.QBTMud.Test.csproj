@@ -27,11 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lantean.QBTMud\Lantean.QBTMud.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Xunit" />
-    <Using Include="MudBlazor.Extensions" />
+    <ProjectReference Include="..\Lantean.QBTMud.TestSupport\Lantean.QBTMud.TestSupport.csproj" />
   </ItemGroup>
 
 </Project>

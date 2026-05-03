@@ -1,0 +1,17 @@
+@inject ILanguageLocalizer LanguageLocalizer
+
+<MudDialog Style="min-width: 400px;">
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <CascadingValue Value="Preferences">
+                    <TorrentActions Hashes="Hashes" ParentAction="ParentAction" RenderType="RenderType.Children" MudDialog="MudDialog" Torrents="Torrents" Preferences="Preferences" Tags="Tags" Categories="Categories" />
+                </CascadingValue>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" Style="display:none" OnClick="Cancel" data-test-id="@TestIdHelper.For("SubMenuCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" Style="display:none" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SubMenuClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+    </DialogActions>
+</MudDialog>

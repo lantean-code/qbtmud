@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
+    <PackageReference Include="MudBlazor" Version="9.4.0" />
+    <PackageReference Include="QBittorrent.ApiClient" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lantean.QBTMud.Core\Lantean.QBTMud.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lantean.QBTMud.Infrastructure" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Presentation" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.Application.Test" />
+    <InternalsVisibleTo Include="Lantean.QBTMud.TestSupport" />
+  </ItemGroup>
+
+</Project>
