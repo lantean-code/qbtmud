@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using MudBlazor.Extensions;
 using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Presentation.Test.Pages
@@ -146,6 +147,27 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var pageTitle = target.FindComponent<PageTitle>();
 
             GetChildContentText(pageTitle.Instance.ChildContent).Should().Be("Login");
+        }
+
+        [Fact]
+        public void GIVEN_LoginPage_WHEN_Rendered_THEN_CredentialInputsHaveAutofillMetadata()
+        {
+            var target = RenderPage();
+
+            var usernameField = FindComponentByTestId<MudTextField<string>>(target, "Username");
+            var passwordField = FindComponentByTestId<MudTextField<string>>(target, "Password");
+
+            usernameField.Instance.GetState(x => x.InputId).Should().Be("username");
+            usernameField.Instance.UserAttributes.Should().ContainKey("name");
+            usernameField.Instance.UserAttributes["name"].Should().Be("username");
+            usernameField.Instance.UserAttributes.Should().ContainKey("autocomplete");
+            usernameField.Instance.UserAttributes["autocomplete"].Should().Be("username");
+
+            passwordField.Instance.GetState(x => x.InputId).Should().Be("password");
+            passwordField.Instance.UserAttributes.Should().ContainKey("name");
+            passwordField.Instance.UserAttributes["name"].Should().Be("password");
+            passwordField.Instance.UserAttributes.Should().ContainKey("autocomplete");
+            passwordField.Instance.UserAttributes["autocomplete"].Should().Be("current-password");
         }
 
         [Fact]
