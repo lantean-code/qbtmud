@@ -979,6 +979,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             var target = RenderLayout(new List<IManagedTimer>());
 
             _navigationManager.LastNavigationUri.Should().Be("login");
+            _navigationManager.ForceLoad.Should().BeFalse();
             target.FindComponent<MudProgressLinear>().Should().NotBeNull();
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
@@ -1094,7 +1095,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
-            _navigationManager.ForceLoad.Should().BeTrue();
+            _navigationManager.ForceLoad.Should().BeFalse();
         }
 
         [Fact]

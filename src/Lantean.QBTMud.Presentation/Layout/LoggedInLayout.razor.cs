@@ -328,13 +328,14 @@ namespace Lantean.QBTMud.Layout
 
         private async Task HandleAuthenticationFailureAsync(CancellationToken cancellationToken)
         {
+            var forceLoginReload = _authConfirmed;
             IsAuthenticated = false;
             _authConfirmed = false;
             _startupRecoveryPending = false;
 
             await PendingDownloadWorkflow.ClearAsync(cancellationToken);
             _timerCancellationToken.CancelIfNotDisposed();
-            await InvokeAsync(() => NavigationManager.NavigateTo("login", forceLoad: true));
+            await InvokeAsync(() => NavigationManager.NavigateTo("login", forceLoad: forceLoginReload));
         }
 
         private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)
