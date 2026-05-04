@@ -102,6 +102,29 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
         }
 
         [Fact]
+        public async Task GIVEN_MenuOpen_WHEN_AdornmentClicked_THEN_MenuClosedBeforeDialogOpened()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
+                .ReturnsSuccessAsync(["C:/Alpha"]);
+
+            var target = _target.RenderComponent(browseDialogTitle: "Pick");
+            var autocomplete = target.FindComponent<MudAutocomplete<string>>();
+
+            await autocomplete.Find("input").InputAsync("C:/");
+            target.WaitForAssertion(() => autocomplete.Instance.Open.Should().BeTrue());
+
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.All, true))
+                .Callback(() => autocomplete.Instance.Open.Should().BeFalse())
+                .ReturnsAsync(string.Empty);
+
+            await target.InvokeAsync(() => autocomplete.Instance.OnAdornmentClick.InvokeAsync());
+
+            autocomplete.Instance.Open.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_DialogReturnsEmpty_WHEN_AdornmentClicked_THEN_ValueNotChanged()
         {
             string? received = null;
