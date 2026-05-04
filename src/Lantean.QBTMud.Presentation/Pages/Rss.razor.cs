@@ -8,6 +8,7 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using MudBlazor.Utilities;
 using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
@@ -765,14 +766,11 @@ namespace Lantean.QBTMud.Pages
 
         protected string GetArticleCssClass(RssArticle article)
         {
-            var classes = new List<string> { "rss-article-item" };
-            if (string.Equals(SelectedArticle, article.Id, StringComparison.Ordinal))
-            {
-                classes.Add("mud-selected-item");
-                classes.Add("rss-article-item--selected");
-            }
-
-            return string.Join(" ", classes);
+            var selected = string.Equals(SelectedArticle, article.Id, StringComparison.Ordinal);
+            return new CssBuilder("rss-article-item")
+                .AddClass("mud-selected-item", selected)
+                .AddClass("rss-article-item--selected", selected)
+                .Build();
         }
 
         private async Task GetRssList()

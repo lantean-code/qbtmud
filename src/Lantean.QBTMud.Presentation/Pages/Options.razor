@@ -15,7 +15,7 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("OptionsDialog", "Options")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("OptionsDialog", "Options")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(UpdatePreferences is null)" />
             <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(UpdatePreferences is null)" />

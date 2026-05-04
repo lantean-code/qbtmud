@@ -1,3 +1,13 @@
+.theme-detail-page {
+    display: contents;
+}
+
+.theme-detail-page ::deep .details-tab-contents {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
 .theme-editor__header {
     display: flex;
     align-items: center;

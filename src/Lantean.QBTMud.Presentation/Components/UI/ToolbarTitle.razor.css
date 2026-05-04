@@ -1,0 +1,9 @@
+.toolbar-title-host {
+    display: contents;
+}
+
+.toolbar-title-host ::deep .toolbar-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

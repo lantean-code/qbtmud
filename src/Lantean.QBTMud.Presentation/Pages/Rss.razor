@@ -9,7 +9,7 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" data-test-id="@TestIdHelper.For("RssBackToList")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("MainWindow", "RSS")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("MainWindow", "RSS")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" title="@LanguageLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
             <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@LanguageLocalizer.Translate("RSSWidget", "Mark items read")" data-test-id="@TestIdHelper.For("RssMarkItemsRead")" />

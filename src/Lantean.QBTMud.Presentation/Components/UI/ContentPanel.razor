@@ -1,5 +1,3 @@
-@using Microsoft.AspNetCore.Components
-
 <div class="@RootClassName" @attributes="AdditionalAttributes">
     @if (ToolbarContent is not null)
     {
@@ -21,72 +19,3 @@
         }
     </div>
 </div>
-
-@code {
-    [Parameter]
-    public RenderFragment? ToolbarContent { get; set; }
-
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-
-    [Parameter]
-    public bool ToolbarScroll { get; set; }
-
-    [Parameter]
-    public bool UseContainer { get; set; }
-
-    [Parameter]
-    public MaxWidth ContainerMaxWidth { get; set; } = MaxWidth.ExtraExtraLarge;
-
-    [Parameter]
-    public string? RootClass { get; set; }
-
-    [Parameter]
-    public string? ToolbarClass { get; set; }
-
-    [Parameter]
-    public string? BodyClass { get; set; }
-
-    [Parameter]
-    public string? ContainerClass { get; set; }
-
-    [Parameter(CaptureUnmatchedValues = true)]
-    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
-
-    private string RootClassName
-    {
-        get
-        {
-            return CombineClasses("content-panel", RootClass);
-        }
-    }
-
-    private string ToolbarClassName
-    {
-        get
-        {
-            return CombineClasses("content-panel__toolbar", ToolbarScroll ? "content-panel__toolbar--scroll" : null, ToolbarClass);
-        }
-    }
-
-    private string BodyClassName
-    {
-        get
-        {
-            return CombineClasses("content-panel__body", BodyClass);
-        }
-    }
-
-    private string ContainerClassName
-    {
-        get
-        {
-            return CombineClasses("content-panel__container", ContainerClass);
-        }
-    }
-
-    private static string CombineClasses(params string?[] classes)
-    {
-        return string.Join(" ", classes.Where(c => !string.IsNullOrWhiteSpace(c)));
-    }
-}

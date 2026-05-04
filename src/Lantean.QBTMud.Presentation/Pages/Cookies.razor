@@ -9,7 +9,7 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to torrent list")" data-test-id="@TestIdHelper.For("CookiesBack")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("CookiesDialog", "Manage Cookies")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("CookiesDialog", "Manage Cookies")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="@LanguageLocalizer.Translate("CookiesDialog", "Add Cookie")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesAdd")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="@Translate("Refresh")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesRefresh")" />

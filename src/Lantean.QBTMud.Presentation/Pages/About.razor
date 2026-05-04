@@ -2,6 +2,7 @@
 @layout OtherLayout
 @inject ILanguageLocalizer LanguageLocalizer
 
+<div class="about-page">
 <ContentPanel>
     <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
@@ -10,7 +11,7 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("AboutDialog", "About")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("AboutDialog", "About")</ToolbarTitle>
         </MudToolBar>
     </ToolbarContent>
 
@@ -1166,3 +1167,4 @@
         </MudTabs>
     </ChildContent>
 </ContentPanel>
+</div>

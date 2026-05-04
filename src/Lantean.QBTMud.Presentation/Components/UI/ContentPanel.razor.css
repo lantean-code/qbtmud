@@ -103,37 +103,3 @@
 .content-panel__container ::deep > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
     bottom: 0;
 }
-
-.content-panel ::deep .torrent-list .mud-table-container,
-.content-panel ::deep .file-list .mud-table-container,
-.content-panel ::deep .details-list .mud-table-container,
-.content-panel ::deep .search-list .mud-table-container {
-    height: 100%;
-}
-
-.content-panel ::deep .details-tab-contents,
-.content-panel ::deep .options-tab-contents,
-.content-panel ::deep .rss-contents {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: auto;
-}
-
-.content-panel ::deep .no-wrap {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-@supports (-webkit-touch-callout: none) {
-    .content-panel ::deep .torrent-list .mud-table-container {
-        box-sizing: border-box;
-        padding-right: 14px;
-        padding-right: calc(14px + env(safe-area-inset-right));
-    }
-
-    .content-panel ::deep .torrent-list .mud-table-container th:last-child,
-    .content-panel ::deep .torrent-list .mud-table-container td:last-child {
-        padding-right: 14px;
-    }
-}

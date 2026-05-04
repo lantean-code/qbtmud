@@ -1,11 +1,12 @@
 @page "/themes/{ThemeId}"
 @layout OtherLayout
+<div class="theme-detail-page">
 <ContentPanel RootClass="theme-detail">
     <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to themes")" data-test-id="@TestIdHelper.For("ThemeDetailBack")" />
             <MudDivider Vertical="true" />
-            <MudText Class="px-5 no-wrap">@ThemeTitle</MudText>
+            <ToolbarTitle Class="px-5">@ThemeTitle</ToolbarTitle>
             <MudDivider Vertical="true" />
             @if (!IsLoading && Theme is not null)
             {
@@ -162,3 +163,4 @@
         }
     </ChildContent>
 </ContentPanel>
+</div>

@@ -9,7 +9,7 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("TransferListFiltersWidget", "Tags")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("TransferListFiltersWidget", "Tags")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Filled.NewLabel" OnClick="AddTag" title="@LanguageLocalizer.Translate("TagFilterWidget", "New Tag")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="@LanguageLocalizer.Translate("AppCookies", "Refresh")" />

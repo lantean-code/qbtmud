@@ -34,6 +34,12 @@
     white-space: nowrap;
 }
 
+.dynamic-table-host ::deep .no-wrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .dynamic-table-host ::deep .table-select .mud-input-control > .mud-input-control-input-container > div.mud-input.mud-input-text {
     margin-top: 0;
     margin-left: 5px;

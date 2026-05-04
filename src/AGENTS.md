@@ -61,6 +61,11 @@
 - Only use custom HTML/CSS for UI structure when the required result cannot be achieved with MudBlazor components.
 - Keep custom CSS focused on small visual adjustments; do not replace standard MudBlazor layout/content components unless necessary.
 
+### Razor Component Structure
+- Razor components must keep markup in `.razor` files and C# members in adjacent `.razor.cs` code-behind files using `public partial class <ComponentName>`.
+- Do not add inline `@code` blocks to components unless there is an explicit local precedent and a clear reason to keep the component markup-only.
+- Component `.razor.cs` files are the allowed exception to the general "avoid partial classes" rule.
+
 ### CSS Ownership
 - The default location for CSS is the `.razor.css` file adjacent to the Razor component that renders the affected element.
 - Shared CSS must be owned by a shared Razor component. Do not add generic global classes for repeated component/page patterns.
@@ -79,7 +84,7 @@
 ### Design
 - Use constructor injection only, unless absolutely necessary (for example, in Blazor).
 - Static methods and classes are acceptable when appropriate.
-- Avoid partial classes in user code unless generated.
+- Avoid partial classes in user code unless generated or used for Razor component code-behind.
 - Use `record` for data-only objects.
 - Do not use positional record syntax (for example, `public record MyModel(string Name)`).
 - For records and classes with constructors, declare explicit properties and constructor bodies.
