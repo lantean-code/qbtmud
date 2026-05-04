@@ -848,6 +848,10 @@ body {
     box-shadow: none;
 }
 
+.speed-chart-frame {
+    padding: 14px 24px 18px 44px;
+}
+
 .speed-chart {
     background-color: transparent;
 }
@@ -871,6 +875,15 @@ body {
     .speed-chart .mud-chart-serie.mud-chart-line path {
         stroke-width: 2;
     }
+
+.speed-chart-updated {
+    display: block;
+    margin-top: 8px;
+    padding-right: 14px;
+    color: var(--mud-palette-text-secondary);
+    line-height: 1.4;
+    text-align: right;
+}
 
 .app-settings-storage-overrides-panels {
     margin-top: 8px;

@@ -35,6 +35,8 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             var toggleGroup = FindComponentByTestId<MudToggleGroup<SpeedPeriod>>(target, "PeriodToggleGroup");
             toggleGroup.Instance.GetState(x => x.Value).Should().Be(SpeedPeriod.Min5);
+            FindComponentByTestId<MudPaper>(target, "SpeedChartContainer").Instance.Class.Should().Contain("speed-chart-container");
+            FindComponentByTestId<MudText>(target, "SpeedChartLastUpdated").Instance.Class.Should().Contain("speed-chart-updated");
 
             Mock.Get(_speedHistoryService).Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
             Mock.Get(_speedHistoryService).Verify(s => s.GetSeries(SpeedPeriod.Min5, SpeedDirection.Download), Times.AtLeastOnce());

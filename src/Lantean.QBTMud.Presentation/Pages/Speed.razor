@@ -47,17 +47,19 @@
             }
             else
             {
-                <MudPaper Class="pa-4 speed-chart-container">
-                    <MudChart T="double"
-                              ChartType="ChartType.Timeseries"
-                              ChartSeries="@_series"
-                              ChartOptions="@_chartOptions"
-                              MatchBoundsToSize="true"
-                              Height="360px"
-                              Width="100%"
-                              Class="speed-chart"
-                              data-test-id="@TestIdHelper.For("SpeedChart")" />
-                    <MudText Typo="Typo.caption" Class="mt-2">
+                <MudPaper Class="pa-4 speed-chart-container" data-test-id="@TestIdHelper.For("SpeedChartContainer")">
+                    <div class="speed-chart-frame">
+                        <MudChart T="double"
+                                  ChartType="ChartType.Timeseries"
+                                  ChartSeries="@_series"
+                                  ChartOptions="@_chartOptions"
+                                  MatchBoundsToSize="true"
+                                  Height="320px"
+                                  Width="100%"
+                                  Class="speed-chart"
+                                  data-test-id="@TestIdHelper.For("SpeedChart")" />
+                    </div>
+                    <MudText Typo="Typo.caption" Class="speed-chart-updated" data-test-id="@TestIdHelper.For("SpeedChartLastUpdated")">
                         @Translate("Last updated:") @_lastUpdatedText
                     </MudText>
                 </MudPaper>
