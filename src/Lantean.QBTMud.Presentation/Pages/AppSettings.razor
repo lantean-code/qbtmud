@@ -4,8 +4,8 @@
 
 <NavigationLock ConfirmExternalNavigation="@HasPendingChanges" OnBeforeInternalNavigation="ValidateExit" />
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -15,7 +15,7 @@
                                data-test-id="@TestIdHelper.For("AppSettingsBackButton")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@TranslateSettings("App Settings")</MudText>
+            <ToolbarTitle Class="px-5">@TranslateSettings("App Settings")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Save"
                            OnClick="Save"
@@ -31,9 +31,9 @@
                            Disabled="@(IsLoading || IsReloading || IsStorageBusy)"
                            data-test-id="@TestIdHelper.For("AppSettingsReloadButton")" />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         @if (IsLoading)
         {
             <MudProgressLinear Color="Color.Primary"
@@ -93,5 +93,5 @@
                 </MudTabPanel>
             </MudTabs>
         }
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>

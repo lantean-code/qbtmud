@@ -8,8 +8,9 @@
     <MudMenuItem Icon="@Icons.Material.Filled.Clear" IconColor="Color.Error" Disabled="@(!HasResults)" OnClick="ClearResults">@LanguageLocalizer.Translate("ExecutionLogWidget", "Clear")</MudMenuItem>
 </MudMenu>
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<div class="log-page">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -17,10 +18,10 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">@LanguageLocalizer.Translate("MainWindow", "Execution Log")</MudText>
+            <ToolbarTitle Class="pl-5">@LanguageLocalizer.Translate("MainWindow", "Execution Log")</ToolbarTitle>
         </MudToolBar>
-    </div>
-    <div class="content-panel__body">
+    </ToolbarContent>
+    <ChildContent>
         <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
             <MudCardContent>
                 <EditForm Model="Model" OnSubmit="Submit">
@@ -55,5 +56,6 @@
                       OnTableDataContextMenu="TableDataContextMenu"
                       OnTableDataLongPress="TableDataLongPress"
                       Class="search-list content-panel__table" />
-    </div>
+    </ChildContent>
+</ContentPanel>
 </div>

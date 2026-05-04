@@ -1,14 +1,15 @@
 @page "/rss"
 @layout OtherLayout
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<div class="rss-page">
+<ContentPanel UseContainer="true">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" data-test-id="@TestIdHelper.For("RssBackToList")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("MainWindow", "RSS")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("MainWindow", "RSS")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" title="@LanguageLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
             <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@LanguageLocalizer.Translate("RSSWidget", "Mark items read")" data-test-id="@TestIdHelper.For("RssMarkItemsRead")" />
@@ -16,10 +17,8 @@
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@LanguageLocalizer.Translate("RSSWidget", "RSS Downloader...")" data-test-id="@TestIdHelper.For("RssEditDownloadRules")" />
         </MudToolBar>
-    </div>
-
-    <div class="content-panel__body">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container">
+    </ToolbarContent>
+    <ChildContent>
             <MudMenu @ref="FeedContextMenu"
                      Dense="true"
                      PositionAtCursor="true"
@@ -273,6 +272,6 @@
                     </MudItem>
                 }
             </MudGrid>
-        </MudContainer>
-    </div>
+    </ChildContent>
+</ContentPanel>
 </div>

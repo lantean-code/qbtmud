@@ -1,8 +1,8 @@
 @page "/statistics"
 @layout OtherLayout
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -10,11 +10,11 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">@LanguageLocalizer.Translate("StatsDialog", "Statistics")</MudText>
+            <ToolbarTitle Class="pl-5">@LanguageLocalizer.Translate("StatsDialog", "Statistics")</ToolbarTitle>
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
             <MudCardHeader>
                 <CardHeaderContent>
@@ -98,5 +98,5 @@
                 </MudGrid>
             </MudCardContent>
         </MudCard>
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>

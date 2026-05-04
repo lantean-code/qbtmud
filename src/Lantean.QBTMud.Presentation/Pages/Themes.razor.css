@@ -28,6 +28,12 @@
     gap: 0.25rem;
 }
 
+.theme-actions-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .theme-colors-row {
     display: flex;
     align-items: center;

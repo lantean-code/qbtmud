@@ -1,7 +1,8 @@
 @page "/speed"
 @layout OtherLayout
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<div class="speed-page">
+<ContentPanel UseContainer="true" ContainerClass="pt-4">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -9,12 +10,10 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">@Translate("Speed")</MudText>
+            <ToolbarTitle Class="pl-5">@Translate("Speed")</ToolbarTitle>
         </MudToolBar>
-    </div>
-
-    <div class="content-panel__body">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container pt-4">
+    </ToolbarContent>
+    <ChildContent>
             <MudPaper Class="pa-4 mb-4">
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
                     <MudToggleGroup T="SpeedPeriod"
@@ -64,6 +63,6 @@
                     </MudText>
                 </MudPaper>
             }
-        </MudContainer>
-    </div>
+    </ChildContent>
+</ContentPanel>
 </div>

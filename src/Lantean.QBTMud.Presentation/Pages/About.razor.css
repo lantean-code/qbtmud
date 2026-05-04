@@ -1,0 +1,9 @@
+.about-page {
+    display: contents;
+}
+
+.about-page ::deep .options-tab-contents {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}

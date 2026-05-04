@@ -3,23 +3,23 @@
 @using Lantean.QBTMud.Core.Helpers
 @using QBittorrent.ApiClient.Models
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("TorrentCreator", "Torrent Creator")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("TorrentCreator", "Torrent Creator")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Filled.AddBox" OnClick="OpenCreateDialog" Disabled="@IsLoading" title="@LanguageLocalizer.Translate("TorrentCreator", "Create Torrent")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshTasks" Disabled="@IsLoading" title="Refresh" />
             <MudSpacer />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         @if (!HasTasks)
         {
             const string emptyStateText = "No torrent creation tasks.";
@@ -37,8 +37,8 @@
                           SelectOnRowClick="false"
                           Class="details-list content-panel__table" />
         }
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>
 
 @code {
     private RenderFragment<RowContext<TorrentCreationTaskStatus>> StatusColumn

@@ -1,0 +1,21 @@
+<div class="@RootClassName" @attributes="AdditionalAttributes">
+    @if (ToolbarContent is not null)
+    {
+        <div class="@ToolbarClassName">
+            @ToolbarContent
+        </div>
+    }
+
+    <div class="@BodyClassName">
+        @if (UseContainer)
+        {
+            <MudContainer MaxWidth="ContainerMaxWidth" Class="@ContainerClassName">
+                @ChildContent
+            </MudContainer>
+        }
+        else
+        {
+            @ChildContent
+        }
+    </div>
+</div>

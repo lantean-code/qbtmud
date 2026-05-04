@@ -61,10 +61,30 @@
 - Only use custom HTML/CSS for UI structure when the required result cannot be achieved with MudBlazor components.
 - Keep custom CSS focused on small visual adjustments; do not replace standard MudBlazor layout/content components unless necessary.
 
+### Razor Component Structure
+- Razor components must keep markup in `.razor` files and C# members in adjacent `.razor.cs` code-behind files using `public partial class <ComponentName>`.
+- Do not add inline `@code` blocks to components unless there is an explicit local precedent and a clear reason to keep the component markup-only.
+- Component `.razor.cs` files are the allowed exception to the general "avoid partial classes" rule.
+
+### CSS Ownership
+- The default location for CSS is the `.razor.css` file adjacent to the Razor component that renders the affected element.
+- Shared CSS must be owned by a shared Razor component. Do not add generic global classes for repeated component/page patterns.
+- `src/Lantean.QBTMud/wwwroot/css/app.css` is reserved for host/root CSS, Blazor loading/error UI, static non-Razor output, and verified unavoidable MudBlazor provider/portal selectors.
+- New global utility classes are not allowed without explicit design approval.
+- Before moving or adding a selector, classify the rendered DOM owner:
+  - If the same Razor file renders the element, place the selector in that component's `.razor.css`.
+  - If the same structure is repeated across pages, create or use a shared wrapper component and place the selector there.
+  - If a MudBlazor child component renders the target element, anchor from real HTML owned by the component and use `::deep`.
+  - If a dialog, popover, snackbar, provider, or portal renders the target outside the component scope, keep the selector global unless the final DOM is verified to carry the component scope attribute.
+- Do not assume `Class`, `ContentClass`, `PopoverClass`, `BackgroundClass`, `HeaderClass`, or generated row/cell class strings are scope-safe. Verify the rendered DOM receives the component scope attribute before moving those selectors out of `app.css`.
+- `::deep` selectors must always be anchored from a component-owned HTML element, for example `.search-page ::deep .mud-card-content`.
+- Avoid isolated selectors whose rightmost target is produced by a child component unless the final DOM has been verified. Prefer wrapping the child component in a local `<div class="...">`.
+- After moving CSS out of `app.css`, remove the old selector only after confirming the scoped replacement is present in the generated scoped CSS bundle and affects the page.
+
 ### Design
 - Use constructor injection only, unless absolutely necessary (for example, in Blazor).
 - Static methods and classes are acceptable when appropriate.
-- Avoid partial classes in user code unless generated.
+- Avoid partial classes in user code unless generated or used for Razor component code-behind.
 - Use `record` for data-only objects.
 - Do not use positional record syntax (for example, `public record MyModel(string Name)`).
 - For records and classes with constructors, declare explicit properties and constructor bodies.

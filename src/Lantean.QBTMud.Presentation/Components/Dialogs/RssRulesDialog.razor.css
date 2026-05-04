@@ -1,0 +1,9 @@
+.rss-rules-dialog {
+    display: contents;
+}
+
+.rss-rules-dialog ::deep .no-wrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -1,0 +1,8 @@
+.filters-nav {
+    display: contents;
+}
+
+.filters-nav ::deep .filter-menu-item .mud-nav-link {
+    padding-left: 0 !important;
+    padding-inline-start: 10px !important;
+}

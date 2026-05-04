@@ -87,12 +87,13 @@
                         </MudStack>
                     </MudItem>
                 </MudGrid>
-                <MudExpansionPanels MultiExpansion="true" Outlined="true" Elevation="0" Class="app-settings-storage-overrides-panels">
-                    <MudExpansionPanel Expanded="@isGroupOverridesExpanded"
-                                       ExpandedChanged="@(value => SetGroupOverridesExpanded(group.Id, value))"
-                                       Class="app-settings-storage-overrides-panel"
-                                       HeaderClass="app-settings-storage-overrides-panel__header"
-                                       data-test-id="@TestIdHelper.For($"AppSettingsStorageGroupOverridesPanel-{group.Id}")">
+                <div class="app-settings-storage-overrides-panels">
+                    <MudExpansionPanels MultiExpansion="true" Outlined="true" Elevation="0">
+                        <MudExpansionPanel Expanded="@isGroupOverridesExpanded"
+                                           ExpandedChanged="@(value => SetGroupOverridesExpanded(group.Id, value))"
+                                           Class="app-settings-storage-overrides-panel"
+                                           HeaderClass="app-settings-storage-overrides-panel__header"
+                                           data-test-id="@TestIdHelper.For($"AppSettingsStorageGroupOverridesPanel-{group.Id}")">
                         <TitleContent>
                             <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
                                 <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Default" Size="Size.Small" />
@@ -121,8 +122,9 @@
                                 </MudGrid>
                             }
                         </ChildContent>
-                    </MudExpansionPanel>
-                </MudExpansionPanels>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                </div>
             </MudCardContent>
         </MudCard>
     }

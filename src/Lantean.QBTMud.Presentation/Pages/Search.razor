@@ -1,8 +1,9 @@
 @using QBittorrent.ApiClient.Models
 @page "/search"
 @layout OtherLayout
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<div class="search-page">
+<ContentPanel UseContainer="true" ContainerClass="ma-0 pa-0">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -10,7 +11,7 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("SearchEngineWidget", "Search")</MudText>
+            <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("SearchEngineWidget", "Search")</ToolbarTitle>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Filled.Settings"
                            title="@LanguageLocalizer.Translate("SearchEngineWidget", "Search plugins...")"
@@ -42,9 +43,8 @@
                            OnClick="CloseAllJobs"
                            data-test-id="@TestIdHelper.For("CloseAllJobsButton")" />
         </MudToolBar>
-    </div>
-    <div class="content-panel__body">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0 content-panel__container">
+    </ToolbarContent>
+    <ChildContent>
             <MudMenu @ref="ResultContextMenu"
                      Dense="true"
                      RelativeWidth="DropdownWidth.Ignore"
@@ -310,6 +310,6 @@
                 </MudPaper>
             }
 
-        </MudContainer>
-    </div>
+    </ChildContent>
+</ContentPanel>
 </div>

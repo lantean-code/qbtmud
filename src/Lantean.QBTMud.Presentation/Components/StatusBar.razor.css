@@ -1,0 +1,49 @@
+.status-bar-host {
+    display: contents;
+}
+
+.status-bar-host ::deep .app-shell__status-bar.mud-appbar {
+    flex: 0 0 calc(var(--app-status-bar-height) + env(safe-area-inset-bottom, 0px));
+    height: calc(var(--app-status-bar-height) + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    border-top: 1px solid var(--mud-palette-divider);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: var(--mud-palette-appbar-background) !important;
+    color: var(--mud-palette-appbar-text);
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    z-index: calc(var(--mud-zindex-popover) - 1);
+    bottom: calc(env(safe-area-inset-bottom, 0px) * -1);
+}
+
+.status-bar-host ::deep .app-shell__status-bar .mud-toolbar {
+    width: 100%;
+    height: var(--app-status-bar-height);
+    min-height: var(--app-status-bar-height);
+    align-items: center;
+    background-color: inherit;
+    box-sizing: border-box;
+}
+
+.status-bar-host ::deep .app-shell__alt-speed-enabled .mud-icon-root {
+    transform: scaleX(-1);
+    transform-origin: center;
+}
+
+@media (max-width: 960px) {
+    .status-bar-host ::deep .app-shell__status-bar.mud-appbar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .status-bar-host ::deep .app-shell__status-bar .mud-toolbar {
+        min-width: max-content;
+        white-space: nowrap;
+    }
+
+    .status-bar-host ::deep .app-shell__status-bar .mud-toolbar > * {
+        flex-shrink: 0;
+    }
+}

@@ -1,0 +1,46 @@
+.speed-page {
+    display: contents;
+}
+
+.speed-page ::deep .speed-chart-container {
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: none;
+}
+
+.speed-chart-frame {
+    padding: 14px 24px 18px 44px;
+}
+
+.speed-page ::deep .speed-chart {
+    background-color: transparent;
+}
+
+.speed-page ::deep .speed-chart .mud-chart-line {
+    overflow: visible;
+}
+
+.speed-page ::deep .speed-chart .mud-charts-grid path {
+    stroke: var(--mud-palette-divider);
+    stroke-dasharray: 4 3;
+    stroke-width: 0.6;
+    opacity: 0.8;
+}
+
+.speed-page ::deep .speed-chart .mud-charts-yaxis text,
+.speed-page ::deep .speed-chart .mud-charts-xaxis text {
+    fill: var(--mud-palette-text-secondary);
+}
+
+.speed-page ::deep .speed-chart .mud-chart-serie.mud-chart-line path {
+    stroke-width: 2;
+}
+
+.speed-page ::deep .speed-chart-updated {
+    display: block;
+    margin-top: 8px;
+    padding-right: 14px;
+    color: var(--mud-palette-text-secondary);
+    line-height: 1.4;
+    text-align: right;
+}

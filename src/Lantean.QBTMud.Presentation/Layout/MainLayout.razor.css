@@ -1,0 +1,14 @@
+.main-layout {
+    height: 100%;
+    min-height: 100%;
+}
+
+.main-layout ::deep .app-shell__timer-drawer {
+    --mud-drawer-width: min(90vw, 520px);
+}
+
+@media (max-width: 960px) {
+    .main-layout ::deep .app-shell__timer-drawer {
+        --mud-drawer-width: 100vw;
+    }
+}
