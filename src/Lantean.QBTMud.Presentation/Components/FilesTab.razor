@@ -4,8 +4,9 @@
     <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu" data-test-id="@TestIdHelper.For("ContextMenuRename")">@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")</MudMenuItem>
 </MudMenu>
 
-<div class="content-panel">
-    <div class="content-panel__toolbar content-panel__toolbar--scroll">
+<div class="files-tab">
+<ContentPanel ToolbarScroll="true">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")" data-test-id="@TestIdHelper.For("RenameToolbar")" />
             <MudDivider Vertical="true" />
@@ -26,8 +27,8 @@
             <MudSpacer />
             <MudTextField @ref="SearchInput" T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="@LanguageLocalizer.Translate("PropertiesWidget", "Filter files...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" data-test-id="@TestIdHelper.For("FilesTabSearch")"></MudTextField>
         </MudToolBar>
-    </div>
-    <div class="content-panel__body">
+    </ToolbarContent>
+    <ChildContent>
         <DynamicTable
             @ref="Table"
             T="ContentItem" 
@@ -45,7 +46,8 @@
             RowKeyFunc="CreateKey"
             Class="file-list content-panel__table"
         />
-    </div>
+    </ChildContent>
+</ContentPanel>
 </div>
 
 @code {

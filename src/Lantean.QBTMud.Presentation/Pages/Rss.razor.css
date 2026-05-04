@@ -1,23 +1,61 @@
-::deep .rss-article-item {
+.rss-page {
+    display: contents;
+}
+
+.rss-page ::deep .rss-article-item {
     border-radius: 4px;
 }
 
-    ::deep .rss-article-item .mud-list-item-icon {
+    .rss-page ::deep .rss-article-item .mud-list-item-icon {
         min-width: 36px !important;
     }
 
-::deep .rss-article-item--selected {
+.rss-page ::deep .rss-article-item--selected {
     background-color: var(--mud-palette-primary);
     color: var(--mud-palette-primary-text);
 }
 
-    ::deep .rss-article-item--selected .mud-list-item-text {
+    .rss-page ::deep .rss-article-item--selected .mud-list-item-text {
         color: inherit;
     }
 
-    ::deep .rss-article-item--selected .mud-icon-root {
+    .rss-page ::deep .rss-article-item--selected .mud-icon-root {
         color: inherit;
     }
+
+.rss-page ::deep .rss-contents {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.rss-page ::deep .rss-feed-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.rss-feed-list-container {
+    height: 100%;
+}
+
+.rss-feed-list-container:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
+.rss-page ::deep .rss-feed-list__item {
+    cursor: pointer;
+}
+
+.rss-page ::deep .spin-animation svg {
+    animation: spin 1s linear infinite;
+}
+
+.rss-feed-list__item-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
 
 .rss-back-button {
     margin-bottom: 8px;
@@ -79,4 +117,14 @@
 
 .rss-slider__pane-content--with-back {
     padding-top: 48px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }

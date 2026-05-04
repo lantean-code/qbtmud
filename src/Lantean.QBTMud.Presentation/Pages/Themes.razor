@@ -2,8 +2,8 @@
 @layout OtherLayout
 @using Lantean.QBTMud.Core.Theming
 
-<div class="content-panel themes">
-    <div class="content-panel__toolbar">
+<ContentPanel RootClass="themes" BodyClass="themes__body">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -25,9 +25,9 @@
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="@Translate("Reload theme sources")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
             <MudSpacer />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body themes__body">
+    <ChildContent>
         <DynamicTable @ref="Table"
                       TableId="Themes"
                       T="ThemeCatalogItem"
@@ -39,8 +39,8 @@
                       SelectOnRowClick="false"
                       RowClassFunc="RowClassFunc"
                       Class="details-list content-panel__table" />
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>
 
 @code {
     private RenderFragment<RowContext<ThemeCatalogItem>> NameColumn

@@ -1,7 +1,7 @@
 @page "/themes/{ThemeId}"
 @layout OtherLayout
-<div class="content-panel theme-detail">
-    <div class="content-panel__toolbar">
+<ContentPanel RootClass="theme-detail">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to themes")" data-test-id="@TestIdHelper.For("ThemeDetailBack")" />
             <MudDivider Vertical="true" />
@@ -32,9 +32,9 @@
                                data-test-id="@TestIdHelper.For("ThemeDetailSaveApply")" />
             }
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         @if (IsLoading)
         {
             <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container pa-4">
@@ -160,5 +160,5 @@
                 </MudTabPanel>
             </MudTabs>
         }
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>

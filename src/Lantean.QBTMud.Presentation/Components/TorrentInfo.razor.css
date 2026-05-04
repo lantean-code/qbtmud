@@ -1,0 +1,9 @@
+.torrent-info {
+    display: contents;
+}
+
+.torrent-info ::deep .no-wrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

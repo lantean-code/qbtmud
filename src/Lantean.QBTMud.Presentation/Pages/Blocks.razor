@@ -7,8 +7,8 @@
     <MudMenuItem Icon="@Icons.Material.Filled.Clear" IconColor="Color.Error" Disabled="@(!HasResults)" OnClick="ClearResults">@LanguageLocalizer.Translate("ExecutionLogWidget", "Clear")</MudMenuItem>
 </MudMenu>
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -18,8 +18,8 @@
             <MudDivider Vertical="true" />
             <MudText Class="pl-5 no-wrap">@LanguageLocalizer.Translate("ExecutionLogWidget", "Blocked IPs")</MudText>
         </MudToolBar>
-    </div>
-    <div class="content-panel__body">
+    </ToolbarContent>
+    <ChildContent>
         <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
             <MudCardContent>
                 <EditForm Model="Model" OnSubmit="Submit">
@@ -46,5 +46,5 @@
                       OnTableDataContextMenu="TableDataContextMenu"
                       OnTableDataLongPress="TableDataLongPress"
                       Class="search-list content-panel__table" />
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>

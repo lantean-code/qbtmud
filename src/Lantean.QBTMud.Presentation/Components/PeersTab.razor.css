@@ -1,0 +1,37 @@
+.peers-tab {
+    display: contents;
+}
+
+.peers-tab ::deep .peer-country {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.peers-tab ::deep .peer-country__flag {
+    position: relative;
+    width: 13px;
+    height: 10px;
+    overflow: hidden;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+.peers-tab ::deep .peer-country__flag-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: scale(0.25);
+    transform-origin: top left;
+    margin: 0;
+}
+
+.peers-tab ::deep .peer-country__flag-image.small-flag {
+    margin: 0;
+    transform: scale(0.25);
+    transform-origin: top left;
+}
+
+.peers-tab ::deep .peer-country__name {
+    white-space: nowrap;
+}

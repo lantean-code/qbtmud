@@ -1,5 +1,6 @@
 @inject ILanguageLocalizer LanguageLocalizer
 
+<div class="filters-nav">
 <MudMenu @ref="StatusContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable"> 
     @TorrentControls(_statusType)
 </MudMenu>
@@ -61,6 +62,7 @@
         }
     </MudNavGroup>
 </MudNavMenu>
+</div>
 
 
 @code {

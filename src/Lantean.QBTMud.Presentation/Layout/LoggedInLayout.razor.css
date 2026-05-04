@@ -1,0 +1,29 @@
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    height: var(--app-viewport-height);
+    min-height: var(--app-viewport-height);
+    overflow: hidden;
+    background-color: var(--mud-palette-background, #dbe8f6);
+}
+
+.app-shell ::deep .app-shell__body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.app-shell ::deep .app-shell__sidebar {
+    flex: 0 0 auto;
+}
+
+.app-shell ::deep .app-shell__main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: var(--mud-appbar-height) 0 calc(var(--app-status-bar-height));
+    box-sizing: border-box;
+}

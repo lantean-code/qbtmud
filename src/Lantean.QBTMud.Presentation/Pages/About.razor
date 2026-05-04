@@ -2,8 +2,8 @@
 @layout OtherLayout
 @inject ILanguageLocalizer LanguageLocalizer
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -12,9 +12,9 @@
             }
             <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("AboutDialog", "About")</MudText>
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         <MudTabs Elevation="2" ApplyEffectsToContainer="true">
             <MudTabPanel Text="@LanguageLocalizer.Translate("AboutDialog", "About")">
                 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 content-panel__container options-tab-contents">
@@ -1163,6 +1163,6 @@
             <MudText Typo="Typo.body1" Class="py-1">@LanguageLocalizer.Translate("AboutDialog", "The free IP to Country Lite database by DB-IP is used for resolving the countries of peers. The database is licensed under the Creative Commons Attribution 4.0 International License") (<MudLink Target="https://db-ip.com/" Href="https://db-ip.com/" rel="noopener ">https://db-ip.com/</MudLink>)</MudText>
         </MudContainer>
     </MudTabPanel>
-</MudTabs>
-    </div>
-</div>
+        </MudTabs>
+    </ChildContent>
+</ContentPanel>

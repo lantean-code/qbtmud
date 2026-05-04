@@ -7,8 +7,8 @@
     <NavigationLock ConfirmExternalNavigation="true" OnBeforeInternalNavigation="ValidateExit" />
 }
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -20,9 +20,9 @@
             <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(UpdatePreferences is null)" />
             <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(UpdatePreferences is null)" />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Behavior")">
                 <div class="options-tab-contents">
@@ -65,5 +65,5 @@
                 </div>
             </MudTabPanel>
         </MudTabs>
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>

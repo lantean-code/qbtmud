@@ -1,5 +1,6 @@
 @using Lantean.QBTMud.Helpers
 
+<div class="status-bar-host">
 <MudAppBar Bottom="true" Dense="true" Class="app-shell__status-bar">
     @{
         var freeSpaceValue = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk);
@@ -112,3 +113,4 @@
         <MudText data-test-id="@TestIdHelper.For("Status-Upload")">@BuildTransferInfo(MainData?.ServerState.UploadInfoSpeed, MainData?.ServerState.UploadRateLimit, MainData?.ServerState.UploadInfoData)</MudText>
     </MudButton>
 </MudAppBar>
+</div>

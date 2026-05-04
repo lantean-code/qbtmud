@@ -1,0 +1,32 @@
+.pwa-install-snackbar-content {
+    width: 100%;
+}
+
+.pwa-install-snackbar-content ::deep .pwa-install-snackbar-message {
+    font-size: clamp(1.05rem, 1.3vw, 1.3rem);
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-align: center;
+}
+
+.pwa-install-snackbar-content ::deep .pwa-install-snackbar-actions {
+    justify-content: center;
+    margin-top: 16px;
+    gap: 10px;
+}
+
+.pwa-install-snackbar-content ::deep .pwa-install-snackbar-button {
+    min-width: 170px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+
+@media (max-width: 600px) {
+    .pwa-install-snackbar-content ::deep .pwa-install-snackbar-button {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+}

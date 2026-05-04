@@ -1,0 +1,139 @@
+.content-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.content-panel__toolbar {
+    flex: 0 0 auto;
+}
+
+.content-panel__toolbar--scroll {
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.content-panel__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-panel__container {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.content-panel ::deep .content-panel__container {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.content-panel ::deep .content-panel__table {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.content-panel ::deep .content-panel__table .mud-table-container {
+    flex: 1 1 auto;
+    height: 100%;
+}
+
+.content-panel__body ::deep > .mud-tabs {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.content-panel__body ::deep > .mud-tabs .mud-tabs-tabbar {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.content-panel__body ::deep > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
+    margin-bottom: -1px;
+}
+
+.content-panel__body ::deep > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
+    bottom: 0;
+}
+
+.content-panel__body ::deep > .mud-tabs .mud-tabs-panels {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-top: 0;
+    margin-top: -1px;
+    border-top: none;
+}
+
+.content-panel__body ::deep .mud-tabs .mud-tabs-panels .mud-tab-panel {
+    overflow: auto;
+}
+
+.content-panel__container ::deep > .mud-tabs {
+    flex: 0 0 auto;
+}
+
+.content-panel__container ::deep > .mud-tabs .mud-tabs-tabbar {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.content-panel__container ::deep > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
+    margin-bottom: -1px;
+}
+
+.content-panel__container ::deep > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
+    bottom: 0;
+}
+
+.content-panel ::deep .torrent-list .mud-table-container,
+.content-panel ::deep .file-list .mud-table-container,
+.content-panel ::deep .details-list .mud-table-container,
+.content-panel ::deep .search-list .mud-table-container {
+    height: 100%;
+}
+
+.content-panel ::deep .details-tab-contents,
+.content-panel ::deep .options-tab-contents,
+.content-panel ::deep .rss-contents {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.content-panel ::deep .no-wrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@supports (-webkit-touch-callout: none) {
+    .content-panel ::deep .torrent-list .mud-table-container {
+        box-sizing: border-box;
+        padding-right: 14px;
+        padding-right: calc(14px + env(safe-area-inset-right));
+    }
+
+    .content-panel ::deep .torrent-list .mud-table-container th:last-child,
+    .content-panel ::deep .torrent-list .mud-table-container td:last-child {
+        padding-right: 14px;
+    }
+}

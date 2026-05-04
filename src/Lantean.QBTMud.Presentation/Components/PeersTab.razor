@@ -1,3 +1,4 @@
+<div class="peers-tab">
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddPeer">@TranslatePeerList("Add peers...")</MudMenuItem>
     @if (ContextMenuItem is not null)
@@ -7,17 +8,17 @@
     }
 </MudMenu>
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddPeer">@TranslatePeerList("Add peers...")</MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.DisabledByDefault" Color="Color.Error" OnClick="BanPeerToolbar" Disabled="@(SelectedItem is null)">@TranslatePeerList("Ban peer permanently")</MudIconButton>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@TranslateApp("Choose Columns")" />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         <DynamicTable @ref="Table"
                       T="Peer"
                       TableId="Peers"
@@ -31,5 +32,6 @@
                       OnTableDataContextMenu="TableDataContextMenu"
                       SelectedItemChanged="SelectedItemChanged"
                       Class="details-list content-panel__table" />
-    </div>
+    </ChildContent>
+</ContentPanel>
 </div>

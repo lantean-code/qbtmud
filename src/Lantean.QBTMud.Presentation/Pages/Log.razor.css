@@ -1,0 +1,19 @@
+.log-page {
+    display: contents;
+}
+
+.log-page ::deep tr.log-normal td {
+    color: var(--mud-palette-text-primary) !important;
+}
+
+.log-page ::deep tr.log-info td {
+    color: var(--mud-palette-info) !important;
+}
+
+.log-page ::deep tr.log-warning td {
+    color: var(--mud-palette-warning) !important;
+}
+
+.log-page ::deep tr.log-critical td {
+    color: var(--mud-palette-error) !important;
+}

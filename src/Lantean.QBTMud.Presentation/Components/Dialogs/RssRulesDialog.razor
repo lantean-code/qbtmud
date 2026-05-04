@@ -3,7 +3,8 @@
 
 <MudDialog>
     <DialogContent>
-        <MudGrid>
+        <div class="rss-rules-dialog">
+            <MudGrid>
             <MudItem xs="3">
                 <MudToolBar Class="px-0" Dense>
                     <MudText Class="no-wrap">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Download Rules")</MudText>
@@ -109,7 +110,8 @@
                     }
                 </MudList>
             </MudItem>
-        </MudGrid>
+            </MudGrid>
+        </div>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("RssRulesClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>

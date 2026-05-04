@@ -1,15 +1,16 @@
 @inherits LayoutComponentBase
 
-<BreakpointOrientationProvider OnBreakpointChanged="BreakpointChanged">
-    <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
-    <CascadingValue Value="DrawerOpenChangedCallback" Name="DrawerOpenChanged">
-    <CascadingValue Value="TimerDrawerOpen" Name="TimerDrawerOpen">
-    <CascadingValue Value="TimerDrawerOpenChangedCallback" Name="TimerDrawerOpenChanged">
-        <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
-            <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
-            <MudDialogProvider CloseOnEscapeKey="true" />
-            <MudSnackbarProvider />
-            <MudPopoverProvider />
+<div class="main-layout">
+    <BreakpointOrientationProvider OnBreakpointChanged="BreakpointChanged">
+        <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
+        <CascadingValue Value="DrawerOpenChangedCallback" Name="DrawerOpenChanged">
+        <CascadingValue Value="TimerDrawerOpen" Name="TimerDrawerOpen">
+        <CascadingValue Value="TimerDrawerOpenChangedCallback" Name="TimerDrawerOpenChanged">
+            <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
+                <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
+                <MudDialogProvider CloseOnEscapeKey="true" />
+                <MudSnackbarProvider />
+                <MudPopoverProvider />
 
             <PageTitle>@BuildPageTitle()</PageTitle>
 
@@ -46,9 +47,10 @@
                 </CascadingValue>
                 </CascadingValue>
             </MudLayout>
-        </EnhancedErrorBoundary>
-    </CascadingValue>
-    </CascadingValue>
-    </CascadingValue>
-    </CascadingValue>
-</BreakpointOrientationProvider>
+            </EnhancedErrorBoundary>
+        </CascadingValue>
+        </CascadingValue>
+        </CascadingValue>
+        </CascadingValue>
+    </BreakpointOrientationProvider>
+</div>

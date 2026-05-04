@@ -1,0 +1,47 @@
+.dynamic-table-host {
+    display: contents;
+}
+
+.dynamic-table-host ::deep .table-progress {
+    padding: 0 !important;
+}
+
+.dynamic-table-host ::deep .table-progress .progress-expand {
+    height: 28px !important;
+}
+
+.dynamic-table-host ::deep .table-header-cell {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+}
+
+.dynamic-table-host ::deep .table-header-cell--sortable {
+    cursor: pointer;
+}
+
+.dynamic-table-host ::deep .table-header-cell--sortable .column-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.dynamic-table-host ::deep .overflow-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dynamic-table-host ::deep .table-select .mud-input-control > .mud-input-control-input-container > div.mud-input.mud-input-text {
+    margin-top: 0;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.dynamic-table-host ::deep .table-icon {
+    width: 25px;
+    max-width: 25px;
+    padding: 0 8px !important;
+}

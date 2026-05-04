@@ -1,8 +1,8 @@
 @page "/tags"
 @layout OtherLayout
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -14,9 +14,9 @@
             <MudIconButton Icon="@Icons.Material.Filled.NewLabel" OnClick="AddTag" title="@LanguageLocalizer.Translate("TagFilterWidget", "New Tag")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="@LanguageLocalizer.Translate("AppCookies", "Refresh")" />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         <DynamicTable @ref="Table"
                       TableId="Tags"
                       T="string"
@@ -25,8 +25,8 @@
                       MultiSelection="false"
                       SelectOnRowClick="false"
                       Class="details-list content-panel__table" />
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>
 
 @code {
     private RenderFragment<RowContext<string>> ActionsColumn

@@ -9,8 +9,8 @@
     }
 </MudMenu>
 
-<div class="content-panel">
-    <div class="content-panel__toolbar">
+<ContentPanel>
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker" title="@TranslateTrackersAddition("Add trackers")" />
             <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" OnClick="EditTrackerToolbar" Disabled="@(SelectedItem is null)" title="@TranslateTrackerList("Edit tracker URL...")" />
@@ -19,9 +19,9 @@
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@TranslateApp("Choose Columns")" />
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         <DynamicTable @ref="Table"
                       TableId="Trackers"
                       T="TorrentTracker"
@@ -36,5 +36,5 @@
                       OnTableDataContextMenu="TableDataContextMenu"
                       SelectedItemChanged="SelectedItemChanged"
                       Class="file-list content-panel__table" />
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>

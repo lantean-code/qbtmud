@@ -1,0 +1,7 @@
+.files-tab {
+    display: contents;
+}
+
+.files-tab ::deep td .folder-button {
+    padding: 6px 16px 6px 16px !important;
+}

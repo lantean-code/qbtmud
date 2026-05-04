@@ -2,8 +2,8 @@
 @layout DetailsLayout
 @inject ILanguageLocalizer LanguageLocalizer
 
-<div class="content-panel">
-    <div class="content-panel__toolbar content-panel__toolbar--scroll">
+<ContentPanel ToolbarScroll="true">
+    <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
@@ -17,9 +17,9 @@
             <MudDivider Vertical="true" />
             <MudText Class="pl-5 no-wrap">@Name</MudText>
         </MudToolBar>
-    </div>
+    </ToolbarContent>
 
-    <div class="content-panel__body">
+    <ChildContent>
         @if (ShowTabs)
         {
             <CascadingValue Value="RefreshInterval" Name="RefreshInterval">
@@ -42,5 +42,5 @@
                 </MudTabs>
             </CascadingValue>
         }
-    </div>
-</div>
+    </ChildContent>
+</ContentPanel>
