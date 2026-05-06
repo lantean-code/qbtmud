@@ -15,6 +15,9 @@ namespace Lantean.QBTMud.Components
         private const string _appContext = "AppPiecesProgressSvg";
         private const string _pendingCssClass = "pieces-progress-svg__rect--pending";
 
+        private readonly HashSet<int> _previousDownloadingIndexes = new();
+        private readonly HashSet<int> _heldDownloadingIndexes = new();
+
         private bool _showSvg = false;
         private string _linearBarStyle = string.Empty;
         private string _linearSummary = string.Empty;
@@ -30,7 +33,8 @@ namespace Lantean.QBTMud.Components
         private bool _buildPending;
         private bool _buildRequested;
         private bool _buildInProgress;
-        private IReadOnlyList<PieceState> _lastPiecesReference = Array.Empty<PieceState>();
+        private string _lastSmoothingHash = string.Empty;
+        private int _lastSmoothingPieceCount;
         private int _lastPiecesSignature;
         private int _lastPiecesCount;
 
@@ -112,16 +116,11 @@ namespace Lantean.QBTMud.Components
 
         private string DimmedDownloadingColor => DimColor(IsDarkMode ? Theme.PaletteDark.Info : Theme.PaletteLight.Info);
 
-        private string DimColor(MudColor color)
-        {
-            var alpha = IsDarkMode ? 0.45f : 0.55f;
-            return color.SetAlpha(alpha).ToString(MudColorOutputFormats.RGBA);
-        }
-
         protected override void OnParametersSet()
         {
             base.OnParametersSet();
 
+            UpdateHeldDownloadingIndexes();
             var piecesChanged = UpdatePiecesSignature();
 
             if (piecesChanged || string.IsNullOrWhiteSpace(_linearBarStyle) || PiecesLoading || PiecesFailed)
@@ -174,6 +173,12 @@ namespace Lantean.QBTMud.Components
             return Task.CompletedTask;
         }
 
+        private string DimColor(MudColor color)
+        {
+            var alpha = IsDarkMode ? 0.45f : 0.55f;
+            return color.SetAlpha(alpha).ToString(MudColorOutputFormats.RGBA);
+        }
+
         private void BuildProgressSummary()
         {
             if (PiecesLoading)
@@ -199,9 +204,9 @@ namespace Lantean.QBTMud.Components
             int downloadingCount = 0;
             int pendingCount = 0;
 
-            foreach (var piece in Pieces)
+            for (var index = 0; index < Pieces.Count; index++)
             {
-                switch (piece)
+                switch (GetDisplayPieceState(index))
                 {
                     case PieceState.Downloaded:
                         downloadedCount++;
@@ -325,17 +330,19 @@ namespace Lantean.QBTMud.Components
             var cells = new List<PieceCell>(Pieces.Count);
             for (var index = 0; index < Pieces.Count; index++)
             {
+                var displayState = GetDisplayPieceState(index);
                 var column = index % columns;
                 var row = index / columns;
                 var x = (column * cellWidth) + offset;
                 var y = (row * cellHeight) + offset;
-                var tooltip = TranslateApp("Piece #%1: %2", index + 1, DescribePieceState(Pieces[index]));
+                var tooltip = TranslateApp("Piece #%1: %2", index + 1, DescribePieceState(displayState));
+
                 cells.Add(new PieceCell(
                     x,
                     y,
                     drawWidth,
                     drawHeight,
-                    GetSvgCssClass(Pieces[index]),
+                    GetSvgCssClass(displayState),
                     tooltip));
             }
 
@@ -441,14 +448,15 @@ namespace Lantean.QBTMud.Components
 
             var totalPieces = Pieces.Count;
             var segmentStart = 0;
-            var currentState = Pieces[0];
+            var currentState = GetDisplayPieceState(0);
             for (var index = 1; index < totalPieces; index++)
             {
-                if (Pieces[index] != currentState)
+                var displayState = GetDisplayPieceState(index);
+                if (displayState != currentState)
                 {
                     segments.Add(CreateSegment(currentState, segmentStart, index, totalPieces));
                     segmentStart = index;
-                    currentState = Pieces[index];
+                    currentState = displayState;
                 }
             }
 
@@ -480,6 +488,16 @@ namespace Lantean.QBTMud.Components
             };
         }
 
+        private PieceState GetDisplayPieceState(int index)
+        {
+            if (_heldDownloadingIndexes.Contains(index))
+            {
+                return PieceState.Downloading;
+            }
+
+            return Pieces[index];
+        }
+
         private static string GetSvgCssClass(PieceState state)
         {
             return state switch
@@ -488,6 +506,43 @@ namespace Lantean.QBTMud.Components
                 PieceState.Downloading => "pieces-progress-svg__rect--downloading",
                 _ => _pendingCssClass
             };
+        }
+
+        private void UpdateHeldDownloadingIndexes()
+        {
+            _heldDownloadingIndexes.Clear();
+
+            if (_lastSmoothingHash != Hash || _lastSmoothingPieceCount != Pieces.Count)
+            {
+                _previousDownloadingIndexes.Clear();
+                _lastSmoothingHash = Hash;
+                _lastSmoothingPieceCount = Pieces.Count;
+            }
+
+            if (PiecesLoading || PiecesFailed || Pieces.Count == 0)
+            {
+                _previousDownloadingIndexes.Clear();
+                return;
+            }
+
+            for (var index = 0; index < Pieces.Count; index++)
+            {
+                var currentState = Pieces[index];
+
+                if (currentState == PieceState.Downloading)
+                {
+                    _previousDownloadingIndexes.Add(index);
+                    continue;
+                }
+
+                if (currentState == PieceState.NotDownloaded && _previousDownloadingIndexes.Remove(index))
+                {
+                    _heldDownloadingIndexes.Add(index);
+                    continue;
+                }
+
+                _previousDownloadingIndexes.Remove(index);
+            }
         }
 
         private string DownloadedColor => ToCssColor(IsDarkMode ? Theme.PaletteDark.Success : Theme.PaletteLight.Success);
@@ -518,22 +573,17 @@ namespace Lantean.QBTMud.Components
 
         private bool UpdatePiecesSignature()
         {
-            if (ReferenceEquals(Pieces, _lastPiecesReference))
-            {
-                return false;
-            }
-
             var signatureBuilder = new HashCode();
             signatureBuilder.Add(Pieces.Count);
+
             for (var index = 0; index < Pieces.Count; index++)
             {
-                signatureBuilder.Add((int)Pieces[index]);
+                signatureBuilder.Add((int)GetDisplayPieceState(index));
             }
 
             var signature = signatureBuilder.ToHashCode();
             var unchanged = _lastPiecesCount == Pieces.Count && _lastPiecesSignature == signature;
 
-            _lastPiecesReference = Pieces;
             _lastPiecesSignature = signature;
             _lastPiecesCount = Pieces.Count;
 
