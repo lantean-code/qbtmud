@@ -77,17 +77,27 @@ jobs:
         shell: bash
         run: |
           api_client_version=$(sed -nE 's/.*<PackageReference Include="QBittorrent\.ApiClient" Version="([^"]+)".*/\1/p' src/Lantean.QBTMud/Lantean.QBTMud.csproj | head -n 1)
+          hash_routing_version=$(sed -nE 's/.*<PackageReference Include="Blazor\.HashRouting" Version="([^"]+)".*/\1/p' src/Lantean.QBTMud/Lantean.QBTMud.csproj | head -n 1)
+
           if [ -z "$api_client_version" ]; then
             echo "::error::Could not find QBittorrent.ApiClient PackageReference version."
             exit 1
           fi
 
-          if [[ "$api_client_version" == *-* ]]; then
+          if [ -z "$hash_routing_version" ]; then
+            echo "::error::Could not find Blazor.HashRouting PackageReference version."
+            exit 1
+          fi
+
+          echo "QBittorrent.ApiClient version: $api_client_version"
+          echo "Blazor.HashRouting version: $hash_routing_version"
+
+          if [[ "$api_client_version" == *-* || "$hash_routing_version" == *-* ]]; then
             echo "config=nuget.github.config" >> "$GITHUB_OUTPUT"
-            echo "QBittorrent.ApiClient $api_client_version is prerelease; using GitHub Packages."
+            echo "At least one checked dependency is prerelease; using GitHub Packages."
           else
             echo "config=nuget.config" >> "$GITHUB_OUTPUT"
-            echo "QBittorrent.ApiClient $api_client_version is stable; using nuget.org only."
+            echo "All checked dependencies are stable; using nuget.org only."
           fi
 
       - name: Restore dependencies
