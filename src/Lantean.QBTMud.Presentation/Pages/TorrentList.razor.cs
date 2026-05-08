@@ -404,7 +404,7 @@ namespace Lantean.QBTMud.Pages
             return new List<ColumnDefinition<MudTorrent>>
             {
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>("#", t => t.Priority, id: "#"),
-                ColumnDefinitionHelper.CreateColumnDefinition(statusIconLabel, t => t.State, iconColumn, iconOnly: true, width: 25, tdClass: "table-icon", id: "icon"),
+                ColumnDefinitionHelper.CreateColumnDefinition(statusIconLabel, t => t.State, iconColumn, iconOnly: true, width: 40, tdClass: "table-icon", id: "icon"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(nameLabel, t => t.Name, width: 400, id: "name"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(sizeLabel, t => t.Size, t => DisplayHelpers.Size(t.Size), id: "size"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(totalSizeLabel, t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false, id: "total_size"),

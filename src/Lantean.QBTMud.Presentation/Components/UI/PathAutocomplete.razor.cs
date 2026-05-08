@@ -11,6 +11,7 @@ namespace Lantean.QBTMud.Components.UI
 {
     public partial class PathAutocomplete
     {
+        private MudAutocomplete<string>? _autocomplete;
         private bool _touched;
 
         [Inject]
@@ -141,6 +142,11 @@ namespace Lantean.QBTMud.Components.UI
             if (!ShowBrowseButton || Disabled)
             {
                 return;
+            }
+
+            if (_autocomplete is not null)
+            {
+                await _autocomplete.CloseMenuAsync();
             }
 
             var title = ResolveBrowseDialogTitle();
