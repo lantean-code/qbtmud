@@ -19,6 +19,7 @@ namespace Lantean.QBTMud.Application
             ArgumentNullException.ThrowIfNull(services);
 
             services.TryAddScoped<IAppSettingsService, AppSettingsService>();
+            services.TryAddScoped<IAppSettingsStateService, AppSettingsStateService>();
             services.TryAddScoped<ITorrentQueryState, TorrentQueryState>();
             services.TryAddScoped<IQBittorrentPreferencesStateService, QBittorrentPreferencesStateService>();
             services.TryAddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();

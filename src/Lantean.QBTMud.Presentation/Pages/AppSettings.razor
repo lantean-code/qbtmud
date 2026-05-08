@@ -49,6 +49,14 @@
                      ActivePanelIndexChanged="OnActiveTabChanged"
                      Border="true"
                      KeepPanelsAlive="true">
+                <MudTabPanel Text="@TranslateSettings("General")"
+                             data-test-id="@TestIdHelper.For("AppSettingsGeneralTab")">
+                    <div class="options-tab-contents">
+                        <GeneralAppSettingsTab Settings="@Settings"
+                                               SettingsChanged="OnSettingsChanged" />
+                    </div>
+                </MudTabPanel>
+
                 <MudTabPanel Text="@TranslateSettings("Visual")"
                              data-test-id="@TestIdHelper.For("AppSettingsVisualTab")">
                     <div class="options-tab-contents">

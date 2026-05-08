@@ -1,5 +1,6 @@
 using System.Net;
 using AwesomeAssertions;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
@@ -22,6 +23,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
         private readonly ILanguageLocalizer _languageLocalizer = Mock.Of<ILanguageLocalizer>();
         private readonly ISpeedHistoryService _speedHistoryService = Mock.Of<ISpeedHistoryService>(MockBehavior.Strict);
         private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>(MockBehavior.Strict);
+        private readonly IAppSettingsStateService _appSettingsStateService = new AppSettingsStateService();
         private readonly ITorrentCompletionNotificationService _torrentCompletionNotificationService = Mock.Of<ITorrentCompletionNotificationService>(MockBehavior.Strict);
         private readonly TestNavigationManager _navigationManager = new();
         private readonly ISnackbarWorkflow _snackbarWorkflow;
@@ -229,6 +231,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var target = CreateTarget();
             var mainData = CreateMainData(downloadSpeed: 10, uploadSpeed: 20);
             var settings = AppSettings.Default.Clone();
+            settings.SpeedHistoryEnabled = true;
             SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
@@ -270,6 +273,58 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Verify(service => service.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_speedHistoryService)
                 .Verify(service => service.PushSampleAsync(It.IsAny<DateTime>(), 10, 20, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_SpeedHistoryDisabledInAppSettings_WHEN_LoadingShellSession_THEN_ShouldSkipHistoryInitializationAndSampling()
+        {
+            var target = CreateTarget();
+            var settings = AppSettings.Default.Clone();
+            settings.SpeedHistoryEnabled = false;
+            SetupAuthenticatedSession();
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(CreatePreferences("en"));
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync("Version");
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(CreateClientMainData());
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+            Mock.Get(_dataManager)
+                .Setup(manager => manager.CreateMainData(It.IsAny<ClientMainData>()))
+                .Returns(CreateMainData(downloadSpeed: 10, uploadSpeed: 20));
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.Ready);
+            Mock.Get(_speedHistoryService).Verify(service => service.InitializeAsync(It.IsAny<CancellationToken>()), Times.Never);
+            Mock.Get(_speedHistoryService).Verify(service => service.PushSampleAsync(It.IsAny<DateTime>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_RuntimeSpeedHistoryDisabled_WHEN_RefreshingShellSession_THEN_ShouldSkipSampling()
+        {
+            var target = CreateTarget();
+            var mainData = CreateMainData(downloadSpeed: 10, uploadSpeed: 20);
+            _appSettingsStateService.SetSettings(new AppSettings
+            {
+                SpeedHistoryEnabled = false
+            });
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetMainDataAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 2, fullUpdate: true));
+            Mock.Get(_dataManager)
+                .Setup(manager => manager.CreateMainData(It.IsAny<ClientMainData>()))
+                .Returns(mainData);
+
+            var result = await target.RefreshAsync(1, null, Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionRefreshOutcome.Updated);
+            Mock.Get(_speedHistoryService).Verify(service => service.PushSampleAsync(It.IsAny<DateTime>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -654,6 +709,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 _languageLocalizer,
                 _speedHistoryService,
                 _appSettingsService,
+                _appSettingsStateService,
                 _torrentCompletionNotificationService,
                 _navigationManager);
         }

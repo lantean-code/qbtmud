@@ -723,7 +723,6 @@ namespace Lantean.QBTMud.Services
                 });
         }
 
-        /// <inheritdoc />
         public async Task<List<PropertyFilterDefinition<T>>?> ShowFilterOptionsDialog<T>(List<PropertyFilterDefinition<T>>? propertyFilterDefinitions)
         {
             var parameters = new DialogParameters

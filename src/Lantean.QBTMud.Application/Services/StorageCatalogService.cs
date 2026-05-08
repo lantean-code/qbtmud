@@ -74,7 +74,7 @@ namespace Lantean.QBTMud.Application.Services
                     displayNameSource: "General",
                     items:
                     [
-                        new StorageCatalogItemDefinition("general.app-settings", "general", "App settings", StorageCatalogItemMatchMode.ExactKey, "AppSettings.State.v1", StorageItemSerializationMode.Json),
+                        new StorageCatalogItemDefinition("general.app-settings", "general", "App settings", StorageCatalogItemMatchMode.ExactKey, "AppSettings.State.v2", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("general.drawer-open", "general", "Drawer open state", StorageCatalogItemMatchMode.ExactKey, "MainLayout.DrawerOpen", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("general.legacy-dark-mode", "general", "Legacy dark mode state", StorageCatalogItemMatchMode.ExactKey, "MainLayout.IsDarkMode", StorageItemSerializationMode.Json)
                     ]),

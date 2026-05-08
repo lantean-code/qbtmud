@@ -15,8 +15,8 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class AppSettings
     {
-        private const int _storageTabIndex = 3;
-        private const int _pwaTabIndex = 4;
+        private const int _storageTabIndex = 4;
+        private const int _pwaTabIndex = 5;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -28,6 +28,9 @@ namespace Lantean.QBTMud.Pages
         protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
+        protected IAppSettingsStateService AppSettingsStateService { get; set; } = default!;
+
+        [Inject]
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
 
         [Inject]
@@ -35,6 +38,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -110,6 +116,7 @@ namespace Lantean.QBTMud.Pages
                 var correctedSettings = _savedSettings.Clone();
                 correctedSettings.NotificationsEnabled = false;
                 _savedSettings = await AppSettingsService.SaveSettingsAsync(correctedSettings);
+                AppSettingsStateService.SetSettings(_savedSettings);
             }
             catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException or JsonException or JSException)
             {
@@ -178,6 +185,7 @@ namespace Lantean.QBTMud.Pages
 
                 Settings = (await settingsTask).Clone();
                 _savedSettings = Settings.Clone();
+                AppSettingsStateService.SetSettings(_savedSettings);
 
                 StorageRoutingSettings = await storageRoutingSettingsTask;
                 _savedStorageRoutingSettings = StorageRoutingSettings.Clone();
@@ -223,6 +231,20 @@ namespace Lantean.QBTMud.Pages
 
             var settingsChanged = !AreSettingsEquivalent(Settings, _savedSettings);
             var storageRoutingChanged = !AreStorageRoutingEquivalent(StorageRoutingSettings, _savedStorageRoutingSettings);
+            var shouldClearSpeedHistory = false;
+
+            if (settingsChanged && _savedSettings.SpeedHistoryEnabled && !Settings.SpeedHistoryEnabled)
+            {
+                var disableSpeedHistoryConfirmed = await DialogWorkflow.ShowConfirmDialog(
+                    TranslateSettings("Disable speed history"),
+                    TranslateSettings("Disabling speed history will clear all existing speed history. Continue?"));
+                if (!disableSpeedHistoryConfirmed)
+                {
+                    return;
+                }
+
+                shouldClearSpeedHistory = true;
+            }
 
             if (storageRoutingChanged)
             {
@@ -261,6 +283,12 @@ namespace Lantean.QBTMud.Pages
                 var previousThemeModePreference = _savedSettings.ThemeModePreference;
                 Settings = await AppSettingsService.SaveSettingsAsync(Settings);
                 _savedSettings = Settings.Clone();
+                AppSettingsStateService.SetSettings(_savedSettings);
+
+                if (shouldClearSpeedHistory)
+                {
+                    await SpeedHistoryService.ClearAsync();
+                }
 
                 if (previousThemeModePreference != Settings.ThemeModePreference)
                 {
@@ -291,14 +319,7 @@ namespace Lantean.QBTMud.Pages
 
         private static bool AreSettingsEquivalent(AppSettingsModel left, AppSettingsModel right)
         {
-            return left.UpdateChecksEnabled == right.UpdateChecksEnabled
-                && left.NotificationsEnabled == right.NotificationsEnabled
-                && left.ThemeModePreference == right.ThemeModePreference
-                && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
-                && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
-                && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
-                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal)
-                && string.Equals(left.ThemeRepositoryIndexUrl, right.ThemeRepositoryIndexUrl, StringComparison.Ordinal);
+            return AppSettingsModel.AreEquivalent(left, right);
         }
 
         private static bool AreStorageRoutingEquivalent(StorageRoutingSettings left, StorageRoutingSettings right)

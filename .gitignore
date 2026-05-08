@@ -70,6 +70,9 @@ node_modules/
 # Local reference checkouts (see AGENTS.md)
 /ref/
 
+# Agent plans
+/plans/
+
 # Generated i18n bundles: keep the canonical qBittorrent + override files tracked.
 /src/Lantean.QBTMud/wwwroot/i18n/*.json
 !/src/Lantean.QBTMud/wwwroot/i18n/webui_en.json

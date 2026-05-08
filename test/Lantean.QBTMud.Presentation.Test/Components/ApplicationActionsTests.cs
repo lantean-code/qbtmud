@@ -1,6 +1,7 @@
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Interop;
@@ -16,6 +17,7 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
+using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
 
 namespace Lantean.QBTMud.Presentation.Test.Components
 {
@@ -40,6 +42,51 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             menuItems.Any(item => HasTestId(item, "Action-appSettings")).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void GIVEN_SpeedHistoryDisabled_WHEN_Rendered_THEN_HidesSpeedAction()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.UseSnackbarMock();
+            TestContext.Services.GetRequiredService<IAppSettingsStateService>().SetSettings(new AppSettingsModel
+            {
+                SpeedHistoryEnabled = false
+            });
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            target.FindComponents<MudMenuItem>().Any(item => HasTestId(item, "Action-speed")).Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_RuntimeAppSettingsChange_WHEN_SpeedHistoryDisabled_THEN_HidesSpeedAction()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.UseSnackbarMock();
+            var appSettingsStateService = TestContext.Services.GetRequiredService<IAppSettingsStateService>();
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            target.FindComponents<MudMenuItem>().Any(item => HasTestId(item, "Action-speed")).Should().BeTrue();
+
+            appSettingsStateService.SetSettings(new AppSettingsModel
+            {
+                SpeedHistoryEnabled = false
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<MudMenuItem>().Any(item => HasTestId(item, "Action-speed")).Should().BeFalse();
+            });
         }
 
         [Fact]

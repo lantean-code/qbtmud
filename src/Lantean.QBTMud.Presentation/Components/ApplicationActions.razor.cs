@@ -10,12 +10,13 @@ using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
-    public partial class ApplicationActions
+    public partial class ApplicationActions : IDisposable
     {
         private List<UIAction>? _actions;
         private bool _startAllInProgress;
         private bool _stopAllInProgress;
         private bool _registerMagnetHandlerInProgress;
+        private bool _disposedValue;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -41,6 +42,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
+        [Inject]
+        protected IAppSettingsStateService AppSettingsStateService { get; set; } = default!;
+
         [Parameter]
         public bool IsMenu { get; set; }
 
@@ -58,6 +62,11 @@ namespace Lantean.QBTMud.Components
                 {
                     if (action.Name != "rss" || Preferences is not null && Preferences.RssProcessingEnabled)
                     {
+                        if (action.Name == "speed" && !(AppSettingsStateService.Current?.SpeedHistoryEnabled ?? true))
+                        {
+                            continue;
+                        }
+
                         yield return action;
                     }
                 }
@@ -83,6 +92,19 @@ namespace Lantean.QBTMud.Components
                 new("settings", LanguageLocalizer.Translate("MainWindow", "Options..."), Icons.Material.Filled.Settings, Color.Default, "./settings"),
                 new("about", LanguageLocalizer.Translate("MainWindow", "About"), Icons.Material.Filled.Info, Color.Default, "./about"),
             ];
+
+            AppSettingsStateService.Changed += OnAppSettingsChanged;
+        }
+
+        public void Dispose()
+        {
+            if (_disposedValue)
+            {
+                return;
+            }
+
+            AppSettingsStateService.Changed -= OnAppSettingsChanged;
+            _disposedValue = true;
         }
 
         protected void NavigateBack()
@@ -235,6 +257,16 @@ namespace Lantean.QBTMud.Components
             {
                 _stopAllInProgress = false;
             }
+        }
+
+        private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
+        {
+            if (_disposedValue || args.PreviousSettings?.SpeedHistoryEnabled == args.CurrentSettings?.SpeedHistoryEnabled)
+            {
+                return;
+            }
+
+            _ = InvokeAsync(StateHasChanged);
         }
     }
 }

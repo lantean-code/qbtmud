@@ -43,6 +43,9 @@ namespace Lantean.QBTMud.Layout
         protected IQBittorrentPreferencesStateService QBittorrentPreferencesStateService { get; set; } = default!;
 
         [Inject]
+        protected IAppSettingsStateService AppSettingsStateService { get; set; } = default!;
+
+        [Inject]
         protected IPendingDownloadWorkflow PendingDownloadWorkflow { get; set; } = default!;
 
         [Inject]
@@ -554,6 +557,7 @@ namespace Lantean.QBTMud.Layout
                 ? PreferencesDataManager.CreateQBittorrentPreferences(loadResult.Preferences)
                 : null;
             Preferences = qBittorrentPreferences;
+            AppSettingsStateService.SetSettings(loadResult.AppSettings);
             QBittorrentPreferencesStateService.SetPreferences(qBittorrentPreferences);
             Version = loadResult.Version ?? string.Empty;
             MainData = loadResult.MainData;

@@ -176,7 +176,6 @@ namespace Lantean.QBTMud.Services
         /// <param name="onSuccess">The callback invoked when confirmed.</param>
         Task ShowConfirmDialog(string title, string content, Action onSuccess);
 
-        /// <summary>
         /// Shows the filter options dialog.
         /// </summary>
         /// <param name="propertyFilterDefinitions">The current filter definitions.</param>

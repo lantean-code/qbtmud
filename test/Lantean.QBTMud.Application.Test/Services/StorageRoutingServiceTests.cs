@@ -82,7 +82,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
 
-            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v1", "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v2", "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
 
             IReadOnlyDictionary<string, object?>? storedPayload = null;
             Mock.Get(_clientDataStorageAdapter)
@@ -97,11 +97,11 @@ namespace Lantean.QBTMud.Application.Test.Services
 
             updated.MasterStorageType.Should().Be(StorageType.ClientData);
             storedPayload.Should().NotBeNull();
-            storedPayload!.Should().ContainKey("QbtMud.AppSettings.State.v1");
-            storedPayload["QbtMud.AppSettings.State.v1"].Should().BeOfType<JsonElement>();
-            ((JsonElement)storedPayload["QbtMud.AppSettings.State.v1"]!).GetProperty("theme").GetString().Should().Be("dark");
+            storedPayload!.Should().ContainKey("QbtMud.AppSettings.State.v2");
+            storedPayload["QbtMud.AppSettings.State.v2"].Should().BeOfType<JsonElement>();
+            ((JsonElement)storedPayload["QbtMud.AppSettings.State.v2"]!).GetProperty("theme").GetString().Should().Be("dark");
 
-            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v2", TestContext.Current.CancellationToken);
             localValue.Should().BeNull();
         }
 
@@ -146,7 +146,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
 
-            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v1", "{invalid-json}", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v2", "{invalid-json}", TestContext.Current.CancellationToken);
 
             var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
@@ -175,9 +175,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .ReturnsAsync((IEnumerable<string> keys, CancellationToken _) =>
                 {
                     var dictionary = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-                    if (keys.Contains("QbtMud.AppSettings.State.v1", StringComparer.Ordinal))
+                    if (keys.Contains("QbtMud.AppSettings.State.v2", StringComparer.Ordinal))
                     {
-                        dictionary["QbtMud.AppSettings.State.v1"] = JsonDocument.Parse("{\"notifications\":true}").RootElement.Clone();
+                        dictionary["QbtMud.AppSettings.State.v2"] = JsonDocument.Parse("{\"notifications\":true}").RootElement.Clone();
                     }
 
                     return Loaded(dictionary);
@@ -196,11 +196,11 @@ namespace Lantean.QBTMud.Application.Test.Services
 
             updated.MasterStorageType.Should().Be(StorageType.LocalStorage);
 
-            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v2", TestContext.Current.CancellationToken);
             localValue.Should().Be("{\"notifications\":true}");
             Mock.Get(_clientDataStorageAdapter)
                 .Verify(adapter => adapter.RemovePrefixedEntriesAsync(
-                    It.Is<IEnumerable<string>>(keys => keys.Contains("QbtMud.AppSettings.State.v1", StringComparer.Ordinal)),
+                    It.Is<IEnumerable<string>>(keys => keys.Contains("QbtMud.AppSettings.State.v2", StringComparer.Ordinal)),
                     It.IsAny<CancellationToken>()),
                     Times.Once);
         }
@@ -415,7 +415,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             {
                 MasterStorageType = StorageType.ClientData
             }, TestContext.Current.CancellationToken);
-            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v1", "{\"enabled\":true}", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v2", "{\"enabled\":true}", TestContext.Current.CancellationToken);
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
@@ -424,9 +424,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .ReturnsAsync((IEnumerable<string> keys, CancellationToken _) =>
                 {
                     var dictionary = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-                    if (keys.Contains("QbtMud.AppSettings.State.v1", StringComparer.Ordinal))
+                    if (keys.Contains("QbtMud.AppSettings.State.v2", StringComparer.Ordinal))
                     {
-                        dictionary["QbtMud.AppSettings.State.v1"] = JsonDocument.Parse("null").RootElement.Clone();
+                        dictionary["QbtMud.AppSettings.State.v2"] = JsonDocument.Parse("null").RootElement.Clone();
                     }
 
                     return Loaded(dictionary);
@@ -443,7 +443,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 MasterStorageType = StorageType.LocalStorage
             }, TestContext.Current.CancellationToken);
 
-            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v2", TestContext.Current.CancellationToken);
             localValue.Should().BeNull();
         }
 
@@ -677,7 +677,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
-            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v1", "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("AppSettings.State.v2", "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
 
             var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
@@ -687,7 +687,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Unable to migrate storage item 'general.app-settings'.");
 
-            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v2", TestContext.Current.CancellationToken);
             localValue.Should().Be("{\"theme\":\"dark\"}");
 
             var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
@@ -741,7 +741,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Loaded(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                 {
-                    ["QbtMud.AppSettings.State.v1"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone()
+                    ["QbtMud.AppSettings.State.v2"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone()
                 }));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
@@ -758,7 +758,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Unable to migrate storage item 'general.app-settings'.");
 
-            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v2", TestContext.Current.CancellationToken);
             localValue.Should().Be("{\"enabled\":true}");
 
             var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
