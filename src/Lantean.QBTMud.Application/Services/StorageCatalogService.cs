@@ -62,6 +62,12 @@ namespace Lantean.QBTMud.Application.Services
                 return exactMatch;
             }
 
+            if (string.Equals(normalizedKey, AppSettings.LegacyStorageKey, StringComparison.Ordinal)
+                && _exactMatchLookup.TryGetValue(AppSettings.StorageKey, out var appSettingsMatch))
+            {
+                return appSettingsMatch;
+            }
+
             return _prefixItems.FirstOrDefault(prefixItem => normalizedKey.StartsWith(prefixItem.MatchPattern, StringComparison.Ordinal));
         }
 

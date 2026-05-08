@@ -76,6 +76,23 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public void GIVEN_AppSettingsItemOverride_WHEN_ResolvingLegacyAppSettingsKey_THEN_ShouldUseAppSettingsOverride()
+        {
+            var settings = new StorageRoutingSettings
+            {
+                MasterStorageType = StorageType.LocalStorage,
+                ItemStorageTypes = new Dictionary<string, StorageType>(StringComparer.Ordinal)
+                {
+                    ["general.app-settings"] = StorageType.ClientData
+                }
+            };
+
+            var storageType = _target.ResolveEffectiveStorageType(AppSettings.LegacyStorageKey, settings, supportsClientData: true);
+
+            storageType.Should().Be(StorageType.ClientData);
+        }
+
+        [Fact]
         public async Task GIVEN_ExactJsonKeyInLocalStorage_WHEN_SavingClientDataRouting_THEN_ShouldMigrateValueAndRemoveLocalEntry()
         {
             Mock.Get(_webApiCapabilityService)
