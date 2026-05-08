@@ -55,6 +55,7 @@
 
 - After each behavior-affecting set of changes, follow the test execution instructions in `AGENTS.md`.
 - If the change is docs-only/report-only/markdown-only and does not affect behavior, test execution is optional unless explicitly requested.
+- When contributing PR summaries or PR bodies, describe testing in terms of the coverage added or updated by the change (for example, new service tests, component regressions covered, migrated scenarios validated), not just the commands executed.
 
 ## Anti-Smell Rules
 

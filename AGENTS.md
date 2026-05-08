@@ -66,6 +66,10 @@
    - Public XML docs added/updated.
    - Changelog notes in the PR description (what changed, why, risks, testing).
    - Prefer the repository PR template in `.github/PULL_REQUEST_TEMPLATE.md`.
+   - When drafting a PR summary/body, follow the repository template structure and recent merged-PR style.
+   - The target audience for the PR summary/body is the PR reviewer. Write for reviewer context, not for local agent bookkeeping.
+   - PR `Testing` sections must describe the test coverage or test changes introduced by the code change (for example, added/updated unit tests, covered workflows, covered UI paths), not merely list commands the agent ran.
+   - Exact validation commands may be included additionally when useful, but they must not replace the summary of testing changes.
 
 ## PR and review checklist
 - [ ] Change is scoped and well-justified; no unrelated edits.
@@ -80,6 +84,9 @@
 - When linking to files in responses, use paths relative to the repository root so links work from the user's host environment.
 - When reviewing pull request feedback, only unresolved review threads/comments are actionable by default; resolved or dismissed threads are informational unless the user explicitly asks to revisit them.
 - Prefer concise diffs and explicit rationale in commit messages and PR descriptions.
+- When generating PR summaries/bodies, commit messages, review replies, release notes, or other GitHub-facing repository text, use British English spelling and phrasing.
+- For PR descriptions, keep `Summary` focused on user-visible or architectural intent, `What Changed` focused on the code/design changes, `Testing` focused on the added or updated coverage and validated scenarios, and `Notes` for risks, migration details, or reviewer guidance.
+- Do not include local-worktree status, unrelated modified files, agent-only caveats, or similar implementation-chatter in a PR summary/body unless that information materially affects the branch diff the reviewer is being asked to review.
 
 ## GitHub interactions
 - When interacting with GitHub repository state (for example PRs, PR comments, reviews, issues, or release metadata), prefer the `gh` CLI where possible instead of manual browsing or ad-hoc API calls.
