@@ -9,7 +9,6 @@ namespace Lantean.QBTMud.Application.Services
     public sealed class AppSettingsService : IAppSettingsService
     {
         private const string _legacyDarkModeStorageKey = "MainLayout.IsDarkMode";
-
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly ISettingsStorageService _settingsStorageService;
         private AppSettings? _cachedSettings;
@@ -60,6 +59,7 @@ namespace Lantean.QBTMud.Application.Services
         {
             return new AppSettings
             {
+                SpeedHistoryEnabled = settings.SpeedHistoryEnabled,
                 UpdateChecksEnabled = settings.UpdateChecksEnabled,
                 NotificationsEnabled = settings.NotificationsEnabled,
                 ThemeModePreference = NormalizeThemeModePreference(settings.ThemeModePreference),
@@ -141,9 +141,30 @@ namespace Lantean.QBTMud.Application.Services
                     loadedSettings = null;
                 }
 
+                var migratedFromLegacy = false;
+                if (loadedSettings is null)
+                {
+                    try
+                    {
+                        loadedSettings = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.LegacyStorageKey, cancellationToken);
+                        migratedFromLegacy = loadedSettings is not null;
+                    }
+                    catch (JsonException)
+                    {
+                        loadedSettings = null;
+                    }
+                }
+
                 var normalized = loadedSettings is null
                     ? AppSettings.Default.Clone()
                     : Normalize(loadedSettings);
+                if (migratedFromLegacy)
+                {
+                    normalized.SpeedHistoryEnabled = true;
+                    await _settingsStorageService.SetItemAsync(AppSettings.StorageKey, normalized, cancellationToken);
+                    await _settingsStorageService.RemoveItemAsync(AppSettings.LegacyStorageKey, cancellationToken);
+                }
+
                 _cachedSettings = await MigrateLegacyThemeModePreference(normalized, cancellationToken);
                 return _cachedSettings.Clone();
             }

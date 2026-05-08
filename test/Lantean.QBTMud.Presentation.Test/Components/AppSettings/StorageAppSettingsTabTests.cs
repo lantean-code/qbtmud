@@ -279,19 +279,19 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("RemoveError"));
 
             var target = RenderTarget(reloadToken: 2);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
             _storageDiagnosticsServiceMock.Verify(
-                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -302,19 +302,19 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JsonException("RemoveError"));
 
             var target = RenderTarget(reloadToken: 3);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
             _storageDiagnosticsServiceMock.Verify(
-                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -325,19 +325,19 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("RemoveError"));
 
             var target = RenderTarget(reloadToken: 4);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
             _storageDiagnosticsServiceMock.Verify(
-                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -348,19 +348,19 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JSException("RemoveError"));
 
             var target = RenderTarget(reloadToken: 5);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
             _storageDiagnosticsServiceMock.Verify(
-                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -371,7 +371,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))
@@ -394,7 +394,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))
@@ -417,7 +417,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))
@@ -440,7 +440,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             _storageDiagnosticsServiceMock
                 .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))

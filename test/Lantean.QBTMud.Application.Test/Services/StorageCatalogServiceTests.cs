@@ -39,6 +39,16 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public void GIVEN_LegacyAppSettingsKey_WHEN_MatchItemByKeyInvoked_THEN_ReturnsAppSettingsItem()
+        {
+            var result = _target.MatchItemByKey(AppSettings.LegacyStorageKey);
+
+            result.Should().NotBeNull();
+            result!.Id.Should().Be("general.app-settings");
+            result.MatchPattern.Should().Be(AppSettings.StorageKey);
+        }
+
+        [Fact]
         public void GIVEN_PrefixKey_WHEN_MatchItemByKeyInvoked_THEN_ReturnsPrefixItem()
         {
             var result = _target.MatchItemByKey("DynamicTableTorrent.ColumnWidths.Main");

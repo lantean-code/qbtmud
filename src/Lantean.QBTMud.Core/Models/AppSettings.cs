@@ -8,7 +8,12 @@ namespace Lantean.QBTMud.Core.Models
         /// <summary>
         /// Gets the local storage key used to persist qbtmud app settings.
         /// </summary>
-        public const string StorageKey = "AppSettings.State.v1";
+        public const string StorageKey = "AppSettings.State.v2";
+
+        /// <summary>
+        /// Gets the legacy local storage key used to persist qbtmud app settings before v2.
+        /// </summary>
+        public const string LegacyStorageKey = "AppSettings.State.v1";
 
         /// <summary>
         /// Gets the default settings.
@@ -19,6 +24,7 @@ namespace Lantean.QBTMud.Core.Models
             {
                 return new AppSettings
                 {
+                    SpeedHistoryEnabled = false,
                     UpdateChecksEnabled = true,
                     NotificationsEnabled = false,
                     ThemeModePreference = ThemeModePreference.System,
@@ -30,6 +36,11 @@ namespace Lantean.QBTMud.Core.Models
                 };
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether speed history is enabled.
+        /// </summary>
+        public bool SpeedHistoryEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether startup update checks are enabled.
@@ -72,6 +83,37 @@ namespace Lantean.QBTMud.Core.Models
         public string ThemeRepositoryIndexUrl { get; set; } = "https://lantean-code.github.io/qbtmud-themes/index.json";
 
         /// <summary>
+        /// Determines whether two app-settings instances are equivalent.
+        /// </summary>
+        /// <param name="left">The first settings instance.</param>
+        /// <param name="right">The second settings instance.</param>
+        /// <returns><see langword="true"/> when the settings are equivalent; otherwise, <see langword="false"/>.</returns>
+        public static bool AreEquivalent(AppSettings? left, AppSettings? right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left is null || right is null)
+            {
+                return false;
+            }
+
+            return left.SpeedHistoryEnabled == right.SpeedHistoryEnabled
+                && left.UpdateChecksEnabled == right.UpdateChecksEnabled
+                && left.NotificationsEnabled == right.NotificationsEnabled
+                && left.ThemeModePreference == right.ThemeModePreference
+                && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
+                && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
+                && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
+                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal)
+                && string.Equals(left.ThemeRepositoryIndexUrl, right.ThemeRepositoryIndexUrl, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether startup update checks are enabled.
+        /// </summary>
         /// Creates a deep copy of the current settings.
         /// </summary>
         /// <returns>A copied instance.</returns>
@@ -79,6 +121,7 @@ namespace Lantean.QBTMud.Core.Models
         {
             return new AppSettings
             {
+                SpeedHistoryEnabled = SpeedHistoryEnabled,
                 UpdateChecksEnabled = UpdateChecksEnabled,
                 NotificationsEnabled = NotificationsEnabled,
                 ThemeModePreference = ThemeModePreference,

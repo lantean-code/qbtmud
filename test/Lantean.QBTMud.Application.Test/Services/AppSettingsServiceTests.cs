@@ -21,6 +21,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         {
             var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
 
+            result.SpeedHistoryEnabled.Should().BeFalse();
             result.UpdateChecksEnabled.Should().BeTrue();
             result.NotificationsEnabled.Should().BeFalse();
             result.ThemeModePreference.Should().Be(ThemeModePreference.System);
@@ -36,6 +37,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         {
             var settings = new AppSettings
             {
+                SpeedHistoryEnabled = false,
                 UpdateChecksEnabled = false,
                 NotificationsEnabled = true,
                 ThemeModePreference = ThemeModePreference.Dark,
@@ -49,6 +51,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             var saved = await _target.SaveSettingsAsync(settings, TestContext.Current.CancellationToken);
             var reloaded = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
 
+            saved.SpeedHistoryEnabled.Should().BeFalse();
             saved.UpdateChecksEnabled.Should().BeFalse();
             saved.NotificationsEnabled.Should().BeTrue();
             saved.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
@@ -128,6 +131,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
             settingsStorageService
+                .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.LegacyStorageKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppSettings?)null);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
@@ -149,11 +155,13 @@ namespace Lantean.QBTMud.Application.Test.Services
             [
                 new AppSettings
                 {
+                    SpeedHistoryEnabled = false,
                     UpdateChecksEnabled = false,
                     NotificationsEnabled = false
                 },
                 new AppSettings
                 {
+                    SpeedHistoryEnabled = true,
                     UpdateChecksEnabled = true,
                     NotificationsEnabled = true
                 }
@@ -161,6 +169,9 @@ namespace Lantean.QBTMud.Application.Test.Services
             settingsStorageService
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => loadQueue.Dequeue());
+            settingsStorageService
+                .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.LegacyStorageKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppSettings?)null);
             settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
@@ -170,7 +181,9 @@ namespace Lantean.QBTMud.Application.Test.Services
             var first = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
             var refreshed = await target.RefreshSettingsAsync(TestContext.Current.CancellationToken);
 
+            first.SpeedHistoryEnabled.Should().BeFalse();
             first.UpdateChecksEnabled.Should().BeFalse();
+            refreshed.SpeedHistoryEnabled.Should().BeTrue();
             refreshed.UpdateChecksEnabled.Should().BeTrue();
             refreshed.NotificationsEnabled.Should().BeTrue();
             settingsStorageService.Verify(
@@ -186,6 +199,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JsonException("invalid"));
             settingsStorageService
+                .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.LegacyStorageKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppSettings?)null);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
@@ -194,6 +210,29 @@ namespace Lantean.QBTMud.Application.Test.Services
             var result = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
 
             result.Should().BeEquivalentTo(AppSettings.Default);
+        }
+
+        [Fact]
+        public async Task GIVEN_LegacyPersistedSettings_WHEN_GetSettingsInvoked_THEN_MigratesFromV1ToV2()
+        {
+            await _settingsStorageService.SetItemAsStringAsync(
+                AppSettings.LegacyStorageKey,
+                """
+                {"updateChecksEnabled":false,"notificationsEnabled":true,"themeModePreference":2}
+                """,
+                TestContext.Current.CancellationToken);
+
+            var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
+            var persisted = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
+            var legacyPersisted = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.LegacyStorageKey, TestContext.Current.CancellationToken);
+
+            result.SpeedHistoryEnabled.Should().BeTrue();
+            result.UpdateChecksEnabled.Should().BeFalse();
+            result.NotificationsEnabled.Should().BeTrue();
+            result.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            persisted.Should().NotBeNull();
+            persisted!.SpeedHistoryEnabled.Should().BeTrue();
+            legacyPersisted.Should().BeNull();
         }
 
         [Fact]
@@ -211,6 +250,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                     return await releaseRead.Task;
                 });
             settingsStorageService
+                .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.LegacyStorageKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppSettings?)null);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
@@ -221,6 +263,7 @@ namespace Lantean.QBTMud.Application.Test.Services
 
             releaseRead.TrySetResult(new AppSettings
             {
+                SpeedHistoryEnabled = false,
                 UpdateChecksEnabled = false,
                 NotificationsEnabled = true
             });
@@ -228,7 +271,9 @@ namespace Lantean.QBTMud.Application.Test.Services
             var first = await firstReadTask;
             var second = await secondReadTask;
 
+            first.SpeedHistoryEnabled.Should().BeFalse();
             first.NotificationsEnabled.Should().BeTrue();
+            second.SpeedHistoryEnabled.Should().BeFalse();
             second.NotificationsEnabled.Should().BeTrue();
             settingsStorageService.Verify(
                 service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()),

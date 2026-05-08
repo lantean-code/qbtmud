@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 
 #if DEBUG
 
@@ -38,6 +39,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly ISnackbar _snackbar;
         private readonly IPwaInstallPromptService _pwaInstallPromptService;
+        private readonly ISpeedHistoryService _speedHistoryService;
 
         public AppSettingsTests()
         {
@@ -50,6 +52,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
             _pwaInstallPromptService = Mock.Of<IPwaInstallPromptService>();
+            _speedHistoryService = Mock.Of<ISpeedHistoryService>();
 
             Mock.Get(_appBuildInfoService)
                 .Setup(service => service.GetCurrentBuildInfo())
@@ -87,7 +90,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             Mock.Get(_storageDiagnosticsService)
                 .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -110,6 +113,9 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 {
                     CanPrompt = true
                 });
+            Mock.Get(_speedHistoryService)
+                .Setup(service => service.ClearAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             TestContext.Services.RemoveAll<IAppBuildInfoService>();
             TestContext.Services.RemoveAll<IAppSettingsService>();
@@ -120,6 +126,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.RemoveAll<IPwaInstallPromptService>();
+            TestContext.Services.RemoveAll<ISpeedHistoryService>();
             TestContext.Services.AddSingleton(_appBuildInfoService);
             TestContext.Services.AddSingleton(_appSettingsService);
             TestContext.Services.AddSingleton(_appUpdateService);
@@ -129,6 +136,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.AddSingleton(_snackbar);
             TestContext.Services.AddSingleton(_pwaInstallPromptService);
+            TestContext.Services.AddSingleton(_speedHistoryService);
         }
 
         [Fact]
@@ -161,7 +169,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var target = RenderPage();
             var tabPanels = target.FindComponents<MudTabPanel>();
 
-            tabPanels.First().Instance.Text.Should().Be("Visual");
+            tabPanels.First().Instance.Text.Should().Be("General");
         }
 
         [Fact]
@@ -213,6 +221,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             Mock.Get(_themeManagerService).Verify(
                 service => service.ApplyPersistedThemeModePreference(It.IsAny<ThemeModePreference>()),
                 Times.Never);
+            TestContext.Services.GetRequiredService<IAppSettingsStateService>().Current!.UpdateChecksEnabled.Should().BeFalse();
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add(
                     It.Is<string>(message => string.Equals(message, "App settings saved.", StringComparison.Ordinal)),
@@ -236,6 +245,59 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             Mock.Get(_themeManagerService).Verify(
                 service => service.ApplyPersistedThemeModePreference(ThemeModePreference.Dark),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_SpeedHistoryDisabledAndConfirmed_WHEN_SaveClicked_THEN_PersistsDisabledSettingAndClearsHistory()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog(
+                    It.Is<string>(title => string.Equals(title, "Disable speed history", StringComparison.Ordinal)),
+                    It.Is<string>(content => string.Equals(content, "Disabling speed history will clear all existing speed history. Continue?", StringComparison.Ordinal))))
+                .ReturnsAsync(true);
+
+            var target = RenderPage();
+            var speedHistorySwitch = FindSwitch(target, "AppSettingsSpeedHistoryEnabled");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => speedHistorySwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(
+                workflow => workflow.ShowConfirmDialog(
+                    It.Is<string>(title => string.Equals(title, "Disable speed history", StringComparison.Ordinal)),
+                    It.Is<string>(content => string.Equals(content, "Disabling speed history will clear all existing speed history. Continue?", StringComparison.Ordinal))),
+                Times.Once);
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettingsModel>(settings => !settings.SpeedHistoryEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_speedHistoryService).Verify(service => service.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
+            TestContext.Services.GetRequiredService<IAppSettingsStateService>().Current!.SpeedHistoryEnabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_SpeedHistoryDisabledAndCancelled_WHEN_SaveClicked_THEN_AbortsSave()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog(
+                    It.Is<string>(title => string.Equals(title, "Disable speed history", StringComparison.Ordinal)),
+                    It.Is<string>(content => string.Equals(content, "Disabling speed history will clear all existing speed history. Continue?", StringComparison.Ordinal))))
+                .ReturnsAsync(false);
+
+            var target = RenderPage();
+            var speedHistorySwitch = FindSwitch(target, "AppSettingsSpeedHistoryEnabled");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => speedHistorySwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            Mock.Get(_speedHistoryService).Verify(service => service.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
+            saveButton.Instance.Disabled.Should().BeFalse();
         }
 
         [Fact]
@@ -529,14 +591,14 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             var target = RenderPage();
             await ActivateStorageTab(target);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
             var clearButton = FindButton(target, "AppSettingsStorageClearAll");
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_storageDiagnosticsService).Verify(
-                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", It.IsAny<CancellationToken>()),
                 Times.Once);
             Mock.Get(_storageDiagnosticsService).Verify(
                 service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()),
@@ -1734,7 +1796,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             var initialEntries = new[]
             {
-                new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
             };
             var invocationCount = 0;
             Mock.Get(_storageDiagnosticsService)
@@ -1771,7 +1833,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             var initialEntries = new[]
             {
-                new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v2", "AppSettings.State.v2", "{\"value\":true}", "{\"value\":true}", 14)
             };
             var refreshTaskSource = new TaskCompletionSource<IReadOnlyList<AppStorageEntry>>(TaskCreationOptions.RunContinuationsAsynchronously);
             var invocationCount = 0;
@@ -1821,7 +1883,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             var target = RenderPage();
             await ActivateStorageTab(target);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
             _snackbar.ClearInvocations();
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
@@ -1845,7 +1907,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             var target = RenderPage();
             await ActivateStorageTab(target);
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v2");
             _storageDiagnosticsService.ClearInvocations();
 
             var firstDeleteTask = target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
@@ -2379,7 +2441,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         private async Task ActivateStorageTab(IRenderedComponent<AppSettingsPage> target)
         {
             var tabs = target.FindComponent<MudTabs>();
-            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(3));
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(4));
             target.WaitForAssertion(() =>
             {
                 _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
@@ -2389,7 +2451,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         private async Task ActivatePwaTab(IRenderedComponent<AppSettingsPage> target)
         {
             var tabs = target.FindComponent<MudTabs>();
-            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(4));
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(5));
             target.WaitForAssertion(() =>
             {
                 _ = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaStatus");
@@ -2400,6 +2462,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             return new AppSettingsModel
             {
+                SpeedHistoryEnabled = true,
                 UpdateChecksEnabled = true,
                 NotificationsEnabled = false,
                 ThemeModePreference = ThemeModePreference.System,

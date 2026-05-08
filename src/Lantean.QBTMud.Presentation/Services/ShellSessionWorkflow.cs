@@ -26,6 +26,7 @@ namespace Lantean.QBTMud.Services
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly ISpeedHistoryService _speedHistoryService;
         private readonly IAppSettingsService _appSettingsService;
+        private readonly IAppSettingsStateService _appSettingsStateService;
         private readonly ITorrentCompletionNotificationService _torrentCompletionNotificationService;
         private readonly NavigationManager _navigationManager;
 
@@ -39,6 +40,7 @@ namespace Lantean.QBTMud.Services
         /// <param name="languageLocalizer">The language localizer.</param>
         /// <param name="speedHistoryService">The speed history service.</param>
         /// <param name="appSettingsService">The app settings service.</param>
+        /// <param name="appSettingsStateService">The runtime app-settings state service.</param>
         /// <param name="torrentCompletionNotificationService">The torrent completion notification service.</param>
         /// <param name="navigationManager">The navigation manager.</param>
         public ShellSessionWorkflow(
@@ -49,6 +51,7 @@ namespace Lantean.QBTMud.Services
             ILanguageLocalizer languageLocalizer,
             ISpeedHistoryService speedHistoryService,
             IAppSettingsService appSettingsService,
+            IAppSettingsStateService appSettingsStateService,
             ITorrentCompletionNotificationService torrentCompletionNotificationService,
             NavigationManager navigationManager)
         {
@@ -59,6 +62,7 @@ namespace Lantean.QBTMud.Services
             _languageLocalizer = languageLocalizer;
             _speedHistoryService = speedHistoryService;
             _appSettingsService = appSettingsService;
+            _appSettingsStateService = appSettingsStateService;
             _torrentCompletionNotificationService = torrentCompletionNotificationService;
             _navigationManager = navigationManager;
         }
@@ -105,11 +109,15 @@ namespace Lantean.QBTMud.Services
 
             if (mainData is not null)
             {
-                await _speedHistoryService.PushSampleAsync(
-                    DateTime.UtcNow,
-                    mainData.ServerState.DownloadInfoSpeed,
-                    mainData.ServerState.UploadInfoSpeed,
-                    cancellationToken);
+                if (_appSettingsStateService.Current?.SpeedHistoryEnabled ?? true)
+                {
+                    await _speedHistoryService.PushSampleAsync(
+                        DateTime.UtcNow,
+                        mainData.ServerState.DownloadInfoSpeed,
+                        mainData.ServerState.UploadInfoSpeed,
+                        cancellationToken);
+                }
+
                 await TryProcessTorrentNotificationsAsync(transitionBatch, cancellationToken);
             }
 
@@ -203,18 +211,20 @@ namespace Lantean.QBTMud.Services
             preferences = preferencesResultTask.Result.Value;
             version = versionResultTask.Result.Value;
             data = mainDataResultTask.Result.Value;
+            var appSettings = await appSettingsTask ?? await _appSettingsService.GetSettingsAsync(cancellationToken);
 
             await SynchronizeLocalePreferenceAsync(preferences);
 
             var mainData = _dataManager.CreateMainData(data!);
-            await _speedHistoryService.InitializeAsync(cancellationToken);
-            await _speedHistoryService.PushSampleAsync(
-                DateTime.UtcNow,
-                mainData.ServerState.DownloadInfoSpeed,
-                mainData.ServerState.UploadInfoSpeed,
-                cancellationToken);
-
-            var appSettings = await appSettingsTask ?? await _appSettingsService.GetSettingsAsync(cancellationToken);
+            if (appSettings.SpeedHistoryEnabled)
+            {
+                await _speedHistoryService.InitializeAsync(cancellationToken);
+                await _speedHistoryService.PushSampleAsync(
+                    DateTime.UtcNow,
+                    mainData.ServerState.DownloadInfoSpeed,
+                    mainData.ServerState.UploadInfoSpeed,
+                    cancellationToken);
+            }
 
             return new ShellSessionLoadResult(
                 ShellSessionLoadOutcome.Ready,

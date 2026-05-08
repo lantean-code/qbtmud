@@ -79,7 +79,8 @@
     }
 
     function getThemeModePreference() {
-        const rawSettings = getStorageValueWithMigration("AppSettings.State.v1");
+        const rawSettings = getStorageValueWithMigration("AppSettings.State.v2")
+            ?? getStorageValueWithMigration("AppSettings.State.v1");
         if (!rawSettings) {
             return null;
         }

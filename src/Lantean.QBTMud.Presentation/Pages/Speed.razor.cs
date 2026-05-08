@@ -61,15 +61,26 @@ namespace Lantean.QBTMud.Pages
         private TimeSpan _timeLabelSpacing = TimeSpan.FromMinutes(5);
         private string _lastUpdatedText = string.Empty;
         private UnitScale _currentUnit = _mebiBytesPerSecond;
+        private bool _hasRedirectedForDisabledHistory;
+        private bool? _isSpeedHistoryEnabled;
 
         [Inject]
         protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
+
+        [Inject]
+        protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IAppSettingsStateService AppSettingsStateService { get; set; } = default!;
 
         [CascadingParameter]
         public MainData? MainData { get; set; }
@@ -79,12 +90,22 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!await EnsureSpeedHistoryEnabledAsync())
+            {
+                return;
+            }
+
             await SpeedHistoryService.InitializeAsync();
             await LoadSeriesAsync();
         }
 
         protected override async Task OnParametersSetAsync()
         {
+            if (!await EnsureSpeedHistoryEnabledAsync())
+            {
+                return;
+            }
+
             await LoadSeriesAsync();
         }
 
@@ -149,6 +170,34 @@ namespace Lantean.QBTMud.Pages
             };
 
             _lastUpdatedText = SpeedHistoryService.LastUpdatedUtc?.ToLocalTime().ToString("G") ?? Translate("n/a");
+        }
+
+        private async Task<bool> EnsureSpeedHistoryEnabledAsync()
+        {
+            if (_hasRedirectedForDisabledHistory)
+            {
+                return false;
+            }
+
+            if (!_isSpeedHistoryEnabled.HasValue)
+            {
+                _isSpeedHistoryEnabled = AppSettingsStateService.Current?.SpeedHistoryEnabled;
+            }
+
+            if (!_isSpeedHistoryEnabled.HasValue)
+            {
+                _isSpeedHistoryEnabled = (await AppSettingsService.GetSettingsAsync()).SpeedHistoryEnabled;
+            }
+
+            if (_isSpeedHistoryEnabled.Value)
+            {
+                return true;
+            }
+
+            _hasRedirectedForDisabledHistory = true;
+            SnackbarWorkflow.ShowTransientMessage(Translate("Speed history is disabled in App Settings."), Severity.Warning);
+            NavigationManager.NavigateToHome();
+            return false;
         }
 
         private (int DownloadSegmentCount, int UploadSegmentCount, bool HasBounds) BuildChartData(IReadOnlyList<SpeedPoint> downloadSamples, IReadOnlyList<SpeedPoint> uploadSamples)

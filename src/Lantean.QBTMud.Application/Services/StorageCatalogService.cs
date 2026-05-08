@@ -62,6 +62,12 @@ namespace Lantean.QBTMud.Application.Services
                 return exactMatch;
             }
 
+            if (string.Equals(normalizedKey, AppSettings.LegacyStorageKey, StringComparison.Ordinal)
+                && _exactMatchLookup.TryGetValue(AppSettings.StorageKey, out var appSettingsMatch))
+            {
+                return appSettingsMatch;
+            }
+
             return _prefixItems.FirstOrDefault(prefixItem => normalizedKey.StartsWith(prefixItem.MatchPattern, StringComparison.Ordinal));
         }
 
@@ -74,7 +80,7 @@ namespace Lantean.QBTMud.Application.Services
                     displayNameSource: "General",
                     items:
                     [
-                        new StorageCatalogItemDefinition("general.app-settings", "general", "App settings", StorageCatalogItemMatchMode.ExactKey, "AppSettings.State.v1", StorageItemSerializationMode.Json),
+                        new StorageCatalogItemDefinition("general.app-settings", "general", "App settings", StorageCatalogItemMatchMode.ExactKey, "AppSettings.State.v2", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("general.drawer-open", "general", "Drawer open state", StorageCatalogItemMatchMode.ExactKey, "MainLayout.DrawerOpen", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("general.legacy-dark-mode", "general", "Legacy dark mode state", StorageCatalogItemMatchMode.ExactKey, "MainLayout.IsDarkMode", StorageItemSerializationMode.Json)
                     ]),

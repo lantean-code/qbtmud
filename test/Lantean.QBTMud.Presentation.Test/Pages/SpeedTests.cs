@@ -1,23 +1,33 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Pages;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using AppSettingsModel = Lantean.QBTMud.Core.Models.AppSettings;
 
 namespace Lantean.QBTMud.Presentation.Test.Pages
 {
     public sealed class SpeedTests : RazorComponentTestBase<Speed>
     {
         private readonly ISpeedHistoryService _speedHistoryService = Mock.Of<ISpeedHistoryService>();
+        private readonly IAppSettingsStateService _appSettingsStateService = new AppSettingsStateService();
 
         public SpeedTests()
         {
             TestContext.Services.RemoveAll<ISpeedHistoryService>();
             TestContext.Services.AddSingleton(_speedHistoryService);
+            TestContext.Services.RemoveAll<IAppSettingsStateService>();
+            TestContext.Services.AddSingleton(_appSettingsStateService);
+            _appSettingsStateService.SetSettings(new AppSettingsModel
+            {
+                SpeedHistoryEnabled = true
+            });
 
             var speedHistoryServiceMock = Mock.Get(_speedHistoryService);
             speedHistoryServiceMock.Setup(s => s.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -26,6 +36,36 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .Returns(new List<SpeedPoint> { new(new DateTime(2000, 1, 1, 0, 4, 0, DateTimeKind.Utc), 1000) });
             speedHistoryServiceMock.Setup(s => s.GetSeries(It.IsAny<SpeedPeriod>(), SpeedDirection.Upload))
                 .Returns(new List<SpeedPoint> { new(new DateTime(2000, 1, 1, 0, 4, 0, DateTimeKind.Utc), 2000) });
+        }
+
+        [Fact]
+        public void GIVEN_SpeedHistoryDisabled_WHEN_Rendered_THEN_RedirectsHomeAndDoesNotTouchHistoryService()
+        {
+            var navigationManager = UseTestNavigationManager();
+            navigationManager.NavigateTo("speed");
+            var appSettingsService = new Mock<IAppSettingsService>(MockBehavior.Strict);
+            appSettingsService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettingsModel
+                {
+                    SpeedHistoryEnabled = false
+                });
+            TestContext.Services.RemoveAll<IAppSettingsService>();
+            TestContext.Services.AddSingleton(appSettingsService.Object);
+
+            var appSettingsStateService = Mock.Of<IAppSettingsStateService>();
+            Mock.Get(appSettingsStateService)
+                .SetupGet(service => service.Current)
+                .Returns((AppSettingsModel?)null);
+            TestContext.Services.RemoveAll<IAppSettingsStateService>();
+            TestContext.Services.AddSingleton<IAppSettingsStateService>(appSettingsStateService);
+            Mock.Get(_speedHistoryService).ClearInvocations();
+
+            _ = RenderTarget();
+
+            navigationManager.Uri.Should().Be("http://localhost/");
+            Mock.Get(_speedHistoryService).Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.Never);
+            Mock.Get(_speedHistoryService).Verify(s => s.GetSeries(It.IsAny<SpeedPeriod>(), It.IsAny<SpeedDirection>()), Times.Never);
         }
 
         [Fact]
@@ -165,6 +205,27 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                     new Dictionary<string, HashSet<string>>(),
                     new Dictionary<string, HashSet<string>>()));
             });
+        }
+
+        private TestNavigationManager UseTestNavigationManager()
+        {
+            var navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<NavigationManager>();
+            TestContext.Services.AddSingleton<NavigationManager>(navigationManager);
+            return navigationManager;
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                Uri = ToAbsoluteUri(uri).ToString();
+            }
         }
 
         private static void ConfigureSpeedService(Mock<ISpeedHistoryService> mock, Func<SpeedPeriod, double> valueFactory, List<SpeedPeriod>? requestedPeriods)

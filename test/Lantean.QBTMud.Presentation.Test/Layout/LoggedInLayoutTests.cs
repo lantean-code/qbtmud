@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Helpers;
@@ -203,6 +204,20 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()), Times.Never);
             });
+        }
+
+        [Fact]
+        public void GIVEN_LoadedAppSettings_WHEN_Rendered_THEN_RuntimeAppSettingsStateIsSeeded()
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.SpeedHistoryEnabled = false;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+
+            _ = RenderLayout(new List<IManagedTimer>());
+
+            TestContext.Services.GetRequiredService<IAppSettingsStateService>().Current!.SpeedHistoryEnabled.Should().BeFalse();
         }
 
         [Fact]

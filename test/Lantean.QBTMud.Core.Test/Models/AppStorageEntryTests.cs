@@ -10,15 +10,15 @@ namespace Lantean.QBTMud.Core.Test.Models
         {
             var result = new AppStorageEntry(
                 storageType: StorageType.LocalStorage,
-                key: "QbtMud.AppSettings.State.v1",
-                displayKey: "AppSettings.State.v1",
+                key: "QbtMud.AppSettings.State.v2",
+                displayKey: "AppSettings.State.v2",
                 value: null,
                 preview: "{}",
                 length: 2);
 
             result.StorageType.Should().Be(StorageType.LocalStorage);
-            result.Key.Should().Be("QbtMud.AppSettings.State.v1");
-            result.DisplayKey.Should().Be("AppSettings.State.v1");
+            result.Key.Should().Be("QbtMud.AppSettings.State.v2");
+            result.DisplayKey.Should().Be("AppSettings.State.v2");
             result.Value.Should().BeNull();
             result.Preview.Should().Be("{}");
             result.Length.Should().Be(2);
@@ -29,16 +29,16 @@ namespace Lantean.QBTMud.Core.Test.Models
         {
             var result = new AppStorageEntry(
                 storageType: StorageType.LocalStorage,
-                key: "QbtMud.AppSettings.State.v1",
-                displayKey: "AppSettings.State.v1",
+                key: "QbtMud.AppSettings.State.v2",
+                displayKey: "AppSettings.State.v2",
                 value: "{\"value\":true}",
                 preview: "{\"value\":true}",
                 length: 14);
 
             result.ToString().Should().Contain("AppStorageEntry");
             result.ToString().Should().Contain("LocalStorage");
-            result.ToString().Should().Contain("QbtMud.AppSettings.State.v1");
-            result.ToString().Should().Contain("AppSettings.State.v1");
+            result.ToString().Should().Contain("QbtMud.AppSettings.State.v2");
+            result.ToString().Should().Contain("AppSettings.State.v2");
             result.ToString().Should().Contain("{\"value\":true}");
             result.ToString().Should().Contain("14");
         }

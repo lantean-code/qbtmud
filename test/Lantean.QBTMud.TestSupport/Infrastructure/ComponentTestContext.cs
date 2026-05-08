@@ -111,6 +111,7 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
             Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();
             Services.AddScoped<IPwaInstallPromptService, PwaInstallPromptService>();
+            Services.AddScoped<IAppSettingsStateService, AppSettingsStateService>();
             Services.AddScoped<IQBittorrentPreferencesStateService, QBittorrentPreferencesStateService>();
 
             Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
