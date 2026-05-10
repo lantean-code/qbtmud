@@ -1955,28 +1955,32 @@ namespace Lantean.QBTMud.Presentation.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_NullTheme_WHEN_ShowThemePreviewDialog_THEN_Throws()
+        public async Task GIVEN_NullRequest_WHEN_ShowThemePreviewDialog_THEN_Throws()
         {
-            Func<Task> act = async () => await _target.ShowThemePreviewDialog(null!, true);
+            Func<Task> act = async () => await _target.ShowThemePreviewDialog(null!);
 
             await act.Should().ThrowAsync<ArgumentNullException>();
         }
 
         [Fact]
-        public async Task GIVEN_Theme_WHEN_ShowThemePreviewDialog_THEN_ShowsDialog()
+        public async Task GIVEN_Request_WHEN_ShowThemePreviewDialog_THEN_ShowsDialog()
         {
             var reference = new Mock<IDialogReference>();
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ThemePreviewDialog>("Theme Preview", It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
                 .ReturnsAsync(reference.Object);
 
-            var theme = new MudTheme();
+            var request = new ThemePreviewDialogRequest(
+                [new ThemePreviewDialogItem("ThemeId", "Name", "Bundled", new MudTheme())],
+                "ThemeId",
+                ThemePreviewDialogMode.Catalogue,
+                true);
 
-            await _target.ShowThemePreviewDialog(theme, true);
+            await _target.ShowThemePreviewDialog(request);
 
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<ThemePreviewDialog>(
                     "Theme Preview",
-                    It.Is<DialogParameters>(parameters => HasThemePreviewDialogParameters(parameters, theme, true)),
+                    It.Is<DialogParameters>(parameters => HasThemePreviewDialogParameters(parameters, request)),
                     It.Is<DialogOptions>(options => HasThemePreviewDialogOptions(options))),
                 Times.Once);
         }
@@ -2362,21 +2366,15 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                    && ReferenceEquals(parameters[nameof(SubMenuDialog.Torrents)], torrents);
         }
 
-        private static bool HasThemePreviewDialogParameters(DialogParameters parameters, MudTheme theme, bool isDarkMode)
+        private static bool HasThemePreviewDialogParameters(DialogParameters parameters, ThemePreviewDialogRequest request)
         {
-            if (!HasParameter(parameters, nameof(ThemePreviewDialog.Theme))
-                || !ReferenceEquals(parameters[nameof(ThemePreviewDialog.Theme)], theme))
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.Request))
+                || !ReferenceEquals(parameters[nameof(ThemePreviewDialog.Request)], request))
             {
                 return false;
             }
 
-            if (!HasParameter(parameters, nameof(ThemePreviewDialog.IsDarkMode)))
-            {
-                return false;
-            }
-
-            var isDarkModeValue = parameters[nameof(ThemePreviewDialog.IsDarkMode)] as bool?;
-            return isDarkModeValue.HasValue && isDarkModeValue.Value == isDarkMode;
+            return true;
         }
 
         private static bool HasThemePreviewDialogOptions(DialogOptions options)

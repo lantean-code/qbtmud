@@ -3,6 +3,13 @@
     height: 100%;
 }
 
+.theme-preview-dialog {
+    overflow: hidden;
+    width: min(1800px, calc(100vw - 4rem));
+    height: calc(100vh - 4rem);
+    max-width: none;
+}
+
 .theme-preview {
     height: 100%;
     display: flex;
@@ -62,5 +69,25 @@
 @media (max-width: 900px) {
     .theme-preview__sidebar {
         display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .theme-preview-dialog {
+        width: calc(100vw - 1rem);
+        height: calc(100vh - 1rem);
+    }
+
+    .theme-preview-dialog ::deep .mud-dialog {
+        margin: 0.5rem;
+        border-radius: 12px;
+    }
+
+    .theme-preview__content {
+        padding: 0.875rem;
+    }
+
+    .theme-preview__footer {
+        padding-inline: 0.5rem;
     }
 }

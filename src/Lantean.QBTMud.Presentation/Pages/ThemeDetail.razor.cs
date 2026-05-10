@@ -3,6 +3,7 @@ using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Core.Theming;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -77,6 +78,7 @@ namespace Lantean.QBTMud.Pages
         private bool _hasChanges;
         private bool _isBusy;
         private bool _isLoading;
+        private StorageType _localThemeStorageType = StorageType.LocalStorage;
         private readonly HashSet<string> _loadedFonts = new(StringComparer.OrdinalIgnoreCase);
 
         [Inject]
@@ -182,11 +184,13 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnParametersSetAsync()
         {
             await ThemeManagerService.EnsureInitialized();
+            _localThemeStorageType = await ThemeManagerService.GetLocalThemeStorageTypeAsync();
             await LoadTheme();
 
             if (_theme is null)
             {
                 await ThemeManagerService.EnsureRepositoryThemesLoaded();
+                _localThemeStorageType = await ThemeManagerService.GetLocalThemeStorageTypeAsync();
                 await LoadTheme();
             }
         }
@@ -229,7 +233,24 @@ namespace Lantean.QBTMud.Pages
             }
 
             var previewTheme = _editorTheme?.Theme ?? _theme.Theme.Theme;
-            await DialogWorkflow.ShowThemePreviewDialog(previewTheme, IsDarkMode);
+            var request = new ThemePreviewDialogRequest(
+                [
+                    new ThemePreviewDialogItem(
+                        _theme.Id,
+                        _editorName,
+                        ThemeDisplayHelper.GetSourceLabel(_theme, _localThemeStorageType, value => Translate(value)),
+                        ThemeSerialization.CloneTheme(previewTheme))
+                ],
+                _theme.Id,
+                ThemePreviewDialogMode.Details,
+                IsDarkMode)
+            {
+                CurrentThemeId = ThemeManagerService.CurrentThemeId,
+                CanSaveAndApply = CanEditTheme && !_isBusy && !HasNameError,
+                SaveAndApplyThemeAsync = CanEditTheme ? SaveAndApplyFromPreviewAsync : null
+            };
+
+            await DialogWorkflow.ShowThemePreviewDialog(request);
         }
 
         protected Task NameChanged(string value)
@@ -318,9 +339,86 @@ namespace Lantean.QBTMud.Pages
 
         protected string GetReadOnlySourceLabel(ThemeCatalogItem theme)
         {
-            return theme.Source == ThemeSource.Repository
-                ? Translate("Repository")
-                : Translate("Bundled");
+            return ThemeDisplayHelper.GetSourceLabel(theme, _localThemeStorageType, value => Translate(value));
+        }
+
+        protected Color GetSourceChipColor(ThemeCatalogItem theme)
+        {
+            return ThemeDisplayHelper.GetSourceChipColor(theme);
+        }
+
+        protected async Task RenameTheme()
+        {
+            if (!CanEditTheme || _theme is null || _hasChanges || _isBusy)
+            {
+                return;
+            }
+
+            await RunBusy(async () =>
+            {
+                var name = await DialogWorkflow.ShowStringFieldDialog(Translate("Rename Theme"), Translate("Name"), _theme.Name);
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return;
+                }
+
+                var definition = ThemeSerialization.CloneDefinition(_theme.Theme);
+                definition.Id = _theme.Id;
+                definition.Name = name.Trim();
+
+                await ThemeManagerService.SaveLocalTheme(definition);
+                await RefreshTheme();
+            });
+        }
+
+        protected async Task DuplicateTheme()
+        {
+            if (_theme is null || _hasChanges || _isBusy)
+            {
+                return;
+            }
+
+            await RunBusy(async () =>
+            {
+                var clone = await ThemeActionHelper.DuplicateThemeAsync(_theme, DialogWorkflow, (value, args) => Translate(value, args));
+                if (clone is null)
+                {
+                    return;
+                }
+
+                await ThemeManagerService.SaveLocalTheme(clone);
+                NavigateToThemeDetails(clone.Id);
+            });
+        }
+
+        protected async Task ExportTheme()
+        {
+            if (_theme is null || _hasChanges || _isBusy)
+            {
+                return;
+            }
+
+            await RunBusy(() => ThemeActionHelper.ExportThemeAsync(_theme, JSRuntime, (value, args) => Translate(value, args)));
+        }
+
+        protected async Task DeleteTheme()
+        {
+            if (!CanEditTheme || _theme is null || _isBusy)
+            {
+                return;
+            }
+
+            await RunBusy(async () =>
+            {
+                var confirmed = await DialogWorkflow.ShowConfirmDialog(Translate("Delete theme?"), Translate("Delete '%1'?", [_theme.Name]));
+                if (!confirmed)
+                {
+                    return;
+                }
+
+                await ThemeManagerService.DeleteLocalTheme(_theme.Id);
+                NavigateBack();
+            });
         }
 
         private Task LoadTheme()
@@ -369,6 +467,12 @@ namespace Lantean.QBTMud.Pages
             await InvokeAsync(StateHasChanged);
         }
 
+        private void NavigateToThemeDetails(string themeId)
+        {
+            var escaped = Uri.EscapeDataString(themeId);
+            NavigationManager.NavigateTo($"./themes/{escaped}");
+        }
+
         private async Task SaveEditsInternal(bool applyAfterSave)
         {
             if (!CanEditTheme || _theme is null || _editorTheme is null)
@@ -407,6 +511,23 @@ namespace Lantean.QBTMud.Pages
                     await ThemeManagerService.ApplyTheme(_theme.Id);
                 }
             });
+        }
+
+        private async Task<bool> SaveAndApplyFromPreviewAsync()
+        {
+            if (!CanEditTheme || _theme is null || _editorTheme is null || HasNameError)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(_editorName))
+            {
+                _nameError = Translate("Name is required.");
+                return false;
+            }
+
+            await SaveEditsInternal(true);
+            return true;
         }
 
         private async Task RunBusy(Func<Task> action)
@@ -474,6 +595,11 @@ namespace Lantean.QBTMud.Pages
         private string Translate(string value)
         {
             return LanguageLocalizer.Translate("AppThemeDetail", value);
+        }
+
+        private string Translate(string value, params object[] args)
+        {
+            return LanguageLocalizer.Translate("AppThemeDetail", value, args);
         }
     }
 }

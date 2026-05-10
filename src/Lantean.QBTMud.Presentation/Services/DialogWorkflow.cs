@@ -838,19 +838,19 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Shows a theme preview dialog.
         /// </summary>
-        /// <param name="theme">The theme to preview.</param>
-        /// <param name="isDarkMode">Whether to start the preview in dark mode.</param>
-        public async Task ShowThemePreviewDialog(MudTheme theme, bool isDarkMode)
+        /// <param name="request">The preview request.</param>
+        public async Task ShowThemePreviewDialog(ThemePreviewDialogRequest request)
         {
-            if (theme is null)
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (request.Items.Count == 0)
             {
-                throw new ArgumentNullException(nameof(theme));
+                throw new ArgumentException("At least one preview theme is required.", nameof(request));
             }
 
             var parameters = new DialogParameters
             {
-                { nameof(ThemePreviewDialog.Theme), theme },
-                { nameof(ThemePreviewDialog.IsDarkMode), isDarkMode }
+                { nameof(ThemePreviewDialog.Request), request }
             };
             var options = FullScreenDialogOptions with
             {

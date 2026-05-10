@@ -15,6 +15,27 @@
                                OnClick="ShowPreview"
                                Disabled="@IsBusy"
                                data-test-id="@TestIdHelper.For("ThemeDetailPreview")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               title="@Translate("Rename")"
+                               OnClick="RenameTheme"
+                               Disabled="@(!CanEditTheme || HasChanges || IsBusy)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailRename")" />
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                               title="@Translate("Duplicate")"
+                               OnClick="DuplicateTheme"
+                               Disabled="@(HasChanges || IsBusy)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailDuplicate")" />
+                <MudIconButton Icon="@Icons.Material.Filled.FileDownload"
+                               title="@Translate("Export")"
+                               OnClick="ExportTheme"
+                               Disabled="@(HasChanges || IsBusy)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailExport")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               title="@Translate("Delete")"
+                               OnClick="DeleteTheme"
+                               Disabled="@(!CanEditTheme || IsBusy)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailDelete")" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Undo"
                                title="@Translate("Reset")"
                                OnClick="ResetEdits"
@@ -59,10 +80,11 @@
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ThemeDetailApplied")">@Translate("Applied")</MudChip>
                             }
-                            @if (Theme.IsReadOnly)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ThemeDetailBundled")">@GetReadOnlySourceLabel(Theme)</MudChip>
-                            }
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="@GetSourceChipColor(Theme)"
+                                     Variant="Variant.Outlined"
+                                     data-test-id="@TestIdHelper.For("ThemeDetailSource")">@GetReadOnlySourceLabel(Theme)</MudChip>
                         </div>
 
                         @if (Theme.IsReadOnly)
