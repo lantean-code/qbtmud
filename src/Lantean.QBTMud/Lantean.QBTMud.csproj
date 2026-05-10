@@ -162,7 +162,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.7" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
     <PackageReference Include="MudBlazor" Version="9.4.0" />
-    <PackageReference Include="QBittorrent.ApiClient" Version="1.0.0" />
+    <PackageReference Include="QBittorrent.ApiClient" Version="1.1.0-rc.1" />
   </ItemGroup>
 
   <ItemGroup>
