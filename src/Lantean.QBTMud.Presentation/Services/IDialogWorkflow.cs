@@ -235,8 +235,7 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Shows a theme preview dialog.
         /// </summary>
-        /// <param name="theme">The theme to preview.</param>
-        /// <param name="isDarkMode">Whether to start the preview in dark mode.</param>
-        Task ShowThemePreviewDialog(MudTheme theme, bool isDarkMode);
+        /// <param name="request">The preview request.</param>
+        Task ShowThemePreviewDialog(ThemePreviewDialogRequest request);
     }
 }

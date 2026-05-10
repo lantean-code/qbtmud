@@ -24,6 +24,8 @@ namespace Lantean.QBTMud.Infrastructure.Services
         private readonly Lock _repositoryLoadLock = new();
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISettingsStorageService _settingsStorage;
+        private readonly IStorageRoutingService _storageRoutingService;
+        private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IThemeFontCatalog _themeFontCatalog;
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly IAppSettingsService _appSettingsService;
@@ -47,6 +49,8 @@ namespace Lantean.QBTMud.Infrastructure.Services
         /// </summary>
         /// <param name="httpClientFactory">The HTTP client factory for loading theme assets.</param>
         /// <param name="settingsStorage">The local storage service.</param>
+        /// <param name="storageRoutingService">The storage routing service.</param>
+        /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="themeFontCatalog">The theme font catalog.</param>
         /// <param name="languageLocalizer">The language localizer.</param>
         /// <param name="appSettingsService">The app settings service.</param>
@@ -54,6 +58,8 @@ namespace Lantean.QBTMud.Infrastructure.Services
         public ThemeManagerService(
             IHttpClientFactory httpClientFactory,
             ISettingsStorageService settingsStorage,
+            IStorageRoutingService storageRoutingService,
+            IWebApiCapabilityService webApiCapabilityService,
             IThemeFontCatalog themeFontCatalog,
             ILanguageLocalizer languageLocalizer,
             IAppSettingsService appSettingsService,
@@ -61,6 +67,8 @@ namespace Lantean.QBTMud.Infrastructure.Services
         {
             _httpClientFactory = httpClientFactory;
             _settingsStorage = settingsStorage;
+            _storageRoutingService = storageRoutingService;
+            _webApiCapabilityService = webApiCapabilityService;
             _themeFontCatalog = themeFontCatalog;
             _languageLocalizer = languageLocalizer;
             _appSettingsService = appSettingsService;
@@ -115,6 +123,17 @@ namespace Lantean.QBTMud.Infrastructure.Services
         public ThemeModePreference CurrentThemeModePreference
         {
             get { return _currentThemeModePreference; }
+        }
+
+        /// <summary>
+        /// Resolves the effective storage type currently used for custom themes.
+        /// </summary>
+        /// <returns>The effective storage type for custom themes.</returns>
+        public async Task<StorageType> GetLocalThemeStorageTypeAsync()
+        {
+            var settings = await _storageRoutingService.GetSettingsAsync();
+            var capabilityState = await _webApiCapabilityService.GetCapabilityStateAsync();
+            return _storageRoutingService.ResolveEffectiveStorageType(_localThemesStorageKey, settings, capabilityState.SupportsClientData);
         }
 
         /// <summary>

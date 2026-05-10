@@ -126,27 +126,17 @@
                                        OnClick="@(e => OpenThemeDetails(theme))"
                                        Disabled="@IsBusy"
                                        data-test-id="@TestIdHelper.For($"ThemeDetails-{theme.Id}")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                       title="@Translate("Preview")"
+                                       OnClick="@(e => PreviewTheme(theme))"
+                                       Disabled="@IsBusy"
+                                       data-test-id="@TestIdHelper.For($"ThemePreview-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                        Color="Color.Primary"
                                        title="@Translate("Apply")"
                                        OnClick="@(e => ApplyTheme(theme))"
                                        Disabled="@(!CanApplyTheme(theme) || IsBusy)"
                                        data-test-id="@TestIdHelper.For($"ThemeApply-{theme.Id}")" />
-                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
-                                       title="@Translate("Duplicate")"
-                                       OnClick="@(e => DuplicateTheme(theme))"
-                                       Disabled="@IsBusy"
-                                       data-test-id="@TestIdHelper.For($"ThemeDuplicate-{theme.Id}")" />
-                        <MudIconButton Icon="@Icons.Material.Filled.FileDownload"
-                                       title="@Translate("Export")"
-                                       OnClick="@(e => ExportTheme(theme))"
-                                       Disabled="@IsBusy"
-                                       data-test-id="@TestIdHelper.For($"ThemeExport-{theme.Id}")" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                       title="@Translate("Rename")"
-                                       OnClick="@(e => RenameTheme(theme))"
-                                       Disabled="@(!CanEditTheme(theme) || IsBusy)"
-                                       data-test-id="@TestIdHelper.For($"ThemeRename-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Color="Color.Error"
                                        title="@Translate("Delete")"

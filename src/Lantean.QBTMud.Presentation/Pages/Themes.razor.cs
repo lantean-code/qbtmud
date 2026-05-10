@@ -1,17 +1,15 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
 using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core;
-using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Core.Theming;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Utilities;
 
@@ -27,6 +25,7 @@ namespace Lantean.QBTMud.Pages
         private const string _actionsColumnId = "actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<ThemeCatalogItem>>> _columnRenderFragments = [];
+        private StorageType _localThemeStorageType = StorageType.LocalStorage;
         private bool _isBusy;
 
         [Inject]
@@ -45,13 +44,13 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IJSRuntime JSRuntime { get; set; } = default!;
-
-        [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
+
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool IsDarkMode { get; set; }
 
         protected DynamicTable<ThemeCatalogItem>? Table { get; set; }
 
@@ -97,6 +96,7 @@ namespace Lantean.QBTMud.Pages
         {
             await ThemeManagerService.EnsureInitialized();
             await ThemeManagerService.EnsureRepositoryThemesLoaded();
+            _localThemeStorageType = await ThemeManagerService.GetLocalThemeStorageTypeAsync();
             if (ThemeManagerService.LastReloadHadRepositoryIssues)
             {
                 SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load theme repository. Showing bundled and local themes only."), Severity.Warning);
@@ -119,6 +119,7 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 await ThemeManagerService.ReloadServerThemes();
+                _localThemeStorageType = await ThemeManagerService.GetLocalThemeStorageTypeAsync();
                 if (ThemeManagerService.LastReloadHadRepositoryIssues)
                 {
                     SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load theme repository. Showing bundled and local themes only."), Severity.Warning);
@@ -153,93 +154,24 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected async Task DuplicateTheme(ThemeCatalogItem theme)
+        protected async Task PreviewTheme(ThemeCatalogItem theme)
         {
             if (_isBusy)
             {
                 return;
             }
 
-            _isBusy = true;
-            try
+            var request = new ThemePreviewDialogRequest(
+                ThemeDisplayHelper.CreatePreviewItems(ThemeEntries, _localThemeStorageType, value => Translate(value)),
+                theme.Id,
+                ThemePreviewDialogMode.Catalogue,
+                IsDarkMode)
             {
-                var defaultName = Translate("%1 Copy", theme.Name);
-                var name = await DialogWorkflow.ShowStringFieldDialog(Translate("Duplicate Theme"), Translate("Name"), defaultName);
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    return;
-                }
+                CurrentThemeId = ThemeManagerService.CurrentThemeId,
+                ApplyThemeAsync = ApplyPreviewThemeAsync
+            };
 
-                var clone = ThemeSerialization.CloneDefinition(theme.Theme);
-                clone.Id = Guid.NewGuid().ToString("N");
-                clone.Name = name.Trim();
-
-                await ThemeManagerService.SaveLocalTheme(clone);
-                NavigateToDetails(clone.Id);
-            }
-            finally
-            {
-                _isBusy = false;
-            }
-        }
-
-        protected async Task ExportTheme(ThemeCatalogItem theme)
-        {
-            if (_isBusy)
-            {
-                return;
-            }
-
-            _isBusy = true;
-            try
-            {
-                var definition = ThemeSerialization.CloneDefinition(theme.Theme);
-                definition.Id = theme.Id;
-                definition.Name = theme.Name;
-
-                var json = ThemeSerialization.SerializeDefinition(definition, writeIndented: true);
-                var safeName = SanitizeFileName(theme.Name);
-                var dataUrl = BuildJsonDataUrl(json);
-
-                await JSRuntime.FileDownload(dataUrl, $"{safeName}.json");
-            }
-            finally
-            {
-                _isBusy = false;
-            }
-        }
-
-        protected async Task RenameTheme(ThemeCatalogItem theme)
-        {
-            if (_isBusy)
-            {
-                return;
-            }
-
-            if (!CanEditTheme(theme))
-            {
-                return;
-            }
-
-            _isBusy = true;
-            try
-            {
-                var name = await DialogWorkflow.ShowStringFieldDialog(Translate("Rename Theme"), Translate("Name"), theme.Name);
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    return;
-                }
-
-                var definition = ThemeSerialization.CloneDefinition(theme.Theme);
-                definition.Id = theme.Id;
-                definition.Name = name.Trim();
-
-                await ThemeManagerService.SaveLocalTheme(definition);
-            }
-            finally
-            {
-                _isBusy = false;
-            }
+            await DialogWorkflow.ShowThemePreviewDialog(request);
         }
 
         protected async Task DeleteTheme(ThemeCatalogItem theme)
@@ -379,22 +311,12 @@ namespace Lantean.QBTMud.Pages
 
         protected string GetSourceLabel(ThemeCatalogItem theme)
         {
-            return theme.Source switch
-            {
-                ThemeSource.Local => Translate("Local"),
-                ThemeSource.Repository => Translate("Repository"),
-                _ => Translate("Bundled")
-            };
+            return ThemeDisplayHelper.GetSourceLabel(theme, _localThemeStorageType, value => Translate(value));
         }
 
         protected Color GetSourceChipColor(ThemeCatalogItem theme)
         {
-            return theme.Source switch
-            {
-                ThemeSource.Local => Color.Default,
-                ThemeSource.Repository => Color.Secondary,
-                _ => Color.Info
-            };
+            return ThemeDisplayHelper.GetSourceChipColor(theme);
         }
 
         private void NavigateToDetails(string themeId)
@@ -463,34 +385,34 @@ namespace Lantean.QBTMud.Pages
             };
         }
 
-        private string SanitizeFileName(string name)
+        private async Task<bool> ApplyPreviewThemeAsync(string themeId)
         {
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var builder = new StringBuilder(name.Length);
-
-            foreach (var ch in name)
+            if (_isBusy)
             {
-                builder.Append(invalidChars.Contains(ch) ? '-' : ch);
+                return false;
             }
 
-            var sanitized = builder.ToString().Trim();
-            if (string.IsNullOrWhiteSpace(sanitized))
+            var theme = ThemeEntries.FirstOrDefault(entry => string.Equals(entry.Id, themeId, StringComparison.Ordinal));
+            if (theme is null || !CanApplyTheme(theme))
             {
-                return Translate("theme");
+                return false;
             }
 
-            return sanitized;
+            _isBusy = true;
+            try
+            {
+                await ThemeManagerService.ApplyTheme(themeId);
+                return true;
+            }
+            finally
+            {
+                _isBusy = false;
+            }
         }
 
         private string Translate(string value, params object[] args)
         {
             return LanguageLocalizer.Translate("AppThemes", value, args);
-        }
-
-        private static string BuildJsonDataUrl(string json)
-        {
-            var escaped = Uri.EscapeDataString(json);
-            return $"data:application/json;charset=utf-8,{escaped}";
         }
 
         private static string GetSwatchStyle(ThemeCatalogItem theme, ThemePaletteColor colorType, bool useDarkPalette)

@@ -22,6 +22,8 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
         private static readonly HttpResponseMessage _notFoundResponseMessage = new HttpResponseMessage(HttpStatusCode.NotFound);
 
         private readonly TestLocalStorageService _localStorage;
+        private readonly IStorageRoutingService _storageRoutingService;
+        private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IThemeFontCatalog _fontCatalog;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILanguageLocalizer _languageLocalizer;
@@ -32,6 +34,8 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
         public ThemeManagerServiceTests()
         {
             _localStorage = new TestLocalStorageService();
+            _storageRoutingService = Mock.Of<IStorageRoutingService>();
+            _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
             _fontCatalog = Mock.Of<IThemeFontCatalog>();
             _httpClientFactory = Mock.Of<IHttpClientFactory>();
             _languageLocalizer = Mock.Of<ILanguageLocalizer>();
@@ -40,8 +44,17 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             Mock.Get(_languageLocalizer)
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] _) => source);
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false));
             SetupThemeRepositoryIndexUrl(string.Empty);
-            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer, _appSettingsService, _logger);
+            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _storageRoutingService, _webApiCapabilityService, _fontCatalog, _languageLocalizer, _appSettingsService, _logger);
         }
 
         [Fact]

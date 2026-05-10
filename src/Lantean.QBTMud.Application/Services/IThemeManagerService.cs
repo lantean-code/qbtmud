@@ -43,6 +43,12 @@ namespace Lantean.QBTMud.Application.Services
         ThemeModePreference CurrentThemeModePreference { get; }
 
         /// <summary>
+        /// Resolves the effective storage type currently used for custom themes.
+        /// </summary>
+        /// <returns>The effective storage type for custom themes.</returns>
+        Task<StorageType> GetLocalThemeStorageTypeAsync();
+
+        /// <summary>
         /// Gets a value indicating whether the most recent theme-source reload had repository issues.
         /// </summary>
         bool LastReloadHadRepositoryIssues { get; }

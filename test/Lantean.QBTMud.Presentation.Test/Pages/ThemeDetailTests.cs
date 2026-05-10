@@ -47,6 +47,9 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             Mock.Get(_themeManagerService)
                 .Setup(service => service.ReloadServerThemes())
                 .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.GetLocalThemeStorageTypeAsync())
+                .ReturnsAsync(StorageType.LocalStorage);
 
             SetupFontCatalog(new[] { "Nunito Sans", "Open Sans" });
         }
@@ -92,7 +95,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowThemePreviewDialog(It.IsAny<MudTheme>(), true))
+                .Setup(workflow => workflow.ShowThemePreviewDialog(It.IsAny<ThemePreviewDialogRequest>()))
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme }, isDarkMode: true);
@@ -101,7 +104,12 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             await target.InvokeAsync(() => previewButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_dialogWorkflow)
-                .Verify(workflow => workflow.ShowThemePreviewDialog(It.IsAny<MudTheme>(), true), Times.Once);
+                .Verify(workflow => workflow.ShowThemePreviewDialog(
+                        It.Is<ThemePreviewDialogRequest>(request =>
+                            request.Mode == ThemePreviewDialogMode.Details
+                            && request.IsDarkMode
+                            && request.SelectedThemeId == "ThemeId")),
+                    Times.Once);
         }
 
         [Fact]
