@@ -24,6 +24,9 @@ namespace Lantean.QBTMud.Layout
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
 
         [Inject]
@@ -366,14 +369,14 @@ namespace Lantean.QBTMud.Layout
             var lightCss = ThemeCssBuilder.BuildCssVariables(Theme, false);
             var darkCss = ThemeCssBuilder.BuildCssVariables(Theme, true);
 
-            await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
-            await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
-            await SettingsStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
+            await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
+            await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
+            await LocalStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
 
             var fontFamily = ThemeManagerService.CurrentFontFamily;
             if (!string.IsNullOrWhiteSpace(fontFamily))
             {
-                await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
+                await LocalStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
             }
         }
 
