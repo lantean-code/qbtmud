@@ -31,10 +31,12 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             TestContext.Services.RemoveAll<IThemeManagerService>();
             TestContext.Services.RemoveAll<IThemeFontCatalog>();
             TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.RemoveAll<ILocalStorageService>();
 
             TestContext.Services.AddSingleton(_themeManagerService);
             TestContext.Services.AddSingleton(_themeFontCatalog);
             TestContext.Services.AddSingleton<ISettingsStorageService>(_localStorage);
+            TestContext.Services.AddSingleton<ILocalStorageService>(_localStorage);
 
             Mock.Get(_themeManagerService)
                 .Setup(service => service.EnsureInitialized())
@@ -165,6 +167,46 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
                 snapshot.Should().ContainKey("ThemeManager.BootstrapFontFamily");
                 snapshot["ThemeManager.BootstrapFontFamily"].Should().Be("FontFamily");
             });
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeChanged_WHEN_Rendered_THEN_PersistsBootstrapThemeOnlyToLocalStorage()
+        {
+            var localStorage = new TestLocalStorageService();
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            settingsStorage
+                .Setup(service => service.GetItemAsync<bool?>("MainLayout.DrawerOpen", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<bool?>(null));
+
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.RemoveAll<ILocalStorageService>();
+            TestContext.Services.AddSingleton<ISettingsStorageService>(settingsStorage.Object);
+            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage);
+
+            var target = RenderLayout();
+
+            await target.InvokeAsync(() => RaiseThemeChanged(new MudTheme(), "FontFamily", "ThemeId"));
+
+            target.WaitForAssertion(() =>
+            {
+                var snapshot = localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
+            });
+
+            settingsStorage.Verify(
+                service => service.SetItemAsStringAsync(
+                    It.Is<string>(key => key.StartsWith("ThemeManager.Bootstrap", StringComparison.Ordinal)),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+            settingsStorage.Verify(
+                service => service.SetItemAsync(
+                    It.Is<string>(key => key.StartsWith("ThemeManager.Bootstrap", StringComparison.Ordinal)),
+                    It.IsAny<bool>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]

@@ -106,6 +106,37 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_BootstrapThemeEntriesInLocalStorage_WHEN_SavingThemeGroupClientDataRouting_THEN_ShouldLeaveBootstrapEntriesInLocalStorage()
+        {
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            await _localStorageService.SetItemAsStringAsync("ThemeManager.BootstrapCss.Light", "LightCss", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("ThemeManager.BootstrapCss.Dark", "DarkCss", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("ThemeManager.BootstrapFontFamily", "FontFamily", TestContext.Current.CancellationToken);
+
+            var updated = await _target.SaveSettingsAsync(new StorageRoutingSettings
+            {
+                MasterStorageType = StorageType.LocalStorage,
+                GroupStorageTypes = new Dictionary<string, StorageType>(StringComparer.Ordinal)
+                {
+                    ["themes"] = StorageType.ClientData
+                }
+            }, TestContext.Current.CancellationToken);
+
+            updated.GroupStorageTypes["themes"].Should().Be(StorageType.ClientData);
+            (await _localStorageService.GetItemAsStringAsync("ThemeManager.BootstrapCss.Light", TestContext.Current.CancellationToken)).Should().Be("LightCss");
+            (await _localStorageService.GetItemAsStringAsync("ThemeManager.BootstrapCss.Dark", TestContext.Current.CancellationToken)).Should().Be("DarkCss");
+            (await _localStorageService.GetItemAsStringAsync("ThemeManager.BootstrapFontFamily", TestContext.Current.CancellationToken)).Should().Be("FontFamily");
+            Mock.Get(_clientDataStorageAdapter).Verify(
+                adapter => adapter.StorePrefixedEntriesAsync(
+                    It.Is<IReadOnlyDictionary<string, object?>>(payload => payload.Keys.Any(key => key.Contains("ThemeManager.Bootstrap", StringComparison.Ordinal))),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_DynamicTablePrefixKeysInLocalStorage_WHEN_SavingClientDataRouting_THEN_ShouldMigrateMatchingPrefixKeys()
         {
             Mock.Get(_webApiCapabilityService)

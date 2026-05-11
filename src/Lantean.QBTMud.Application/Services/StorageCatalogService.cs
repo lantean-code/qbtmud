@@ -85,11 +85,7 @@ namespace Lantean.QBTMud.Application.Services
                     [
                         new StorageCatalogItemDefinition("themes.selected-theme", "themes", "Selected theme", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.SelectedThemeId", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("themes.selected-theme-definition", "themes", "Selected theme snapshot", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.SelectedThemeDefinition", StorageItemSerializationMode.Json),
-                        new StorageCatalogItemDefinition("themes.local-themes", "themes", "Custom themes", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.LocalThemes", StorageItemSerializationMode.Json),
-                        new StorageCatalogItemDefinition("themes.bootstrap-css-light", "themes", "Bootstrap CSS (light)", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Light", StorageItemSerializationMode.RawString),
-                        new StorageCatalogItemDefinition("themes.bootstrap-css-dark", "themes", "Bootstrap CSS (dark)", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Dark", StorageItemSerializationMode.RawString),
-                        new StorageCatalogItemDefinition("themes.bootstrap-is-dark", "themes", "Bootstrap dark-mode flag", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapIsDark", StorageItemSerializationMode.Json),
-                        new StorageCatalogItemDefinition("themes.bootstrap-font-family", "themes", "Bootstrap font family", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapFontFamily", StorageItemSerializationMode.RawString)
+                        new StorageCatalogItemDefinition("themes.local-themes", "themes", "Custom themes", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.LocalThemes", StorageItemSerializationMode.Json)
                     ]),
                 new StorageCatalogGroupDefinition(
                     id: "language",
