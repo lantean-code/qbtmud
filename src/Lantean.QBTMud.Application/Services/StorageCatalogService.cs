@@ -11,6 +11,8 @@ namespace Lantean.QBTMud.Application.Services
         private readonly IReadOnlyList<StorageCatalogItemDefinition> _items;
         private readonly IReadOnlyDictionary<string, StorageCatalogItemDefinition> _exactMatchLookup;
         private readonly IReadOnlyList<StorageCatalogItemDefinition> _prefixItems;
+        private readonly IReadOnlyDictionary<string, StorageCatalogItemDefinition> _localOnlyExactMatchLookup;
+        private readonly IReadOnlyList<StorageCatalogItemDefinition> _localOnlyPrefixItems;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageCatalogService"/> class.
@@ -25,6 +27,14 @@ namespace Lantean.QBTMud.Application.Services
                 .Where(item => item.MatchMode == StorageCatalogItemMatchMode.ExactKey)
                 .ToDictionary(item => item.MatchPattern, item => item, StringComparer.Ordinal);
             _prefixItems = _items
+                .Where(item => item.MatchMode == StorageCatalogItemMatchMode.PrefixPattern)
+                .OrderByDescending(item => item.MatchPattern.Length)
+                .ToList();
+            var localOnlyItems = BuildLocalOnlyItems();
+            _localOnlyExactMatchLookup = localOnlyItems
+                .Where(item => item.MatchMode == StorageCatalogItemMatchMode.ExactKey)
+                .ToDictionary(item => item.MatchPattern, item => item, StringComparer.Ordinal);
+            _localOnlyPrefixItems = localOnlyItems
                 .Where(item => item.MatchMode == StorageCatalogItemMatchMode.PrefixPattern)
                 .OrderByDescending(item => item.MatchPattern.Length)
                 .ToList();
@@ -69,6 +79,23 @@ namespace Lantean.QBTMud.Application.Services
             }
 
             return _prefixItems.FirstOrDefault(prefixItem => normalizedKey.StartsWith(prefixItem.MatchPattern, StringComparison.Ordinal));
+        }
+
+        /// <inheritdoc />
+        public bool IsLocalStorageOnlyKey(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            var normalizedKey = key.Trim();
+            if (_localOnlyExactMatchLookup.ContainsKey(normalizedKey))
+            {
+                return true;
+            }
+
+            return _localOnlyPrefixItems.Any(prefixItem => normalizedKey.StartsWith(prefixItem.MatchPattern, StringComparison.Ordinal));
         }
 
         private static IReadOnlyList<StorageCatalogGroupDefinition> BuildGroups()
@@ -143,6 +170,18 @@ namespace Lantean.QBTMud.Application.Services
                     [
                         new StorageCatalogItemDefinition("tables.dynamic", "tables", "Dynamic table preferences", StorageCatalogItemMatchMode.PrefixPattern, "DynamicTable", StorageItemSerializationMode.Json)
                     ])
+            ];
+        }
+
+        private static IReadOnlyList<StorageCatalogItemDefinition> BuildLocalOnlyItems()
+        {
+            return
+            [
+                new StorageCatalogItemDefinition("internal.storage-routing-settings", "internal", "Storage routing settings", StorageCatalogItemMatchMode.ExactKey, StorageRoutingSettings.StorageKey, StorageItemSerializationMode.Json),
+                new StorageCatalogItemDefinition("internal.bootstrap-css-light", "internal", "Bootstrap theme light CSS", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Light", StorageItemSerializationMode.RawString),
+                new StorageCatalogItemDefinition("internal.bootstrap-css-dark", "internal", "Bootstrap theme dark CSS", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Dark", StorageItemSerializationMode.RawString),
+                new StorageCatalogItemDefinition("internal.bootstrap-is-dark", "internal", "Bootstrap theme dark mode", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapIsDark", StorageItemSerializationMode.Json),
+                new StorageCatalogItemDefinition("internal.bootstrap-font-family", "internal", "Bootstrap theme font family", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapFontFamily", StorageItemSerializationMode.RawString)
             ];
         }
     }

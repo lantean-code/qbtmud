@@ -59,11 +59,37 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public void GIVEN_LocalStorageOnlyKey_WHEN_MatchItemByKeyInvoked_THEN_ReturnsNull()
+        {
+            var result = _target.MatchItemByKey(StorageRoutingSettings.StorageKey);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_LocalStorageOnlyKey_WHEN_IsLocalStorageOnlyKeyInvoked_THEN_ReturnsTrue()
+        {
+            var storageRoutingResult = _target.IsLocalStorageOnlyKey(StorageRoutingSettings.StorageKey);
+            var bootstrapResult = _target.IsLocalStorageOnlyKey("ThemeManager.BootstrapCss.Light");
+
+            storageRoutingResult.Should().BeTrue();
+            bootstrapResult.Should().BeTrue();
+        }
+
+        [Fact]
         public void GIVEN_UnknownKey_WHEN_MatchItemByKeyInvoked_THEN_ReturnsNull()
         {
             var result = _target.MatchItemByKey("Unknown.Storage.Key");
 
             result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_UnknownKey_WHEN_IsLocalStorageOnlyKeyInvoked_THEN_ReturnsFalse()
+        {
+            var result = _target.IsLocalStorageOnlyKey("Unknown.Storage.Key");
+
+            result.Should().BeFalse();
         }
     }
 }

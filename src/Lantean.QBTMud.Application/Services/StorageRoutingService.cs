@@ -137,6 +137,11 @@ namespace Lantean.QBTMud.Application.Services
             var matchedItem = _storageCatalogService.MatchItemByKey(key.Trim());
             if (matchedItem is null)
             {
+                if (_storageCatalogService.IsLocalStorageOnlyKey(key))
+                {
+                    return StorageType.LocalStorage;
+                }
+
                 return settings.MasterStorageType;
             }
 

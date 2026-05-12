@@ -93,6 +93,21 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public void GIVEN_LocalStorageOnlyKey_WHEN_MasterStorageTypeIsClientData_THEN_ShouldResolveToLocalStorage()
+        {
+            var settings = new StorageRoutingSettings
+            {
+                MasterStorageType = StorageType.ClientData
+            };
+
+            var bootstrapStorageType = _target.ResolveEffectiveStorageType("ThemeManager.BootstrapCss.Light", settings, supportsClientData: true);
+            var routingSettingsStorageType = _target.ResolveEffectiveStorageType(StorageRoutingSettings.StorageKey, settings, supportsClientData: true);
+
+            bootstrapStorageType.Should().Be(StorageType.LocalStorage);
+            routingSettingsStorageType.Should().Be(StorageType.LocalStorage);
+        }
+
+        [Fact]
         public async Task GIVEN_ExactJsonKeyInLocalStorage_WHEN_SavingClientDataRouting_THEN_ShouldMigrateValueAndRemoveLocalEntry()
         {
             Mock.Get(_webApiCapabilityService)
