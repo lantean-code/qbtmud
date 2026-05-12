@@ -162,7 +162,15 @@ namespace Lantean.QBTMud.Application.Services
         {
             if (item.MatchMode == StorageCatalogItemMatchMode.ExactKey)
             {
-                return await MigrateStorageKeyAsync(item.MatchPattern, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken);
+                foreach (var storageKey in GetStorageKeysForMigration(item))
+                {
+                    if (!await MigrateStorageKeyAsync(storageKey, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             if (sourceStorageType == StorageType.LocalStorage)
@@ -445,6 +453,16 @@ namespace Lantean.QBTMud.Application.Services
             }
 
             return prefixedKey[StorageKeys.Prefix.Length..];
+        }
+
+        private static IReadOnlyList<string> GetStorageKeysForMigration(StorageCatalogItemDefinition item)
+        {
+            if (string.Equals(item.MatchPattern, AppSettings.StorageKey, StringComparison.Ordinal))
+            {
+                return [item.MatchPattern, AppSettings.LegacyStorageKey];
+            }
+
+            return [item.MatchPattern];
         }
     }
 }
