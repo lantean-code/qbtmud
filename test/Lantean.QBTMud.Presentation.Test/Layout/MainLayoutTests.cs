@@ -315,6 +315,52 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_SystemThemeModePreferenceAndStoredBootstrapModeMismatch_WHEN_Rendered_THEN_PersistsBootstrapThemeOnInitialize()
+        {
+            await _localStorage.SetItemAsync("ThemeManager.BootstrapIsDark", false, Xunit.TestContext.Current.CancellationToken);
+
+            _currentThemeModePreference = ThemeModePreference.System;
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+            var writesBeforeRender = _localStorage.WriteCount;
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
+
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
+                snapshot["ThemeManager.BootstrapIsDark"].Should().Be(true);
+                _localStorage.WriteCount.Should().BeGreaterThan(writesBeforeRender);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SystemThemeModePreferenceAndStoredBootstrapModeMatch_WHEN_Rendered_THEN_DoesNotPersistBootstrapThemeOnInitialize()
+        {
+            await _localStorage.SetItemAsync("ThemeManager.BootstrapIsDark", true, Xunit.TestContext.Current.CancellationToken);
+
+            _currentThemeModePreference = ThemeModePreference.System;
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+            var writesBeforeRender = _localStorage.WriteCount;
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
+                _localStorage.WriteCount.Should().Be(writesBeforeRender);
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Light");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Dark");
+            });
+        }
+
+        [Fact]
         public void GIVEN_LightThemeModePreference_WHEN_Rendered_THEN_DoesNotQuerySystemDarkModePreference()
         {
             _currentThemeModePreference = ThemeModePreference.Light;

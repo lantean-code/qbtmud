@@ -374,11 +374,22 @@ namespace Lantean.QBTMud.Layout
             {
                 _pendingBootstrapThemeUpdate = true;
             }
+            else if (!persistBootstrapTheme && await ShouldPersistBootstrapThemeForResolvedModeAsync(resolvedIsDarkMode))
+            {
+                _pendingBootstrapThemeUpdate = true;
+            }
 
             if (darkModeChanged)
             {
                 StateHasChanged();
             }
+        }
+
+        private async Task<bool> ShouldPersistBootstrapThemeForResolvedModeAsync(bool resolvedIsDarkMode)
+        {
+            var storedBootstrapThemeIsDark = await LocalStorage.GetItemAsync<bool?>(_bootstrapThemeIsDarkStorageKey);
+
+            return storedBootstrapThemeIsDark.HasValue && storedBootstrapThemeIsDark.Value != resolvedIsDarkMode;
         }
 
         private async Task PersistBootstrapThemeAsync()
