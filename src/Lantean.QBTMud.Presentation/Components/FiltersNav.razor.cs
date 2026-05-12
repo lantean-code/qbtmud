@@ -30,6 +30,7 @@ namespace Lantean.QBTMud.Components
         private bool _categoriesExpanded = true;
         private bool _tagsExpanded = true;
         private bool _trackersExpanded = true;
+        private bool _supportsTrackerErrorFilters = true;
         private readonly Dictionary<string, TrackerFilterItem> _trackerItems = new(StringComparer.Ordinal);
 
         protected string Status => TorrentQueryState.Status.ToString();
@@ -54,6 +55,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
 
         [CascadingParameter]
         public MudMainData? MainData { get; set; }
@@ -96,6 +100,9 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnInitializedAsync()
         {
+            var capabilityState = await WebApiCapabilityService.GetCapabilityStateAsync();
+            _supportsTrackerErrorFilters = capabilityState.SupportsTrackerErrorFilters;
+
             var status = await SettingsStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
             if (status is not null)
             {
@@ -117,7 +124,14 @@ namespace Lantean.QBTMud.Components
             var tracker = await SettingsStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
             if (tracker is not null)
             {
-                TorrentQueryState.SetTracker(tracker);
+                if (IsTrackerFilterSupported(tracker))
+                {
+                    TorrentQueryState.SetTracker(tracker);
+                }
+                else
+                {
+                    await SettingsStorage.RemoveItemAsync(_trackerSelectionStorageKey);
+                }
             }
         }
 
@@ -489,9 +503,13 @@ namespace Lantean.QBTMud.Components
 
             AppendSpecialTrackerItem(FilterHelper.TRACKER_ALL, items);
             AppendSpecialTrackerItem(FilterHelper.TRACKER_TRACKERLESS, items);
-            AppendSpecialTrackerItem(FilterHelper.TRACKER_ERROR, items);
-            AppendSpecialTrackerItem(FilterHelper.TRACKER_WARNING, items);
-            AppendSpecialTrackerItem(FilterHelper.TRACKER_ANNOUNCE_ERROR, items);
+
+            if (_supportsTrackerErrorFilters)
+            {
+                AppendSpecialTrackerItem(FilterHelper.TRACKER_ERROR, items);
+                AppendSpecialTrackerItem(FilterHelper.TRACKER_WARNING, items);
+                AppendSpecialTrackerItem(FilterHelper.TRACKER_ANNOUNCE_ERROR, items);
+            }
 
             if (MainData.Trackers.Count > 0)
             {
@@ -703,6 +721,18 @@ namespace Lantean.QBTMud.Components
                 _trackerType => "TrackerFiltersList",
                 _ => string.Empty
             };
+        }
+
+        private bool IsTrackerFilterSupported(string tracker)
+        {
+            return _supportsTrackerErrorFilters || !IsTrackerErrorFilter(tracker);
+        }
+
+        private static bool IsTrackerErrorFilter(string tracker)
+        {
+            return tracker == FilterHelper.TRACKER_ERROR
+                || tracker == FilterHelper.TRACKER_WARNING
+                || tracker == FilterHelper.TRACKER_ANNOUNCE_ERROR;
         }
 
         private static string GetHostName(string tracker)

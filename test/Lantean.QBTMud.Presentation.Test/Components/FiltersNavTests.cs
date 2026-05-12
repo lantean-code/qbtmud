@@ -28,7 +28,17 @@ namespace Lantean.QBTMud.Presentation.Test.Components
         private const string _tagStorageKey = "FiltersNav.Selection.Tag";
         private const string _trackerStorageKey = "FiltersNav.Selection.Tracker";
 
+        private readonly Mock<IWebApiCapabilityService> _webApiCapabilityServiceMock;
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
+        private WebApiCapabilityState _webApiCapabilityState = new("2.15.1", new Version(2, 15, 1), supportsClientData: true);
+
+        public FiltersNavTests()
+        {
+            _webApiCapabilityServiceMock = TestContext.AddSingletonMock<IWebApiCapabilityService>(MockBehavior.Strict);
+            _webApiCapabilityServiceMock
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => _webApiCapabilityState);
+        }
 
         [Fact]
         public async Task GIVEN_LocalStorageSelections_WHEN_Initialized_THEN_CallbacksInvokedAndLinksActive()
@@ -170,6 +180,26 @@ namespace Lantean.QBTMud.Presentation.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_UnsupportedTrackerErrorSelectionInStorage_WHEN_Initialized_THEN_SelectionClearedAndAllActive()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+
+            await TestContext.LocalStorage.SetItemAsStringAsync(_trackerStorageKey, FilterHelper.TRACKER_ERROR, Xunit.TestContext.Current.CancellationToken);
+
+            var target = RenderFiltersNav(
+                mainData,
+                webApiCapabilityState: new WebApiCapabilityState("2.11.4", new Version(2, 11, 4), supportsClientData: false));
+
+            queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
+            FindComponentByTestId<CustomNavLink>(target, "Tracker-All").Instance.Active.Should().BeTrue();
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-Error")).Should().BeFalse();
+        }
+
+        [Fact]
         public void GIVEN_AllStatusValues_WHEN_Rendered_THEN_DisplaysExpectedStatusLabels()
         {
             TestContext.UseApiClientMock();
@@ -266,6 +296,25 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             removeTracker.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_OlderWebApiVersion_WHEN_Rendered_THEN_TrackerErrorFiltersAreHidden()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            var target = RenderFiltersNav(
+                mainData,
+                webApiCapabilityState: new WebApiCapabilityState("2.11.4", new Version(2, 11, 4), supportsClientData: false));
+
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-All")).Should().BeTrue();
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-Trackerless")).Should().BeTrue();
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-tracker.example.com")).Should().BeTrue();
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-Error")).Should().BeFalse();
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-Warning")).Should().BeFalse();
+            target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-Announce error")).Should().BeFalse();
         }
 
         [Fact]
@@ -838,9 +887,11 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
         private IRenderedComponent<FiltersNav> RenderFiltersNav(
             MudMainData? mainData = null,
-            QBittorrentPreferences? preferences = null)
+            QBittorrentPreferences? preferences = null,
+            WebApiCapabilityState? webApiCapabilityState = null)
         {
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
+            _webApiCapabilityState = webApiCapabilityState ?? new WebApiCapabilityState("2.15.1", new Version(2, 15, 1), supportsClientData: true);
 
             var target = TestContext.Render<FiltersNav>(parameters =>
             {

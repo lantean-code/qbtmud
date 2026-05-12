@@ -17,7 +17,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_WebApiVersionAtThreshold_WHEN_GetCapabilityStateAsync_THEN_ShouldReportClientDataSupported()
+        public async Task GIVEN_WebApiVersionAtClientDataThreshold_WHEN_GetCapabilityStateAsync_THEN_ShouldReportClientDataSupported()
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
@@ -26,8 +26,24 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
             result.SupportsClientData.Should().BeTrue();
+            result.SupportsTrackerErrorFilters.Should().BeFalse();
             result.ParsedWebApiVersion.Should().Be(new Version(2, 13, 1));
             result.RawWebApiVersion.Should().Be("2.13.1");
+        }
+
+        [Fact]
+        public async Task GIVEN_WebApiVersionAtTrackerFilterThreshold_WHEN_GetCapabilityStateAsync_THEN_ShouldReportTrackerFiltersSupported()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAPIVersionAsync())
+                .ReturnsSuccessAsync("2.15.1");
+
+            var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
+
+            result.SupportsClientData.Should().BeTrue();
+            result.SupportsTrackerErrorFilters.Should().BeTrue();
+            result.ParsedWebApiVersion.Should().Be(new Version(2, 15, 1));
+            result.RawWebApiVersion.Should().Be("2.15.1");
         }
 
         [Fact]
@@ -40,6 +56,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
             result.SupportsClientData.Should().BeFalse();
+            result.SupportsTrackerErrorFilters.Should().BeFalse();
             result.ParsedWebApiVersion.Should().Be(new Version(2, 13, 0));
             result.RawWebApiVersion.Should().Be("2.13.0");
         }
@@ -54,6 +71,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
             result.SupportsClientData.Should().BeFalse();
+            result.SupportsTrackerErrorFilters.Should().BeFalse();
             result.ParsedWebApiVersion.Should().BeNull();
             result.RawWebApiVersion.Should().Be("not-a-version");
         }
@@ -68,6 +86,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
             result.SupportsClientData.Should().BeFalse();
+            result.SupportsTrackerErrorFilters.Should().BeFalse();
             result.ParsedWebApiVersion.Should().BeNull();
             result.RawWebApiVersion.Should().BeNull();
         }
