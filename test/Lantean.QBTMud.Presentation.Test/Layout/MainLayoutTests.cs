@@ -226,11 +226,19 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             var target = RenderLayout(CreateProbeBody());
 
-            target.FindComponent<DrawerProbe>().Should().NotBeNull();
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<DrawerProbe>().Should().NotBeNull();
+                TestContext.JSInterop.Invocations.Should().Contain(inv => inv.Identifier == "qbt.removeBootstrapTheme");
+                _localStorage.WriteCount.Should().Be(0);
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Light");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Dark");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapIsDark");
+            });
         }
 
         [Fact]
-        public void GIVEN_CurrentThemeAvailable_WHEN_Rendered_THEN_AppliesCurrentThemeOnInitialize()
+        public void GIVEN_CurrentThemeAvailable_WHEN_Rendered_THEN_DoesNotPersistBootstrapThemeOnInitialize()
         {
             var currentTheme = new ThemeCatalogItem(
                 id: "ThemeId",
@@ -253,10 +261,12 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             target.WaitForAssertion(() =>
             {
-                var snapshot = _localStorage.Snapshot();
-                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
-                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
-                snapshot.Should().ContainKey("ThemeManager.BootstrapFontFamily");
+                TestContext.JSInterop.Invocations.Should().Contain(inv => inv.Identifier == "qbt.removeBootstrapTheme");
+                _localStorage.WriteCount.Should().Be(0);
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Light");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Dark");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapIsDark");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapFontFamily");
             });
         }
 
@@ -301,6 +311,52 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             {
                 target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
                 systemDarkModeInvocation.Invocations.Should().HaveCount(1);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SystemThemeModePreferenceAndStoredBootstrapModeMismatch_WHEN_Rendered_THEN_PersistsBootstrapThemeOnInitialize()
+        {
+            await _localStorage.SetItemAsync("ThemeManager.BootstrapIsDark", false, Xunit.TestContext.Current.CancellationToken);
+
+            _currentThemeModePreference = ThemeModePreference.System;
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+            var writesBeforeRender = _localStorage.WriteCount;
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
+
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
+                snapshot["ThemeManager.BootstrapIsDark"].Should().Be(true);
+                _localStorage.WriteCount.Should().BeGreaterThan(writesBeforeRender);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SystemThemeModePreferenceAndStoredBootstrapModeMatch_WHEN_Rendered_THEN_DoesNotPersistBootstrapThemeOnInitialize()
+        {
+            await _localStorage.SetItemAsync("ThemeManager.BootstrapIsDark", true, Xunit.TestContext.Current.CancellationToken);
+
+            _currentThemeModePreference = ThemeModePreference.System;
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+            var writesBeforeRender = _localStorage.WriteCount;
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
+                _localStorage.WriteCount.Should().Be(writesBeforeRender);
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Light");
+                _localStorage.Snapshot().Should().NotContainKey("ThemeManager.BootstrapCss.Dark");
             });
         }
 
@@ -436,7 +492,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             var baselineMode = baselineSnapshot.TryGetValue("ThemeManager.BootstrapIsDark", out var value)
                 ? value as bool?
                 : null;
-            baselineMode.Should().BeTrue();
+            baselineMode.Should().BeNull();
 
             await target.InvokeAsync(() => themeProvider.Instance.SystemDarkModeChangedAsync(false));
 
@@ -444,7 +500,8 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             var updatedMode = updatedSnapshot.TryGetValue("ThemeManager.BootstrapIsDark", out var updatedValue)
                 ? updatedValue as bool?
                 : null;
-            updatedMode.Should().BeTrue();
+            updatedMode.Should().BeNull();
+            _localStorage.WriteCount.Should().Be(0);
         }
 
         [Fact]
@@ -460,7 +517,16 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             await target.InvokeAsync(() => RaiseThemeModePreferenceChanged(ThemeModePreference.Light));
 
-            target.WaitForAssertion(() => themeProvider.Instance.GetState(x => x.IsDarkMode).Should().BeFalse());
+            target.WaitForAssertion(() =>
+            {
+                themeProvider.Instance.GetState(x => x.IsDarkMode).Should().BeFalse();
+
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
+                snapshot["ThemeManager.BootstrapIsDark"].Should().Be(false);
+            });
         }
 
         [Fact]

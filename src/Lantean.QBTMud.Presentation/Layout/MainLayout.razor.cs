@@ -65,6 +65,7 @@ namespace Lantean.QBTMud.Layout
         private int _lastErrorCount;
         private bool _pendingThemeUpdate;
         private bool _pendingThemeModeUpdate = true;
+        private bool _persistBootstrapThemeForPendingThemeModeUpdate;
         private bool _pendingBootstrapThemeUpdate;
         private bool _pendingBootstrapThemeRemoval;
         private bool _bootstrapThemeRemoved;
@@ -185,7 +186,9 @@ namespace Lantean.QBTMud.Layout
             if (_pendingThemeModeUpdate && _themeInitialized)
             {
                 _pendingThemeModeUpdate = false;
-                await ApplyThemeModePreferenceAsync();
+                var persistBootstrapTheme = _persistBootstrapThemeForPendingThemeModeUpdate;
+                _persistBootstrapThemeForPendingThemeModeUpdate = false;
+                await ApplyThemeModePreferenceAsync(persistBootstrapTheme);
             }
 
             if (_pendingThemeUpdate && _themeInitialized)
@@ -291,13 +294,7 @@ namespace Lantean.QBTMud.Layout
 
         private void OnThemeChanged(object? sender, ThemeChangedEventArgs args)
         {
-            Theme = args.Theme;
-            _pendingFontFamily = args.FontFamily;
-            _pendingThemeUpdate = true;
-            _pendingBootstrapThemeUpdate = true;
-            _pendingBootstrapThemeRemoval = true;
-            _hasAppliedTheme = true;
-            StateHasChanged();
+            ApplyTheme(args.Theme, args.FontFamily, persistBootstrapTheme: _themeInitialized, removeBootstrapTheme: true);
         }
 
         private void OnThemeModePreferenceChanged(object? sender, ThemeModePreferenceChangedEventArgs args)
@@ -310,6 +307,7 @@ namespace Lantean.QBTMud.Layout
 
             _themeModePreference = themeModePreference;
             _pendingThemeModeUpdate = true;
+            _persistBootstrapThemeForPendingThemeModeUpdate = true;
             StateHasChanged();
         }
 
@@ -326,7 +324,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            OnThemeChanged(this, new ThemeChangedEventArgs(current.Theme.Theme, ThemeManagerService.CurrentFontFamily, current.Id));
+            ApplyTheme(current.Theme.Theme, ThemeManagerService.CurrentFontFamily, persistBootstrapTheme: false, removeBootstrapTheme: true);
         }
 
         private async Task LoadPendingFontAsync()
@@ -345,7 +343,23 @@ namespace Lantean.QBTMud.Layout
             await JSRuntime.LoadGoogleFont(url, fontId);
         }
 
-        private async Task ApplyThemeModePreferenceAsync()
+        private void ApplyTheme(MudTheme theme, string fontFamily, bool persistBootstrapTheme, bool removeBootstrapTheme)
+        {
+            Theme = theme;
+            _pendingFontFamily = fontFamily;
+            _pendingThemeUpdate = true;
+            _pendingBootstrapThemeUpdate = persistBootstrapTheme;
+
+            if (removeBootstrapTheme)
+            {
+                _pendingBootstrapThemeRemoval = true;
+            }
+
+            _hasAppliedTheme = true;
+            StateHasChanged();
+        }
+
+        private async Task ApplyThemeModePreferenceAsync(bool persistBootstrapTheme)
         {
             var resolvedIsDarkMode = _themeModePreference switch
             {
@@ -356,12 +370,26 @@ namespace Lantean.QBTMud.Layout
             var darkModeChanged = IsDarkMode != resolvedIsDarkMode;
 
             IsDarkMode = resolvedIsDarkMode;
-            _pendingBootstrapThemeUpdate = true;
+            if (persistBootstrapTheme && darkModeChanged)
+            {
+                _pendingBootstrapThemeUpdate = true;
+            }
+            else if (!persistBootstrapTheme && await ShouldPersistBootstrapThemeForResolvedModeAsync(resolvedIsDarkMode))
+            {
+                _pendingBootstrapThemeUpdate = true;
+            }
 
             if (darkModeChanged)
             {
                 StateHasChanged();
             }
+        }
+
+        private async Task<bool> ShouldPersistBootstrapThemeForResolvedModeAsync(bool resolvedIsDarkMode)
+        {
+            var storedBootstrapThemeIsDark = await LocalStorage.GetItemAsync<bool?>(_bootstrapThemeIsDarkStorageKey);
+
+            return storedBootstrapThemeIsDark.HasValue && storedBootstrapThemeIsDark.Value != resolvedIsDarkMode;
         }
 
         private async Task PersistBootstrapThemeAsync()
