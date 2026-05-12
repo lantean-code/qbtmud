@@ -138,6 +138,36 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_LegacyAppSettingsKeyInLocalStorage_WHEN_SavingClientDataRouting_THEN_ShouldMigrateValueAndRemoveLegacyLocalEntry()
+        {
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            await _localStorageService.SetItemAsStringAsync(AppSettings.LegacyStorageKey, "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
+
+            IReadOnlyDictionary<string, object?>? storedPayload = null;
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyDictionary<string, object?>, CancellationToken>((payload, _) => storedPayload = payload)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+
+            var updated = await _target.SaveSettingsAsync(new StorageRoutingSettings
+            {
+                MasterStorageType = StorageType.ClientData
+            }, TestContext.Current.CancellationToken);
+
+            updated.MasterStorageType.Should().Be(StorageType.ClientData);
+            storedPayload.Should().NotBeNull();
+            storedPayload!.Should().ContainKey("QbtMud.AppSettings.State.v1");
+            storedPayload["QbtMud.AppSettings.State.v1"].Should().BeOfType<JsonElement>();
+            ((JsonElement)storedPayload["QbtMud.AppSettings.State.v1"]!).GetProperty("theme").GetString().Should().Be("dark");
+
+            var localValue = await _localStorageService.GetItemAsStringAsync(AppSettings.LegacyStorageKey, TestContext.Current.CancellationToken);
+            localValue.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_BootstrapThemeEntriesInLocalStorage_WHEN_SavingThemeGroupClientDataRouting_THEN_ShouldLeaveBootstrapEntriesInLocalStorage()
         {
             Mock.Get(_webApiCapabilityService)

@@ -5,6 +5,8 @@ namespace Lantean.QBTMud.Core.Models
     /// </summary>
     public sealed class WebApiCapabilityState
     {
+        private static readonly Version _trackerErrorFiltersMinimumVersion = new(2, 15, 1);
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WebApiCapabilityState"/> class.
         /// </summary>
@@ -34,5 +36,17 @@ namespace Lantean.QBTMud.Core.Models
         /// Gets a value indicating whether ClientData endpoints are supported.
         /// </summary>
         public bool SupportsClientData { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether tracker error filter buckets are supported.
+        /// </summary>
+        public bool SupportsTrackerErrorFilters
+        {
+            get
+            {
+                return ParsedWebApiVersion is not null
+                    && ParsedWebApiVersion >= _trackerErrorFiltersMinimumVersion;
+            }
+        }
     }
 }
