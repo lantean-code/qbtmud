@@ -10,10 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="ByteSize" Version="2.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.8" />
     <PackageReference Include="MudBlazor" Version="9.4.0" />
-    <PackageReference Include="QBittorrent.ApiClient" Version="1.1.0" />
+    <PackageReference Include="QBittorrent.ApiClient" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>

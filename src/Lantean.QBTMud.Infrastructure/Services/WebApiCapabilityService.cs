@@ -9,8 +9,6 @@ namespace Lantean.QBTMud.Infrastructure.Services
     /// </summary>
     public sealed class WebApiCapabilityService : IWebApiCapabilityService
     {
-        private static readonly Version _clientDataMinimumVersion = new(2, 13, 1);
-
         private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
         private readonly IApiClient _apiClient;
         private WebApiCapabilityState? _cachedState;
@@ -35,27 +33,27 @@ namespace Lantean.QBTMud.Infrastructure.Services
                     return _cachedState;
                 }
 
-                var versionResult = await _apiClient.GetAPIVersionAsync();
+                var versionResult = await _apiClient.GetAPIVersionAsync(cancellationToken);
                 if (versionResult.IsFailure)
                 {
-                    return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+                    return new WebApiCapabilityState(
+                        webApiVersion: null,
+                        supportsClientData: false,
+                        supportsTrackerErrorFilters: false);
                 }
 
-                var rawVersion = versionResult.Value;
-                rawVersion = string.IsNullOrWhiteSpace(rawVersion)
-                    ? null
-                    : rawVersion.Trim();
-
-                if (rawVersion is null || !Version.TryParse(rawVersion, out var parsedVersion))
+                if (!WebApiCompatibilityProfile.TryCreate(versionResult.Value, out var compatibilityProfile))
                 {
-                    _cachedState = new WebApiCapabilityState(rawVersion, parsedWebApiVersion: null, supportsClientData: false);
-                    return _cachedState;
+                    return new WebApiCapabilityState(
+                        webApiVersion: null,
+                        supportsClientData: false,
+                        supportsTrackerErrorFilters: false);
                 }
 
                 _cachedState = new WebApiCapabilityState(
-                    rawVersion,
-                    parsedVersion,
-                    supportsClientData: parsedVersion >= _clientDataMinimumVersion);
+                    compatibilityProfile.WebApiVersion,
+                    supportsClientData: compatibilityProfile.SupportsClientData,
+                    supportsTrackerErrorFilters: compatibilityProfile.SupportsTrackerErrorFilters);
                 return _cachedState;
             }
             finally

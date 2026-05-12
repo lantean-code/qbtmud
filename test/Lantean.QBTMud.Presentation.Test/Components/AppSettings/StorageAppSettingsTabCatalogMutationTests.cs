@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
             var webApiCapabilityServiceMock = TestContext.AddSingletonMock<IWebApiCapabilityService>();
             webApiCapabilityServiceMock
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.11.0", new Version(2, 11, 0), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 11, 0), true));
 
             _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
         }
