@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             _target = new WelcomeWizardPlanBuilder(_welcomeWizardStateService, _webApiCapabilityService);
         }
 
@@ -103,7 +103,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         {
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.12.0", new Version(2, 12, 0), false));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 12, 0), false));
             Mock.Get(_welcomeWizardStateService)
                 .Setup(service => service.GetStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WelcomeWizardState());

@@ -80,7 +80,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             IReadOnlyDictionary<string, object?>? payload = null;
             Mock.Get(_clientDataStorageAdapter)
@@ -106,7 +106,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.12.0", new Version(2, 12, 0), false));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 12, 0), false));
 
             await _target.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en", TestContext.Current.CancellationToken);
 
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
@@ -152,7 +152,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
@@ -181,7 +181,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
@@ -204,7 +204,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));
@@ -228,7 +228,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
@@ -253,7 +253,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
@@ -280,7 +280,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.Failure);
@@ -301,7 +301,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));
@@ -329,7 +329,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
@@ -352,7 +352,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             IReadOnlyDictionary<string, object?>? payload = null;
             Mock.Get(_clientDataStorageAdapter)
@@ -378,7 +378,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
@@ -405,7 +405,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
@@ -429,7 +429,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));
@@ -453,7 +453,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataStorageResult.Success);
@@ -497,7 +497,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
@@ -523,7 +523,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             IReadOnlyDictionary<string, object?>? payload = null;
             Mock.Get(_clientDataStorageAdapter)
@@ -550,7 +550,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));
@@ -596,7 +596,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 });
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));

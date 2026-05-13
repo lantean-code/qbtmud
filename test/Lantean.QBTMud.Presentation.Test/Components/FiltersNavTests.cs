@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
         private readonly Mock<IWebApiCapabilityService> _webApiCapabilityServiceMock;
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
-        private WebApiCapabilityState _webApiCapabilityState = new("2.15.1", new Version(2, 15, 1), supportsClientData: true);
+        private WebApiCapabilityState _webApiCapabilityState = new(new Version(2, 15, 1), true, true);
 
         public FiltersNavTests()
         {
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             var target = RenderFiltersNav(
                 mainData,
-                webApiCapabilityState: new WebApiCapabilityState("2.11.4", new Version(2, 11, 4), supportsClientData: false));
+                webApiCapabilityState: new WebApiCapabilityState(new Version(2, 11, 4), false));
 
             queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
@@ -307,7 +307,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             var target = RenderFiltersNav(
                 mainData,
-                webApiCapabilityState: new WebApiCapabilityState("2.11.4", new Version(2, 11, 4), supportsClientData: false));
+                webApiCapabilityState: new WebApiCapabilityState(new Version(2, 11, 4), false));
 
             target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-All")).Should().BeTrue();
             target.FindComponents<CustomNavLink>().Any(component => HasTestId(component, "Tracker-Trackerless")).Should().BeTrue();
@@ -891,7 +891,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             WebApiCapabilityState? webApiCapabilityState = null)
         {
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
-            _webApiCapabilityState = webApiCapabilityState ?? new WebApiCapabilityState("2.15.1", new Version(2, 15, 1), supportsClientData: true);
+            _webApiCapabilityState = webApiCapabilityState ?? new WebApiCapabilityState(new Version(2, 15, 1), true, true);
 
             var target = TestContext.Render<FiltersNav>(parameters =>
             {

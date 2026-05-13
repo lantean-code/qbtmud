@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 
         protected bool IsLoadingInitialStorageEntries => IsActive && !_hasLoadedInitialStorageEntries && IsStorageBusy;
 
-        protected WebApiCapabilityState WebApiCapabilityState { get; private set; } = new(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+        protected WebApiCapabilityState WebApiCapabilityState { get; private set; } = new(webApiVersion: null, supportsClientData: false);
 
         private int _loadedReloadToken = -1;
         private bool _hasLoadedCapabilityState;
@@ -263,12 +263,12 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 
         protected string GetWebApiVersionText()
         {
-            if (string.IsNullOrWhiteSpace(WebApiCapabilityState.RawWebApiVersion))
+            if (WebApiCapabilityState.WebApiVersion is null)
             {
                 return TranslateSettings("Unavailable");
             }
 
-            return WebApiCapabilityState.RawWebApiVersion;
+            return WebApiCapabilityState.WebApiVersion.ToString();
         }
 
         protected string GetClientDataSupportText()
@@ -435,15 +435,15 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             }
             catch (HttpRequestException)
             {
-                return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+                return new WebApiCapabilityState(webApiVersion: null, supportsClientData: false);
             }
             catch (JsonException)
             {
-                return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+                return new WebApiCapabilityState(webApiVersion: null, supportsClientData: false);
             }
             catch (InvalidOperationException)
             {
-                return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+                return new WebApiCapabilityState(webApiVersion: null, supportsClientData: false);
             }
         }
 

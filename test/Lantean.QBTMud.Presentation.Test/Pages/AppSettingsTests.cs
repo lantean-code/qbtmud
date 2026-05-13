@@ -2009,7 +2009,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2061,7 +2061,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2193,7 +2193,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2237,7 +2237,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2285,7 +2285,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2326,7 +2326,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2370,7 +2370,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();
@@ -2409,7 +2409,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             webApiCapabilityService
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
 
             TestContext.Services.RemoveAll<IStorageRoutingService>();
             TestContext.Services.RemoveAll<IWebApiCapabilityService>();

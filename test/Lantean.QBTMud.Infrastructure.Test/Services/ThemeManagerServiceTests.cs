@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 .Returns(StorageType.LocalStorage);
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false));
+                .ReturnsAsync(new WebApiCapabilityState(webApiVersion: null, supportsClientData: false));
             SetupThemeRepositoryIndexUrl(string.Empty);
             _target = new ThemeManagerService(_httpClientFactory, _localStorage, _storageRoutingService, _webApiCapabilityService, _fontCatalog, _languageLocalizer, _appSettingsService, _logger);
         }
