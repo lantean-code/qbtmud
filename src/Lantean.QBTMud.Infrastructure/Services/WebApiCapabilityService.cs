@@ -44,10 +44,11 @@ namespace Lantean.QBTMud.Infrastructure.Services
 
                 if (!WebApiCompatibilityProfile.TryCreate(versionResult.Value, out var compatibilityProfile))
                 {
-                    return new WebApiCapabilityState(
+                    _cachedState = new WebApiCapabilityState(
                         webApiVersion: null,
                         supportsClientData: false,
                         supportsTrackerErrorFilters: false);
+                    return _cachedState;
                 }
 
                 _cachedState = new WebApiCapabilityState(
