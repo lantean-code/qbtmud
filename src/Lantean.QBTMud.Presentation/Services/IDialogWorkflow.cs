@@ -235,7 +235,21 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Shows a theme preview dialog.
         /// </summary>
-        /// <param name="request">The preview request.</param>
-        Task ShowThemePreviewDialog(ThemePreviewDialogRequest request);
+        /// <param name="items">The themes available for preview.</param>
+        /// <param name="selectedThemeId">The initially selected theme identifier.</param>
+        /// <param name="mode">The preview mode.</param>
+        /// <param name="isDarkMode">Whether the preview starts in dark mode.</param>
+        /// <param name="currentThemeId">The currently applied persisted theme identifier.</param>
+        /// <param name="currentSelectionThemeId">The currently selected pending theme identifier.</param>
+        /// <param name="canSaveAndApply">A value indicating whether the details-mode action is enabled.</param>
+        /// <returns>The selected theme identifier when confirmed; otherwise, <c>null</c>.</returns>
+        Task<string?> ShowThemePreviewDialog(
+            IReadOnlyList<ThemePreviewDialogItem> items,
+            string selectedThemeId,
+            ThemePreviewDialogMode mode,
+            bool isDarkMode,
+            string? currentThemeId = null,
+            string? currentSelectionThemeId = null,
+            bool canSaveAndApply = false);
     }
 }

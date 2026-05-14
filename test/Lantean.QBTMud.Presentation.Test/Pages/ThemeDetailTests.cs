@@ -95,8 +95,15 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowThemePreviewDialog(It.IsAny<ThemePreviewDialogRequest>()))
-                .Returns(Task.CompletedTask);
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync((string?)null);
 
             var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme }, isDarkMode: true);
 
@@ -105,11 +112,52 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             Mock.Get(_dialogWorkflow)
                 .Verify(workflow => workflow.ShowThemePreviewDialog(
-                        It.Is<ThemePreviewDialogRequest>(request =>
-                            request.Mode == ThemePreviewDialogMode.Details
-                            && request.IsDarkMode
-                            && request.SelectedThemeId == "ThemeId")),
+                        It.Is<IReadOnlyList<ThemePreviewDialogItem>>(items =>
+                            items.Count == 1
+                            && items[0].ThemeId == "ThemeId"),
+                        "ThemeId",
+                        ThemePreviewDialogMode.Details,
+                        true,
+                        It.IsAny<string?>(),
+                        It.IsAny<string?>(),
+                        true),
                     Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PreviewConfirmed_WHEN_Invoked_THEN_SavesAndAppliesTheme()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync("ThemeId");
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.Themes)
+                .Returns(themes);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme("ThemeId"))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage("ThemeId", themes);
+
+            var previewButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailPreview");
+            await target.InvokeAsync(() => previewButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("ThemeId"), Times.Once);
         }
 
         [Fact]

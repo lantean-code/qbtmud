@@ -233,7 +233,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var previewTheme = _editorTheme?.Theme ?? _theme.Theme.Theme;
-            var request = new ThemePreviewDialogRequest(
+            var selectedThemeId = await DialogWorkflow.ShowThemePreviewDialog(
                 [
                     new ThemePreviewDialogItem(
                         _theme.Id,
@@ -243,14 +243,15 @@ namespace Lantean.QBTMud.Pages
                 ],
                 _theme.Id,
                 ThemePreviewDialogMode.Details,
-                IsDarkMode)
+                IsDarkMode,
+                currentThemeId: ThemeManagerService.CurrentThemeId,
+                canSaveAndApply: CanEditTheme && !_isBusy && !HasNameError);
+            if (string.IsNullOrWhiteSpace(selectedThemeId))
             {
-                CurrentThemeId = ThemeManagerService.CurrentThemeId,
-                CanSaveAndApply = CanEditTheme && !_isBusy && !HasNameError,
-                SaveAndApplyThemeAsync = CanEditTheme ? SaveAndApplyFromPreviewAsync : null
-            };
+                return;
+            }
 
-            await DialogWorkflow.ShowThemePreviewDialog(request);
+            await SaveAndApplyFromPreviewAsync();
         }
 
         protected Task NameChanged(string value)

@@ -31,9 +31,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_Request_WHEN_Rendered_THEN_UsesPreviewScope()
+        public async Task GIVEN_Parameters_WHEN_Rendered_THEN_UsesPreviewScope()
         {
-            var dialog = await _target.RenderDialogAsync(CreateCatalogueRequest());
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.Catalogue, false, currentThemeId: "Other");
 
             var provider = dialog.Component.FindComponent<MudThemeProvider>();
 
@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_DarkModeEnabled_WHEN_Toggled_THEN_IconUpdates()
         {
-            var dialog = await _target.RenderDialogAsync(CreateCatalogueRequest(isDarkMode: true));
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.Catalogue, true, currentThemeId: "Other");
 
             var toggle = FindComponentByTestId<MudIconButton>(dialog.Component, "ThemePreviewToggleMode");
             toggle.Instance.Icon.Should().Be(Icons.Material.Filled.LightMode);
@@ -56,9 +56,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_CatalogueRequest_WHEN_PreviousAndNextUsed_THEN_NavigatesWithinBounds()
+        public async Task GIVEN_CatalogueParameters_WHEN_PreviousAndNextUsed_THEN_NavigatesWithinBounds()
         {
-            var dialog = await _target.RenderDialogAsync(CreateCatalogueRequest());
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.Catalogue, false, currentThemeId: "Other");
 
             var name = FindComponentByTestId<MudText>(dialog.Component, "ThemePreviewName");
             GetChildContentText(name.Instance.ChildContent).Should().Be("First");
@@ -77,31 +77,23 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_CatalogueRequest_WHEN_ApplyClicked_THEN_InvokesCallbackAndCloses()
+        public async Task GIVEN_CatalogueParameters_WHEN_ApplyClicked_THEN_ReturnsSelectedThemeIdAndCloses()
         {
-            var appliedThemeId = string.Empty;
-            var request = CreateCatalogueRequest();
-            request.ApplyThemeAsync = themeId =>
-            {
-                appliedThemeId = themeId;
-                return Task.FromResult(true);
-            };
-
-            var dialog = await _target.RenderDialogAsync(request);
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.Catalogue, false, currentThemeId: "Other");
             var apply = FindComponentByTestId<MudButton>(dialog.Component, "ThemePreviewApply");
 
             await dialog.Component.InvokeAsync(() => apply.Instance.OnClick.InvokeAsync());
 
-            appliedThemeId.Should().Be("First");
             var result = await dialog.Reference.Result;
             result.Should().NotBeNull();
             result!.Canceled.Should().BeFalse();
+            result.Data.Should().Be("First");
         }
 
         [Fact]
-        public async Task GIVEN_DetailsRequest_WHEN_Rendered_THEN_HidesNavigationAndShowsSaveApply()
+        public async Task GIVEN_DetailsParameters_WHEN_Rendered_THEN_HidesNavigationAndShowsSaveApply()
         {
-            var dialog = await _target.RenderDialogAsync(CreateDetailsRequest());
+            var dialog = await _target.RenderDialogAsync(CreateDetailsItems(), "ThemeId", ThemePreviewDialogMode.Details, false, canSaveAndApply: true);
 
             dialog.Component.FindComponents<MudIconButton>()
                 .Any(component => HasTestId(component, "ThemePreviewPrevious"))
@@ -111,35 +103,98 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             FindComponentByTestId<MudButton>(dialog.Component, "ThemePreviewSaveApply").Instance.Disabled.Should().BeFalse();
         }
 
-        private static ThemePreviewDialogRequest CreateCatalogueRequest(bool isDarkMode = false)
+        [Fact]
+        public async Task GIVEN_WizardSelectionParameters_WHEN_Rendered_THEN_ShowsUseThemeInsteadOfApply()
         {
-            var request = new ThemePreviewDialogRequest(
-                [
-                    new ThemePreviewDialogItem("First", "First", "Bundled", new MudTheme()),
-                    new ThemePreviewDialogItem("Second", "Second", "Repository", new MudTheme())
-                ],
-                "First",
-                ThemePreviewDialogMode.Catalogue,
-                isDarkMode)
-            {
-                CurrentThemeId = "Other"
-            };
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.WizardSelection, false, currentSelectionThemeId: "First");
 
-            request.ApplyThemeAsync = _ => Task.FromResult(true);
-            return request;
+            dialog.Component.FindComponents<MudButton>()
+                .Any(component => HasTestId(component, "ThemePreviewApply"))
+                .Should()
+                .BeFalse();
+
+            FindComponentByTestId<MudButton>(dialog.Component, "ThemePreviewUseTheme").Instance.Disabled.Should().BeFalse();
         }
 
-        private static ThemePreviewDialogRequest CreateDetailsRequest()
+        [Fact]
+        public async Task GIVEN_WizardSelectionParameters_WHEN_UseThemeClicked_THEN_ReturnsSelectedThemeIdAndCloses()
         {
-            return new ThemePreviewDialogRequest(
-                [new ThemePreviewDialogItem("ThemeId", "Name", "Local Storage", new MudTheme())],
-                "ThemeId",
-                ThemePreviewDialogMode.Details,
-                false)
-            {
-                CanSaveAndApply = true,
-                SaveAndApplyThemeAsync = () => Task.FromResult(true)
-            };
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.WizardSelection, false, currentSelectionThemeId: "First");
+
+            var next = FindComponentByTestId<MudIconButton>(dialog.Component, "ThemePreviewNext");
+            await dialog.Component.InvokeAsync(() => next.Instance.OnClick.InvokeAsync());
+
+            var useTheme = FindComponentByTestId<MudButton>(dialog.Component, "ThemePreviewUseTheme");
+            useTheme.Instance.Disabled.Should().BeFalse();
+            await dialog.Component.InvokeAsync(() => useTheme.Instance.OnClick.InvokeAsync());
+
+            var result = await dialog.Reference.Result;
+            result.Should().NotBeNull();
+            result!.Canceled.Should().BeFalse();
+            result.Data.Should().Be("Second");
+        }
+
+        [Fact]
+        public async Task GIVEN_WizardSelectionParameters_WHEN_CurrentThemeUsed_THEN_ReturnsCurrentSelectedThemeIdAndCloses()
+        {
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.WizardSelection, false, currentSelectionThemeId: "First");
+
+            var useTheme = FindComponentByTestId<MudButton>(dialog.Component, "ThemePreviewUseTheme");
+            useTheme.Instance.Disabled.Should().BeFalse();
+            await dialog.Component.InvokeAsync(() => useTheme.Instance.OnClick.InvokeAsync());
+
+            var result = await dialog.Reference.Result;
+            result.Should().NotBeNull();
+            result!.Canceled.Should().BeFalse();
+            result.Data.Should().Be("First");
+        }
+
+        [Fact]
+        public async Task GIVEN_DetailsParameters_WHEN_SaveApplyClicked_THEN_ReturnsSelectedThemeIdAndCloses()
+        {
+            var dialog = await _target.RenderDialogAsync(CreateDetailsItems(), "ThemeId", ThemePreviewDialogMode.Details, false, canSaveAndApply: true);
+            var saveAndApply = FindComponentByTestId<MudButton>(dialog.Component, "ThemePreviewSaveApply");
+
+            await dialog.Component.InvokeAsync(() => saveAndApply.Instance.OnClick.InvokeAsync());
+
+            var result = await dialog.Reference.Result;
+            result.Should().NotBeNull();
+            result!.Canceled.Should().BeFalse();
+            result.Data.Should().Be("ThemeId");
+        }
+
+        [Fact]
+        public async Task GIVEN_WizardSelectionParameters_WHEN_ToggledAndNavigated_THEN_UpdatesPreviewState()
+        {
+            var dialog = await _target.RenderDialogAsync(CreateCatalogueItems(), "First", ThemePreviewDialogMode.WizardSelection, true, currentSelectionThemeId: "First");
+
+            var toggle = FindComponentByTestId<MudIconButton>(dialog.Component, "ThemePreviewToggleMode");
+            toggle.Instance.Icon.Should().Be(Icons.Material.Filled.LightMode);
+
+            await dialog.Component.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+
+            toggle = FindComponentByTestId<MudIconButton>(dialog.Component, "ThemePreviewToggleMode");
+            toggle.Instance.Icon.Should().Be(Icons.Material.Filled.DarkMode);
+
+            var next = FindComponentByTestId<MudIconButton>(dialog.Component, "ThemePreviewNext");
+            await dialog.Component.InvokeAsync(() => next.Instance.OnClick.InvokeAsync());
+
+            var name = FindComponentByTestId<MudText>(dialog.Component, "ThemePreviewName");
+            GetChildContentText(name.Instance.ChildContent).Should().Be("Second");
+        }
+
+        private static IReadOnlyList<ThemePreviewDialogItem> CreateCatalogueItems()
+        {
+            return
+            [
+                new ThemePreviewDialogItem("First", "First", "Bundled", new MudTheme()),
+                new ThemePreviewDialogItem("Second", "Second", "Repository", new MudTheme())
+            ];
+        }
+
+        private static IReadOnlyList<ThemePreviewDialogItem> CreateDetailsItems()
+        {
+            return [new ThemePreviewDialogItem("ThemeId", "Name", "Local Storage", new MudTheme())];
         }
     }
 
@@ -152,14 +207,27 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _testContext = testContext;
         }
 
-        public async Task<ThemePreviewDialogRenderContext> RenderDialogAsync(ThemePreviewDialogRequest request)
+        public async Task<ThemePreviewDialogRenderContext> RenderDialogAsync(
+            IReadOnlyList<ThemePreviewDialogItem> items,
+            string selectedThemeId,
+            ThemePreviewDialogMode mode,
+            bool isDarkMode,
+            string? currentThemeId = null,
+            string? currentSelectionThemeId = null,
+            bool canSaveAndApply = false)
         {
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
 
             var parameters = new DialogParameters
             {
-                { nameof(ThemePreviewDialog.Request), request }
+                { nameof(ThemePreviewDialog.Items), items },
+                { nameof(ThemePreviewDialog.SelectedThemeId), selectedThemeId },
+                { nameof(ThemePreviewDialog.Mode), mode },
+                { nameof(ThemePreviewDialog.IsDarkMode), isDarkMode },
+                { nameof(ThemePreviewDialog.CurrentThemeId), currentThemeId },
+                { nameof(ThemePreviewDialog.CurrentSelectionThemeId), currentSelectionThemeId },
+                { nameof(ThemePreviewDialog.CanSaveAndApply), canSaveAndApply }
             };
 
             var reference = await dialogService.ShowAsync<ThemePreviewDialog>("Theme Preview", parameters);

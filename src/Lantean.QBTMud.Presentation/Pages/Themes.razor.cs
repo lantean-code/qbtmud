@@ -162,18 +162,18 @@ namespace Lantean.QBTMud.Pages
             }
 
             var previewEntries = Table?.GetOrderedItemsSnapshot() ?? ThemeEntries.ToList();
-
-            var request = new ThemePreviewDialogRequest(
+            var selectedThemeId = await DialogWorkflow.ShowThemePreviewDialog(
                 ThemeDisplayHelper.CreatePreviewItems(previewEntries, _localThemeStorageType, value => Translate(value)),
                 theme.Id,
                 ThemePreviewDialogMode.Catalogue,
-                IsDarkMode)
+                IsDarkMode,
+                currentThemeId: ThemeManagerService.CurrentThemeId);
+            if (string.IsNullOrWhiteSpace(selectedThemeId))
             {
-                CurrentThemeId = ThemeManagerService.CurrentThemeId,
-                ApplyThemeAsync = ApplyPreviewThemeAsync
-            };
+                return;
+            }
 
-            await DialogWorkflow.ShowThemePreviewDialog(request);
+            await ApplyPreviewThemeAsync(selectedThemeId);
         }
 
         protected async Task DeleteTheme(ThemeCatalogItem theme)

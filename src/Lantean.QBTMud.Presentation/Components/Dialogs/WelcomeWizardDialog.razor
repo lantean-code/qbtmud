@@ -60,9 +60,9 @@
                                 <WizardStep Accent="@WizardAccentColor.FromPalette(Color.Primary)"
                                             Icon="@Icons.Material.Filled.Palette"
                                             Title="@LanguageLocalizer.Translate("AppThemes", "Theme")"
-                                            Subtitle="@LanguageLocalizer.Translate("AppWelcomeWizard", "Choose a theme. It will apply immediately so you can preview it.")"
+                                            Subtitle="@LanguageLocalizer.Translate("AppWelcomeWizard", "Choose a theme to preview in the wizard. We'll apply it when setup finishes.")"
                                             AlertSeverity="Severity.Info"
-                                            AlertText="@LanguageLocalizer.Translate("AppWelcomeWizard", "Choose a theme. It will apply immediately so you can preview it.")">
+                                            AlertText="@LanguageLocalizer.Translate("AppWelcomeWizard", "Preview themes in the wizard, then apply your choice when setup finishes.")">
                                     <MudStack Spacing="2">
                                         <MudSelect T="string"
                                                    Label="@LanguageLocalizer.Translate("AppThemes", "Theme")"
@@ -79,6 +79,15 @@
                                                 <MudSelectItem Value="@theme.Id">@theme.Name</MudSelectItem>
                                             }
                                         </MudSelect>
+
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.Visibility"
+                                                   OnClick="ShowThemePreview"
+                                                   Disabled="@string.IsNullOrWhiteSpace(_selectedThemeId)"
+                                                   data-test-id="@TestIdHelper.For("WelcomeWizardThemePreview")">
+                                            @LanguageLocalizer.Translate("AppThemePreviewDialog", "Preview")
+                                        </MudButton>
 
                                         <MudSelect T="ThemeModePreference"
                                                    Label="@LanguageLocalizer.Translate("AppSettings", "Theme mode")"

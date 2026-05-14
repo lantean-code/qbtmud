@@ -5,6 +5,7 @@ using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
     {
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly IThemeManagerService _themeManagerService = Mock.Of<IThemeManagerService>();
+        private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly ILanguageCatalog _languageCatalog = Mock.Of<ILanguageCatalog>();
         private readonly ILanguageInitializationService _languageInitializationService = Mock.Of<ILanguageInitializationService>();
@@ -59,8 +61,22 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 .SetupGet(service => service.CurrentThemeId)
                 .Returns("theme1");
             themeManagerServiceMock
+                .Setup(service => service.GetLocalThemeStorageTypeAsync())
+                .ReturnsAsync(StorageType.LocalStorage);
+            themeManagerServiceMock
                 .Setup(service => service.ApplyTheme(It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
+
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync((string?)null);
 
             var languageCatalogMock = Mock.Get(_languageCatalog);
             languageCatalogMock
@@ -111,6 +127,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.RemoveAll<IThemeManagerService>();
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.RemoveAll<ILanguageCatalog>();
             TestContext.Services.RemoveAll<ILanguageInitializationService>();
@@ -121,6 +138,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_themeManagerService);
+            TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.AddSingleton(_snackbar);
             TestContext.Services.AddSingleton(_languageCatalog);
             TestContext.Services.AddSingleton(_languageInitializationService);
@@ -668,7 +686,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_ThemeStep_WHEN_ThemeSelected_THEN_AppliesTheme()
+        public async Task GIVEN_ThemeStep_WHEN_ThemeSelected_THEN_StoresPendingSelectionWithoutApplyingTheme()
         {
             var dialog = await _target.RenderDialogAsync();
 
@@ -678,7 +696,103 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
 
-            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("theme2"), Times.Once);
+            themeSelect.Instance.GetState(x => x.Value).Should().Be("theme2");
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_PreviewClicked_THEN_ShowsPreviewDialogSeededToPendingTheme()
+        {
+            IReadOnlyList<ThemePreviewDialogItem>? capturedItems = null;
+            string? capturedSelectedThemeId = null;
+            ThemePreviewDialogMode? capturedMode = null;
+            string? capturedCurrentSelectionThemeId = null;
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .Callback<IReadOnlyList<ThemePreviewDialogItem>, string, ThemePreviewDialogMode, bool, string?, string?, bool>((items, selectedThemeId, mode, _, _, currentSelectionThemeId, _) =>
+                {
+                    capturedItems = items;
+                    capturedSelectedThemeId = selectedThemeId;
+                    capturedMode = mode;
+                    capturedCurrentSelectionThemeId = currentSelectionThemeId;
+                })
+                .ReturnsAsync((string?)null);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+
+            var previewButton = FindButton(dialog.Component, "WelcomeWizardThemePreview");
+            await previewButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            capturedItems.Should().NotBeNull();
+            capturedMode.Should().Be(ThemePreviewDialogMode.WizardSelection);
+            capturedSelectedThemeId.Should().Be("theme2");
+            capturedCurrentSelectionThemeId.Should().Be("theme2");
+            capturedItems!.Select(item => item.ThemeId).Should().ContainInOrder("theme1", "theme2");
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_PreviewSelectionConfirmed_THEN_UpdatesPendingSelection()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync("theme2");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var previewButton = FindButton(dialog.Component, "WelcomeWizardThemePreview");
+            await previewButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            themeSelect.Instance.GetState(x => x.Value).Should().Be("theme2");
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_PreviewSelectionCanceled_THEN_LeavesPendingSelectionUnchanged()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync((string?)null);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var previewButton = FindButton(dialog.Component, "WelcomeWizardThemePreview");
+            await previewButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            themeSelect.Instance.GetState(x => x.Value).Should().Be("theme1");
         }
 
         [Fact]
@@ -757,24 +871,6 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrows_THEN_ShowsSnackbarError()
-        {
-            Mock.Get(_themeManagerService)
-                .Setup(service => service.ApplyTheme(It.IsAny<string>()))
-                .ThrowsAsync(new InvalidOperationException("Message"));
-
-            var dialog = await _target.RenderDialogAsync();
-
-            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
-            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
-
-            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
-            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
-
-            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
-        }
-
-        [Fact]
         public async Task GIVEN_ThemeStep_WHEN_ThemeIdMissing_THEN_DoneStepRenders()
         {
             var dialog = await _target.RenderDialogAsync();
@@ -791,7 +887,32 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_LastStep_WHEN_FinishClicked_THEN_StoresCompletionAndClosesDialog()
+        public async Task GIVEN_LastStep_WHEN_FinishClicked_THEN_AppliesPendingThemeAndStoresCompletionAndClosesDialog()
+        {
+            await TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+            result.Data.Should().Be(true);
+
+            var stored = await TestContext.LocalStorage.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
+            stored.Should().BeTrue();
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("theme2"), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LastStep_WHEN_PendingThemeMatchesInitialTheme_THEN_DoesNotApplyThemeOnFinish()
         {
             await TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
 
@@ -804,12 +925,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
             await finishButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            var result = await dialog.Reference.Result;
-            result!.Canceled.Should().BeFalse();
-            result.Data.Should().Be(true);
+            await dialog.Reference.Result;
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
-            stored.Should().BeTrue();
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -841,6 +959,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var openOptionsButton = FindButton(dialog.Component, "WelcomeWizardOpenOptions");
@@ -853,6 +973,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var stored = await TestContext.LocalStorage.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeTrue();
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("theme2"), Times.Once);
         }
 
         [Fact]
@@ -987,7 +1108,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrowsJsException_THEN_ShowsSnackbarError()
+        public async Task GIVEN_LastStep_WHEN_DeferredThemeApplyThrowsJsException_THEN_ShowsSnackbarError()
         {
             Mock.Get(_themeManagerService)
                 .Setup(service => service.ApplyTheme(It.IsAny<string>()))
@@ -997,15 +1118,18 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
-
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
 
             Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrowsJsonException_THEN_ShowsSnackbarError()
+        public async Task GIVEN_LastStep_WHEN_DeferredThemeApplyThrowsJsonException_THEN_ShowsSnackbarError()
         {
             Mock.Get(_themeManagerService)
                 .Setup(service => service.ApplyTheme(It.IsAny<string>()))
@@ -1015,15 +1139,18 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
-
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
 
             Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeCanceled_THEN_DoesNotShowSnackbarError()
+        public async Task GIVEN_LastStep_WHEN_DeferredThemeApplyCanceled_THEN_DoesNotShowSnackbarError()
         {
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
@@ -1036,12 +1163,37 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
-
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
-
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+
+            await dialog.Component.InvokeAsync(() => finishButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_LastStep_WHEN_DeferredThemeApplyFailsDuringOpenOptions_THEN_DoesNotNavigate()
+        {
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme(It.IsAny<string>()))
+                .ThrowsAsync(new InvalidOperationException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var openOptionsButton = FindButton(dialog.Component, "WelcomeWizardOpenOptions");
+            await openOptionsButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            _navigationManager.LastUri.Should().Be("http://localhost/");
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
         }
 
         [Fact]

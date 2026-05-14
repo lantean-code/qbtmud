@@ -1,4 +1,5 @@
 @using Lantean.QBTMud.Components.UI
+@using Lantean.QBTMud.Core.Models
 @using Lantean.QBTMud.Helpers
 @using MudBlazor.Utilities
 <MudDialog Class="theme-preview-dialog"
@@ -90,7 +91,7 @@
                                data-test-id="@TestIdHelper.For("ThemePreviewToggleMode")" />
             </MudStack>
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Style="justify-self: center;">
-                @if (IsCatalogueMode)
+                @if (SupportsThemeNavigation)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore"
                                    title="@Translate("Previous theme")"
@@ -99,7 +100,7 @@
                                    data-test-id="@TestIdHelper.For("ThemePreviewPrevious")" />
                 }
                 <MudText Typo="Typo.subtitle2" data-test-id="@TestIdHelper.For("ThemePreviewName")">@CurrentItem.Name</MudText>
-                @if (IsCatalogueMode)
+                @if (SupportsThemeNavigation)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.NavigateNext"
                                    title="@Translate("Next theme")"
@@ -115,7 +116,7 @@
                            data-test-id="@TestIdHelper.For("ThemePreviewCancel")">
                     @Translate("Cancel")
                 </MudButton>
-                @if (IsCatalogueMode && Request.ApplyThemeAsync is not null)
+                @if (IsCatalogueMode)
                 {
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Success"
@@ -125,12 +126,22 @@
                         @Translate("Apply")
                     </MudButton>
                 }
-                @if (!IsCatalogueMode && Request.SaveAndApplyThemeAsync is not null)
+                @if (IsWizardSelectionMode)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               OnClick="SelectCurrentTheme"
+                               Disabled="@(!CanSelectCurrentTheme)"
+                               data-test-id="@TestIdHelper.For("ThemePreviewUseTheme")">
+                        @Translate("Use theme")
+                    </MudButton>
+                }
+                @if (Mode == ThemePreviewDialogMode.Details)
                 {
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Success"
                                OnClick="SaveAndApplyCurrentTheme"
-                               Disabled="@(!CanSaveAndApply)"
+                               Disabled="@(!CanSaveAndApplyCurrentTheme)"
                                data-test-id="@TestIdHelper.For("ThemePreviewSaveApply")">
                         @Translate("Save & apply")
                     </MudButton>
