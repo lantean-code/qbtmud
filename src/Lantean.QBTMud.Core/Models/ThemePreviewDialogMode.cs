@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Core.Models
     public enum ThemePreviewDialogMode
     {
         Catalogue,
+        Details,
         WizardSelection,
-        Details
     }
 }
