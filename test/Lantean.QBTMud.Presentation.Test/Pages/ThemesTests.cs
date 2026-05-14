@@ -331,8 +331,8 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         {
             var themes = new List<ThemeCatalogItem>
             {
-                CreateTheme("ThemeId", "Name", ThemeSource.Local),
-                CreateTheme("ThemeIdTwo", "Name Two", ThemeSource.Repository)
+                CreateTheme("ThemeId", "Zoo", ThemeSource.Local),
+                CreateTheme("ThemeIdTwo", "Alpha", ThemeSource.Repository)
             };
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowThemePreviewDialog(It.IsAny<ThemePreviewDialogRequest>()))
@@ -347,7 +347,9 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                     It.Is<ThemePreviewDialogRequest>(request =>
                         request.Mode == ThemePreviewDialogMode.Catalogue
                         && request.SelectedThemeId == "ThemeId"
-                        && request.Items.Count == 2)),
+                        && request.Items.Count == 2
+                        && request.Items[0].ThemeId == "ThemeIdTwo"
+                        && request.Items[1].ThemeId == "ThemeId")),
                 Times.Once);
         }
 

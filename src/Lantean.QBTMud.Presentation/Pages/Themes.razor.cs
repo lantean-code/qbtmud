@@ -161,8 +161,10 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
+            var previewEntries = Table?.GetOrderedItemsSnapshot() ?? ThemeEntries.ToList();
+
             var request = new ThemePreviewDialogRequest(
-                ThemeDisplayHelper.CreatePreviewItems(ThemeEntries, _localThemeStorageType, value => Translate(value)),
+                ThemeDisplayHelper.CreatePreviewItems(previewEntries, _localThemeStorageType, value => Translate(value)),
                 theme.Id,
                 ThemePreviewDialogMode.Catalogue,
                 IsDarkMode)

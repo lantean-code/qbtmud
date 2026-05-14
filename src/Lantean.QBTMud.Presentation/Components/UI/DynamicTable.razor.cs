@@ -308,6 +308,21 @@ namespace Lantean.QBTMud.Components.UI
             }
         }
 
+        /// <summary>
+        /// Gets the items using the table's current sort order.
+        /// </summary>
+        /// <returns>A snapshot of the currently ordered items.</returns>
+        public IReadOnlyList<T> GetOrderedItemsSnapshot()
+        {
+            var items = GetOrderedItems();
+            if (items is null)
+            {
+                return [];
+            }
+
+            return items.ToList();
+        }
+
         private IEnumerable<T>? GetOrderedItems()
         {
             if (Items is null)
