@@ -1955,34 +1955,75 @@ namespace Lantean.QBTMud.Presentation.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_NullRequest_WHEN_ShowThemePreviewDialog_THEN_Throws()
+        public async Task GIVEN_NullItems_WHEN_ShowThemePreviewDialog_THEN_Throws()
         {
-            Func<Task> act = async () => await _target.ShowThemePreviewDialog(null!);
+            Func<Task> act = async () => await _target.ShowThemePreviewDialog(null!, "ThemeId", ThemePreviewDialogMode.Catalogue, true);
 
             await act.Should().ThrowAsync<ArgumentNullException>();
         }
 
         [Fact]
-        public async Task GIVEN_Request_WHEN_ShowThemePreviewDialog_THEN_ShowsDialog()
+        public async Task GIVEN_EmptyItems_WHEN_ShowThemePreviewDialog_THEN_Throws()
         {
-            var reference = new Mock<IDialogReference>();
+            Func<Task> act = async () => await _target.ShowThemePreviewDialog([], "ThemeId", ThemePreviewDialogMode.Catalogue, true);
+
+            await act.Should().ThrowAsync<ArgumentException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_Parameters_WHEN_ShowThemePreviewDialog_THEN_ShowsDialogAndReturnsSelectedTheme()
+        {
+            var reference = CreateReference(DialogResult.Ok("ThemeId"));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ThemePreviewDialog>("Theme Preview", It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
-                .ReturnsAsync(reference.Object);
+                .ReturnsAsync(reference);
 
-            var request = new ThemePreviewDialogRequest(
+            var items =
+                new List<ThemePreviewDialogItem>
+                {
+                    new("ThemeId", "Name", "Bundled", new MudTheme())
+                };
+
+            var result = await _target.ShowThemePreviewDialog(
+                items,
+                "ThemeId",
+                ThemePreviewDialogMode.Catalogue,
+                true,
+                "CurrentThemeId",
+                "CurrentSelectionThemeId",
+                true);
+
+            result.Should().Be("ThemeId");
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<ThemePreviewDialog>(
+                    "Theme Preview",
+                    It.Is<DialogParameters>(parameters => HasThemePreviewDialogParameters(
+                        parameters,
+                        items,
+                        "ThemeId",
+                        ThemePreviewDialogMode.Catalogue,
+                        true,
+                        "CurrentThemeId",
+                        "CurrentSelectionThemeId",
+                        true)),
+                    It.Is<DialogOptions>(options => HasThemePreviewDialogOptions(options))),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogCanceled_WHEN_ShowThemePreviewDialog_THEN_ReturnsNull()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<ThemePreviewDialog>("Theme Preview", It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowThemePreviewDialog(
                 [new ThemePreviewDialogItem("ThemeId", "Name", "Bundled", new MudTheme())],
                 "ThemeId",
                 ThemePreviewDialogMode.Catalogue,
                 true);
 
-            await _target.ShowThemePreviewDialog(request);
-
-            Mock.Get(_dialogService).Verify(s => s.ShowAsync<ThemePreviewDialog>(
-                    "Theme Preview",
-                    It.Is<DialogParameters>(parameters => HasThemePreviewDialogParameters(parameters, request)),
-                    It.Is<DialogOptions>(options => HasThemePreviewDialogOptions(options))),
-                Times.Once);
+            result.Should().BeNull();
         }
 
         [Fact]
@@ -2366,10 +2407,53 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                    && ReferenceEquals(parameters[nameof(SubMenuDialog.Torrents)], torrents);
         }
 
-        private static bool HasThemePreviewDialogParameters(DialogParameters parameters, ThemePreviewDialogRequest request)
+        private static bool HasThemePreviewDialogParameters(
+            DialogParameters parameters,
+            IReadOnlyList<ThemePreviewDialogItem> items,
+            string selectedThemeId,
+            ThemePreviewDialogMode mode,
+            bool isDarkMode,
+            string? currentThemeId,
+            string? currentSelectionThemeId,
+            bool canSaveAndApply)
         {
-            if (!HasParameter(parameters, nameof(ThemePreviewDialog.Request))
-                || !ReferenceEquals(parameters[nameof(ThemePreviewDialog.Request)], request))
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.Items))
+                || !ReferenceEquals(parameters[nameof(ThemePreviewDialog.Items)], items))
+            {
+                return false;
+            }
+
+            if (!HasStringParameter(parameters, nameof(ThemePreviewDialog.SelectedThemeId), selectedThemeId))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.Mode))
+                || !Equals(parameters[nameof(ThemePreviewDialog.Mode)], mode))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.IsDarkMode))
+                || !Equals(parameters[nameof(ThemePreviewDialog.IsDarkMode)], isDarkMode))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.CurrentThemeId))
+                || !Equals(parameters[nameof(ThemePreviewDialog.CurrentThemeId)], currentThemeId))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.CurrentSelectionThemeId))
+                || !Equals(parameters[nameof(ThemePreviewDialog.CurrentSelectionThemeId)], currentSelectionThemeId))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.CanSaveAndApply))
+                || !Equals(parameters[nameof(ThemePreviewDialog.CanSaveAndApply)], canSaveAndApply))
             {
                 return false;
             }

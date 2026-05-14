@@ -3,6 +3,7 @@ using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -38,6 +39,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
 
         [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
         protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
@@ -67,6 +71,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private LanguageCatalogItem? _selectedLanguage;
         private string? _selectedLocale;
         private string? _selectedThemeId;
+        private string? _initialThemeId;
         private IReadOnlyList<LanguageCatalogItem> _languageOptions = Array.Empty<LanguageCatalogItem>();
         private IReadOnlyList<ThemeCatalogItem> _themeOptions = Array.Empty<ThemeCatalogItem>();
         private bool _isApplyingNotificationToggle;
@@ -77,6 +82,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private long _notificationPermissionSubscriptionId;
         private bool _notificationPermissionSubscriptionRequested;
         private AppSettings _settings = AppSettings.Default.Clone();
+        private StorageType _localThemeStorageType = StorageType.LocalStorage;
         private StorageType _storageSelection = StorageType.LocalStorage;
         private StorageRoutingSettings _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
         private bool _keyboardFocused;
@@ -211,7 +217,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             await ThemeManagerService.EnsureInitialized();
             _themeOptions = ThemeManagerService.Themes;
-            _selectedThemeId = ThemeManagerService.CurrentThemeId ?? _themeOptions.FirstOrDefault()?.Id;
+            _localThemeStorageType = await ThemeManagerService.GetLocalThemeStorageTypeAsync();
+            _initialThemeId = ThemeManagerService.CurrentThemeId;
+            _selectedThemeId = _initialThemeId ?? _themeOptions.FirstOrDefault()?.Id;
 
             _settings = await AppSettingsService.GetSettingsAsync();
             _storageRoutingSettings = await StorageRoutingService.GetSettingsAsync();
@@ -527,8 +535,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task OnOpenOptionsClicked(MouseEventArgs args)
         {
-            await Finish();
-            NavigationManager.NavigateTo("/settings");
+            if (await Finish())
+            {
+                NavigationManager.NavigateTo("/settings");
+            }
         }
 
         private void NextStep()
@@ -561,17 +571,28 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private Task OnFinishClicked(MouseEventArgs args)
         {
-            return Finish();
+            return FinishAndKeepDialogOpenOnFailureAsync();
         }
 
-        private async Task Finish()
+        private async Task FinishAndKeepDialogOpenOnFailureAsync()
+        {
+            await Finish();
+        }
+
+        private async Task<bool> Finish()
         {
             try
             {
+                if (!await ApplyPendingThemeSelectionAsync())
+                {
+                    return false;
+                }
+
                 await ApplyStorageSelectionAsync();
                 await WelcomeWizardStateService.AcknowledgeStepsAsync(GetAcknowledgedStepIds());
                 await SettingsStorage.SetItemAsync(WelcomeWizardStorageKeys.Completed, true);
                 MudDialog.Close(DialogResult.Ok(true));
+                return true;
             }
             catch (OperationCanceledException)
             {
@@ -592,40 +613,41 @@ namespace Lantean.QBTMud.Components.Dialogs
                 Logger.LogWarning(ex, "Unable to save welcome wizard completion due to JSON exception: {Message}.", ex.Message);
                 SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
             }
+
+            return false;
         }
 
-        private async Task OnThemeChanged(string value)
+        private Task OnThemeChanged(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
+            {
+                return Task.CompletedTask;
+            }
+
+            _selectedThemeId = value;
+            return Task.CompletedTask;
+        }
+
+        private async Task ShowThemePreview()
+        {
+            if (string.IsNullOrWhiteSpace(_selectedThemeId) || _themeOptions.Count == 0)
             {
                 return;
             }
 
-            _selectedThemeId = value;
+            var selectedThemeId = await DialogWorkflow.ShowThemePreviewDialog(
+                ThemeDisplayHelper.CreatePreviewItems(_themeOptions, _localThemeStorageType, TranslateTheme),
+                _selectedThemeId,
+                ThemePreviewDialogMode.WizardSelection,
+                _settings.ThemeModePreference == ThemeModePreference.Dark,
+                currentSelectionThemeId: _selectedThemeId);
+            if (string.IsNullOrWhiteSpace(selectedThemeId))
+            {
+                return;
+            }
 
-            try
-            {
-                await ThemeManagerService.ApplyTheme(value);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (InvalidOperationException ex)
-            {
-                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to invalid operation: {Message}.", value, ex.Message);
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to apply theme: %1", ex.Message), Severity.Error);
-            }
-            catch (JSException ex)
-            {
-                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JS exception: {Message}.", value, ex.Message);
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to apply theme: %1", ex.Message), Severity.Error);
-            }
-            catch (JsonException ex)
-            {
-                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JSON exception: {Message}.", value, ex.Message);
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to apply theme: %1", ex.Message), Severity.Error);
-            }
+            _selectedThemeId = selectedThemeId;
+            await InvokeAsync(StateHasChanged);
         }
 
         private async Task OnThemeModePreferenceChanged(ThemeModePreference value)
@@ -677,6 +699,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
         }
 
+        private string TranslateTheme(string value)
+        {
+            return LanguageLocalizer.Translate("AppThemes", value);
+        }
+
         private string GetStorageTypeDisplayName(StorageType storageType)
         {
             return storageType == StorageType.ClientData
@@ -696,6 +723,43 @@ namespace Lantean.QBTMud.Components.Dialogs
         private void OnStorageSelectionChanged(StorageType value)
         {
             _storageSelection = NormalizeStorageType(value);
+        }
+
+        private async Task<bool> ApplyPendingThemeSelectionAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_selectedThemeId)
+                || string.Equals(_selectedThemeId, _initialThemeId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            try
+            {
+                await ThemeManagerService.ApplyTheme(_selectedThemeId);
+                _initialThemeId = _selectedThemeId;
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to invalid operation: {Message}.", _selectedThemeId, ex.Message);
+                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to apply theme: %1", ex.Message), Severity.Error);
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JS exception: {Message}.", _selectedThemeId, ex.Message);
+                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to apply theme: %1", ex.Message), Severity.Error);
+            }
+            catch (JsonException ex)
+            {
+                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JSON exception: {Message}.", _selectedThemeId, ex.Message);
+                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to apply theme: %1", ex.Message), Severity.Error);
+            }
+
+            return false;
         }
 
         private async Task ApplyStorageSelectionAsync()

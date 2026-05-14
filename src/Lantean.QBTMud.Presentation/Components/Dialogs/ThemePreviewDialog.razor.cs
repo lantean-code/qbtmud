@@ -28,7 +28,25 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
-        public ThemePreviewDialogRequest Request { get; set; } = default!;
+        public IReadOnlyList<ThemePreviewDialogItem> Items { get; set; } = default!;
+
+        [Parameter]
+        public string SelectedThemeId { get; set; } = string.Empty;
+
+        [Parameter]
+        public ThemePreviewDialogMode Mode { get; set; }
+
+        [Parameter]
+        public bool IsDarkMode { get; set; }
+
+        [Parameter]
+        public string? CurrentThemeId { get; set; }
+
+        [Parameter]
+        public string? CurrentSelectionThemeId { get; set; }
+
+        [Parameter]
+        public bool CanSaveAndApply { get; set; }
 
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
@@ -40,22 +58,32 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected ThemePreviewDialogItem CurrentItem
         {
-            get { return Request.Items[_selectedIndex]; }
+            get { return Items[_selectedIndex]; }
         }
 
         protected bool IsCatalogueMode
         {
-            get { return Request.Mode == ThemePreviewDialogMode.Catalogue; }
+            get { return Mode == ThemePreviewDialogMode.Catalogue; }
+        }
+
+        protected bool IsWizardSelectionMode
+        {
+            get { return Mode == ThemePreviewDialogMode.WizardSelection; }
+        }
+
+        protected bool SupportsThemeNavigation
+        {
+            get { return Mode != ThemePreviewDialogMode.Details; }
         }
 
         protected bool CanGoPrevious
         {
-            get { return IsCatalogueMode && _selectedIndex > 0; }
+            get { return SupportsThemeNavigation && _selectedIndex > 0; }
         }
 
         protected bool CanGoNext
         {
-            get { return IsCatalogueMode && _selectedIndex < Request.Items.Count - 1; }
+            get { return SupportsThemeNavigation && _selectedIndex < Items.Count - 1; }
         }
 
         protected bool CanApplyCurrentTheme
@@ -63,24 +91,31 @@ namespace Lantean.QBTMud.Components.Dialogs
             get
             {
                 return IsCatalogueMode
-                    && Request.ApplyThemeAsync is not null
-                    && !string.Equals(CurrentItem.ThemeId, Request.CurrentThemeId, StringComparison.Ordinal);
+                    && !string.Equals(CurrentItem.ThemeId, CurrentThemeId, StringComparison.Ordinal);
             }
         }
 
-        protected bool CanSaveAndApply
+        protected bool CanSelectCurrentTheme
         {
-            get { return !IsCatalogueMode && Request.SaveAndApplyThemeAsync is not null && Request.CanSaveAndApply; }
+            get
+            {
+                return IsWizardSelectionMode;
+            }
+        }
+
+        protected bool CanSaveAndApplyCurrentTheme
+        {
+            get { return Mode == ThemePreviewDialogMode.Details && CanSaveAndApply; }
         }
 
         protected override void OnParametersSet()
         {
             if (!_initialized)
             {
-                ArgumentNullException.ThrowIfNull(Request);
+                ArgumentNullException.ThrowIfNull(Items);
 
                 _selectedIndex = FindSelectedIndex();
-                _isDarkMode = Request.IsDarkMode;
+                _isDarkMode = IsDarkMode;
                 _initialized = true;
             }
 
@@ -145,32 +180,34 @@ namespace Lantean.QBTMud.Components.Dialogs
             return InvokeAsync(StateHasChanged);
         }
 
-        protected async Task ApplyCurrentTheme()
+        protected void ApplyCurrentTheme()
         {
             if (!CanApplyCurrentTheme)
             {
                 return;
             }
 
-            var applied = await Request.ApplyThemeAsync!(CurrentItem.ThemeId);
-            if (applied)
-            {
-                MudDialog.Close();
-            }
+            MudDialog.Close(DialogResult.Ok(CurrentItem.ThemeId));
         }
 
-        protected async Task SaveAndApplyCurrentTheme()
+        protected void SelectCurrentTheme()
         {
-            if (!CanSaveAndApply)
+            if (!CanSelectCurrentTheme)
             {
                 return;
             }
 
-            var applied = await Request.SaveAndApplyThemeAsync!();
-            if (applied)
+            MudDialog.Close(DialogResult.Ok(CurrentItem.ThemeId));
+        }
+
+        protected void SaveAndApplyCurrentTheme()
+        {
+            if (!CanSaveAndApplyCurrentTheme)
             {
-                MudDialog.Close();
+                return;
             }
+
+            MudDialog.Close(DialogResult.Ok(CurrentItem.ThemeId));
         }
 
         private Task HandleNavClick(MouseEventArgs args)
@@ -190,14 +227,14 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private int FindSelectedIndex()
         {
-            if (Request.Items.Count == 0)
+            if (Items.Count == 0)
             {
                 throw new InvalidOperationException("The theme preview dialog requires at least one preview item.");
             }
 
-            var selectedIndex = Request.Items
+            var selectedIndex = Items
                 .Select((item, index) => new { item.ThemeId, index })
-                .FirstOrDefault(entry => string.Equals(entry.ThemeId, Request.SelectedThemeId, StringComparison.Ordinal))
+                .FirstOrDefault(entry => string.Equals(entry.ThemeId, SelectedThemeId, StringComparison.Ordinal))
                 ?.index;
 
             return selectedIndex ?? 0;

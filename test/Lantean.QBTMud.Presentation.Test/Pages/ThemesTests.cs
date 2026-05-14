@@ -335,8 +335,15 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 CreateTheme("ThemeIdTwo", "Alpha", ThemeSource.Repository)
             };
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowThemePreviewDialog(It.IsAny<ThemePreviewDialogRequest>()))
-                .Returns(Task.CompletedTask);
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync((string?)null);
 
             var target = RenderPage(themes);
 
@@ -344,13 +351,47 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             await target.InvokeAsync(() => previewButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowThemePreviewDialog(
-                    It.Is<ThemePreviewDialogRequest>(request =>
-                        request.Mode == ThemePreviewDialogMode.Catalogue
-                        && request.SelectedThemeId == "ThemeId"
-                        && request.Items.Count == 2
-                        && request.Items[0].ThemeId == "ThemeIdTwo"
-                        && request.Items[1].ThemeId == "ThemeId")),
+                    It.Is<IReadOnlyList<ThemePreviewDialogItem>>(items =>
+                        items.Count == 2
+                        && items[0].ThemeId == "ThemeIdTwo"
+                        && items[1].ThemeId == "ThemeId"),
+                    "ThemeId",
+                    ThemePreviewDialogMode.Catalogue,
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    false),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PreviewSelectionConfirmed_WHEN_Invoked_THEN_AppliesSelectedTheme()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Zoo", ThemeSource.Local),
+                CreateTheme("ThemeIdTwo", "Alpha", ThemeSource.Repository)
+            };
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowThemePreviewDialog(
+                    It.IsAny<IReadOnlyList<ThemePreviewDialogItem>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ThemePreviewDialogMode>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync("ThemeIdTwo");
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme("ThemeIdTwo"))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(themes);
+
+            var previewButton = FindComponentByTestId<MudIconButton>(target, "ThemePreview-ThemeId");
+            await target.InvokeAsync(() => previewButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("ThemeIdTwo"), Times.Once);
         }
 
         [Fact]

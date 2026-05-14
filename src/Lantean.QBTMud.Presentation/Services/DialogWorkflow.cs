@@ -838,19 +838,39 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Shows a theme preview dialog.
         /// </summary>
-        /// <param name="request">The preview request.</param>
-        public async Task ShowThemePreviewDialog(ThemePreviewDialogRequest request)
+        /// <param name="items">The themes available for preview.</param>
+        /// <param name="selectedThemeId">The initially selected theme identifier.</param>
+        /// <param name="mode">The preview mode.</param>
+        /// <param name="isDarkMode">Whether the preview starts in dark mode.</param>
+        /// <param name="currentThemeId">The currently applied persisted theme identifier.</param>
+        /// <param name="currentSelectionThemeId">The currently selected pending theme identifier.</param>
+        /// <param name="canSaveAndApply">A value indicating whether the details-mode action is enabled.</param>
+        /// <returns>The selected theme identifier when confirmed; otherwise, <c>null</c>.</returns>
+        public async Task<string?> ShowThemePreviewDialog(
+            IReadOnlyList<ThemePreviewDialogItem> items,
+            string selectedThemeId,
+            ThemePreviewDialogMode mode,
+            bool isDarkMode,
+            string? currentThemeId = null,
+            string? currentSelectionThemeId = null,
+            bool canSaveAndApply = false)
         {
-            ArgumentNullException.ThrowIfNull(request);
+            ArgumentNullException.ThrowIfNull(items);
 
-            if (request.Items.Count == 0)
+            if (items.Count == 0)
             {
-                throw new ArgumentException("At least one preview theme is required.", nameof(request));
+                throw new ArgumentException("At least one preview theme is required.", nameof(items));
             }
 
             var parameters = new DialogParameters
             {
-                { nameof(ThemePreviewDialog.Request), request }
+                { nameof(ThemePreviewDialog.Items), items },
+                { nameof(ThemePreviewDialog.SelectedThemeId), selectedThemeId },
+                { nameof(ThemePreviewDialog.Mode), mode },
+                { nameof(ThemePreviewDialog.IsDarkMode), isDarkMode },
+                { nameof(ThemePreviewDialog.CurrentThemeId), currentThemeId },
+                { nameof(ThemePreviewDialog.CurrentSelectionThemeId), currentSelectionThemeId },
+                { nameof(ThemePreviewDialog.CanSaveAndApply), canSaveAndApply }
             };
             var options = FullScreenDialogOptions with
             {
@@ -859,7 +879,14 @@ namespace Lantean.QBTMud.Services
                 FullWidth = false
             };
 
-            await _dialogService.ShowAsync<ThemePreviewDialog>(_languageLocalizer.Translate("AppThemePreviewDialog", "Theme Preview"), parameters, options);
+            var reference = await _dialogService.ShowAsync<ThemePreviewDialog>(_languageLocalizer.Translate("AppThemePreviewDialog", "Theme Preview"), parameters, options);
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is not string confirmedThemeId || string.IsNullOrWhiteSpace(confirmedThemeId))
+            {
+                return null;
+            }
+
+            return confirmedThemeId;
         }
 
         private async Task ShowAddTorrentSnackbarMessage(AddTorrentResult result, bool isPending)
