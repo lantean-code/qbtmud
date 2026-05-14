@@ -48,6 +48,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IStorageRoutingService StorageRoutingService { get; set; } = default!;
 
         [Inject]
+        protected IClientDataPresenceService ClientDataPresenceService { get; set; } = default!;
+
+        [Inject]
         protected IWelcomeWizardStateService WelcomeWizardStateService { get; set; } = default!;
 
         [Inject]
@@ -85,6 +88,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private StorageType _localThemeStorageType = StorageType.LocalStorage;
         private StorageType _storageSelection = StorageType.LocalStorage;
         private StorageRoutingSettings _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
+        private bool _shouldShowStoredClientDataNotice;
         private bool _keyboardFocused;
         private bool _disposedValue;
 
@@ -224,6 +228,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             _settings = await AppSettingsService.GetSettingsAsync();
             _storageRoutingSettings = await StorageRoutingService.GetSettingsAsync();
             _storageSelection = NormalizeStorageType(_storageRoutingSettings.MasterStorageType);
+            await ApplyStoredClientDataRecommendationAsync();
 
             _notificationPermission = await GetNotificationPermissionSafeAsync();
 
@@ -723,6 +728,27 @@ namespace Lantean.QBTMud.Components.Dialogs
         private void OnStorageSelectionChanged(StorageType value)
         {
             _storageSelection = NormalizeStorageType(value);
+        }
+
+        private async Task ApplyStoredClientDataRecommendationAsync()
+        {
+            if (!ResolvePendingStepIds().Contains(WelcomeWizardStepCatalog.StorageStepId, StringComparer.Ordinal))
+            {
+                return;
+            }
+
+            if (_storageSelection == StorageType.ClientData)
+            {
+                return;
+            }
+
+            if (!await ClientDataPresenceService.HasStoredClientDataAsync())
+            {
+                return;
+            }
+
+            _storageSelection = StorageType.ClientData;
+            _shouldShowStoredClientDataNotice = true;
         }
 
         private async Task<bool> ApplyPendingThemeSelectionAsync()

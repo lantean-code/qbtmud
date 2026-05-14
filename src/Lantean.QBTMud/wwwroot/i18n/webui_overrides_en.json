@@ -601,6 +601,7 @@
   "AppWelcomeWizard|Stored with this qBittorrent WebUI session data.": "Stored with this qBittorrent WebUI session data.",
   "AppWelcomeWizard|Best for single-browser setups on one device.": "Best for single-browser setups on one device.",
   "AppWelcomeWizard|Settings stay in this browser profile.": "Settings stay in this browser profile.",
+  "AppWelcomeWizard|qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.": "qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.",
   "AppWelcomeWizard|Storage: %1": "Storage: %1",
   "AppWelcomeWizard|Select a storage type to continue.": "Select a storage type to continue."
 }

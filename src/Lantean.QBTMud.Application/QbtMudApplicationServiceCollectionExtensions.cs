@@ -24,6 +24,7 @@ namespace Lantean.QBTMud.Application
             services.TryAddScoped<IQBittorrentPreferencesStateService, QBittorrentPreferencesStateService>();
             services.TryAddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             services.TryAddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
+            services.TryAddScoped<IClientDataPresenceService, ClientDataPresenceService>();
             services.TryAddScoped<IStorageDiagnosticsService, StorageDiagnosticsService>();
             services.TryAddScoped<IStorageRoutingService, StorageRoutingService>();
             services.TryAddScoped<ISettingsStorageService, SettingsStorageService>();

@@ -29,6 +29,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         private readonly ILanguageInitializationService _languageInitializationService = Mock.Of<ILanguageInitializationService>();
         private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
         private readonly IBrowserNotificationService _browserNotificationService = Mock.Of<IBrowserNotificationService>();
+        private readonly IClientDataPresenceService _clientDataPresenceService = Mock.Of<IClientDataPresenceService>();
         private readonly IWelcomeWizardStateService _welcomeWizardStateService = Mock.Of<IWelcomeWizardStateService>();
         private readonly IKeyboardService _keyboardService;
         private readonly Mock<IKeyboardService> _keyboardServiceMock;
@@ -112,6 +113,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.UnsubscribePermissionChangesAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+            Mock.Get(_clientDataPresenceService)
+                .Setup(service => service.HasStoredClientDataAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
             Mock.Get(_welcomeWizardStateService)
                 .Setup(service => service.AcknowledgeStepsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WelcomeWizardState());
@@ -134,6 +138,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.RemoveAll<IAppSettingsService>();
             TestContext.Services.RemoveAll<IBrowserNotificationService>();
+            TestContext.Services.RemoveAll<IClientDataPresenceService>();
             TestContext.Services.RemoveAll<IWelcomeWizardStateService>();
 
             TestContext.Services.AddSingleton(_apiClient);
@@ -145,6 +150,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             TestContext.Services.AddSingleton(_keyboardService);
             TestContext.Services.AddSingleton(_appSettingsService);
             TestContext.Services.AddSingleton(_browserNotificationService);
+            TestContext.Services.AddSingleton(_clientDataPresenceService);
             TestContext.Services.AddSingleton(_welcomeWizardStateService);
 
             _target = new WelcomeWizardDialogTestDriver(TestContext);
@@ -1871,7 +1877,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_StorageStep_WHEN_Rendered_THEN_BrowserLocalStorageIsSelectedAndNextIsEnabled()
+        public async Task GIVEN_StorageStepWithoutStoredClientData_WHEN_Rendered_THEN_BrowserLocalStorageIsSelectedAndNextIsEnabled()
         {
             var dialog = await _target.RenderDialogAsync(
                 pendingStepIds: new[]
@@ -1884,6 +1890,33 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             storageSelection.Instance.Value.Should().Be(StorageType.LocalStorage);
             nextButton.Instance.Disabled.Should().BeFalse();
+            dialog.Component.FindComponents<MudAlert>()
+                .Any(component => HasTestId(component, "WelcomeWizardStoredClientDataAlert"))
+                .Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithStoredClientData_WHEN_Rendered_THEN_ClientDataIsSelectedAndNoticeIsShown()
+        {
+            var clientDataPresenceService = new Mock<IClientDataPresenceService>(MockBehavior.Strict);
+            clientDataPresenceService
+                .Setup(service => service.HasStoredClientDataAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            TestContext.Services.RemoveAll<IClientDataPresenceService>();
+            TestContext.Services.AddSingleton<IClientDataPresenceService>(clientDataPresenceService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
+            var alert = FindComponentByTestId<MudAlert>(dialog.Component, "WelcomeWizardStoredClientDataAlert");
+
+            storageSelection.Instance.Value.Should().Be(StorageType.ClientData);
+            GetChildContentText(alert.Instance.ChildContent).Should().Be("qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.");
         }
 
         [Fact]
@@ -1924,6 +1957,39 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
             storageSelection.Instance.Value.Should().Be(StorageType.LocalStorage);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithPersistedClientDataRouting_WHEN_Rendered_THEN_ClientDataRemainsSelectedWithoutNotice()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+
+            var clientDataPresenceService = new Mock<IClientDataPresenceService>(MockBehavior.Strict);
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+            TestContext.Services.RemoveAll<IClientDataPresenceService>();
+            TestContext.Services.AddSingleton<IClientDataPresenceService>(clientDataPresenceService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
+
+            storageSelection.Instance.Value.Should().Be(StorageType.ClientData);
+            dialog.Component.FindComponents<MudAlert>()
+                .Any(component => HasTestId(component, "WelcomeWizardStoredClientDataAlert"))
+                .Should().BeFalse();
+            clientDataPresenceService.Verify(service => service.HasStoredClientDataAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -2006,6 +2072,99 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 {
                     WelcomeWizardStepCatalog.StorageStepId
                 });
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+
+            storageRoutingService.Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<StorageRoutingSettings>(settings =>
+                        settings.MasterStorageType == StorageType.LocalStorage
+                        && settings.GroupStorageTypes.Count == 0
+                        && settings.ItemStorageTypes.Count == 0),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithStoredClientData_WHEN_FinishClicked_THEN_AppliesClientDataSelection()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var clientDataPresenceService = new Mock<IClientDataPresenceService>(MockBehavior.Strict);
+            clientDataPresenceService
+                .Setup(service => service.HasStoredClientDataAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+            TestContext.Services.RemoveAll<IClientDataPresenceService>();
+            TestContext.Services.AddSingleton<IClientDataPresenceService>(clientDataPresenceService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+
+            storageRoutingService.Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<StorageRoutingSettings>(settings =>
+                        settings.MasterStorageType == StorageType.ClientData
+                        && settings.GroupStorageTypes.Count == 0
+                        && settings.ItemStorageTypes.Count == 0),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithStoredClientData_WHEN_LocalStorageSelectedBeforeFinish_THEN_AppliesLocalStorageSelection()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var clientDataPresenceService = new Mock<IClientDataPresenceService>(MockBehavior.Strict);
+            clientDataPresenceService
+                .Setup(service => service.HasStoredClientDataAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+            TestContext.Services.RemoveAll<IClientDataPresenceService>();
+            TestContext.Services.AddSingleton<IClientDataPresenceService>(clientDataPresenceService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
+            await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());

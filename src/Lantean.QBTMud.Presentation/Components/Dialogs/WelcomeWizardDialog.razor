@@ -187,6 +187,17 @@
                                             Subtitle="@LanguageLocalizer.Translate("AppWelcomeWizard", "Choose how qbtmud stores your settings data.")"
                                             AlertSeverity="Severity.Info"
                                             AlertText="@LanguageLocalizer.Translate("AppWelcomeWizard", "You can customize storage per group and per item later in App Settings.")">
+                                    @if (_shouldShowStoredClientDataNotice)
+                                    {
+                                        <MudAlert Severity="Severity.Info"
+                                                  Variant="Variant.Outlined"
+                                                  Dense="true"
+                                                  Class="mb-4"
+                                                  data-test-id="@TestIdHelper.For("WelcomeWizardStoredClientDataAlert")">
+                                            @LanguageLocalizer.Translate("AppWelcomeWizard", "qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.")
+                                        </MudAlert>
+                                    }
+
                                     <MudRadioGroup T="StorageType"
                                                    Value="_storageSelection"
                                                    ValueChanged="OnStorageSelectionChanged"
