@@ -166,6 +166,30 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_InitialLocaleMissingAndCurrentUiCultureIsFrench_WHEN_Rendered_THEN_SelectsCurrentUiCultureLocale()
+        {
+            var originalCulture = CultureInfo.CurrentCulture;
+            var originalUiCulture = CultureInfo.CurrentUICulture;
+
+            try
+            {
+                var culture = new CultureInfo("fr-FR");
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+
+                var dialog = await _target.RenderDialogAsync();
+
+                var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
+                languageSelect.Instance.GetState(x => x.Value).Should().Be("fr");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalUiCulture;
+            }
+        }
+
+        [Fact]
         public async Task GIVEN_FirstStepActive_WHEN_Rendered_THEN_BackDisabledAndLanguageSelectVisible()
         {
             var dialog = await _target.RenderDialogAsync();

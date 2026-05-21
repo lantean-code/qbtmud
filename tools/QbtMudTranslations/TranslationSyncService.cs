@@ -133,13 +133,14 @@ namespace QbtMudTranslations
         {
             Dictionary<string, string>? lastLocaleTranslations = null;
             IReadOnlyList<string> lastValidationErrors = [];
+            IReadOnlyDictionary<string, string> seedLocaleTranslations = existingLocaleTranslations;
 
             for (var attempt = 0; attempt <= _maxValidationRetries; attempt++)
             {
                 var localeTranslations = await BuildLocaleTranslationsAsync(
                     locale,
                     englishEntries,
-                    existingLocaleTranslations,
+                    seedLocaleTranslations,
                     cancellationToken);
                 var validationErrors = _translationValidator.ValidateLocale(locale, englishTranslations, localeTranslations);
                 if (validationErrors.Count == 0)
@@ -149,6 +150,16 @@ namespace QbtMudTranslations
 
                 lastLocaleTranslations = localeTranslations;
                 lastValidationErrors = validationErrors;
+
+                var invalidKeys = _translationValidator.GetInvalidKeys(locale, englishTranslations, localeTranslations);
+                if (invalidKeys.Count == 0)
+                {
+                    break;
+                }
+
+                seedLocaleTranslations = localeTranslations
+                    .Where(entry => !invalidKeys.Contains(entry.Key))
+                    .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
             }
 
             return (lastLocaleTranslations ?? new Dictionary<string, string>(StringComparer.Ordinal), lastValidationErrors);

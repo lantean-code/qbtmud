@@ -119,15 +119,31 @@ namespace Lantean.QBTMud.Infrastructure.Services.Localization
                     locale);
             }
 
-            var qbtMudFileName = string.Format(CultureInfo.InvariantCulture, _options.QbtMudFileNameFormat, loadedLocale);
-            var qbtMudTranslations = await _fileResourceProvider.LoadDictionaryAsync(qbtMudFileName, cancellationToken)
-                ?? new Dictionary<string, string>(StringComparer.Ordinal);
+            var qbtMudTranslations = await LoadQbtMudTranslationsAsync(locale, loadedLocale, cancellationToken);
 
             return new LanguageResources(
                 aliases,
                 qbtMudTranslations,
                 translations,
                 locale);
+        }
+
+        private async ValueTask<IReadOnlyDictionary<string, string>> LoadQbtMudTranslationsAsync(
+            string requestedLocale,
+            string loadedLocale,
+            CancellationToken cancellationToken)
+        {
+            foreach (var candidateLocale in GetQbtMudCandidateLocales(requestedLocale, loadedLocale))
+            {
+                var qbtMudFileName = string.Format(CultureInfo.InvariantCulture, _options.QbtMudFileNameFormat, candidateLocale);
+                var qbtMudTranslations = await _fileResourceProvider.LoadDictionaryAsync(qbtMudFileName, cancellationToken);
+                if (qbtMudTranslations is not null)
+                {
+                    return qbtMudTranslations;
+                }
+            }
+
+            return new Dictionary<string, string>(StringComparer.Ordinal);
         }
 
         private static List<string> GetCandidateLocales(string locale)
@@ -156,6 +172,19 @@ namespace Lantean.QBTMud.Infrastructure.Services.Localization
             }
 
             candidates.Add("en");
+
+            return candidates.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        private static List<string> GetQbtMudCandidateLocales(string requestedLocale, string loadedLocale)
+        {
+            var candidates = new List<string>();
+            candidates.AddRange(GetCandidateLocales(requestedLocale));
+
+            if (!string.IsNullOrWhiteSpace(loadedLocale))
+            {
+                candidates.AddRange(GetCandidateLocales(loadedLocale));
+            }
 
             return candidates.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }

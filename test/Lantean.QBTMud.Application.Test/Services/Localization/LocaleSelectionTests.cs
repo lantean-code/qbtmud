@@ -1,3 +1,4 @@
+using System.Globalization;
 using AwesomeAssertions;
 using Lantean.QBTMud.Core.Models;
 
@@ -25,6 +26,34 @@ namespace Lantean.QBTMud.Application.Test.Services.Localization
             var result = LocaleSelection.ResolveLocale(null, languages);
 
             result.Should().Be("en");
+        }
+
+        [Fact]
+        public void GIVEN_NullLocaleAndCurrentUiCultureMatch_WHEN_Resolved_THEN_ReturnsCurrentUiCultureLocale()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("en", "English"),
+                new("fr", "French")
+            };
+            var originalCulture = CultureInfo.CurrentCulture;
+            var originalUiCulture = CultureInfo.CurrentUICulture;
+
+            try
+            {
+                var culture = new CultureInfo("fr-FR");
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+
+                var result = LocaleSelection.ResolveLocale(null, languages);
+
+                result.Should().Be("fr");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalUiCulture;
+            }
         }
 
         [Fact]

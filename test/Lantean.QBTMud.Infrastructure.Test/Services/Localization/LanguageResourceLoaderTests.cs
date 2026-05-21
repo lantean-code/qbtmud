@@ -159,6 +159,43 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
         }
 
         [Fact]
+        public async Task GIVEN_EnglishVariantLocaleAndVariantQbtMudTranslations_WHEN_LoadLocaleAsync_THEN_ShouldPreferVariantQbtMudTranslations()
+        {
+            var translations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|Source"] = "Translated"
+            };
+            var qbtMudTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|Source"] = "Translated Colour"
+            };
+
+            Mock.Get(_fileResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("webui_aliases.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(new Dictionary<string, string>(StringComparer.Ordinal)));
+
+            Mock.Get(_assemblyResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("webui_en.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
+
+            Mock.Get(_fileResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en-GB.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
+
+            Mock.Get(_fileResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en_GB.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(qbtMudTranslations));
+
+            await _target.LoadLocaleAsync("en-GB", TestContext.Current.CancellationToken);
+
+            _resourceProvider.Resources.QbtMudTranslations.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Translated Colour");
+
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("qbtmud_en-GB.json", It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("qbtmud_en_GB.json", It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("qbtmud_en.json", It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_SystemDefaultLocaleMarker_WHEN_LoadLocaleAsync_THEN_ShouldNormalizeToEnglishWithoutProbingCLocaleFile()
         {
             var translations = new Dictionary<string, string>(StringComparer.Ordinal)

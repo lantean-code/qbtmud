@@ -233,6 +233,50 @@ namespace QbtMudTranslations.Test
         }
 
         [Fact]
+        public async Task GIVEN_SyncModeAndExistingLocaleFileContainsInvalidPlaceholderTranslation_WHEN_RunAsync_THEN_ShouldRetranslateOnlyInvalidKeys()
+        {
+            File.WriteAllText(Path.Combine(_upstreamDirectoryPath, "webui_en.ts"), string.Empty);
+            File.WriteAllText(Path.Combine(_upstreamDirectoryPath, "webui_ja.ts"), string.Empty);
+            File.WriteAllText(_englishFilePath, "{\n  \"Ctx|A\": \"Applied to all items in %1; cleared %2 item overrides.\",\n  \"Ctx|B\": \"Ready\"\n}");
+            File.WriteAllText(Path.Combine(_outputDirectoryPath, "qbtmud_ja.json"), "{\n  \"Ctx|A\": \"%1のすべての項目に適用しました。%2 %2項目の上書き設定をクリアしました。\",\n  \"Ctx|B\": \"準備完了\"\n}");
+            var translationClient = new Mock<ITranslationClient>();
+            translationClient
+                .Setup(mock => mock.TranslateAsync(
+                    "ja",
+                    It.Is<IReadOnlyList<string>>(texts => texts.Count == 1 && texts[0] == "Applied to all items in %1; cleared %2 item overrides."),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(["%1のすべての項目に適用しました。%2項目の上書き設定をクリアしました。"]);
+
+            var target = new TranslationSyncService(
+                new LocaleDiscoveryService(),
+                translationClient.Object,
+                new TranslationValidator(),
+                new TranslationProviderAvailabilityValidator(hasAzureProvider: true, hasGoogleProvider: true),
+                maxValidationRetries: 1);
+            var options = new ToolOptions
+            {
+                EnglishFilePath = _englishFilePath,
+                OutputDirectoryPath = _outputDirectoryPath,
+                UpstreamTranslationsPath = _upstreamDirectoryPath,
+                Mode = TranslationToolMode.Sync
+            };
+
+            var result = await target.RunAsync(options, TestContext.Current.CancellationToken);
+
+            result.Should().Be(0);
+            JsonTranslationDocument.LoadDictionary(Path.Combine(_outputDirectoryPath, "qbtmud_ja.json"))
+                .Should()
+                .Contain(new KeyValuePair<string, string>("Ctx|A", "%1のすべての項目に適用しました。%2項目の上書き設定をクリアしました。"))
+                .And.Contain(new KeyValuePair<string, string>("Ctx|B", "準備完了"));
+            translationClient.Verify(
+                mock => mock.TranslateAsync(
+                    "ja",
+                    It.Is<IReadOnlyList<string>>(texts => texts.Count == 1 && texts[0] == "Applied to all items in %1; cleared %2 item overrides."),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_ValidateModeAndMissingLocaleFile_WHEN_RunAsync_THEN_ShouldFail()
         {
             File.WriteAllText(Path.Combine(_upstreamDirectoryPath, "webui_en.ts"), string.Empty);
