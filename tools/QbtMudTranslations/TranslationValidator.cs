@@ -118,25 +118,12 @@ namespace QbtMudTranslations
             List<string> errors,
             HashSet<string>? invalidKeys)
         {
-            var expectedPlaceholders = PlaceholderRegex()
-                .Matches(englishValue)
-                .Select(match => match.Value)
-                .GroupBy(value => value, StringComparer.Ordinal)
-                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
-            if (expectedPlaceholders.Count == 0)
+            var englishPlaceholders = PlaceholderRegex().Matches(englishValue).Select(match => match.Value).OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            var localePlaceholders = PlaceholderRegex().Matches(translation).Select(match => match.Value).OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            if (!englishPlaceholders.SequenceEqual(localePlaceholders, StringComparer.Ordinal))
             {
-                return;
-            }
-
-            foreach (var expectedPlaceholder in expectedPlaceholders)
-            {
-                var localeCount = Regex.Matches(translation, Regex.Escape(expectedPlaceholder.Key), RegexOptions.CultureInvariant).Count;
-                if (localeCount != expectedPlaceholder.Value)
-                {
-                    errors.Add($"{locale}: key '{key}' has mismatched placeholders.");
-                    invalidKeys?.Add(key);
-                    return;
-                }
+                errors.Add($"{locale}: key '{key}' has mismatched placeholders.");
+                invalidKeys?.Add(key);
             }
         }
 

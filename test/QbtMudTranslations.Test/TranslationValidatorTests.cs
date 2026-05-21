@@ -85,5 +85,43 @@ namespace QbtMudTranslations.Test
 
             result.Should().Contain(error => error.Contains("placeholder", StringComparison.Ordinal));
         }
+
+        [Fact]
+        public void GIVEN_LocaleIntroducesUnexpectedPlaceholder_WHEN_ValidateLocale_THEN_ShouldReportPlaceholderMismatch()
+        {
+            var englishTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Done %1"
+            };
+            var localeTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Fertig %1 %2"
+            };
+
+            var target = new TranslationValidator();
+
+            var result = target.ValidateLocale("de", englishTranslations, localeTranslations);
+
+            result.Should().Contain(error => error.Contains("placeholder", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void GIVEN_EnglishHasNoPlaceholderAndLocaleAddsOne_WHEN_ValidateLocale_THEN_ShouldReportPlaceholderMismatch()
+        {
+            var englishTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Done"
+            };
+            var localeTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Fertig %1"
+            };
+
+            var target = new TranslationValidator();
+
+            var result = target.ValidateLocale("de", englishTranslations, localeTranslations);
+
+            result.Should().Contain(error => error.Contains("placeholder", StringComparison.Ordinal));
+        }
     }
 }

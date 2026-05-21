@@ -151,7 +151,7 @@ namespace Lantean.QBTMud.Infrastructure.Services.Localization
 
         private static string ResolveDisplayName(string locale)
         {
-            var normalized = NormalizeLocaleForCulture(locale);
+            var normalized = WebUiLocaleScriptMapper.NormalizeLocaleForCulture(locale);
             if (string.IsNullOrWhiteSpace(normalized))
             {
                 return locale;
@@ -166,51 +166,6 @@ namespace Lantean.QBTMud.Infrastructure.Services.Localization
             {
                 return locale;
             }
-        }
-
-        private static string NormalizeLocaleForCulture(string locale)
-        {
-            var normalized = locale.Replace('_', '-');
-            var atIndex = normalized.IndexOf('@', StringComparison.Ordinal);
-            if (atIndex < 0)
-            {
-                return normalized;
-            }
-
-            var basePart = normalized[..atIndex];
-            var scriptPart = normalized[(atIndex + 1)..];
-            if (string.IsNullOrWhiteSpace(scriptPart))
-            {
-                return basePart;
-            }
-
-            var script = NormalizeScriptTag(scriptPart);
-            if (string.IsNullOrWhiteSpace(script))
-            {
-                return basePart;
-            }
-
-            return string.Concat(basePart, "-", script);
-        }
-
-        private static string NormalizeScriptTag(string script)
-        {
-            if (string.Equals(script, "latin", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Latn";
-            }
-
-            if (string.Equals(script, "cyrillic", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Cyrl";
-            }
-
-            if (script.Length == 4)
-            {
-                return string.Concat(char.ToUpperInvariant(script[0]), script.Substring(1).ToLowerInvariant());
-            }
-
-            return string.Empty;
         }
     }
 }
