@@ -73,8 +73,8 @@ node_modules/
 # Agent plans
 /plans/
 
-# Generated i18n bundles: keep the canonical qBittorrent + override files tracked.
-/src/Lantean.QBTMud/wwwroot/i18n/*.json
+# Generated upstream i18n bundles: keep the canonical source and override files tracked.
+/src/Lantean.QBTMud/wwwroot/i18n/webui_*.json
 !/src/Lantean.QBTMud/wwwroot/i18n/webui_en.json
 !/src/Lantean.QBTMud/wwwroot/i18n/webui_aliases.json
 !/src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json

@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.Application.Services.Localization
         ValueTask EnsureInitialized(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Loads aliases, base translations, and overrides for the specified locale.
+        /// Loads aliases, base translations, and qbtmud translations for the specified locale.
         /// </summary>
         /// <param name="locale">The locale to load.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>

@@ -42,9 +42,9 @@ namespace Lantean.QBTMud.Services.Localization
                 key = aliasKey;
             }
 
-            if (resources.Overrides.TryGetValue(key, out var overrideTranslation))
+            if (resources.QbtMudTranslations.TryGetValue(key, out var qbtMudTranslation))
             {
-                return FormatTranslation(overrideTranslation, formatArguments, source);
+                return FormatTranslation(qbtMudTranslation, formatArguments, source);
             }
 
             if (resources.Translations.TryGetValue(key, out var translation))

@@ -103,11 +103,14 @@
 - Any user-facing copy (labels, button text, tooltips, empty states, alerts, errors) must be localized.
 - When replicating qBittorrent WebUI functionality, prefer using qBittorrent's existing language keys and text via `ILanguageLocalizer.Translate(context, source, ...)` so translations come from the bundled WebUI language files.
 - Before adding any new override key, explicitly verify the text is not already available in qBittorrent WebUI locale files (context + source), and reuse an existing key whenever possible.
-- Do not add entries to `webui_overrides_*.json` for convenience, wording preference, or duplicate text that already exists upstream under another usable context.
-- Only when no suitable upstream translation key exists, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json` and reference it via `ILanguageLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
+- Do not add entries to `qbtmud_*.json` for convenience, wording preference, or duplicate text that already exists upstream under another usable context.
+- Only when no suitable upstream translation key exists, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/qbtmud_en.json` and reference it via `ILanguageLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
 
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
+- After editing any source file that is expected to use CRLF, run `unix2dos <changed files>` to normalize the entire file and eliminate any LF or mixed endings introduced by patching tools.
+- Do not run `unix2dos` on files that are intentionally LF per `.gitattributes` (for example `*.sh`, `*.bash`, `*.py`, and `justfile`).
+- Before finishing, verify every changed CRLF-governed file is `crlf` and not `mixed`.
 - After modifying source files, run `dotnet format --include <changed files> --artifacts-path=/tmp/artifacts/qbtmud` for the files changed in the current task only.
 - Do not format unrelated files.
 

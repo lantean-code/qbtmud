@@ -119,13 +119,13 @@ namespace Lantean.QBTMud.Infrastructure.Services.Localization
                     locale);
             }
 
-            var overridesFileName = string.Format(CultureInfo.InvariantCulture, _options.OverrideFileNameFormat, loadedLocale);
-            var overrides = await _fileResourceProvider.LoadDictionaryAsync(overridesFileName, cancellationToken)
+            var qbtMudFileName = string.Format(CultureInfo.InvariantCulture, _options.QbtMudFileNameFormat, loadedLocale);
+            var qbtMudTranslations = await _fileResourceProvider.LoadDictionaryAsync(qbtMudFileName, cancellationToken)
                 ?? new Dictionary<string, string>(StringComparer.Ordinal);
 
             return new LanguageResources(
                 aliases,
-                overrides,
+                qbtMudTranslations,
                 translations,
                 locale);
         }

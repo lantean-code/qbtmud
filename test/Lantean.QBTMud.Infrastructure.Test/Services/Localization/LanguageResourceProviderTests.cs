@@ -15,7 +15,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
         public void GIVEN_NewProvider_WHEN_ResourcesRead_THEN_ShouldReturnEmptyResources()
         {
             _target.Resources.Aliases.Should().BeEmpty();
-            _target.Resources.Overrides.Should().BeEmpty();
+            _target.Resources.QbtMudTranslations.Should().BeEmpty();
             _target.Resources.Translations.Should().BeEmpty();
             _target.Resources.LoadedCultureName.Should().BeEmpty();
         }
@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
         {
             var resources = new LanguageResources(
                 new Dictionary<string, string>(StringComparer.Ordinal) { ["Alias"] = "Value" },
-                new Dictionary<string, string>(StringComparer.Ordinal) { ["Override"] = "Value" },
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["QbtMudTranslation"] = "Value" },
                 new Dictionary<string, string>(StringComparer.Ordinal) { ["Translation"] = "Value" },
                 "fr-FR");
 

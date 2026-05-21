@@ -26,7 +26,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 BasePath = "i18n",
                 AliasFileName = "webui_aliases.json",
                 BaseFileNameFormat = "webui_{0}.json",
-                OverrideFileNameFormat = "webui_overrides_{0}.json"
+                QbtMudFileNameFormat = "qbtmud_{0}.json"
             });
 
             _target = new LanguageResourceLoader(_fileResourceProvider, _assemblyResourceProvider, _resourceProvider, _logger, options);
@@ -36,7 +36,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
         public void GIVEN_LoaderNotInitialized_WHEN_ResourcesRead_THEN_ShouldReturnEmptyResources()
         {
             _resourceProvider.Resources.Aliases.Should().BeEmpty();
-            _resourceProvider.Resources.Overrides.Should().BeEmpty();
+            _resourceProvider.Resources.QbtMudTranslations.Should().BeEmpty();
             _resourceProvider.Resources.Translations.Should().BeEmpty();
             _resourceProvider.Resources.LoadedCultureName.Should().BeEmpty();
         }
@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_de-DE.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_de-DE.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(new Dictionary<string, string>(StringComparer.Ordinal)));
 
             await _target.LoadLocaleAsync("de-DE", TestContext.Current.CancellationToken);
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_aliases.json", It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_de-DE.json", It.IsAny<CancellationToken>()), Times.Once);
-            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_overrides_de-DE.json", It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("qbtmud_de-DE.json", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 }));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(new Dictionary<string, string>(StringComparer.Ordinal)));
 
             Mock.Get(_fileResourceProvider)
@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 }));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_fr-FR.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_fr-FR.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(new Dictionary<string, string>(StringComparer.Ordinal)));
 
             await WithCultureAsync(new CultureInfo("en-US"), async () =>
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
         }
 
         [Fact]
-        public async Task GIVEN_EnglishLocaleAndEmbeddedTranslations_WHEN_LoadLocaleAsync_THEN_ShouldUseEmbeddedAndEnglishOverrides()
+        public async Task GIVEN_EnglishLocaleAndEmbeddedTranslations_WHEN_LoadLocaleAsync_THEN_ShouldUseEmbeddedAndEnglishQbtMudTranslations()
         {
             var aliases = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -130,7 +130,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["Ctx|Alias"] = "Translated"
             };
-            var overrides = new Dictionary<string, string>(StringComparer.Ordinal)
+            var qbtMudTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["Ctx|Alias"] = "Override"
             };
@@ -144,14 +144,14 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en.json", It.IsAny<CancellationToken>()))
-                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(overrides));
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(qbtMudTranslations));
 
             await _target.LoadLocaleAsync("en-US", TestContext.Current.CancellationToken);
 
             _resourceProvider.Resources.Aliases.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Ctx|Alias");
             _resourceProvider.Resources.Translations.Should().ContainKey("Ctx|Alias").WhoseValue.Should().Be("Translated");
-            _resourceProvider.Resources.Overrides.Should().ContainKey("Ctx|Alias").WhoseValue.Should().Be("Override");
+            _resourceProvider.Resources.QbtMudTranslations.Should().ContainKey("Ctx|Alias").WhoseValue.Should().Be("Override");
             _resourceProvider.Resources.LoadedCultureName.Should().Be("en-US");
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_en-US.json", It.IsAny<CancellationToken>()), Times.Never);
@@ -175,7 +175,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
 
             await _target.LoadLocaleAsync("C", TestContext.Current.CancellationToken);
@@ -195,7 +195,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["Ctx|Source"] = "Translated"
             };
-            var overrides = new Dictionary<string, string>(StringComparer.Ordinal)
+            var qbtMudTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["Ctx|Source"] = "Override"
             };
@@ -217,14 +217,14 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en_US.json", It.IsAny<CancellationToken>()))
-                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(overrides));
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en_US.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(qbtMudTranslations));
 
             await _target.LoadLocaleAsync("en-US", TestContext.Current.CancellationToken);
 
             _resourceProvider.Resources.Aliases.Should().BeEmpty();
             _resourceProvider.Resources.Translations.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Translated");
-            _resourceProvider.Resources.Overrides.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Override");
+            _resourceProvider.Resources.QbtMudTranslations.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Override");
             _resourceProvider.Resources.LoadedCultureName.Should().Be("en-US");
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_en-US.json", It.IsAny<CancellationToken>()), Times.Once);
@@ -232,7 +232,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
         }
 
         [Fact]
-        public async Task GIVEN_NonEnglishLocale_WHEN_PrimaryLocalesMissing_THEN_ShouldUseBaseLocaleAndEmptyOverrides()
+        public async Task GIVEN_NonEnglishLocale_WHEN_PrimaryLocalesMissing_THEN_ShouldUseBaseLocaleAndEmptyQbtMudTranslations()
         {
             var aliases = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -260,14 +260,14 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_fr.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_fr.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
 
             await _target.LoadLocaleAsync("fr-CA", TestContext.Current.CancellationToken);
 
             _resourceProvider.Resources.Aliases.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Ctx|Alias");
             _resourceProvider.Resources.Translations.Should().ContainKey("Ctx|Alias").WhoseValue.Should().Be("Translated");
-            _resourceProvider.Resources.Overrides.Should().BeEmpty();
+            _resourceProvider.Resources.QbtMudTranslations.Should().BeEmpty();
             _resourceProvider.Resources.LoadedCultureName.Should().Be("fr-CA");
 
             Mock.Get(_assemblyResourceProvider).Verify(provider => provider.LoadDictionaryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -291,7 +291,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
 
             _resourceProvider.Resources.Aliases.Should().BeEmpty();
             _resourceProvider.Resources.Translations.Should().BeEmpty();
-            _resourceProvider.Resources.Overrides.Should().BeEmpty();
+            _resourceProvider.Resources.QbtMudTranslations.Should().BeEmpty();
             _resourceProvider.Resources.LoadedCultureName.Should().Be("sv-SE");
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_sv-SE.json", It.IsAny<CancellationToken>()), Times.Once);
@@ -321,13 +321,13 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
 
             await _target.LoadLocaleAsync("en", TestContext.Current.CancellationToken);
 
             _resourceProvider.Resources.Translations.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Translated");
-            _resourceProvider.Resources.Overrides.Should().BeEmpty();
+            _resourceProvider.Resources.QbtMudTranslations.Should().BeEmpty();
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_en.json", It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -353,7 +353,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_pt-BR.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_pt-BR.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
 
             await _target.LoadLocaleAsync("pt_BR", TestContext.Current.CancellationToken);
@@ -363,7 +363,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_pt_BR.json", It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_pt-BR.json", It.IsAny<CancellationToken>()), Times.Once);
-            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_overrides_pt-BR.json", It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("qbtmud_pt-BR.json", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -387,7 +387,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_sr.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_sr.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
 
             await _target.LoadLocaleAsync("sr@latin", TestContext.Current.CancellationToken);
@@ -397,7 +397,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
 
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_sr@latin.json", It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_sr.json", It.IsAny<CancellationToken>()), Times.Once);
-            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_overrides_sr.json", It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("qbtmud_sr.json", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -421,7 +421,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
 
             Mock.Get(_fileResourceProvider)
-                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en.json", It.IsAny<CancellationToken>()))
+                .Setup(provider => provider.LoadDictionaryAsync("qbtmud_en.json", It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
 
             await _target.LoadLocaleAsync("@", TestContext.Current.CancellationToken);

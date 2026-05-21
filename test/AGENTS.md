@@ -46,6 +46,9 @@
 
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
+- After editing any test file that is expected to use CRLF, run `unix2dos <changed files>` to normalize the entire file and eliminate any LF or mixed endings introduced by patching tools.
+- Do not run `unix2dos` on files that are intentionally LF per `.gitattributes` (for example `*.sh`, `*.bash`, `*.py`, and `justfile`).
+- Before finishing, verify every changed CRLF-governed file is `crlf` and not `mixed`.
 
 ## Formatting
 - After modifying test files, run `dotnet format --include <changed files> --artifacts-path=/tmp/artifacts/qbtmud` for the files changed in the current task only.
