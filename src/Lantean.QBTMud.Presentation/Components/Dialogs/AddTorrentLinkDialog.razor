@@ -7,7 +7,15 @@
         <MudGrid>
             <MudItem xs="12">
                 <MudFocusTrap>
-                    <MudTextField @ref="UrlsTextField" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Add torrent links")" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" ShrinkLabel="true" AutoFocus="true" data-test-id="@TestIdHelper.For("AddTorrentLinkUrls")" />
+                    <MudTextField @ref="UrlsTextField"
+                                  Label="@LanguageLocalizer.Translate("DownloadFromURLDialog", "URLs")"
+                                  HelperText="@LanguageLocalizer.Translate("DownloadFromURLDialog", "One link per line (HTTP links, Magnet links and info-hashes are supported)")"
+                                  Lines="10"
+                                  @bind-Value="Urls"
+                                  Variant="Variant.Outlined"
+                                  ShrinkLabel="true"
+                                  AutoFocus="true"
+                                  data-test-id="@TestIdHelper.For("AddTorrentLinkUrls")" />
                 </MudFocusTrap>
             </MudItem>
         </MudGrid>
@@ -15,6 +23,6 @@
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentLinkClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentLinkSubmit")">@LanguageLocalizer.Translate("downloadFromURL", "Download")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentLinkSubmit")">@LanguageLocalizer.Translate("DownloadFromURLDialog", "Download")</MudButton>
     </DialogActions>
 </MudDialog>
