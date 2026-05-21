@@ -13,6 +13,9 @@ namespace Lantean.QBTMud.Components.Dialogs
     {
         private const int _bytesPerKibibyte = 1024;
         private const string _storageKey = "TorrentCreator.FormState";
+        private const string _optimizeAlignmentSource = "Optimize\n                    alignment";
+        private const string _privateTorrentSource = "Private\n                torrent (Won't distribute on DHT network)";
+        private const string _startSeedingImmediatelySource = "Start\n                seeding\n                immediately";
 
         private static readonly IReadOnlyList<int> _pieceSizeOptions =
         [
@@ -70,6 +73,21 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected bool SupportsTorrentFormat
         {
             get { return _supportsTorrentFormat; }
+        }
+
+        protected string OptimizeAlignmentLabel
+        {
+            get { return TranslateTorrentCreator(_optimizeAlignmentSource); }
+        }
+
+        protected string PrivateTorrentLabel
+        {
+            get { return TranslateTorrentCreator(_privateTorrentSource); }
+        }
+
+        protected string StartSeedingImmediatelyLabel
+        {
+            get { return TranslateTorrentCreator(_startSeedingImmediatelySource); }
         }
 
         protected override async Task OnInitializedAsync()
@@ -303,6 +321,16 @@ namespace Lantean.QBTMud.Components.Dialogs
         private string Translate(string value, params object[] args)
         {
             return LanguageLocalizer.Translate("AppCreateTorrentDialog", value, args);
+        }
+
+        private string TranslatePluginSelectDialog(string value, params object[] args)
+        {
+            return LanguageLocalizer.Translate("PluginSelectDlg", value, args);
+        }
+
+        private string TranslateTorrentCreator(string value, params object[] args)
+        {
+            return LanguageLocalizer.Translate("TorrentCreator", value, args);
         }
     }
 }

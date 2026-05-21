@@ -1,3 +1,4 @@
+using System.Globalization;
 using AwesomeAssertions;
 using Lantean.QBTMud.Core.Models;
 
@@ -25,6 +26,67 @@ namespace Lantean.QBTMud.Application.Test.Services.Localization
             var result = LocaleSelection.ResolveLocale(null, languages);
 
             result.Should().Be("en");
+        }
+
+        [Fact]
+        public void GIVEN_NullLocaleAndCurrentUiCultureMatch_WHEN_Resolved_THEN_ReturnsCurrentUiCultureLocale()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("en", "English"),
+                new("fr", "French")
+            };
+            var originalCulture = CultureInfo.CurrentCulture;
+            var originalUiCulture = CultureInfo.CurrentUICulture;
+
+            try
+            {
+                var culture = new CultureInfo("fr-FR");
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+
+                var result = LocaleSelection.ResolveLocale(null, languages);
+
+                result.Should().Be("fr");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalUiCulture;
+            }
+        }
+
+        [Theory]
+        [InlineData("sr-Latn-RS", "sr@latin")]
+        [InlineData("uz-Latn-UZ", "uz@Latn")]
+        [InlineData("sr-Cyrl-RS", "sr@cyrillic")]
+        public void GIVEN_NullLocaleAndCurrentUiCultureUsesScriptTag_WHEN_Resolved_THEN_ReturnsMatchingScriptLocale(string cultureName, string expectedLocale)
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("en", "English"),
+                new("sr@latin", "Serbian (Latin)"),
+                new("sr@cyrillic", "Serbian (Cyrillic)"),
+                new("uz@Latn", "Uzbek (Latin)")
+            };
+            var originalCulture = CultureInfo.CurrentCulture;
+            var originalUiCulture = CultureInfo.CurrentUICulture;
+
+            try
+            {
+                var culture = new CultureInfo(cultureName);
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+
+                var result = LocaleSelection.ResolveLocale(null, languages);
+
+                result.Should().Be(expectedLocale);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalUiCulture;
+            }
         }
 
         [Fact]
@@ -137,6 +199,25 @@ namespace Lantean.QBTMud.Application.Test.Services.Localization
             var result = LocaleSelection.ResolveLocale("fr_CA", languages);
 
             result.Should().Be("fr");
+        }
+
+        [Theory]
+        [InlineData("sr-Latn-RS", "sr@latin")]
+        [InlineData("uz-Latn-UZ", "uz@Latn")]
+        [InlineData("sr-Cyrl-RS", "sr@cyrillic")]
+        public void GIVEN_RegionalLocaleWithScriptTag_WHEN_Resolved_THEN_UsesMatchingScriptLocale(string desiredLocale, string expectedLocale)
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("en", "English"),
+                new("sr@latin", "Serbian (Latin)"),
+                new("sr@cyrillic", "Serbian (Cyrillic)"),
+                new("uz@Latn", "Uzbek (Latin)")
+            };
+
+            var result = LocaleSelection.ResolveLocale(desiredLocale, languages);
+
+            result.Should().Be(expectedLocale);
         }
 
         [Fact]

@@ -7,7 +7,7 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <PathAutocomplete Label="@Translate("Source path")"
+                <PathAutocomplete Label="@TranslateTorrentCreator("Source Path")"
                                   Value="@_sourcePath"
                                   ValueChanged="OnSourcePathChanged"
                                   Required="true"
@@ -25,8 +25,8 @@
                                   data-test-id="@TestIdHelper.For("TorrentFilePath")" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" Label="@Translate("Piece size")" @bind-Value="_pieceSize" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("PieceSize")">
-                    <MudSelectItem T="int?" Value="@((int?)null)">@Translate("Automatic")</MudSelectItem>
+                <MudSelect T="int?" Label="@TranslateTorrentCreator("Piece size:")" @bind-Value="_pieceSize" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("PieceSize")">
+                    <MudSelectItem T="int?" Value="@((int?)null)">@TranslateTorrentCreator("Auto")</MudSelectItem>
                     @foreach (var option in PieceSizeOptions)
                     {
                         <MudSelectItem T="int?" Value="@((int?)option)">@DisplayHelpers.Size(option)</MudSelectItem>
@@ -34,15 +34,15 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <FieldSwitch Label="@Translate("Private torrent")" @bind-Value="_isPrivate" data-test-id="@TestIdHelper.For("PrivateTorrent")" />
+                <FieldSwitch Label="@PrivateTorrentLabel" @bind-Value="_isPrivate" data-test-id="@TestIdHelper.For("PrivateTorrent")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@Translate("Start seeding immediately")" @bind-Value="_startSeeding" data-test-id="@TestIdHelper.For("StartSeeding")" />
+                <FieldSwitch Label="@StartSeedingImmediatelyLabel" @bind-Value="_startSeeding" data-test-id="@TestIdHelper.For("StartSeeding")" />
             </MudItem>
             @if (SupportsTorrentFormat)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="TorrentFormat" Label="@Translate("Torrent format")" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentFormat")">
+                    <MudSelect T="TorrentFormat" Label="@TranslateTorrentCreator("Torrent format:")" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentFormat")">
                         <MudSelectItem Value="@TorrentFormat.V2">V2</MudSelectItem>
                         <MudSelectItem Value="@TorrentFormat.Hybrid">Hybrid</MudSelectItem>
                         <MudSelectItem Value="@TorrentFormat.V1">V1</MudSelectItem>
@@ -52,7 +52,7 @@
             else
             {
                 <MudItem xs="12" sm="6">
-                    <FieldSwitch Label="@Translate("Optimize alignment")" @bind-Value="_optimizeAlignment" data-test-id="@TestIdHelper.For("OptimizeAlignment")" />
+                    <FieldSwitch Label="@OptimizeAlignmentLabel" @bind-Value="_optimizeAlignment" data-test-id="@TestIdHelper.For("OptimizeAlignment")" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudNumericField T="int"
@@ -67,7 +67,7 @@
                 </MudItem>
             }
             <MudItem xs="12">
-                <MudTextField Label="@Translate("Tracker URLs")"
+                <MudTextField Label="@TranslateTorrentCreator("Tracker URLs:")"
                               @bind-Value="_trackers"
                               Lines="4"
                               Variant="Variant.Outlined"
@@ -76,7 +76,7 @@
                               data-test-id="@TestIdHelper.For("TrackerUrls")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="@Translate("Web seed URLs")"
+                <MudTextField Label="@TranslateTorrentCreator("Web seed URLs:")"
                               @bind-Value="_urlSeeds"
                               Lines="4"
                               Variant="Variant.Outlined"
@@ -85,15 +85,15 @@
                               data-test-id="@TestIdHelper.For("WebSeedUrls")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="@Translate("Comments")" @bind-Value="_comment" Lines="3" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Comments")" />
+                <MudTextField Label="@TranslateTorrentCreator("Comments:")" @bind-Value="_comment" Lines="3" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Comments")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="@Translate("Source")" @bind-Value="_source" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Source")" />
+                <MudTextField Label="@TranslateTorrentCreator("Source:")" @bind-Value="_source" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Source")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CreateTorrentClose")">@Translate("Close")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CreateTorrentSubmit")">@Translate("Create")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CreateTorrentClose")">@TranslatePluginSelectDialog("Close")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CreateTorrentSubmit")">@TranslateTorrentCreator("Create Torrent")</MudButton>
     </DialogActions>
 </MudDialog>

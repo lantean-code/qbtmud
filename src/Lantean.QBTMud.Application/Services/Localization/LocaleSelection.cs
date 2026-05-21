@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lantean.QBTMud.Core.Models;
 
 namespace Lantean.QBTMud.Application.Services.Localization
@@ -13,48 +14,95 @@ namespace Lantean.QBTMud.Application.Services.Localization
 
             if (string.IsNullOrWhiteSpace(desiredLocale))
             {
+                var currentLocale = TryResolveCurrentCultureLocale(languages);
+                if (currentLocale is not null)
+                {
+                    return currentLocale;
+                }
+
                 return TryGetLocale("en", languages) ?? languages[0].Code;
             }
 
-            var trimmed = desiredLocale.Trim();
-
-            var exact = TryGetLocale(trimmed, languages);
-            if (exact is not null)
+            var resolvedLocale = TryResolveLocaleCandidate(desiredLocale, languages);
+            if (resolvedLocale is not null)
             {
-                return exact;
-            }
-
-            var swapped = trimmed.Replace('-', '_');
-            exact = TryGetLocale(swapped, languages);
-            if (exact is not null)
-            {
-                return exact;
-            }
-
-            swapped = trimmed.Replace('_', '-');
-            exact = TryGetLocale(swapped, languages);
-            if (exact is not null)
-            {
-                return exact;
-            }
-
-            var baseLocale = GetBaseLocale(trimmed);
-            if (!string.IsNullOrWhiteSpace(baseLocale))
-            {
-                exact = TryGetLocale(baseLocale, languages);
-                if (exact is not null)
-                {
-                    return exact;
-                }
-
-                exact = TryGetLocale(baseLocale.Replace('-', '_'), languages);
-                if (exact is not null)
-                {
-                    return exact;
-                }
+                return resolvedLocale;
             }
 
             return TryGetLocale("en", languages) ?? languages[0].Code;
+        }
+
+        private static string? TryResolveCurrentCultureLocale(IReadOnlyList<LanguageCatalogItem> languages)
+        {
+            var currentUiCultureLocale = TryResolveLocaleCandidate(CultureInfo.CurrentUICulture.Name, languages);
+            if (currentUiCultureLocale is not null)
+            {
+                return currentUiCultureLocale;
+            }
+
+            return TryResolveLocaleCandidate(CultureInfo.CurrentCulture.Name, languages);
+        }
+
+        private static string? TryResolveLocaleCandidate(string? locale, IReadOnlyList<LanguageCatalogItem> languages)
+        {
+            if (string.IsNullOrWhiteSpace(locale))
+            {
+                return null;
+            }
+
+            foreach (var candidate in GetLocaleCandidates(locale))
+            {
+                var exact = TryGetLocale(candidate, languages);
+                if (exact is not null)
+                {
+                    return exact;
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> GetLocaleCandidates(string locale)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var trimmed = locale.Trim();
+
+            if (seen.Add(trimmed))
+            {
+                yield return trimmed;
+            }
+
+            var underscored = trimmed.Replace('-', '_');
+            if (seen.Add(underscored))
+            {
+                yield return underscored;
+            }
+
+            var hyphenated = trimmed.Replace('_', '-');
+            if (seen.Add(hyphenated))
+            {
+                yield return hyphenated;
+            }
+
+            foreach (var modifierCandidate in WebUiLocaleScriptMapper.GetLocaleCandidatesForScript(hyphenated))
+            {
+                if (seen.Add(modifierCandidate))
+                {
+                    yield return modifierCandidate;
+                }
+            }
+
+            var baseLocale = GetBaseLocale(trimmed);
+            if (!string.IsNullOrWhiteSpace(baseLocale) && seen.Add(baseLocale))
+            {
+                yield return baseLocale;
+            }
+
+            var underscoredBaseLocale = baseLocale.Replace('-', '_');
+            if (!string.IsNullOrWhiteSpace(underscoredBaseLocale) && seen.Add(underscoredBaseLocale))
+            {
+                yield return underscoredBaseLocale;
+            }
         }
 
         private static string? TryGetLocale(string locale, IReadOnlyList<LanguageCatalogItem> languages)

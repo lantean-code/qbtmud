@@ -4,7 +4,7 @@
 
 <MudGrid>
     <MudItem xs="12">
-        <MudSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Torrent options")" @bind-Value="Expanded" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("AdditionalOptions")" />
+        <MudSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Torrent settings")" @bind-Value="Expanded" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("AdditionalOptions")" />
     </MudItem>
 </MudGrid>
 <MudCollapse Expanded="Expanded">
@@ -16,7 +16,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="6">
-            <PathAutocomplete Label="@LanguageLocalizer.Translate("HttpServer", "Save files to location:")"
+            <PathAutocomplete Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Save files to location:")"
                               Value="@SavePath"
                               ValueChanged="@(value => SavePathChanged(value ?? string.Empty))"
                               Mode="DirectoryContentMode.Directories"
@@ -24,10 +24,10 @@
                               data-test-id="@TestIdHelper.For("SaveFilesLocation")" />
         </MudItem>
         <MudItem xs="12" sm="6">
-            <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Keep incomplete torrents in:")" Value="@UseDownloadPath" ValueChanged="@SetUseDownloadPath" Disabled="@TorrentManagementMode" data-test-id="@TestIdHelper.For("UseIncompleteSavePath")" />
+            <FieldSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Use another path for incomplete torrent")" Value="@UseDownloadPath" ValueChanged="@SetUseDownloadPath" Disabled="@TorrentManagementMode" data-test-id="@TestIdHelper.For("UseIncompleteSavePath")" />
         </MudItem>
         <MudItem xs="12">
-            <PathAutocomplete Label="@LanguageLocalizer.Translate("TransferListModel", "Incomplete Save Path")"
+            <PathAutocomplete Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Save path:")"
                               Value="@DownloadPath"
                               ValueChanged="@(value => DownloadPathChanged(value ?? string.Empty))"
                               Mode="DirectoryContentMode.Directories"
@@ -41,7 +41,7 @@
             </MudItem>
         }
         <MudItem xs="12">
-            <MudTextField Label="@LanguageLocalizer.Translate("HttpServer", "Rename torrent")" @bind-Value="RenameTorrent" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Rename")" />
+            <MudTextField Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Rename torrent")" @bind-Value="RenameTorrent" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Rename")" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="string" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Category:")" Value="@Category" ValueChanged="@CategoryChanged" Variant="Variant.Outlined" ShrinkLabel="true" Clearable="true" data-test-id="@TestIdHelper.For("Category")">
@@ -53,7 +53,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="@LanguageLocalizer.Translate("TransferListWidget", "Tags")" Variant="Variant.Outlined" ShrinkLabel="true" MultiSelection="true" SelectedValues="@SelectedTags" SelectedValuesChanged="@SelectedTagsChanged" Disabled="@(AvailableTags.Count == 0)" data-test-id="@TestIdHelper.For("Tags")">
+            <MudSelect T="string" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Tags:")" Variant="Variant.Outlined" ShrinkLabel="true" MultiSelection="true" SelectedValues="@SelectedTags" SelectedValuesChanged="@SelectedTagsChanged" Disabled="@(AvailableTags.Count == 0)" data-test-id="@TestIdHelper.For("Tags")">
                 @foreach (var tag in AvailableTags)
                 {
                     <MudSelectItem Value="@tag">@tag</MudSelectItem>
@@ -84,16 +84,16 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="@LanguageLocalizer.Translate("TransferListWidget", "Download in sequential order")" @bind-Value="DownloadInSequentialOrder" data-test-id="@TestIdHelper.For("DownloadSequentially")" />
+            <FieldSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Download in sequential order")" @bind-Value="DownloadInSequentialOrder" data-test-id="@TestIdHelper.For("DownloadSequentially")" />
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="@LanguageLocalizer.Translate("TransferListWidget", "Download first and last pieces first")" @bind-Value="DownloadFirstAndLastPiecesFirst" data-test-id="@TestIdHelper.For("DownloadFirstLastPieces")" />
+            <FieldSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Download first and last pieces first")" @bind-Value="DownloadFirstAndLastPiecesFirst" data-test-id="@TestIdHelper.For("DownloadFirstLastPieces")" />
         </MudItem>
         <MudItem xs="12" sm="6">
-            <MudNumericField Label="@LanguageLocalizer.Translate("HttpServer", "Limit download rate")" @bind-Value="DownloadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" data-test-id="@TestIdHelper.For("DownloadLimit")" />
+            <MudNumericField Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Limit download rate")" @bind-Value="DownloadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" data-test-id="@TestIdHelper.For("DownloadLimit")" />
         </MudItem>
         <MudItem xs="12" sm="6">
-            <MudNumericField Label="@LanguageLocalizer.Translate("HttpServer", "Limit upload rate")" @bind-Value="UploadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" data-test-id="@TestIdHelper.For("UploadLimit")" />
+            <MudNumericField Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Limit upload rate")" @bind-Value="UploadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" data-test-id="@TestIdHelper.For("UploadLimit")" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="ShareLimitMode" Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "Torrent Upload/Download Ratio Limiting")" Value="@SelectedShareLimitMode" ValueChanged="@ShareLimitModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ShareLimitMode")">

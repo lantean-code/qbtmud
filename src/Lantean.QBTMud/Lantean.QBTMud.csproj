@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot/i18n/qbtmud_*.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>QbtMudBuildVersion</_Parameter1>
       <_Parameter2>$(QbtMudBuildVersion)</_Parameter2>
@@ -133,16 +137,36 @@
     <WriteLinesToFile File="$(ReleaseAotPayloadRoot)/README.txt" Lines="@(_CdnReadmeLines)" Overwrite="true" />
   </Target>
 
-  <Target Name="GenerateWebUiTranslations" BeforeTargets="Publish;ResolveStaticWebAssets" Condition="'$(WebUiTranslationsMode)' != ''">
+  <Target Name="ResolveQbtMudTranslationFiles" Condition="'$(WebUiTranslationsMode)' != ''">
+    <ItemGroup>
+      <_SelectedQbtMudTranslationFiles Include="wwwroot/i18n/qbtmud_en.json" Condition="'$(WebUiTranslationsModeNormalized)'=='en'" />
+      <_SelectedQbtMudTranslationFiles Include="wwwroot/i18n/qbtmud_*.json" Condition="'$(WebUiTranslationsModeNormalized)'=='all'" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="WriteSelectedQbtMudTranslationFiles" DependsOnTargets="ResolveQbtMudTranslationFiles" Condition="'$(QbtMudTranslationFileListOutput)' != ''">
+    <WriteLinesToFile File="$(QbtMudTranslationFileListOutput)" Lines="@(_SelectedQbtMudTranslationFiles->'%(Filename)%(Extension)')" Overwrite="true" />
+  </Target>
+
+  <Target Name="GenerateWebUiTranslations" BeforeTargets="Publish;ResolveStaticWebAssets" DependsOnTargets="ResolveQbtMudTranslationFiles" Condition="'$(WebUiTranslationsMode)' != ''">
     <Message Text="Generating WebUI translations ($(WebUiTranslationsMode)) from $(WebUiTranslationsSource)" Importance="high" />
     <Warning Condition="!Exists('$(WebUiTranslationsSource)')" Text="WebUI translations source path not found: $(WebUiTranslationsSource). Run 'git submodule update --init --recursive'." />
     <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project $(MSBuildThisFileDirectory)../../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
     <ItemGroup>
-      <Content Include="wwwroot/i18n/*.json">
+      <Content Include="@(_SelectedQbtMudTranslationFiles)">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <TargetPath>wwwroot/i18n/%(Filename)%(Extension)</TargetPath>
+      </Content>
+      <Content Include="wwwroot/i18n/webui_aliases.json">
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         <TargetPath>wwwroot/i18n/%(Filename)%(Extension)</TargetPath>
       </Content>
     </ItemGroup>
+  </Target>
+
+  <Target Name="CopySelectedQbtMudTranslationsToPublish" AfterTargets="Publish" DependsOnTargets="ResolveQbtMudTranslationFiles" Condition="'$(WebUiTranslationsMode)' != '' and '$(PublishDir)' != ''">
+    <MakeDir Directories="$(PublishDir)wwwroot/i18n" />
+    <Copy SourceFiles="@(_SelectedQbtMudTranslationFiles)" DestinationFiles="@(_SelectedQbtMudTranslationFiles->'$(PublishDir)wwwroot/i18n/%(Filename)%(Extension)')" SkipUnchangedFiles="true" Condition="Exists('%(Identity)')" />
   </Target>
 
   <Target Name="CopyGeneratedWebUiTranslationsToPublish" AfterTargets="Publish" Condition="'$(WebUiTranslationsMode)' != '' and '$(PublishDir)' != ''">

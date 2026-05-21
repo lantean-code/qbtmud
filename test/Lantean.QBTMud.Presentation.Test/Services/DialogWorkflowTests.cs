@@ -155,7 +155,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
 
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
@@ -190,7 +190,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
@@ -218,7 +218,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
@@ -245,7 +245,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { file.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
@@ -267,13 +267,13 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Setup(service => service.Current)
                 .Returns(preferences);
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
 
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<AddTorrentFileDialog>(
-                    "Add torrent",
+                    "Add Torrent File...",
                     It.Is<DialogParameters>(parameters => HasReferenceParameter(parameters, nameof(AddTorrentFileDialog.Preferences), preferences)),
                     DialogWorkflow.FormDialogOptions),
                 Times.Once);
@@ -299,7 +299,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object, fileThree.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
@@ -343,7 +343,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
@@ -359,7 +359,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var fileOptions = new AddTorrentFileOptions(Array.Empty<IBrowserFile>(), options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add Torrent File...", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))

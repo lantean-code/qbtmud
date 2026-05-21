@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Services
             AddCurrentPreferences(parameters, nameof(AddTorrentFileDialog.Preferences));
 
             var result = await _dialogService.ShowAsync<AddTorrentFileDialog>(
-                _languageLocalizer.Translate(_addNewTorrentDialogContext, "Add torrent"),
+                _languageLocalizer.Translate("MainWindow", "Add Torrent File..."),
                 parameters,
                 FormDialogOptions);
             var dialogResult = await result.Result;

@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 BasePath = "i18n/",
                 AliasFileName = "webui_aliases.json",
                 BaseFileNameFormat = "webui_{0}.json",
-                OverrideFileNameFormat = "webui_overrides_{0}.json"
+                QbtMudFileNameFormat = "qbtmud_{0}.json"
             });
 
             _target = new LanguageFileLoader(_httpClientFactory, _logger, options);

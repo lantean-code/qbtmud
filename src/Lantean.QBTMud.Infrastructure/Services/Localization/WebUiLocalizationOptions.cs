@@ -16,9 +16,9 @@ namespace Lantean.QBTMud.Infrastructure.Services.Localization
         public string BaseFileNameFormat { get; set; } = "webui_{0}.json";
 
         /// <summary>
-        /// Gets or sets the filename format for override translation files.
+        /// Gets or sets the filename format for qbtmud translation files.
         /// </summary>
-        public string OverrideFileNameFormat { get; set; } = "webui_overrides_{0}.json";
+        public string QbtMudFileNameFormat { get; set; } = "qbtmud_{0}.json";
 
         /// <summary>
         /// Gets or sets the filename for the alias map.

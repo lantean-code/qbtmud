@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 ["i18n/webui_aliases.json"] = JsonResponse("{\"Ctx|Source\":\"Ctx|Alias\"}"),
                 ["i18n/webui_fr-CA.json"] = new HttpResponseMessage(HttpStatusCode.NotFound),
                 ["i18n/webui_fr_CA.json"] = JsonResponse("{\"Ctx|Alias\":\"Translated %1\"}"),
-                ["i18n/webui_overrides_fr_CA.json"] = JsonResponse("{\"Ctx|Alias\":\"Override %1\"}")
+                ["i18n/qbtmud_fr_CA.json"] = JsonResponse("{\"Ctx|Alias\":\"Override %1\"}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_de-DE.json"] = JsonResponse("{\"Ctx|Source\":\"Hallo %1\"}"),
-                ["i18n/webui_overrides_de-DE.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_de-DE.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -62,7 +62,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_it-IT.json"] = JsonResponse("{}"),
-                ["i18n/webui_overrides_it-IT.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_it-IT.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_nl-NL.json"] = JsonResponse("{\"Ctx|Source\":\"{broken\"}"),
-                ["i18n/webui_overrides_nl-NL.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_nl-NL.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_es-ES.json"] = JsonResponse("{\"Ctx|Source\":\"%2 %1\"}"),
-                ["i18n/webui_overrides_es-ES.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_es-ES.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_de-DE.json"] = JsonResponse("{\"Ctx|Source\":\"CPU 100%\"}"),
-                ["i18n/webui_overrides_de-DE.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_de-DE.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -147,7 +147,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_cs-CZ.json"] = JsonResponse("{\"Ctx|Source\":\"If &quot;mixed mode&quot; is enabled\"}"),
-                ["i18n/webui_overrides_cs-CZ.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_cs-CZ.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -180,7 +180,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_pt-BR.json"] = JsonResponse("{}"),
-                ["i18n/webui_overrides_pt-BR.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_pt-BR.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -261,7 +261,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_de-DE.json"] = JsonResponse("{\"Ctx|Source\":\"Hallo\"}"),
-                ["i18n/webui_overrides_de-DE.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_de-DE.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -282,7 +282,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             var responses = new Dictionary<string, HttpResponseMessage>(StringComparer.Ordinal)
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
-                ["i18n/webui_overrides_en.json"] = new HttpResponseMessage(HttpStatusCode.NotFound)
+                ["i18n/qbtmud_en.json"] = new HttpResponseMessage(HttpStatusCode.NotFound)
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -294,7 +294,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             });
 
             handler.RequestedPaths.Should().Contain("i18n/webui_aliases.json");
-            handler.RequestedPaths.Should().Contain("i18n/webui_overrides_en.json");
+            handler.RequestedPaths.Should().Contain("i18n/qbtmud_en.json");
             handler.RequestedPaths.Should().NotContain("i18n/webui_en.json");
         }
 
@@ -324,7 +324,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{"),
                 ["i18n/webui_da-DK.json"] = JsonResponse("{\"Ctx|Source\":\"Hej\"}"),
-                ["i18n/webui_overrides_da-DK.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_da-DK.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -345,7 +345,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("null"),
                 ["i18n/webui_nb-NO.json"] = JsonResponse("{\"Ctx|Source\":\"Hei\"}"),
-                ["i18n/webui_overrides_nb-NO.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_nb-NO.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -388,7 +388,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
             {
                 ["i18n/webui_aliases.json"] = JsonResponse("{}"),
                 ["i18n/webui_pl-PL.json"] = JsonResponse("{\"Ctx|Source %1\":\"   \"}"),
-                ["i18n/webui_overrides_pl-PL.json"] = JsonResponse("{}")
+                ["i18n/qbtmud_pl-PL.json"] = JsonResponse("{}")
             };
             var handler = new DictionaryHttpMessageHandler(responses);
             using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
@@ -439,7 +439,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services.Localization
                 BasePath = "i18n",
                 AliasFileName = "webui_aliases.json",
                 BaseFileNameFormat = "webui_{0}.json",
-                OverrideFileNameFormat = "webui_overrides_{0}.json"
+                QbtMudFileNameFormat = "qbtmud_{0}.json"
             });
 
             var fileProviderLogger = Mock.Of<ILogger<LanguageFileLoader>>();

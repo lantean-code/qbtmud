@@ -29,9 +29,11 @@
     <Project Path="test/Lantean.QBTMud.Presentation.Test/Lantean.QBTMud.Presentation.Test.csproj" />
     <Project Path="test/Lantean.QBTMud.Test/Lantean.QBTMud.Test.csproj" />
     <Project Path="test/Lantean.QBTMud.TestSupport/Lantean.QBTMud.TestSupport.csproj" />
+    <Project Path="test/QbtMudTranslations.Test/QbtMudTranslations.Test.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />
+    <Project Path="tools/QbtMudTranslations/QbtMudTranslations.csproj" />
     <Project Path="tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj" />
   </Folder>
 </Solution>

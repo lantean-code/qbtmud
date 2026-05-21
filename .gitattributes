@@ -1,7 +1,14 @@
 ###############################################################################
 # Set default behavior to automatically normalize line endings.
+#
+# This repository uses CRLF for text files by default. Keep Unix-executed
+# scripts on LF so they remain runnable in Linux environments.
 ###############################################################################
-* text=auto
+* text=auto eol=crlf
+*.sh text eol=lf
+*.bash text eol=lf
+*.py text eol=lf
+justfile text eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.
