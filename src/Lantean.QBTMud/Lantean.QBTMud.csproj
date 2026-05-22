@@ -139,7 +139,7 @@
 
   <Target Name="ResolveQbtMudTranslationFiles" Condition="'$(WebUiTranslationsMode)' != ''">
     <ItemGroup>
-      <_SelectedQbtMudTranslationFiles Include="wwwroot/i18n/qbtmud_en.json" Condition="'$(WebUiTranslationsModeNormalized)'=='en'" />
+      <_SelectedQbtMudTranslationFiles Include="wwwroot/i18n/qbtmud_*.json" Condition="'$(WebUiTranslationsModeNormalized)'=='en'" />
       <_SelectedQbtMudTranslationFiles Include="wwwroot/i18n/qbtmud_*.json" Condition="'$(WebUiTranslationsModeNormalized)'=='all'" />
     </ItemGroup>
   </Target>
