@@ -14,6 +14,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
+        private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly SettingsStorageService _target;
 
         public SettingsStorageServiceTests()
@@ -23,6 +24,8 @@ namespace Lantean.QBTMud.Application.Test.Services
             _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
             _clientDataStorageAdapter = Mock.Of<IClientDataStorageAdapter>();
             _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            var clientDataCacheState = new ClientDataCacheState();
+            _clientDataCacheInvalidationService = new ClientDataCacheInvalidationService(clientDataCacheState);
 
             Mock.Get(_storageRoutingService)
                 .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
@@ -44,6 +47,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Returns(Task.CompletedTask);
 
             _target = new SettingsStorageService(
+                clientDataCacheState,
                 _localStorageService,
                 _storageRoutingService,
                 _webApiCapabilityService,
@@ -154,7 +158,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
                     new Dictionary<string, JsonElement>(StringComparer.Ordinal)));
 
@@ -183,7 +187,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
 
             var result = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
@@ -206,7 +210,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));
 
             Func<Task> action = async () =>
@@ -230,7 +234,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
                     new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                     {
@@ -255,7 +259,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
                     new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                     {
@@ -282,7 +286,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.Failure);
 
             var result = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
@@ -303,7 +307,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException("cancelled"));
 
             Func<Task> action = async () =>
@@ -380,7 +384,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
                     new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                     {
@@ -482,7 +486,7 @@ namespace Lantean.QBTMud.Application.Test.Services
 
             result.Should().Be("en");
             Mock.Get(_clientDataStorageAdapter).Verify(
-                adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
+                adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -499,7 +503,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
-                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.FromEntries(
                     new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                     {
@@ -510,6 +514,142 @@ namespace Lantean.QBTMud.Application.Test.Services
 
             result.Should().NotBeNull();
             result!["enabled"].Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataRoutingWithSupport_WHEN_GetMultipleItems_THEN_ShouldLoadClientDataOnce()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.AppSettings.State.v1"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone(),
+                        ["QbtMud.WebUiLocalization.PreferredLocale.v1"] = JsonDocument.Parse("\"en\"").RootElement.Clone()
+                    }));
+
+            var item = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            var locale = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+
+            item.Should().NotBeNull();
+            item!["enabled"].Should().BeTrue();
+            locale.Should().Be("en");
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataCacheInitialized_WHEN_SetItemAsync_THEN_ShouldUpdateCachedValue()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.AppSettings.State.v1"] = JsonDocument.Parse("{\"enabled\":false}").RootElement.Clone()
+                    }));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Success);
+
+            var initial = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            await _target.SetItemAsync("AppSettings.State.v1", new { enabled = true }, TestContext.Current.CancellationToken);
+            var updated = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
+
+            initial.Should().NotBeNull();
+            initial!["enabled"].Should().BeFalse();
+            updated.Should().NotBeNull();
+            updated!["enabled"].Should().BeTrue();
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataCacheInitialized_WHEN_RemoveItemAsync_THEN_ShouldRemoveCachedValue()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.WebUiLocalization.PreferredLocale.v1"] = JsonDocument.Parse("\"en\"").RootElement.Clone()
+                    }));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Success);
+
+            var initial = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            await _target.RemoveItemAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            var removed = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+
+            initial.Should().Be("en");
+            removed.Should().BeNull();
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataCacheInitialized_WHEN_Invalidated_THEN_ShouldReloadClientDataOnNextRead()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            var loadCallCount = 0;
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    loadCallCount++;
+                    return ClientDataLoadResult.FromEntries(
+                        new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                        {
+                            ["QbtMud.WebUiLocalization.PreferredLocale.v1"] = loadCallCount == 1
+                                ? JsonDocument.Parse("\"en\"").RootElement.Clone()
+                                : JsonDocument.Parse("\"en_GB\"").RootElement.Clone()
+                        });
+                });
+
+            var initial = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            await _clientDataCacheInvalidationService.InvalidateClientDataCacheAsync(TestContext.Current.CancellationToken);
+            var reloaded = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+
+            initial.Should().Be("en");
+            reloaded.Should().Be("en_GB");
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]

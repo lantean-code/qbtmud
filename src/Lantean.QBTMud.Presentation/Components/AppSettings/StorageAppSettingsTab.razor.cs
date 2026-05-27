@@ -29,6 +29,12 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
         public EventCallback StorageRoutingChanged { get; set; }
 
         [Parameter]
+        public EventCallback ReloadFromServerRequested { get; set; }
+
+        [Parameter]
+        public bool HasPendingChanges { get; set; }
+
+        [Parameter]
         public EventCallback<bool> BusyChanged { get; set; }
 
         [Inject]
@@ -54,6 +60,8 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
         protected IReadOnlyList<StorageCatalogGroupDefinition> StorageGroups => StorageCatalogService.Groups;
 
         protected bool SupportsClientData => WebApiCapabilityState.SupportsClientData;
+
+        protected bool CanReloadSettingsFromServer => SupportsClientData && HasClientDataSettingsConfigured();
 
         protected bool IsStorageBusy { get; private set; }
 
@@ -460,6 +468,24 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             }
 
             return itemIdsWithOverrides.Count;
+        }
+
+        private bool HasClientDataSettingsConfigured()
+        {
+            foreach (var group in StorageGroups)
+            {
+                if (GetGroupStorageTypeValue(group.Id) == StorageType.ClientData)
+                {
+                    return true;
+                }
+
+                if (group.Items.Any(item => GetItemStorageTypeValue(item) == StorageType.ClientData))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private string TranslateSettings(string source, params object[] arguments)

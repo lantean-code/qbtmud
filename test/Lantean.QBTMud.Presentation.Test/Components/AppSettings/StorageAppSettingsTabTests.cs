@@ -16,6 +16,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
         private readonly Mock<IWebApiCapabilityService> _webApiCapabilityServiceMock;
         private readonly StorageRoutingSettings _storageRoutingSettings;
         private int _storageRoutingChangedCount;
+        private int _reloadFromServerRequestedCount;
         private int _busyChangedCount;
 
         public StorageAppSettingsTabTests()
@@ -216,6 +217,69 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             _busyChangedCount.Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadFromServerButtonClicked_WHEN_Rendered_THEN_RaisesCallback()
+        {
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var reloadButton = FindButton(target, "AppSettingsStorageReloadFromServer");
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            _reloadFromServerRequestedCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void GIVEN_NoSettingsUseClientData_WHEN_Rendered_THEN_DisablesReloadSettingsButton()
+        {
+            var storageRoutingSettings = StorageRoutingSettings.Default.Clone();
+            var target = RenderTarget(storageRoutingSettings: storageRoutingSettings);
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+
+            var reloadButton = FindButton(target, "AppSettingsStorageReloadFromServer");
+
+            reloadButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_PageHasPendingChanges_WHEN_Rendered_THEN_DisablesReloadSettingsButton()
+        {
+            var target = RenderTarget(hasPendingChanges: true);
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+
+            var reloadButton = FindButton(target, "AppSettingsStorageReloadFromServer");
+
+            reloadButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ClientDataUnsupported_WHEN_Rendered_THEN_HidesReloadSettingsButton()
+        {
+            _webApiCapabilityServiceMock
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 11, 0), false));
+
+            var target = RenderTarget(reloadToken: 14);
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudChip<string>>(target, "AppSettingsStorageSupport");
+            });
+
+            target.FindComponents<MudButton>()
+                .Where(button => HasTestId(button, "AppSettingsStorageReloadFromServer"))
+                .Should()
+                .BeEmpty();
         }
 
         [Fact]
@@ -509,14 +573,16 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
                 Times.AtLeastOnce);
         }
 
-        private IRenderedComponent<StorageAppSettingsTab> RenderTarget(bool isActive = true, int reloadToken = 0)
+        private IRenderedComponent<StorageAppSettingsTab> RenderTarget(StorageRoutingSettings? storageRoutingSettings = null, bool hasPendingChanges = false, bool isActive = true, int reloadToken = 0)
         {
             return TestContext.Render<StorageAppSettingsTab>(parameters =>
             {
-                parameters.Add(component => component.StorageRoutingSettings, _storageRoutingSettings);
+                parameters.Add(component => component.StorageRoutingSettings, storageRoutingSettings ?? _storageRoutingSettings);
                 parameters.Add(component => component.IsActive, isActive);
                 parameters.Add(component => component.ReloadToken, reloadToken);
+                parameters.Add(component => component.HasPendingChanges, hasPendingChanges);
                 parameters.Add(component => component.StorageRoutingChanged, EventCallback.Factory.Create(this, OnStorageRoutingChanged));
+                parameters.Add(component => component.ReloadFromServerRequested, EventCallback.Factory.Create(this, OnReloadFromServerRequested));
                 parameters.Add(component => component.BusyChanged, EventCallback.Factory.Create<bool>(this, OnBusyChanged));
             });
         }
@@ -529,6 +595,11 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
         private void OnBusyChanged(bool _)
         {
             _busyChangedCount++;
+        }
+
+        private void OnReloadFromServerRequested()
+        {
+            _reloadFromServerRequestedCount++;
         }
     }
 }

@@ -3,7 +3,7 @@ using Lantean.QBTMud.Application.Services;
 
 namespace Lantean.QBTMud.TestSupport.Infrastructure
 {
-    internal sealed class TestLocalStorageService : ILocalStorageService, ISettingsStorageService
+    internal sealed class TestLocalStorageService : ILocalStorageService, ISettingsStorageService, IClientDataCacheInvalidationService
     {
         private readonly Dictionary<string, object?> _store = new(StringComparer.Ordinal);
         private readonly Lock _lock = new();
@@ -91,6 +91,11 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
         {
             SetItemInternal(key, data);
             return ValueTask.CompletedTask;
+        }
+
+        public Task InvalidateClientDataCacheAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
         }
 
         public void Clear()

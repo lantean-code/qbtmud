@@ -14,6 +14,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly ILocalStorageEntryAdapter _localStorageEntryAdapter;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
+        private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
@@ -22,16 +23,19 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="localStorageEntryAdapter">The local storage entry adapter.</param>
         /// <param name="clientDataStorageAdapter">The ClientData storage adapter.</param>
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
+        /// <param name="clientDataCacheInvalidationService">The ClientData cache invalidation service.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         public StorageDiagnosticsService(
             ILocalStorageEntryAdapter localStorageEntryAdapter,
             IClientDataStorageAdapter clientDataStorageAdapter,
             IWebApiCapabilityService webApiCapabilityService,
+            IClientDataCacheInvalidationService clientDataCacheInvalidationService,
             IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _localStorageEntryAdapter = localStorageEntryAdapter;
             _clientDataStorageAdapter = clientDataStorageAdapter;
             _webApiCapabilityService = webApiCapabilityService;
+            _clientDataCacheInvalidationService = clientDataCacheInvalidationService;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
@@ -120,7 +124,10 @@ namespace Lantean.QBTMud.Application.Services
             if (!removeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
+                return;
             }
+
+            await _clientDataCacheInvalidationService.InvalidateClientDataCacheAsync(cancellationToken);
         }
 
         /// <inheritdoc />
@@ -146,6 +153,7 @@ namespace Lantean.QBTMud.Application.Services
                         if (removeResult.Succeeded)
                         {
                             removedCount += clientEntriesResult.Entries.Count;
+                            await _clientDataCacheInvalidationService.InvalidateClientDataCacheAsync(cancellationToken);
                         }
                         else
                         {

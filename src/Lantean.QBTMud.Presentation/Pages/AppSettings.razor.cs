@@ -137,6 +137,19 @@ namespace Lantean.QBTMud.Pages
             return InvokeAsync(StateHasChanged);
         }
 
+        protected async Task ReloadFromServer()
+        {
+            var confirmed = await DialogWorkflow.ShowConfirmDialog(
+                TranslateSettings("Reload settings"),
+                TranslateSettings("This will reload the app to apply all settings from the server. Continue?"));
+            if (!confirmed)
+            {
+                return;
+            }
+
+            NavigationManager.NavigateToHome(forceLoad: true);
+        }
+
         protected void NavigateBack()
         {
             NavigationManager.NavigateToHome();

@@ -144,6 +144,16 @@
                            data-test-id="@TestIdHelper.For("AppSettingsStorageRefresh")">
                     @TranslateSettings("Refresh")
                 </MudButton>
+                @if (SupportsClientData)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Warning"
+                               OnClick="@(async () => await ReloadFromServerRequested.InvokeAsync())"
+                               Disabled="@(IsStorageBusy || HasPendingChanges || !CanReloadSettingsFromServer)"
+                               data-test-id="@TestIdHelper.For("AppSettingsStorageReloadFromServer")">
+                        @TranslateSettings("Reload settings")
+                    </MudButton>
+                }
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Error"
                            OnClick="ClearStorageEntriesAsync"

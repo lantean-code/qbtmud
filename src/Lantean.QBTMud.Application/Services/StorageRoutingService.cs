@@ -15,6 +15,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IStorageCatalogService _storageCatalogService;
         private readonly ILocalStorageEntryAdapter _localStorageEntryAdapter;
+        private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private StorageRoutingSettings? _cachedSettings;
 
@@ -26,6 +27,7 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="storageCatalogService">The routed storage catalog.</param>
         /// <param name="localStorageEntryAdapter">The local storage entry adapter.</param>
+        /// <param name="clientDataCacheInvalidationService">The ClientData cache invalidation service.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         public StorageRoutingService(
             ILocalStorageService localStorageService,
@@ -33,6 +35,7 @@ namespace Lantean.QBTMud.Application.Services
             IWebApiCapabilityService webApiCapabilityService,
             IStorageCatalogService storageCatalogService,
             ILocalStorageEntryAdapter localStorageEntryAdapter,
+            IClientDataCacheInvalidationService clientDataCacheInvalidationService,
             IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _localStorageService = localStorageService;
@@ -40,6 +43,7 @@ namespace Lantean.QBTMud.Application.Services
             _webApiCapabilityService = webApiCapabilityService;
             _storageCatalogService = storageCatalogService;
             _localStorageEntryAdapter = localStorageEntryAdapter;
+            _clientDataCacheInvalidationService = clientDataCacheInvalidationService;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
@@ -257,6 +261,7 @@ namespace Lantean.QBTMud.Application.Services
                     return false;
                 }
 
+                await _clientDataCacheInvalidationService.InvalidateClientDataCacheAsync(cancellationToken);
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
                 return true;
             }
@@ -299,6 +304,7 @@ namespace Lantean.QBTMud.Application.Services
                     return false;
                 }
 
+                await _clientDataCacheInvalidationService.InvalidateClientDataCacheAsync(cancellationToken);
                 return true;
             }
 

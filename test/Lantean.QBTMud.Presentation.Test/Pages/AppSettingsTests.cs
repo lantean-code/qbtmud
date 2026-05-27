@@ -635,6 +635,79 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_NoPendingChanges_WHEN_ReloadFromServerClicked_THEN_ShowsReloadConfirmationAndNavigatesHome()
+        {
+            var initialSettings = StorageRoutingSettings.Default.Clone();
+            initialSettings.GroupStorageTypes["themes"] = StorageType.ClientData;
+
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(initialSettings.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("/app-settings");
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var reloadButton = FindButton(target, "AppSettingsStorageReloadFromServer");
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(
+                workflow => workflow.ShowConfirmDialog(
+                    It.Is<string>(title => string.Equals(title, "Reload settings", StringComparison.Ordinal)),
+                    It.Is<string>(message => string.Equals(message, "This will reload the app to apply all settings from the server. Continue?", StringComparison.Ordinal))),
+                Times.Once);
+            navigationManager.Uri.Should().Be("http://localhost/");
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingChanges_WHEN_StorageTabRendered_THEN_DisablesReloadFromServerButton()
+        {
+            var initialSettings = StorageRoutingSettings.Default.Clone();
+            initialSettings.GroupStorageTypes["themes"] = StorageType.ClientData;
+
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(initialSettings.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+            var reloadButton = FindButton(target, "AppSettingsStorageReloadFromServer");
+
+            reloadButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
         public void GIVEN_InitializationPending_WHEN_PageRendered_THEN_ShowsLoadingIndicator()
         {
             var settingsTaskSource = new TaskCompletionSource<AppSettingsModel>();
