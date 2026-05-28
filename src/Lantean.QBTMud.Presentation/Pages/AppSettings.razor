@@ -87,7 +87,9 @@
                         <StorageAppSettingsTab StorageRoutingSettings="@StorageRoutingSettings"
                                                IsActive="@IsStorageTabActive"
                                                ReloadToken="@ReloadToken"
+                                               HasPendingChanges="@HasPendingChanges"
                                                StorageRoutingChanged="OnStorageRoutingChanged"
+                                               ReloadFromServerRequested="ReloadFromServer"
                                                BusyChanged="OnStorageBusyChanged" />
                     </div>
                 </MudTabPanel>

@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         public AppSettingsServiceTests()
         {
             _settingsStorageService = new TestLocalStorageService();
-            _target = new AppSettingsService(_settingsStorageService);
+            _target = new AppSettingsService(_settingsStorageService, _settingsStorageService);
         }
 
         [Fact]
@@ -137,7 +137,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
-            var target = new AppSettingsService(settingsStorageService.Object);
+            var target = new AppSettingsService(
+                Mock.Of<IClientDataCacheInvalidationService>(),
+                settingsStorageService.Object);
 
             _ = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
             _ = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
@@ -151,6 +153,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         public async Task GIVEN_CachedSettings_WHEN_RefreshSettingsInvoked_THEN_ReloadsFromStorage()
         {
             var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            var clientDataCacheInvalidationService = new Mock<IClientDataCacheInvalidationService>(MockBehavior.Strict);
             var loadQueue = new Queue<AppSettings?>(
             [
                 new AppSettings
@@ -175,8 +178,13 @@ namespace Lantean.QBTMud.Application.Test.Services
             settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
+            clientDataCacheInvalidationService
+                .Setup(service => service.InvalidateClientDataCacheAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-            var target = new AppSettingsService(settingsStorageService.Object);
+            var target = new AppSettingsService(
+                clientDataCacheInvalidationService.Object,
+                settingsStorageService.Object);
 
             var first = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
             var refreshed = await target.RefreshSettingsAsync(TestContext.Current.CancellationToken);
@@ -189,6 +197,9 @@ namespace Lantean.QBTMud.Application.Test.Services
             settingsStorageService.Verify(
                 service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()),
                 Times.Exactly(2));
+            clientDataCacheInvalidationService.Verify(
+                service => service.InvalidateClientDataCacheAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -205,7 +216,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
-            var target = new AppSettingsService(settingsStorageService.Object);
+            var target = new AppSettingsService(
+                Mock.Of<IClientDataCacheInvalidationService>(),
+                settingsStorageService.Object);
 
             var result = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
 
@@ -256,7 +269,9 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
-            var target = new AppSettingsService(settingsStorageService.Object);
+            var target = new AppSettingsService(
+                Mock.Of<IClientDataCacheInvalidationService>(),
+                settingsStorageService.Object);
             var firstReadTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
             await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
             var secondReadTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);

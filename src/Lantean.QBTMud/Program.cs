@@ -5,6 +5,7 @@ using Lantean.QBTMud.Infrastructure.Configuration;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lantean.QBTMud
 {
@@ -43,6 +44,11 @@ namespace Lantean.QBTMud
             builder.Services.AddQbtMudPresentation();
 
 #if DEBUG
+            builder.UseServiceProviderOptions(new ServiceProviderOptions
+            {
+                ValidateScopes = true,
+                ValidateOnBuild = true
+            });
             builder.Logging.SetMinimumLevel(LogLevel.Information);
 #else
             builder.Logging.SetMinimumLevel(LogLevel.Error);

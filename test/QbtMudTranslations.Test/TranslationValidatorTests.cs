@@ -68,6 +68,63 @@ namespace QbtMudTranslations.Test
         }
 
         [Fact]
+        public void GIVEN_EnglishUsesPlaceholderFollowedByPercentSign_WHEN_LocaleDropsPlaceholder_THEN_ShouldReportPlaceholderMismatch()
+        {
+            var englishTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "%1% complete - %2 downloaded, %3 in progress"
+            };
+            var localeTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Tamamlandı - %2 indirildi, %3 devam ediyor"
+            };
+
+            var target = new TranslationValidator();
+
+            var result = target.ValidateLocale("tr", englishTranslations, localeTranslations);
+
+            result.Should().Contain(error => error.Contains("placeholder", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void GIVEN_EnglishUsesPlaceholderFollowedByPercentSign_WHEN_LocaleKeepsPlaceholderWithoutTrailingPercentSign_THEN_ShouldNotTreatItAsLiteralPercent()
+        {
+            var englishTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Pieces progress for torrent %1: %2% complete. %3 downloaded, %4 downloading, %5 pending."
+            };
+            var localeTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Fortschritt für Torrent %1: %2 abgeschlossen. %3 heruntergeladen, %4 wird heruntergeladen, %5 ausstehend."
+            };
+
+            var target = new TranslationValidator();
+
+            var result = target.ValidateLocale("de", englishTranslations, localeTranslations);
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_PercentageFormattedAsDigitsThenPercentInEnglishAndPercentThenDigitsInLocale_WHEN_ValidateLocale_THEN_ShouldNotTreatItAsPlaceholder()
+        {
+            var englishTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "Less than 80% Availability"
+            };
+            var localeTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|One"] = "%80'in altında kullanılabilirlik"
+            };
+
+            var target = new TranslationValidator();
+
+            var result = target.ValidateLocale("tr", englishTranslations, localeTranslations);
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
         public void GIVEN_LocaleContainsLiteralPercentageAndMissingExpectedPlaceholder_WHEN_ValidateLocale_THEN_ShouldStillReportPlaceholderMismatch()
         {
             var englishTranslations = new Dictionary<string, string>(StringComparer.Ordinal)

@@ -15,6 +15,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IStorageCatalogService _storageCatalogService;
+        private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly Mock<IJSRuntime> _jsRuntime;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly StorageRoutingService _target;
@@ -25,7 +26,11 @@ namespace Lantean.QBTMud.Application.Test.Services
             _clientDataStorageAdapter = Mock.Of<IClientDataStorageAdapter>();
             _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
             _storageCatalogService = new StorageCatalogService();
+            _clientDataCacheInvalidationService = Mock.Of<IClientDataCacheInvalidationService>();
             _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            Mock.Get(_clientDataCacheInvalidationService)
+                .Setup(service => service.InvalidateClientDataCacheAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             _jsRuntime = new Mock<IJSRuntime>(MockBehavior.Strict);
             _jsRuntime
                 .Setup(runtime => runtime.InvokeAsync<BrowserStorageEntry[]?>(
@@ -47,6 +52,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _webApiCapabilityService,
                 _storageCatalogService,
                 new LocalStorageEntryAdapter(_jsRuntime.Object),
+                _clientDataCacheInvalidationService,
                 _apiFeedbackWorkflow);
         }
 
@@ -132,6 +138,8 @@ namespace Lantean.QBTMud.Application.Test.Services
             storedPayload!.Should().ContainKey("QbtMud.AppSettings.State.v2");
             storedPayload["QbtMud.AppSettings.State.v2"].Should().BeOfType<JsonElement>();
             ((JsonElement)storedPayload["QbtMud.AppSettings.State.v2"]!).GetProperty("theme").GetString().Should().Be("dark");
+            Mock.Get(_clientDataCacheInvalidationService)
+                .Verify(service => service.InvalidateClientDataCacheAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v2", TestContext.Current.CancellationToken);
             localValue.Should().BeNull();
@@ -296,6 +304,8 @@ namespace Lantean.QBTMud.Application.Test.Services
                     It.Is<IEnumerable<string>>(keys => keys.Contains("QbtMud.AppSettings.State.v2", StringComparer.Ordinal)),
                     It.IsAny<CancellationToken>()),
                     Times.Once);
+            Mock.Get(_clientDataCacheInvalidationService)
+                .Verify(service => service.InvalidateClientDataCacheAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -685,6 +695,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 webApiCapabilityService.Object,
                 customCatalogService.Object,
                 new LocalStorageEntryAdapter(jsRuntime.Object),
+                _clientDataCacheInvalidationService,
                 apiFeedbackWorkflow.Object);
 
             await customTarget.SaveSettingsAsync(new StorageRoutingSettings
@@ -881,6 +892,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 webApiCapabilityService.Object,
                 storageCatalogService,
                 new LocalStorageEntryAdapter(jsRuntime.Object),
+                Mock.Of<IClientDataCacheInvalidationService>(),
                 apiFeedbackWorkflow.Object);
 
             var firstTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);

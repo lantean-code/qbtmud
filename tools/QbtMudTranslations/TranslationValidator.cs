@@ -118,8 +118,11 @@ namespace QbtMudTranslations
             List<string> errors,
             HashSet<string>? invalidKeys)
         {
-            var englishPlaceholders = PlaceholderRegex().Matches(englishValue).Select(match => match.Value).OrderBy(value => value, StringComparer.Ordinal).ToArray();
-            var localePlaceholders = PlaceholderRegex().Matches(translation).Select(match => match.Value).OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            var englishPercentLiteralValues = GetPercentLiteralValues(englishValue);
+            var englishPlaceholders = PlaceholderRegex().Matches(englishValue).Select(match => match.Value).ToArray();
+            var englishPlaceholderSet = englishPlaceholders.ToHashSet(StringComparer.Ordinal);
+            var localePlaceholders = GetLocalePlaceholders(translation, englishPercentLiteralValues, englishPlaceholderSet).OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            Array.Sort(englishPlaceholders, StringComparer.Ordinal);
             if (!englishPlaceholders.SequenceEqual(localePlaceholders, StringComparer.Ordinal))
             {
                 errors.Add($"{locale}: key '{key}' has mismatched placeholders.");
@@ -127,8 +130,47 @@ namespace QbtMudTranslations
             }
         }
 
+        private static IReadOnlySet<string> GetPercentLiteralValues(string value)
+        {
+            return SuffixPercentLiteralRegex()
+                .Matches(value)
+                .Select(match => match.Groups[1].Value)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        private static IReadOnlyList<string> GetLocalePlaceholders(
+            string value,
+            IReadOnlySet<string> englishPercentLiteralValues,
+            IReadOnlySet<string> englishPlaceholderSet)
+        {
+            var placeholders = new List<string>();
+
+            foreach (Match match in PlaceholderRegex().Matches(value))
+            {
+                var placeholderNumber = match.Groups[1].Value;
+                var followedByPercentSign = match.Index + match.Length < value.Length
+                    && value[match.Index + match.Length] == '%';
+                var leadingPercentLiteral = match.Index == 0
+                    || !char.IsDigit(value[match.Index - 1]);
+                if (leadingPercentLiteral
+                    && !followedByPercentSign
+                    && !englishPlaceholderSet.Contains(match.Value)
+                    && englishPercentLiteralValues.Contains(placeholderNumber))
+                {
+                    continue;
+                }
+
+                placeholders.Add(match.Value);
+            }
+
+            return placeholders;
+        }
+
         [GeneratedRegex("%([1-9][0-9]?)(?![0-9])", RegexOptions.CultureInvariant)]
         private static partial Regex PlaceholderRegex();
+
+        [GeneratedRegex("([1-9][0-9]?)\\s*%", RegexOptions.CultureInvariant)]
+        private static partial Regex SuffixPercentLiteralRegex();
 
         [GeneratedRegex("&[A-Za-z0-9#]+;", RegexOptions.CultureInvariant)]
         private static partial Regex HtmlEntityRegex();

@@ -27,6 +27,8 @@ namespace Lantean.QBTMud.Application
             services.TryAddScoped<IClientDataPresenceService, ClientDataPresenceService>();
             services.TryAddScoped<IStorageDiagnosticsService, StorageDiagnosticsService>();
             services.TryAddScoped<IStorageRoutingService, StorageRoutingService>();
+            services.TryAddScoped<ClientDataCacheState>();
+            services.TryAddScoped<IClientDataCacheInvalidationService, ClientDataCacheInvalidationService>();
             services.TryAddScoped<ISettingsStorageService, SettingsStorageService>();
             services.TryAddScoped<ISpeedHistoryService, SpeedHistoryService>();
 

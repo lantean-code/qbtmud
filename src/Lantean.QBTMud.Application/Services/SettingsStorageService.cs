@@ -12,6 +12,7 @@ namespace Lantean.QBTMud.Application.Services
     {
         private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
+        private readonly ClientDataCacheState _clientDataCacheState;
         private readonly ILocalStorageService _localStorageService;
         private readonly IStorageRoutingService _storageRoutingService;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
@@ -21,18 +22,21 @@ namespace Lantean.QBTMud.Application.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsStorageService"/> class.
         /// </summary>
+        /// <param name="clientDataCacheState">The scoped ClientData cache state.</param>
         /// <param name="localStorageService">The local storage service.</param>
         /// <param name="storageRoutingService">The storage routing service.</param>
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="clientDataStorageAdapter">The client data storage adapter.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         public SettingsStorageService(
+            ClientDataCacheState clientDataCacheState,
             ILocalStorageService localStorageService,
             IStorageRoutingService storageRoutingService,
             IWebApiCapabilityService webApiCapabilityService,
             IClientDataStorageAdapter clientDataStorageAdapter,
             IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
+            _clientDataCacheState = clientDataCacheState;
             _localStorageService = localStorageService;
             _storageRoutingService = storageRoutingService;
             _webApiCapabilityService = webApiCapabilityService;
@@ -54,15 +58,13 @@ namespace Lantean.QBTMud.Application.Services
             try
             {
                 var prefixedKey = ToPrefixedKey(key);
-                var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
-                if (!loadedResult.Succeeded || loadedResult.Entries is null)
+                var loadedEntries = await GetCachedClientDataEntriesAsync(cancellationToken);
+                if (loadedEntries is null)
                 {
-                    await HandleClientDataFailureAsync(loadedResult.FailureResult, cancellationToken);
                     return await _localStorageService.GetItemAsync<T>(key, cancellationToken);
                 }
 
-                var loaded = loadedResult.Entries;
-                if (!loaded.TryGetValue(prefixedKey, out var value)
+                if (!loadedEntries.TryGetValue(prefixedKey, out var value)
                     || value.ValueKind == JsonValueKind.Undefined
                     || value.ValueKind == JsonValueKind.Null)
                 {
@@ -89,15 +91,13 @@ namespace Lantean.QBTMud.Application.Services
             }
 
             var prefixedKey = ToPrefixedKey(key);
-            var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
-            if (!loadedResult.Succeeded || loadedResult.Entries is null)
+            var loadedEntries = await GetCachedClientDataEntriesAsync(cancellationToken);
+            if (loadedEntries is null)
             {
-                await HandleClientDataFailureAsync(loadedResult.FailureResult, cancellationToken);
                 return await _localStorageService.GetItemAsStringAsync(key, cancellationToken);
             }
 
-            var loaded = loadedResult.Entries;
-            if (!loaded.TryGetValue(prefixedKey, out var value)
+            if (!loadedEntries.TryGetValue(prefixedKey, out var value)
                 || value.ValueKind == JsonValueKind.Undefined
                 || value.ValueKind == JsonValueKind.Null)
             {
@@ -136,8 +136,12 @@ namespace Lantean.QBTMud.Application.Services
             if (!storeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
+                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.SetItemAsync(key, data, cancellationToken);
+                return;
             }
+
+            await StoreCachedClientDataEntryAsync(prefixedKey, valueElement, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -164,8 +168,12 @@ namespace Lantean.QBTMud.Application.Services
             if (!storeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
+                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
+                return;
             }
+
+            await StoreCachedClientDataEntryAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), cancellationToken);
         }
 
         /// <inheritdoc />
@@ -184,8 +192,12 @@ namespace Lantean.QBTMud.Application.Services
             if (!removeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
+                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
+                return;
             }
+
+            await RemoveCachedClientDataEntryAsync(ToPrefixedKey(key), cancellationToken);
         }
 
         private async Task HandleClientDataFailureAsync(ApiResultBase? failureResult, CancellationToken cancellationToken)
@@ -209,6 +221,87 @@ namespace Lantean.QBTMud.Application.Services
             return capabilityState.SupportsClientData
                 ? StorageType.ClientData
                 : StorageType.LocalStorage;
+        }
+
+        private async Task<IReadOnlyDictionary<string, JsonElement>?> GetCachedClientDataEntriesAsync(CancellationToken cancellationToken)
+        {
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                if (_clientDataCacheState.CachedEntries is not null)
+                {
+                    return _clientDataCacheState.CachedEntries;
+                }
+
+                var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
+                if (!loadedResult.Succeeded || loadedResult.Entries is null)
+                {
+                    await HandleClientDataFailureAsync(loadedResult.FailureResult, cancellationToken);
+                    return null;
+                }
+
+                _clientDataCacheState.CachedEntries = new Dictionary<string, JsonElement>(loadedResult.Entries, StringComparer.Ordinal);
+                return _clientDataCacheState.CachedEntries;
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
+        }
+
+        private async Task StoreCachedClientDataEntryAsync(string prefixedKey, JsonElement value, CancellationToken cancellationToken)
+        {
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                if (_clientDataCacheState.CachedEntries is null)
+                {
+                    return;
+                }
+
+                var updatedEntries = new Dictionary<string, JsonElement>(_clientDataCacheState.CachedEntries, StringComparer.Ordinal)
+                {
+                    [prefixedKey] = value
+                };
+                _clientDataCacheState.CachedEntries = updatedEntries;
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
+        }
+
+        private async Task InvalidateCachedClientDataEntriesAsync(CancellationToken cancellationToken)
+        {
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                _clientDataCacheState.CachedEntries = null;
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
+        }
+
+        private async Task RemoveCachedClientDataEntryAsync(string prefixedKey, CancellationToken cancellationToken)
+        {
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                if (_clientDataCacheState.CachedEntries is null)
+                {
+                    return;
+                }
+
+                var updatedEntries = new Dictionary<string, JsonElement>(_clientDataCacheState.CachedEntries, StringComparer.Ordinal);
+                updatedEntries.Remove(prefixedKey);
+                _clientDataCacheState.CachedEntries = updatedEntries;
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
         }
 
         private static string ToPrefixedKey(string key)

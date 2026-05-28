@@ -68,6 +68,7 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
             Services.AddSingleton<ILocalStorageService>(_localStorage);
             Services.AddSingleton<ILocalStorageEntryAdapter, LocalStorageEntryAdapter>();
             Services.AddSingleton<ISettingsStorageService>(_localStorage);
+            Services.AddSingleton<IClientDataCacheInvalidationService>(_localStorage);
             Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
             Services
