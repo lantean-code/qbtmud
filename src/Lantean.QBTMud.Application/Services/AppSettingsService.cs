@@ -10,15 +10,20 @@ namespace Lantean.QBTMud.Application.Services
     {
         private const string _legacyDarkModeStorageKey = "MainLayout.IsDarkMode";
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
+        private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly ISettingsStorageService _settingsStorageService;
         private AppSettings? _cachedSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppSettingsService"/> class.
         /// </summary>
+        /// <param name="clientDataCacheInvalidationService">The ClientData cache invalidation service.</param>
         /// <param name="settingsStorageService">The local storage service.</param>
-        public AppSettingsService(ISettingsStorageService settingsStorageService)
+        public AppSettingsService(
+            IClientDataCacheInvalidationService clientDataCacheInvalidationService,
+            ISettingsStorageService settingsStorageService)
         {
+            _clientDataCacheInvalidationService = clientDataCacheInvalidationService;
             _settingsStorageService = settingsStorageService;
         }
 
@@ -126,6 +131,11 @@ namespace Lantean.QBTMud.Application.Services
             await _initializationSemaphore.WaitAsync(cancellationToken);
             try
             {
+                if (forceReload)
+                {
+                    await _clientDataCacheInvalidationService.InvalidateClientDataCacheAsync(cancellationToken);
+                }
+
                 if (!forceReload && _cachedSettings is not null)
                 {
                     return _cachedSettings.Clone();

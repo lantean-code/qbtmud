@@ -583,6 +583,47 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_ClientDataCacheInitializedAndSetItemFails_WHEN_GetItemAsyncAfterFallback_THEN_ShouldInvalidateCacheAndUseLocalStorageValue()
+        {
+            var apiResult = CreateFailureResult();
+
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.AppSettings.State.v1"] = JsonDocument.Parse("{\"enabled\":false}").RootElement.Clone()
+                    }))
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
+
+            var initial = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            await _target.SetItemAsync("AppSettings.State.v1", new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["enabled"] = true
+            }, TestContext.Current.CancellationToken);
+            var updated = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
+
+            initial.Should().NotBeNull();
+            initial!["enabled"].Should().BeFalse();
+            updated.Should().NotBeNull();
+            updated!["enabled"].Should().BeTrue();
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task GIVEN_ClientDataCacheInitialized_WHEN_RemoveItemAsync_THEN_ShouldRemoveCachedValue()
         {
             Mock.Get(_storageRoutingService)
@@ -613,6 +654,78 @@ namespace Lantean.QBTMud.Application.Test.Services
             removed.Should().BeNull();
             Mock.Get(_clientDataStorageAdapter)
                 .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataCacheInitializedAndSetItemAsStringFails_WHEN_GetItemAsStringAsyncAfterFallback_THEN_ShouldInvalidateCacheAndUseLocalStorageValue()
+        {
+            var apiResult = CreateFailureResult();
+
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.WebUiLocalization.PreferredLocale.v1"] = JsonDocument.Parse("\"en\"").RootElement.Clone()
+                    }))
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
+
+            var initial = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            await _target.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en_GB", TestContext.Current.CancellationToken);
+            var updated = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+
+            initial.Should().Be("en");
+            updated.Should().Be("en_GB");
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataCacheInitializedAndRemoveFails_WHEN_GetItemAsStringAsyncAfterFallback_THEN_ShouldInvalidateCacheAndUseLocalStorageValue()
+        {
+            var apiResult = CreateFailureResult();
+
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(
+                    new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                    {
+                        ["QbtMud.WebUiLocalization.PreferredLocale.v1"] = JsonDocument.Parse("\"en\"").RootElement.Clone()
+                    }))
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
+
+            var initial = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            await _target.RemoveItemAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            var removed = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+
+            initial.Should().Be("en");
+            removed.Should().BeNull();
+            Mock.Get(_clientDataStorageAdapter)
+                .Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]

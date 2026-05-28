@@ -136,6 +136,7 @@ namespace Lantean.QBTMud.Application.Services
             if (!storeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
+                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.SetItemAsync(key, data, cancellationToken);
                 return;
             }
@@ -167,6 +168,7 @@ namespace Lantean.QBTMud.Application.Services
             if (!storeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
+                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
                 return;
             }
@@ -190,6 +192,7 @@ namespace Lantean.QBTMud.Application.Services
             if (!removeResult.Succeeded)
             {
                 await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
+                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
                 return;
             }
@@ -261,6 +264,19 @@ namespace Lantean.QBTMud.Application.Services
                     [prefixedKey] = value
                 };
                 _clientDataCacheState.CachedEntries = updatedEntries;
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
+        }
+
+        private async Task InvalidateCachedClientDataEntriesAsync(CancellationToken cancellationToken)
+        {
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                _clientDataCacheState.CachedEntries = null;
             }
             finally
             {
