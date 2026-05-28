@@ -19,9 +19,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public QBittorrentPreferences? Preferences { get; set; }
 
-        protected void UploadFiles(IReadOnlyList<IBrowserFile> files)
+        protected void UploadFiles(IReadOnlyList<IBrowserFile>? files)
         {
-            Files = files.ToList();
+            Files = files?.ToList() ?? [];
         }
 
         protected void Cancel()

@@ -121,6 +121,27 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_FileUploaded_WHEN_LastFileRemoved_THEN_SubmitCancels()
+        {
+            UseApiClientMock();
+            var dialog = await _target.RenderDialogAsync();
+
+            var file = CreateBrowserFile("Name");
+            await UploadFilesAsync(dialog.Component, new[] { file });
+
+            var deleteButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RemoveTorrentFile-Name");
+            await deleteButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            dialog.Component.FindComponents<MudListItem<string>>().Should().BeEmpty();
+
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentFileSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_FileUploaded_WHEN_SubmitInvoked_THEN_ResultContainsFileOptions()
         {
             UseApiClientMock();
