@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "project": {
+    "name": "qbtmud roadmap",
+    "description": "Product, maintenance, and documentation work tracked in one place."
+  },
+  "fields": [
+    {
+      "name": "Status",
+      "type": "single_select",
+      "options": [
+        "Inbox",
+        "Triaged",
+        "Ready",
+        "In progress",
+        "Blocked",
+        "Done"
+      ]
+    },
+    {
+      "name": "Type",
+      "type": "single_select",
+      "options": [
+        "Bug",
+        "Feature",
+        "UX",
+        "Performance",
+        "Docs",
+        "Chore"
+      ]
+    },
+    {
+      "name": "Area",
+      "type": "single_select",
+      "options": [
+        "Torrent list",
+        "Torrent details",
+        "Search",
+        "RSS",
+        "Themes",
+        "Settings",
+        "Install",
+        "Deployment",
+        "PWA",
+        "Notifications",
+        "Localisation",
+        "Accessibility",
+        "API client",
+        "Tests",
+        "CI"
+      ]
+    },
+    {
+      "name": "Priority",
+      "type": "single_select",
+      "options": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    {
+      "name": "Size",
+      "type": "single_select",
+      "options": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "name": "Target release",
+      "type": "text"
+    },
+    {
+      "name": "Needs decision",
+      "type": "single_select",
+      "options": [
+        "No",
+        "Product",
+        "Design",
+        "Technical",
+        "Upstream"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "name": "Triage",
+      "layout": "board",
+      "groupBy": "Status",
+      "filter": "Status:Inbox,Triaged"
+    },
+    {
+      "name": "Ready",
+      "layout": "table",
+      "filter": "Status:Ready"
+    },
+    {
+      "name": "In progress",
+      "layout": "board",
+      "groupBy": "Area",
+      "filter": "Status:\"In progress\""
+    },
+    {
+      "name": "Docs and distribution",
+      "layout": "table",
+      "filter": "Area:Install,Deployment OR Type:Docs"
+    },
+    {
+      "name": "UX and accessibility",
+      "layout": "table",
+      "filter": "Type:UX OR Area:Accessibility"
+    },
+    {
+      "name": "Performance and regression",
+      "layout": "table",
+      "filter": "Type:Performance OR Area:Tests"
+    },
+    {
+      "name": "Done",
+      "layout": "table",
+      "filter": "Status:Done"
+    }
+  ],
+  "notes": [
+    "This file is the repo-side definition of the intended GitHub Project structure.",
+    "Applying or updating project fields requires a GitHub token with project scopes."
+  ]
+}

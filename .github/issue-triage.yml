@@ -1,0 +1,26 @@
+defaults:
+  initialLabels:
+    - status/needs-triage
+classification:
+  actionableIssueTypes:
+    - type/bug
+    - type/feature
+    - type/ux
+    - type/performance
+    - type/docs
+    - type/chore
+  supportRedirectCategory: Q&A
+  exploratoryIdeaRedirectCategory: Ideas
+  showcaseRedirectCategory: Show and tell
+triageFlow:
+  - Confirm the issue belongs in Issues rather than Discussions.
+  - Apply exactly one type label where possible.
+  - Apply one or more area labels.
+  - Add a priority label once urgency is understood.
+  - Add needs labels when repro, design, or upstream validation is missing.
+  - Move the issue to the roadmap project once triaged.
+closureGuidance:
+  - Close duplicate reports with a link to the canonical issue.
+  - Close support questions after redirecting them to Discussions Q&A.
+  - Close exploratory ideas after redirecting them to Discussions Ideas when they are not yet actionable.
+  - Close out-of-scope requests with a concise rationale.
