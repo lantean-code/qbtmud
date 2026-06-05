@@ -15,6 +15,8 @@ namespace QbtMudTranslations.Test
         [Fact]
         public void GIVEN_ApiKeyIsMissing_WHEN_FromEnvironment_THEN_ShouldReturnNull()
         {
+            Environment.SetEnvironmentVariable("QBTMUD_TRANSLATIONS_AZURE_API_KEY", null);
+            Environment.SetEnvironmentVariable("QBTMUD_TRANSLATIONS_AZURE_BASE_URL", null);
             Environment.SetEnvironmentVariable("QBTMUD_TRANSLATIONS_AZURE_REGION", "westeurope");
 
             var result = AzureTranslationOptions.FromEnvironment();
@@ -26,6 +28,8 @@ namespace QbtMudTranslations.Test
         public void GIVEN_RegionIsMissing_WHEN_FromEnvironment_THEN_ShouldReturnNull()
         {
             Environment.SetEnvironmentVariable("QBTMUD_TRANSLATIONS_AZURE_API_KEY", "ApiKey");
+            Environment.SetEnvironmentVariable("QBTMUD_TRANSLATIONS_AZURE_BASE_URL", null);
+            Environment.SetEnvironmentVariable("QBTMUD_TRANSLATIONS_AZURE_REGION", null);
 
             var result = AzureTranslationOptions.FromEnvironment();
 
