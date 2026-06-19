@@ -63,14 +63,31 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             GetChildContentText(FindField(target, "SessionWaste").Instance.ChildContent).Should().Be(DisplayHelpers.Size(serverState.TotalWastedSession));
             GetChildContentText(FindField(target, "ConnectedPeers").Instance.ChildContent).Should().Be(DisplayHelpers.EmptyIfNull((int?)serverState.TotalPeerConnections));
 
-            GetChildContentText(FindField(target, "ReadCacheHits").Instance.ChildContent).Should().Be(DisplayHelpers.Percentage((float?)serverState.ReadCacheHits));
+            GetChildContentText(FindField(target, "ReadCacheHits").Instance.ChildContent).Should().Be(DisplayHelpers.EmptyIfNull((double?)serverState.ReadCacheHits, suffix: "%"));
             GetChildContentText(FindField(target, "TotalBufferSize").Instance.ChildContent).Should().Be(DisplayHelpers.Size(serverState.TotalBuffersSize));
 
-            GetChildContentText(FindField(target, "WriteCacheOverload").Instance.ChildContent).Should().Be(DisplayHelpers.Percentage((float?)serverState.WriteCacheOverload));
-            GetChildContentText(FindField(target, "ReadCacheOverload").Instance.ChildContent).Should().Be(DisplayHelpers.Percentage((float?)serverState.ReadCacheOverload));
+            GetChildContentText(FindField(target, "WriteCacheOverload").Instance.ChildContent).Should().Be(DisplayHelpers.EmptyIfNull((double?)serverState.WriteCacheOverload, suffix: "%"));
+            GetChildContentText(FindField(target, "ReadCacheOverload").Instance.ChildContent).Should().Be(DisplayHelpers.EmptyIfNull((double?)serverState.ReadCacheOverload, suffix: "%"));
             GetChildContentText(FindField(target, "QueuedIoJobs").Instance.ChildContent).Should().Be(DisplayHelpers.EmptyIfNull((int?)serverState.QueuedIOJobs));
             GetChildContentText(FindField(target, "AverageTimeQueue").Instance.ChildContent).Should().Be(DisplayHelpers.EmptyIfNull((int?)serverState.AverageTimeQueue, suffix: "ms"));
             GetChildContentText(FindField(target, "TotalQueuedSize").Instance.ChildContent).Should().Be(DisplayHelpers.Size(serverState.TotalQueuedSize));
+        }
+
+        [Fact]
+        public void GIVEN_ServerStateCacheStatisticsInPercentagePoints_WHEN_Rendered_THEN_ShouldPreserveRawPercentValues()
+        {
+            var serverState = new ServerState
+            {
+                ReadCacheHits = 30.11,
+                WriteCacheOverload = 0.5,
+                ReadCacheOverload = 2.75
+            };
+
+            var target = RenderPage(CreateMainData(serverState), drawerOpen: true);
+
+            GetChildContentText(FindField(target, "ReadCacheHits").Instance.ChildContent).Should().Be("30.11%");
+            GetChildContentText(FindField(target, "WriteCacheOverload").Instance.ChildContent).Should().Be("0.5%");
+            GetChildContentText(FindField(target, "ReadCacheOverload").Instance.ChildContent).Should().Be("2.75%");
         }
 
         [Fact]
