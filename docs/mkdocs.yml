@@ -1,0 +1,31 @@
+site_name: qbtmud
+site_url: https://lantean-code.github.io/qbtmud/
+site_description: Documentation for qbtmud, a drop-in replacement for qBittorrent's default WebUI.
+repo_name: lantean-code/qbtmud
+repo_url: https://github.com/lantean-code/qbtmud
+docs_dir: content
+site_dir: ../site
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Advanced setup: advanced-setup.md
+  - Reverse proxy hosting: reverse-proxy.md
+  - Separate API and UI hosting: separate-api-ui-hosting.md
+  - Build from source: build-from-source.md

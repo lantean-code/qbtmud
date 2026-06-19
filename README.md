@@ -38,73 +38,38 @@ For a detailed explanation of qBittorrent's underlying options, refer to the [qB
 
 For more detail on qBittorrent's alternative WebUI mechanism, refer to the [Alternate WebUI Usage Guide](https://github.com/qbittorrent/qBittorrent/wiki/Alternate-WebUI-usage).
 
+### Documentation
+
+If you need more than the standard release-and-extract setup, use the docs section:
+
+- [Docs index](https://lantean-code.github.io/qbtmud/)
+- [Installation](https://lantean-code.github.io/qbtmud/installation/)
+- [Advanced setup](https://lantean-code.github.io/qbtmud/advanced-setup/)
+- [Build from source](https://lantean-code.github.io/qbtmud/build-from-source/)
+- [Reverse proxy hosting](https://lantean-code.github.io/qbtmud/reverse-proxy/)
+- [Separate API and UI hosting](https://lantean-code.github.io/qbtmud/separate-api-ui-hosting/)
+
 ### Screenshots
 
 **Main torrent dashboard.**
 
-![qbtmud dashboard](docs/readme-assets/dashboard.png)
+![qbtmud dashboard](docs/content/readme-assets/dashboard.png)
 
 **Torrent details view covering the same core inspection workflows as the default WebUI.**
 
-![qbtmud torrent details](docs/readme-assets/torrent-details.png)
+![qbtmud torrent details](docs/content/readme-assets/torrent-details.png)
 
 **First-run setup flow for language, theme, notifications, and storage preferences.**
 
-![qbtmud welcome wizard](docs/readme-assets/welcome-wizard.png)
+![qbtmud welcome wizard](docs/content/readme-assets/welcome-wizard.png)
 
 **Built-in theme manager with bundled themes, previews, and editing workflows.**
 
-![qbtmud theme manager](docs/readme-assets/theme-manager.png)
+![qbtmud theme manager](docs/content/readme-assets/theme-manager.png)
 
 **App-specific visual settings for theme mode and theme repository configuration.**
 
-![qbtmud app settings](docs/readme-assets/app-settings.png)
-
-## Advanced Setup
-
-### Building from source
-
-qbtmud targets the **.NET 10 SDK** pinned in [`global.json`](global.json).
-
-1. Clone the repository.
-
-```sh
-git clone https://github.com/lantean-code/qbtmud.git
-cd qbtmud
-```
-
-2. Restore and build.
-
-```sh
-dotnet restore
-dotnet build
-```
-
-3. Publish the WebUI files.
-
-```sh
-dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj --configuration Release --output output/publish
-mkdir -p output/alternative-ui/public
-cp -a output/publish/wwwroot/. output/alternative-ui/public/
-```
-
-qBittorrent expects an alternative WebUI root folder that contains `public/`. The commands above stage the published site into `output/alternative-ui/public`.
-
-4. Point qBittorrent's alternative WebUI root folder at `output/alternative-ui`.
-
-5. Run tests if you are validating local changes.
-
-```sh
-dotnet test
-```
-
-### Non-standard hosting notes
-
-- **Direct alternative WebUI hosting in qBittorrent** is the default and simplest setup.
-- **Reverse proxy or path-based hosting** requires the proxy to serve the app entry point for qbtmud routes as well as the API. Without that fallback, deep-link refreshes can fail.
-- **Separate API and UI hosting** is possible, but you are responsible for handling routing, origin, and browser reachability correctly in your environment.
-
-If you are working through a non-standard deployment and need help, use [GitHub Discussions Q&A](https://github.com/lantean-code/qbtmud/discussions/categories/q-a).
+![qbtmud app settings](docs/content/readme-assets/app-settings.png)
 
 ## Contributing
 
