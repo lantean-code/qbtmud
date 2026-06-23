@@ -23,7 +23,7 @@ The examples here assume familiarity with the chosen proxy product.
 }
 ```
 
-6. If qbtmud is being published under a subpath, add the required HTML rewrite for `<base href="/">`.
+6. If qbtmud is being published under a subpath, add the required HTML rewrite for `<base href="/" />`.
 7. Reload qbtmud through the proxy.
 
 ## Subpath hosting requirement
@@ -55,7 +55,7 @@ location /qbtmud/ {
 
     sub_filter_types text/html;
     sub_filter_once off;
-    sub_filter '<base href="/">' '<base href="/qbtmud/">';
+    sub_filter '<base href="/" />' '<base href="/qbtmud/" />';
 }
 ```
 
@@ -74,7 +74,7 @@ example.com {
             header_up Accept-Encoding identity
         }
 
-        replace "<base href=\"/\">" "<base href=\"/qbtmud/\">"
+        replace "<base href=\"/\" />" "<base href=\"/qbtmud/\" />"
     }
 }
 ```
@@ -102,8 +102,8 @@ http:
       plugin:
         rewritebody:
           rewrites:
-            - regex: '<base href="/">'
-              replacement: '<base href="/qbtmud/">'
+            - regex: '<base href=\"/\"\\s*/>'
+              replacement: '<base href="/qbtmud/" />'
 ```
 
 Attach that middleware to the router serving the qbtmud HTML entry point.
