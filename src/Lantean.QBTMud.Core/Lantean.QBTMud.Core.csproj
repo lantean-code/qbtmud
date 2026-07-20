@@ -12,8 +12,6 @@
     <PackageReference Include="ByteSize" Version="2.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.9" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageReference Include="MudBlazor" Version="9.7.0" />
     <PackageReference Include="QBittorrent.ApiClient" Version="1.2.0" />
