@@ -23,7 +23,7 @@
     </PackageReference>
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <!-- vuln override-->
-    <PackageReference Include="AngleSharp" Version="1.5.2" />
+    <PackageReference Include="AngleSharp" Version="1.7.0" />
   </ItemGroup>
 
   <ItemGroup>
