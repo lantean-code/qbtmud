@@ -299,6 +299,8 @@ code {
 
     .path-browser-dialog.mud-dialog .mud-dialog-content,
     .path-browser-dialog .mud-dialog-content {
+        display: flex;
+        flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;

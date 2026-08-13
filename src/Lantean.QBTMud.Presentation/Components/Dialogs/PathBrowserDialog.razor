@@ -3,8 +3,7 @@
 <MudDialog Class="path-browser-dialog">
     <DialogContent>
         <div class="path-browser-dialog__content">
-            <MudGrid>
-                <MudItem xs="12">
+            <div class="path-browser-dialog__toolbar">
                 <MudTextField Label="@Translate("Current path")"
                               Value="_currentPath"
                               ValueChanged="@(async (string value) => await PathChanged(value))"
@@ -12,44 +11,41 @@
                               ShrinkLabel="true"
                               Immediate="true"
                               data-test-id="@TestIdHelper.For("CurrentPath")" />
-            </MudItem>
-                <MudItem xs="12">
+                <div class="path-browser-dialog__actions">
                     <MudButtonGroup Variant="Variant.Outlined">
                         <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(!CanNavigateUp)" OnClick="NavigateUp" title="@Translate("Up")" />
                         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="@IsLoading" OnClick="Reload" title="@Translate("Refresh")" />
                     </MudButtonGroup>
-                </MudItem>
-                <MudItem xs="12">
-                    <div class="path-browser-dialog__list">
-                        @if (IsLoading)
+                </div>
+            </div>
+            <div class="path-browser-dialog__list">
+                @if (IsLoading)
+                {
+                    <MudProgressLinear Indeterminate="true" data-test-id="@TestIdHelper.For("PathBrowserLoading")" />
+                }
+                else if (!string.IsNullOrWhiteSpace(LoadError))
+                {
+                    <MudAlert Severity="Severity.Error"
+                              data-test-id="@TestIdHelper.For("PathBrowserLoadError")">@LoadError</MudAlert>
+                }
+                else if (_entries.Count == 0)
+                {
+                    <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">@Translate("No items.")</MudText>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true">
+                        @foreach (var entry in _entries)
                         {
-                            <MudProgressLinear Indeterminate="true" data-test-id="@TestIdHelper.For("PathBrowserLoading")" />
+                            <MudListItem T="string"
+                                         OnClick="@(() => EntryClicked(entry))"
+                                         Icon="@(entry.IsDirectory? Icons.Material.Filled.Folder : Icons.Material.Filled.InsertDriveFile)"
+                                         Text="@entry.Name"
+                                         data-test-id="@TestIdHelper.For($"PathBrowserEntry-{entry.Name}")" />
                         }
-                        else if (!string.IsNullOrWhiteSpace(LoadError))
-                        {
-                            <MudAlert Severity="Severity.Error"
-                                      data-test-id="@TestIdHelper.For("PathBrowserLoadError")">@LoadError</MudAlert>
-                        }
-                        else if (_entries.Count == 0)
-                        {
-                            <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">@Translate("No items.")</MudText>
-                        }
-                        else
-                        {
-                            <MudList T="string" Dense="true">
-                                @foreach (var entry in _entries)
-                                {
-                                    <MudListItem T="string"
-                                                 OnClick="@(() => EntryClicked(entry))"
-                                                 Icon="@(entry.IsDirectory? Icons.Material.Filled.Folder : Icons.Material.Filled.InsertDriveFile)"
-                                                 Text="@entry.Name"
-                                                 data-test-id="@TestIdHelper.For($"PathBrowserEntry-{entry.Name}")" />
-                                }
-                            </MudList>
-                        }
-                    </div>
-                </MudItem>
-            </MudGrid>
+                    </MudList>
+                }
+            </div>
         </div>
     </DialogContent>
     <DialogActions>
