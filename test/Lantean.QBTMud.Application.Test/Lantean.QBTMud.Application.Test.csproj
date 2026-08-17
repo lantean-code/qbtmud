@@ -22,8 +22,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="xunit.v3" Version="3.2.2" />
-    <!-- vuln override-->
-    <PackageReference Include="AngleSharp" Version="1.5.2" />
   </ItemGroup>
 
   <ItemGroup>
