@@ -57,7 +57,7 @@
                 <MudGrid>
                     <MudItem xs="12">
                         <MudField Label="@LanguageLocalizer.Translate("StatsDialog", "Read cache hits:")"
-                                  data-test-id="@TestIdHelper.For("ReadCacheHits")">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
+                                  data-test-id="@TestIdHelper.For("ReadCacheHits")">@DisplayHelpers.EmptyIfNull(ServerState?.ReadCacheHits, suffix: "%")</MudField>
                     </MudItem>
                     <MudItem xs="12">
                         <MudField Label="@LanguageLocalizer.Translate("StatsDialog", "Total buffer size:")"
@@ -77,11 +77,11 @@
                 <MudGrid>
                     <MudItem xs="12">
                         <MudField Label="@LanguageLocalizer.Translate("StatsDialog", "Write cache overload:")"
-                                  data-test-id="@TestIdHelper.For("WriteCacheOverload")">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
+                                  data-test-id="@TestIdHelper.For("WriteCacheOverload")">@DisplayHelpers.EmptyIfNull(ServerState?.WriteCacheOverload, suffix: "%")</MudField>
                     </MudItem>
                     <MudItem xs="12">
                         <MudField Label="@LanguageLocalizer.Translate("StatsDialog", "Read cache overload:")"
-                                  data-test-id="@TestIdHelper.For("ReadCacheOverload")">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
+                                  data-test-id="@TestIdHelper.For("ReadCacheOverload")">@DisplayHelpers.EmptyIfNull(ServerState?.ReadCacheOverload, suffix: "%")</MudField>
                     </MudItem>
                     <MudItem xs="12">
                         <MudField Label="@LanguageLocalizer.Translate("StatsDialog", "Queued I/O jobs:")"
