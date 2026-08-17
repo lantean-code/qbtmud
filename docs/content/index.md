@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # qbtmud Docs
 
 This site covers installation, hosting, and build guidance for qbtmud.
