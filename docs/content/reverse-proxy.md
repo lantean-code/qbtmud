@@ -69,7 +69,7 @@ This requires a Caddy build that includes the `replace-response` module.
 }
 
 example.com {
-    handle /qbtmud/* {
+    handle_path /qbtmud/* {
         reverse_proxy http://qbtmud-upstream {
             header_up Accept-Encoding identity
         }

@@ -4,6 +4,18 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/Docs/">
+    <File Path="docs/docs-requirements.txt" />
+    <File Path="docs/mkdocs.yml" />
+  </Folder>
+  <Folder Name="/Docs/Content/">
+    <File Path="docs/content/advanced-setup.md" />
+    <File Path="docs/content/build-from-source.md" />
+    <File Path="docs/content/index.md" />
+    <File Path="docs/content/installation.md" />
+    <File Path="docs/content/reverse-proxy.md" />
+    <File Path="docs/content/separate-api-ui-hosting.md" />
+  </Folder>
   <Folder Name="/Github/">
     <File Path=".github/workflows/dotnet.yml" />
   </Folder>
@@ -15,11 +27,11 @@
   </Folder>
   <Folder Name="/Source/">
     <File Path="src/AGENTS.md" />
-    <Project Path="src/Lantean.QBTMud/Lantean.QBTMud.csproj" />
     <Project Path="src/Lantean.QBTMud.Application/Lantean.QBTMud.Application.csproj" />
     <Project Path="src/Lantean.QBTMud.Core/Lantean.QBTMud.Core.csproj" />
     <Project Path="src/Lantean.QBTMud.Infrastructure/Lantean.QBTMud.Infrastructure.csproj" />
     <Project Path="src/Lantean.QBTMud.Presentation/Lantean.QBTMud.Presentation.csproj" />
+    <Project Path="src/Lantean.QBTMud/Lantean.QBTMud.csproj" />
   </Folder>
   <Folder Name="/Test/">
     <File Path="test/AGENTS.md" />
@@ -32,8 +44,8 @@
     <Project Path="test/QbtMudTranslations.Test/QbtMudTranslations.Test.csproj" />
   </Folder>
   <Folder Name="/Tools/">
-    <Project Path="tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />
     <Project Path="tools/QbtMudTranslations/QbtMudTranslations.csproj" />
+    <Project Path="tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />
     <Project Path="tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj" />
   </Folder>
 </Solution>
