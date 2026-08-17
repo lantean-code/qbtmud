@@ -1,0 +1,41 @@
+name: Deployment or docs gap
+description: Request missing or unclear deployment, installation, or troubleshooting guidance.
+title: "[Docs]: "
+labels:
+  - type/docs
+  - status/needs-triage
+body:
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic area
+      options:
+        - Quick start
+        - Reverse proxy hosting
+        - Separate API/UI hosting
+        - Docker or container deployment
+        - Upgrade or migration
+        - Browser or PWA behaviour
+        - Magnet handler integration
+        - Troubleshooting
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: What is missing or unclear
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Deployment scenario
+      description: Describe the environment or topology the docs should cover.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What guidance should exist
+      description: Explain what a useful answer or document would contain.

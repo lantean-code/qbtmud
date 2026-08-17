@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Q&A discussion
+    url: https://github.com/lantean-code/qbtmud/discussions/categories/q-a
+    about: Ask setup, usage, or troubleshooting questions in Discussions.
+  - name: Ideas discussion
+    url: https://github.com/lantean-code/qbtmud/discussions/categories/ideas
+    about: Share early-stage ideas before they are ready to become scoped issues.
+  - name: Show and tell discussion
+    url: https://github.com/lantean-code/qbtmud/discussions/categories/show-and-tell
+    about: Share themes, screenshots, integrations, and deployment examples.

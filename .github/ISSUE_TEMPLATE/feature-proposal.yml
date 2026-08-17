@@ -1,0 +1,56 @@
+name: Feature proposal
+description: Propose a scoped feature or enhancement for qbtmud.
+title: "[Feature]: "
+labels:
+  - type/feature
+  - status/needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for proposals that are specific enough to review and track.
+
+        If the idea is still exploratory, please start in Discussions `Ideas` instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user problem does this solve, or what opportunity does it unlock?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: Describe the user-facing behaviour and the expected workflow.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Proposal category
+      options:
+        - qBittorrent parity improvement
+        - qbtmud usability improvement
+        - qbtmud-specific enhancement
+        - Deployment or packaging improvement
+        - Documentation improvement
+    validations:
+      required: true
+  - type: textarea
+    id: parity
+    attributes:
+      label: qBittorrent WebUI precedent
+      description: If relevant, explain how the shipped qBittorrent WebUI behaves today.
+      placeholder: The default WebUI currently ...
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: impact
+    attributes:
+      label: Expected user impact
+      description: Who benefits, and in what workflows?
+    validations:
+      required: true
