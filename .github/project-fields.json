@@ -12,13 +12,14 @@
         "Inbox",
         "Triaged",
         "Ready",
+	"Todo",
         "In progress",
         "Blocked",
         "Done"
       ]
     },
     {
-      "name": "Type",
+      "name": "Work type",
       "type": "single_select",
       "options": [
         "Bug",
@@ -39,6 +40,9 @@
         "RSS",
         "Themes",
         "Settings",
+        "App",
+        "Platform",
+        "Components",
         "Install",
         "Deployment",
         "PWA",
@@ -108,17 +112,17 @@
     {
       "name": "Docs and distribution",
       "layout": "table",
-      "filter": "Area:Install,Deployment OR Type:Docs"
+      "filter": "Area:Install,Deployment OR \"Work type\":Docs"
     },
     {
       "name": "UX and accessibility",
       "layout": "table",
-      "filter": "Type:UX OR Area:Accessibility"
+      "filter": "\"Work type\":UX OR Area:Accessibility"
     },
     {
       "name": "Performance and regression",
       "layout": "table",
-      "filter": "Type:Performance OR Area:Tests"
+      "filter": "\"Work type\":Performance OR Area:Tests"
     },
     {
       "name": "Done",

@@ -6,7 +6,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$ManifestPath = '.github/labels.json'
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
+$ManifestPath = Join-Path $RepoRoot '.github\labels.json'
 
 function Assert-Command {
     param(
@@ -32,22 +33,63 @@ function Invoke-Gh {
     }
 }
 
+function Invoke-GhJson {
+    param(
+        [Parameter(Mandatory)]
+        [string[]] $Arguments
+    )
+
+    $Output = & gh @Arguments
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "gh command failed with exit code $LASTEXITCODE."
+    }
+
+    return ($Output -join [Environment]::NewLine) | ConvertFrom-Json
+}
+
 Assert-Command 'gh'
 
 if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
     throw "Manifest not found: $ManifestPath"
 }
 
-$RepoSlug = & gh repo view --json owner,name --jq '.owner.login + "/" + .name'
+Push-Location $RepoRoot
 
-if ($LASTEXITCODE -ne 0) {
-    throw 'Unable to determine the current GitHub repository.'
+try {
+    $RepoInfo = Invoke-GhJson @(
+        'repo'
+        'view'
+        '--json', 'owner,name'
+    )
+}
+finally {
+    Pop-Location
 }
 
-$Owner, $Repo = $RepoSlug -split '/', 2
+$Owner = [string] $RepoInfo.owner.login
+$Repo = [string] $RepoInfo.name
 $LabelsEndpoint = "repos/$Owner/$Repo/labels"
 
 $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+
+$CurrentLabels = @(
+    Invoke-GhJson @(
+        'api'
+        "${LabelsEndpoint}?per_page=100"
+        '--paginate'
+        '--slurp'
+    ) |
+        ForEach-Object { $_ }
+)
+
+$CurrentLabelsByName = @{}
+
+foreach ($Label in $CurrentLabels) {
+    foreach ($CurrentLabel in $Label) {
+        $CurrentLabelsByName[[string] $CurrentLabel.name] = $CurrentLabel
+    }
+}
 
 foreach ($Label in $Manifest.labels) {
     $Name = [string] $Label.name
@@ -55,10 +97,7 @@ foreach ($Label in $Manifest.labels) {
     $Description = [string] $Label.description
     $EncodedName = [Uri]::EscapeDataString($Name)
 
-    & gh api "$LabelsEndpoint/$EncodedName" *> $null
-    $Exists = $LASTEXITCODE -eq 0
-
-    if ($Exists) {
+    if ($CurrentLabelsByName.ContainsKey($Name)) {
         Invoke-Gh @(
             'api'
             '--method', 'PATCH'
@@ -93,15 +132,7 @@ $ManifestNames = @(
         ForEach-Object { [string] $_.name }
 )
 
-$CurrentNames = @(
-    & gh api "${LabelsEndpoint}?per_page=100" --paginate --jq '.[].name'
-
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unable to retrieve the current repository labels.'
-    }
-)
-
-foreach ($CurrentName in $CurrentNames) {
+foreach ($CurrentName in $CurrentLabelsByName.Keys) {
     if ($CurrentName -in $ManifestNames) {
         continue
     }

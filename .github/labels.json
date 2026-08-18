@@ -107,6 +107,21 @@
       "description": "GitHub Actions, release automation, and repository plumbing."
     },
     {
+      "name": "area/app",
+      "color": "1d76db",
+      "description": "Cross-cutting qbtmud application features and workflows."
+    },
+    {
+      "name": "area/platform",
+      "color": "5319e7",
+      "description": "Architecture, shared infrastructure, multi-instance, and platform capabilities."
+    },
+    {
+      "name": "area/components",
+      "color": "7057ff",
+      "description": "Reusable UI components and shared presentation building blocks."
+    },
+    {
       "name": "status/needs-triage",
       "color": "ededed",
       "description": "New issue awaiting maintainer classification."
