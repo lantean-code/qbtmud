@@ -25,7 +25,7 @@ The script will:
 4. Create an isolated Linux qBittorrent profile with a disposable WebUI username and password.
 5. Launch qBittorrent in WSL, using qbtmud as the alternative WebUI.
 6. Seed the sample torrents through the real qBittorrent Web API.
-7. Log in through qbtmud with Playwright and capture the README screenshots into [`docs/readme-assets`](../../docs/readme-assets).
+7. Log in through qbtmud with Playwright and capture the README screenshots into [`docs/content/readme-assets`](../../docs/content/readme-assets).
 8. Stop the temporary qBittorrent process before exiting.
 
 ## Notes

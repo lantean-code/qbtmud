@@ -1,0 +1,46 @@
+name: UX improvement
+description: Propose an improvement to an existing workflow, layout, or interaction.
+title: "[UX]: "
+labels:
+  - type/ux
+  - status/needs-triage
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Current workflow
+      description: Describe the existing flow and where the friction appears.
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: What feels wrong
+      description: Explain the specific pain, confusion, or unnecessary effort.
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Suggested improvement
+      description: Describe the desired interaction or presentation.
+    validations:
+      required: true
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Primary audience
+      options:
+        - Desktop users
+        - Mobile users
+        - Touch users
+        - Keyboard users
+        - Screen reader users
+        - All users
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: What would success look like
+      description: Describe the before-and-after in practical terms.

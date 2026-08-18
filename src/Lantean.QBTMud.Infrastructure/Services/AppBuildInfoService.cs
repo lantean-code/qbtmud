@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
         /// Initializes a new instance of the <see cref="AppBuildInfoService"/> class.
         /// </summary>
         public AppBuildInfoService()
-            : this(typeof(AppBuildInfoService).Assembly)
+            : this(Assembly.GetEntryAssembly() ?? typeof(AppBuildInfoService).Assembly)
         {
         }
 

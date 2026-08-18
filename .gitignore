@@ -93,6 +93,10 @@ node_modules/
 /.dotnet/
 /.nuget/
 
+# Local docs tooling/output
+/.venv-docs/
+/site/
+
 # Mono crash logs (may appear on Linux/macOS)
 mono_crash.*
 

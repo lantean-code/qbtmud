@@ -1,0 +1,74 @@
+name: Bug report
+description: Report a reproducible problem in qbtmud.
+title: "[Bug]: "
+labels:
+  - type/bug
+  - status/needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        Please make the report as concrete and reproducible as possible.
+  - type: input
+    id: qbtmud-version
+    attributes:
+      label: qbtmud version
+      description: Release version, build identifier, or commit hash.
+      placeholder: 2.8.0
+    validations:
+      required: true
+  - type: input
+    id: qbittorrent-version
+    attributes:
+      label: qBittorrent version
+      placeholder: 5.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment-shape
+    attributes:
+      label: Deployment shape
+      options:
+        - Direct alternative WebUI hosting
+        - Reverse proxy hosting
+        - Separate API/UI hosting
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and platform
+      placeholder: Firefox 139 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest repeatable path you can.
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, logs, or extra context
+      description: Include anything that materially helps diagnose the problem.

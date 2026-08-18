@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "labels": [
+    {
+      "name": "type/bug",
+      "color": "d73a4a",
+      "description": "Something is broken or behaving incorrectly."
+    },
+    {
+      "name": "type/feature",
+      "color": "1d76db",
+      "description": "A scoped enhancement or new capability."
+    },
+    {
+      "name": "type/ux",
+      "color": "fbca04",
+      "description": "An improvement to usability, interaction, or presentation."
+    },
+    {
+      "name": "type/performance",
+      "color": "b60205",
+      "description": "A measurable slowdown, jank, or scaling issue."
+    },
+    {
+      "name": "type/docs",
+      "color": "0075ca",
+      "description": "Documentation, guides, or troubleshooting content."
+    },
+    {
+      "name": "type/chore",
+      "color": "c5def5",
+      "description": "Maintenance work that is not directly user-facing."
+    },
+    {
+      "name": "area/torrent-list",
+      "color": "5319e7",
+      "description": "Torrent list, filtering, sorting, selection, and bulk actions."
+    },
+    {
+      "name": "area/torrent-details",
+      "color": "6f42c1",
+      "description": "Torrent details, tabs, and per-torrent inspection workflows."
+    },
+    {
+      "name": "area/search",
+      "color": "0e8a16",
+      "description": "Search flows, saved filters, and query interactions."
+    },
+    {
+      "name": "area/rss",
+      "color": "006b75",
+      "description": "RSS, RSS rules, and related automation workflows."
+    },
+    {
+      "name": "area/themes",
+      "color": "c2e0c6",
+      "description": "Themes, previews, import or export, and theme repository behaviour."
+    },
+    {
+      "name": "area/settings",
+      "color": "bfd4f2",
+      "description": "Application settings, qBittorrent options, and preferences."
+    },
+    {
+      "name": "area/install",
+      "color": "fef2c0",
+      "description": "Installation, upgrade, migration, and packaging paths."
+    },
+    {
+      "name": "area/deployment",
+      "color": "d4c5f9",
+      "description": "Hosting topologies, reverse proxies, routing, and split hosting."
+    },
+    {
+      "name": "area/pwa",
+      "color": "f9d0c4",
+      "description": "Install prompts, app-like browser behaviour, and magnet handling."
+    },
+    {
+      "name": "area/notifications",
+      "color": "ff9f1c",
+      "description": "Notification flows, browser permissions, and event signalling."
+    },
+    {
+      "name": "area/localisation",
+      "color": "c5def5",
+      "description": "Language files, translation behaviour, and localisation tooling."
+    },
+    {
+      "name": "area/accessibility",
+      "color": "0052cc",
+      "description": "Keyboard, screen reader, focus, and inclusive interaction work."
+    },
+    {
+      "name": "area/api-client",
+      "color": "0b7285",
+      "description": "qBittorrent API integration and client library behaviour."
+    },
+    {
+      "name": "area/tests",
+      "color": "7057ff",
+      "description": "Test coverage, fixtures, smoke tests, and regression suites."
+    },
+    {
+      "name": "area/ci",
+      "color": "0366d6",
+      "description": "GitHub Actions, release automation, and repository plumbing."
+    },
+    {
+      "name": "area/app",
+      "color": "1d76db",
+      "description": "Cross-cutting qbtmud application features and workflows."
+    },
+    {
+      "name": "area/platform",
+      "color": "5319e7",
+      "description": "Architecture, shared infrastructure, multi-instance, and platform capabilities."
+    },
+    {
+      "name": "area/components",
+      "color": "7057ff",
+      "description": "Reusable UI components and shared presentation building blocks."
+    },
+    {
+      "name": "status/needs-triage",
+      "color": "ededed",
+      "description": "New issue awaiting maintainer classification."
+    },
+    {
+      "name": "status/ready",
+      "color": "0e8a16",
+      "description": "Triaged and ready to schedule or implement."
+    },
+    {
+      "name": "status/in-progress",
+      "color": "fbca04",
+      "description": "Actively being worked on."
+    },
+    {
+      "name": "status/blocked",
+      "color": "b60205",
+      "description": "Blocked on a dependency, decision, or external change."
+    },
+    {
+      "name": "status/needs-feedback",
+      "color": "d876e3",
+      "description": "Needs more information or confirmation from the reporter."
+    },
+    {
+      "name": "priority/p0",
+      "color": "b60205",
+      "description": "Critical and urgent."
+    },
+    {
+      "name": "priority/p1",
+      "color": "d93f0b",
+      "description": "High priority."
+    },
+    {
+      "name": "priority/p2",
+      "color": "fbca04",
+      "description": "Normal priority."
+    },
+    {
+      "name": "priority/p3",
+      "color": "0e8a16",
+      "description": "Lower priority or opportunistic work."
+    },
+    {
+      "name": "needs/repro",
+      "color": "fef2c0",
+      "description": "Needs a clearer reproduction or a smaller repeatable case."
+    },
+    {
+      "name": "needs/design",
+      "color": "f9d0c4",
+      "description": "Needs product or UX design clarification before implementation."
+    },
+    {
+      "name": "needs/upstream-check",
+      "color": "d4c5f9",
+      "description": "Needs validation against qBittorrent upstream behaviour or constraints."
+    },
+    {
+      "name": "good first issue",
+      "color": "7057ff",
+      "description": "Good for newcomers."
+    },
+    {
+      "name": "help wanted",
+      "color": "008672",
+      "description": "Extra attention is needed."
+    },
+    {
+      "name": "dependencies",
+      "color": "0366d6",
+      "description": "Pull requests that update a dependency file."
+    },
+    {
+      "name": "duplicate",
+      "color": "cfd3d7",
+      "description": "This issue or pull request already exists."
+    },
+    {
+      "name": "invalid",
+      "color": "e4e669",
+      "description": "This does not contain an actionable issue."
+    },
+    {
+      "name": "question",
+      "color": "d876e3",
+      "description": "Further information is requested."
+    },
+    {
+      "name": "wontfix",
+      "color": "ffffff",
+      "description": "This will not be worked on."
+    },
+    {
+      "name": "codex",
+      "color": "ededed",
+      "description": "Prepared or assisted by Codex."
+    }
+  ]
+}

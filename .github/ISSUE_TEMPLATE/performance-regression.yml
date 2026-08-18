@@ -1,0 +1,67 @@
+name: Performance regression
+description: Report a measurable slowdown, freeze, or scaling problem.
+title: "[Perf]: "
+labels:
+  - type/performance
+  - status/needs-triage
+body:
+  - type: input
+    id: qbtmud-version
+    attributes:
+      label: qbtmud version
+      placeholder: 2.8.0
+    validations:
+      required: true
+  - type: input
+    id: qbittorrent-version
+    attributes:
+      label: qBittorrent version
+      placeholder: 5.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment-shape
+    attributes:
+      label: Deployment shape
+      options:
+        - Direct alternative WebUI hosting
+        - Reverse proxy hosting
+        - Separate API/UI hosting
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and platform
+      placeholder: Chrome 137 on Android 15
+    validations:
+      required: true
+  - type: textarea
+    id: dataset
+    attributes:
+      label: Dataset size and conditions
+      description: Include torrent count, content tree size, filters, and anything else that affects the scenario.
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Measured scenario
+      description: Explain exactly what action becomes slow.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed impact
+      description: Include timings, freezes, scroll jank, or CPU/memory symptoms where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected impact
+      description: What would be acceptable performance for this scenario?
+    validations:
+      required: true
