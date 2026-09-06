@@ -16,7 +16,19 @@
                 <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedRuleName" SelectedValueChanged="SelectedRuleChanged" data-test-id="@TestIdHelper.For("RssRulesList")">
                     @foreach (var (ruleName, rule) in Rules)
                     {
-                        <MudListItem Icon="@((rule?.Enabled ?? true) ? Icons.Material.Filled.CheckBox : Icons.Material.Filled.CheckBoxOutlineBlank)" Text="@ruleName" Value="@ruleName" data-test-id="@TestIdHelper.For($"RssRule-{ruleName}")" />
+                        <MudListItem Value="@ruleName" data-test-id="@TestIdHelper.For($"RssRule-{ruleName}")">
+                            <div class="d-flex align-center">
+                                <span @onclick:stopPropagation="true">
+                                    <MudCheckBox T="bool"
+                                                    Value="@(rule?.Enabled ?? true)"
+                                                    ValueChanged="@(value => RuleEnabledChanged(ruleName, value))"
+                                                    Color="Color.Default"
+                                                    data-test-id="@TestIdHelper.For($"RssRuleEnabled-{ruleName}")" />
+                                </span>
+
+                                <MudText>@ruleName</MudText>
+                            </div>
+                        </MudListItem>
                     }
                 </MudList>
             </MudItem>

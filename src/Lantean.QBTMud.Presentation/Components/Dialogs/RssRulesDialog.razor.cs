@@ -337,6 +337,16 @@ namespace Lantean.QBTMud.Components.Dialogs
             SelectedFeeds = feeds;
         }
 
+        protected async Task RuleEnabledChanged(string ruleName, bool value)
+        {
+            if (SelectedRuleName != ruleName)
+            {
+                await SelectedRuleChanged(ruleName);
+            }
+
+            SelectedRule.Enabled = value;
+        }
+
         protected void Cancel()
         {
             MudDialog.Cancel();

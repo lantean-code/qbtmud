@@ -419,6 +419,44 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             snackbarMock.Verify(snackbar => snackbar.Add("matching failure", Severity.Error, null, null), Times.Once);
         }
+        [Theory]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        public async Task GIVEN_Rule_WHEN_EnabledChangedAndSaved_THEN_UpdatesRule(bool initialValue, bool newValue)
+        {
+            var rules = new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleA", CreateRule(enabled: initialValue) },
+            };
+            SetupApiClient(rules);
+
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync(
+                    "RuleA",
+                    It.IsAny<AutoDownloadingRule>()))
+                .ReturnsSuccess(Task.CompletedTask);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var enabled = FindComponentByTestId<MudCheckBox<bool>>(
+                dialog.Component,
+                "RssRuleEnabled-RuleA");
+
+            await dialog.Component.InvokeAsync(
+                () => enabled.Instance.ValueChanged.InvokeAsync(newValue));
+
+            var saveButton = FindComponentByTestId<MudButton>(
+                dialog.Component,
+                "RssRulesSave");
+
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_apiClient).Verify(
+                client => client.SetRssAutoDownloadingRuleAsync(
+                    "RuleA",
+                    It.Is<AutoDownloadingRule>(rule => rule.Enabled == newValue)),
+                Times.Once);
+        }
 
         private void SetupApiClient(Dictionary<string, AutoDownloadingRule> rules)
         {
