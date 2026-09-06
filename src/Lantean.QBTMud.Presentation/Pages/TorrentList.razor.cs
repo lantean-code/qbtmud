@@ -418,7 +418,7 @@ namespace Lantean.QBTMud.Pages
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(ratioLabel, t => t.Ratio, t => t.Ratio.ToString("0.00"), id: "ratio"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(popularityLabel, t => t.Popularity, t => t.Popularity.ToString("0.00"), id: "popularity"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(categoryLabel, t => t.Category, id: "category"),
-                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(tagsLabel, t => t.Tags, t => string.Join(", ", t.Tags), id: "tags"),
+                ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(tagsLabel, t => string.Join(", ", t.Tags), t => string.Join(", ", t.Tags), id: "tags"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(addedOnLabel, t => t.AddedOn, t => DisplayHelpers.DateTime(t.AddedOn), id: "added_on"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(completedOnLabel, t => t.CompletionOn, t => DisplayHelpers.DateTime(t.CompletionOn), enabled: false, id: "completed_on"),
                 ColumnDefinitionHelper.CreateColumnDefinition<MudTorrent>(trackerLabel, t => t.Tracker, enabled: false, id: "tracker"),

@@ -582,6 +582,27 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             torrentText.Should().Be("Hash");
         }
 
+        [Fact]
+        public void GIVEN_TorrentColumns_WHEN_SortSelectorsEvaluated_THEN_AllSortKeysAreComparable()
+        {
+            var torrent = CreateTorrent("hash", "name");
+            torrent.Tags = ["TagA", "TagB"];
+
+            var columns = TorrentList.BuildColumnsDefinitions(Mock.Of<ILanguageLocalizer>());
+
+            var invalidColumns = columns
+                .Where(column => column.SortSelector is not null)
+                .Where(column =>
+                {
+                    var value = column.SortSelector!(torrent);
+                    return value is not null && value is not IComparable;
+                })
+                .Select(column => column.Id)
+                .ToList();
+
+            invalidColumns.Should().BeEmpty();
+        }
+
         private IRenderedComponent<TorrentList> RenderWithDefaults(IReadOnlyList<MudTorrent>? torrents = null)
         {
             var mainData = CreateMainData(torrents);
