@@ -74,7 +74,31 @@
 
                         <MudDivider Class="my-2" />
 
-                        <MudText Typo="Typo.h6">@LanguageLocalizer.Translate("AppAbout", "qbtmud")</MudText>
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                <MudImage Src="images/qbtmud-icon-transparent.svg" Alt="@LanguageLocalizer.Translate("AppAbout", "qbtmud")"
+                                          Height="32" Width="32" ObjectFit="ObjectFit.Contain" data-test-id="@TestIdHelper.For("QbtMudLogo")" />
+                                <MudText Typo="Typo.h6">@LanguageLocalizer.Translate("AppAbout", "qbtmud")</MudText>
+                            </MudStack>
+                            <MudText>@LanguageLocalizer.Translate("AppAbout", "An alternative qBittorrent WebUI built with Blazor and MudBlazor.")</MudText>
+                            <MudText data-test-id="@TestIdHelper.For("QbtMudCopyright")">@LanguageLocalizer.Translate("AppAbout", "Copyright © 2026 Lantean Code")</MudText>
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="0">
+                                <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AboutDialog", "Home Page:")</MudText>
+                                <MudLink Href="https://github.com/lantean-code/qbtmud" Target="_blank" Class="ms-2" data-test-id="@TestIdHelper.For("QbtMudHomeLink")">https://github.com/lantean-code/qbtmud</MudLink>
+                            </MudStack>
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="0">
+                                <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AboutDialog", "Bug Tracker:")</MudText>
+                                <MudLink Href="https://github.com/lantean-code/qbtmud/issues" Target="_blank" Class="ms-2" data-test-id="@TestIdHelper.For("QbtMudIssuesLink")">https://github.com/lantean-code/qbtmud/issues</MudLink>
+                            </MudStack>
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="0">
+                                <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("MainWindow", "Documentation"):</MudText>
+                                <MudLink Href="https://lantean-code.github.io/qbtmud/" Target="_blank" Class="ms-2" data-test-id="@TestIdHelper.For("QbtMudDocsLink")">https://lantean-code.github.io/qbtmud/</MudLink>
+                            </MudStack>
+                            <MudLink Href="https://lantean-code.github.io" Target="_blank" Class="align-self-start" data-test-id="@TestIdHelper.For("LanteanCodeLink")">
+                                <MudImage Src="images/lantean-code-wordmark.svg" Alt="Lantean Code" Class="about-page__wordmark"
+                                          ObjectFit="ObjectFit.Contain" data-test-id="@TestIdHelper.For("LanteanCodeWordmark")" />
+                            </MudLink>
+                        </MudStack>
                         <MudGrid Class="mt-1 mb-0">
                             <MudItem xs="12" md="4">
                                 <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AppAbout", "Current build")</MudText>

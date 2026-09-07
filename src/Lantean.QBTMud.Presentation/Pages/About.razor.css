@@ -7,3 +7,12 @@
     min-height: 0;
     overflow: auto;
 }
+
+.about-page ::deep .about-page__wordmark {
+    width: 240px;
+    max-width: 100%;
+    height: auto;
+    padding: 8px 0 0;
+    border-radius: var(--mud-default-borderradius);
+    background-color: #101126;
+}

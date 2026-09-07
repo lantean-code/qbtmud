@@ -22,4 +22,8 @@
     <ProjectReference Include="..\Lantean.QBTMud.TestSupport\Lantean.QBTMud.TestSupport.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\src\Lantean.QBTMud\wwwroot\themes\qbtmud-default.json" Link="Themes\qbtmud-default.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

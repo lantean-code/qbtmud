@@ -20,7 +20,11 @@
                     {
                         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
                     }
-                    <MudText Typo="Typo.h5" Class="@AppBarTitleClass">@AppBarTitle</MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="@AppBarTitleClass">
+                        <MudImage Src="images/qbtmud-icon-transparent.svg" Alt="@LanguageLocalizer.Translate("AppAbout", "qbtmud")"
+                                  Width="32" Height="32" ObjectFit="ObjectFit.Contain" Class="flex-shrink-0" data-test-id="@TestIdHelper.For("AppBarLogo")" />
+                        <MudText Typo="Typo.h5">@AppBarTitle</MudText>
+                    </MudStack>
                     <MudSpacer />
                     @if (ErrorBoundary?.Errors.Count > 0)
                     {

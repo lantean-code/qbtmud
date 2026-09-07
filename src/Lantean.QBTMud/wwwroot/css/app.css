@@ -70,7 +70,8 @@
 .loading-screen__logo {
     width: 44px;
     height: 44px;
-    filter: drop-shadow(0 6px 10px rgba(var(--mud-palette-primary-rgb, 27, 110, 194), 0.2));
+    filter: drop-shadow(0 0 5px rgba(var(--mud-palette-primary-rgb, 34, 211, 238), 0.4))
+        drop-shadow(0 0 14px rgba(var(--mud-palette-primary-rgb, 34, 211, 238), 0.25));
 }
 
 .loading-screen__title {
@@ -142,7 +143,8 @@
     }
 
     .loading-screen__logo {
-        filter: drop-shadow(0 6px 12px rgba(var(--mud-palette-primary-rgb, 31, 185, 122), 0.25));
+        filter: drop-shadow(0 0 6px rgba(var(--mud-palette-primary-rgb, 34, 211, 238), 0.7))
+            drop-shadow(0 0 18px rgba(var(--mud-palette-primary-rgb, 34, 211, 238), 0.45));
     }
 
     .loading-screen__track {

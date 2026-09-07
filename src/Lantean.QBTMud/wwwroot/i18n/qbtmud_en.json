@@ -210,6 +210,8 @@
   "AppApplicationActions|Unable to register the magnet handler: %1": "Unable to register the magnet handler: %1",
   "AppApplicationActions|All torrents started.": "All torrents started.",
   "AppApplicationActions|All torrents stopped.": "All torrents stopped.",
+  "AppAbout|An alternative qBittorrent WebUI built with Blazor and MudBlazor.": "An alternative qBittorrent WebUI built with Blazor and MudBlazor.",
+  "AppAbout|Copyright © 2026 Lantean Code": "Copyright © 2026 Lantean Code",
   "AppAbout|qbtmud": "qbtmud",
   "AppAbout|Current build": "Current build",
   "AppAbout|Latest stable release": "Latest stable release",

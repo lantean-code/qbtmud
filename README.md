@@ -1,5 +1,7 @@
 # qbtmud
 
+![qbtmud wordmark](docs/content/readme-assets/qbtmud-wordmark.svg)
+
 qbtmud is a drop-in replacement for qBittorrent's default WebUI. It keeps qBittorrent's Web API semantics and everyday workflows, while adding a more polished application experience around setup, customisation, browser integration, and diagnostics.
 
 ## Overview

@@ -49,6 +49,17 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_MainLayoutRendered_WHEN_HeaderShown_THEN_DisplaysQbtMudIcon()
+        {
+            var target = RenderLayout();
+
+            var logo = FindComponentByTestId<MudImage>(target, "AppBarLogo");
+            logo.Instance.GetState(image => image.Src).Should().Be("images/qbtmud-icon-transparent.svg");
+            logo.Instance.Alt.Should().Be("qbtmud");
+            target.FindComponent<MudAppBar>().FindComponents<MudImage>().Should().Contain(logo);
+        }
+
+        [Fact]
         public void GIVEN_MainLayoutRendered_WHEN_AfterRenderRuns_THEN_InstallsContextMenuPopoverPatchOnce()
         {
             var installPatchInvocation = TestContext.JSInterop.Setup<bool>("qbt.installContextMenuPopoverPatch", _ => true);

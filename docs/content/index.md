@@ -3,7 +3,9 @@ hide:
   - toc
 ---
 
-# qbtmud Docs
+# qbtmud Docs { .qbtmud-visually-hidden }
+
+![qbtmud wordmark](readme-assets/qbtmud-wordmark.svg){ .qbtmud-wordmark }
 
 This site covers installation, hosting, and build guidance for qbtmud.
 

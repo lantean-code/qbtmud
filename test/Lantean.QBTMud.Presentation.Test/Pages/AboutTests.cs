@@ -61,6 +61,27 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_AboutTab_WHEN_Rendered_THEN_ShowsQbtMudBrandingAndCopyright()
+        {
+            var target = RenderPage();
+
+            FindComponentByTestId<MudImage>(target, "QbtMudLogo").Instance.GetState(image => image.Src).Should().Be("images/qbtmud-icon-transparent.svg");
+            var wordmark = FindComponentByTestId<MudImage>(target, "LanteanCodeWordmark");
+            wordmark.Instance.GetState(image => image.Src).Should().Be("images/lantean-code-wordmark.svg");
+            wordmark.Instance.Alt.Should().Be("Lantean Code");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudCopyright").Instance.ChildContent)
+                .Should().Be("Copyright © 2026 Lantean Code");
+            FindComponentByTestId<MudLink>(target, "QbtMudHomeLink").Instance.Href.Should().Be("https://github.com/lantean-code/qbtmud");
+            FindComponentByTestId<MudLink>(target, "QbtMudIssuesLink").Instance.Href.Should().Be("https://github.com/lantean-code/qbtmud/issues");
+            FindComponentByTestId<MudLink>(target, "QbtMudDocsLink").Instance.Href.Should().Be("https://lantean-code.github.io/qbtmud/");
+            GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudHomeLink").Instance.ChildContent).Should().Be("https://github.com/lantean-code/qbtmud");
+            GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudIssuesLink").Instance.ChildContent).Should().Be("https://github.com/lantean-code/qbtmud/issues");
+            GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudDocsLink").Instance.ChildContent).Should().Be("https://lantean-code.github.io/qbtmud/");
+            FindComponentByTestId<MudLink>(target, "LanteanCodeLink").Instance.Href.Should().Be("https://lantean-code.github.io");
+            target.FindComponents<MudImage>().Should().Contain(image => image.Instance.GetState(component => component.Src) == "images/qbittorrent-tray.svg");
+        }
+
+        [Fact]
         public void GIVEN_VersionNotProvided_WHEN_Rendered_THEN_ShowsBuildInfoAndVersion()
         {
             var target = RenderPage();
