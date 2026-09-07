@@ -2,6 +2,8 @@
 
 > Scope: This file gives high-level context and guardrails for the repository root. Deeper folders may add their own `AGENTS.md` files which take precedence for their subtrees (e.g., `./src/AGENTS.md`, `./test/AGENTS.md`).
 
+## v3.0.0
+
 ## Project overview
 - qbtmud is a drop-in replacement for qBittorrent's default WebUI, aiming for full feature parity with a modern UI.
 - Primary goals: parity with the default WebUI, excellent UX, reliability, and easy installation.
