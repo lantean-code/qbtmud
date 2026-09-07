@@ -1,56 +1,52 @@
 @using Lantean.QBTMud.Helpers
 
-<MudDialog Class="path-browser-dialog">
+<MudDialog Class="path-browser-dialog" ContentClass="d-flex flex-column overflow-hidden">
     <DialogContent>
-        <div class="path-browser-dialog__content">
-            <MudGrid>
-                <MudItem xs="12">
-                <MudTextField Label="@Translate("Current path")"
-                              Value="_currentPath"
-                              ValueChanged="@(async (string value) => await PathChanged(value))"
-                              Variant="Variant.Outlined"
-                              ShrinkLabel="true"
-                              Immediate="true"
-                              data-test-id="@TestIdHelper.For("CurrentPath")" />
-            </MudItem>
-                <MudItem xs="12">
-                    <MudButtonGroup Variant="Variant.Outlined">
-                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(!CanNavigateUp)" OnClick="NavigateUp" title="@Translate("Up")" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="@IsLoading" OnClick="Reload" title="@Translate("Refresh")" />
-                    </MudButtonGroup>
-                </MudItem>
-                <MudItem xs="12">
-                    <div class="path-browser-dialog__list">
-                        @if (IsLoading)
+        <MudStack Spacing="3" Class="flex-grow-1 overflow-hidden" data-test-id="@TestIdHelper.For("PathBrowserContent")">
+            <MudTextField Class="flex-grow-0 flex-shrink-0"
+                          Label="@Translate("Current path")"
+                          Value="_currentPath"
+                          ValueChanged="@(async (string value) => await PathChanged(value))"
+                          Variant="Variant.Outlined"
+                          ShrinkLabel="true"
+                          Immediate="true"
+                          data-test-id="@TestIdHelper.For("CurrentPath")" />
+            <MudStack Row="true" Spacing="0" Class="flex-shrink-0">
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(!CanNavigateUp)" OnClick="NavigateUp" title="@Translate("Up")" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="@IsLoading" OnClick="Reload" title="@Translate("Refresh")" />
+                </MudButtonGroup>
+            </MudStack>
+            <MudStack Spacing="0" Class="path-browser-dialog__list flex-grow-1 overflow-y-auto"
+                      data-test-id="@TestIdHelper.For("PathBrowserList")">
+                @if (IsLoading)
+                {
+                    <MudProgressLinear Indeterminate="true" data-test-id="@TestIdHelper.For("PathBrowserLoading")" />
+                }
+                else if (!string.IsNullOrWhiteSpace(LoadError))
+                {
+                    <MudAlert Severity="Severity.Error"
+                              data-test-id="@TestIdHelper.For("PathBrowserLoadError")">@LoadError</MudAlert>
+                }
+                else if (_entries.Count == 0)
+                {
+                    <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">@Translate("No items.")</MudText>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true">
+                        @foreach (var entry in _entries)
                         {
-                            <MudProgressLinear Indeterminate="true" data-test-id="@TestIdHelper.For("PathBrowserLoading")" />
+                            <MudListItem T="string"
+                                         OnClick="@(() => EntryClicked(entry))"
+                                         Icon="@(entry.IsDirectory? Icons.Material.Filled.Folder : Icons.Material.Filled.InsertDriveFile)"
+                                         Text="@entry.Name"
+                                         data-test-id="@TestIdHelper.For($"PathBrowserEntry-{entry.Name}")" />
                         }
-                        else if (!string.IsNullOrWhiteSpace(LoadError))
-                        {
-                            <MudAlert Severity="Severity.Error"
-                                      data-test-id="@TestIdHelper.For("PathBrowserLoadError")">@LoadError</MudAlert>
-                        }
-                        else if (_entries.Count == 0)
-                        {
-                            <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">@Translate("No items.")</MudText>
-                        }
-                        else
-                        {
-                            <MudList T="string" Dense="true">
-                                @foreach (var entry in _entries)
-                                {
-                                    <MudListItem T="string"
-                                                 OnClick="@(() => EntryClicked(entry))"
-                                                 Icon="@(entry.IsDirectory? Icons.Material.Filled.Folder : Icons.Material.Filled.InsertDriveFile)"
-                                                 Text="@entry.Name"
-                                                 data-test-id="@TestIdHelper.For($"PathBrowserEntry-{entry.Name}")" />
-                                }
-                            </MudList>
-                        }
-                    </div>
-                </MudItem>
-            </MudGrid>
-        </div>
+                    </MudList>
+                }
+            </MudStack>
+        </MudStack>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder" data-test-id="@TestIdHelper.For("SelectFolder")">@Translate("Select folder")</MudButton>

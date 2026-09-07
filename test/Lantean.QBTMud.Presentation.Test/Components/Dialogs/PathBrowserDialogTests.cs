@@ -21,6 +21,58 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _target = new PathBrowserDialogTestDriver(TestContext);
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(200)]
+        public async Task GIVEN_DirectoryEntries_WHEN_Rendered_THEN_ListHasBoundedScrollableStackWithoutInlineStyles(int entryCount)
+        {
+            var entries = Enumerable.Range(0, entryCount).Select(index => $"/root/Folder{index:D3}").ToArray();
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("/root/", DirectoryContentMode.Directories))
+                .ReturnsSuccessAsync(entries);
+
+            var dialog = await _target.RenderDialogAsync(initialPath: "/root/", mode: DirectoryContentMode.Directories);
+            var target = dialog.Component;
+            var content = target.FindComponents<MudStack>().Single(stack => stack.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PathBrowserContent"));
+            var list = target.FindComponents<MudStack>().Single(stack => stack.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PathBrowserList"));
+
+            dialog.Dialog.Instance.ContentClass.Should().Be("d-flex flex-column overflow-hidden");
+            FindComponentByTestId<MudTextField<string>>(target, "CurrentPath").Instance.Class.Should().Be("flex-grow-0 flex-shrink-0");
+            content.Instance.Row.Should().BeFalse();
+            content.Instance.Class.Should().Be("flex-grow-1 overflow-hidden");
+            list.Instance.Class.Should().Be("path-browser-dialog__list flex-grow-1 overflow-y-auto");
+            list.Instance.Style.Should().BeNullOrEmpty();
+            content.Nodes.OfType<AngleSharp.Dom.IElement>().Single().Children.Should()
+                .ContainSingle(element => element.GetAttribute("data-test-id") == "PathBrowserList");
+            target.FindComponents<MudGrid>().Should().BeEmpty();
+            target.FindComponents<MudItem>().Should().BeEmpty();
+            target.WaitForAssertion(() => list.FindComponents<MudListItem<string>>().Should().HaveCount(entryCount));
+        }
+
+        [Fact]
+        public async Task GIVEN_ManyDirectories_WHEN_LastEntryClicked_THEN_NavigatesToFolder()
+        {
+            var entries = Enumerable.Range(0, 200).Select(index => $"/root/Folder{index:D3}").ToArray();
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("/root/", DirectoryContentMode.Directories))
+                .ReturnsSuccessAsync(entries);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("/root/Folder199", DirectoryContentMode.Directories))
+                .ReturnsSuccessAsync(Array.Empty<string>());
+
+            var dialog = await _target.RenderDialogAsync(initialPath: "/root/", mode: DirectoryContentMode.Directories);
+            var target = dialog.Component;
+            target.WaitForAssertion(() => target.FindComponents<MudListItem<string>>().Should().HaveCount(200));
+            var entry = FindComponentByTestId<MudListItem<string>>(target, "PathBrowserEntry-Folder199");
+
+            await target.InvokeAsync(() => entry.Instance.OnClick.InvokeAsync());
+
+            FindComponentByTestId<MudTextField<string>>(target, "CurrentPath").Instance.GetState(field => field.Value)
+                .Should().Be("/root/Folder199");
+            Mock.Get(_apiClient).Verify(client => client.GetDirectoryContentAsync("/root/Folder199", DirectoryContentMode.Directories), Times.Once);
+        }
+
         [Fact]
         public async Task GIVEN_InitialPathProvided_WHEN_Rendered_THEN_ListsEntries()
         {

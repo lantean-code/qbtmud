@@ -304,6 +304,12 @@ code {
         overflow: hidden;
     }
 
+    .path-browser-dialog .path-browser-dialog__list {
+        min-height: 0;
+        overscroll-behavior: contain;
+        touch-action: pan-y pinch-zoom;
+    }
+
 @media (orientation: landscape) and (max-height: 900px) and (min-width: 1000px) and (max-width: 1400px) {
     .welcome-wizard-dialog.mud-dialog,
     .welcome-wizard-dialog .mud-dialog {
