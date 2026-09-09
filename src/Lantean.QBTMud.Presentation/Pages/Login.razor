@@ -9,7 +9,13 @@
                 <MudCardContent Class="login-card__content">
                     <MudStack Spacing="2">
                         <div class="login-card__header">
-                            <img src="images/qbtmud-icon-transparent.svg" alt="" class="login-card__logo" />
+                            <MudImage Src="images/qbtmud-wordmark.svg"
+                                      Alt="qbtmud"
+                                      Width="320"
+                                      Height="84"
+                                      ObjectFit="ObjectFit.Contain"
+                                      Class="login-card__logo"
+                                      data-test-id="@TestIdHelper.For("LoginLogo")" />
                             <MudText Typo="Typo.h5">@LanguageLocalizer.Translate("Login", "Login")</MudText>
                         </div>
 

@@ -150,6 +150,19 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_LoginPage_WHEN_Rendered_THEN_BrandLogoHasConstrainedDimensions()
+        {
+            var target = RenderPage();
+
+            var logo = FindComponentByTestId<MudImage>(target, "LoginLogo");
+
+            logo.Instance.GetState(image => image.Src).Should().Be("images/qbtmud-wordmark.svg");
+            logo.Instance.Width.Should().Be(320);
+            logo.Instance.Height.Should().Be(84);
+            logo.Instance.ObjectFit.Should().Be(ObjectFit.Contain);
+        }
+
+        [Fact]
         public void GIVEN_LoginPage_WHEN_Rendered_THEN_CredentialInputsHaveAutofillMetadata()
         {
             var target = RenderPage();
