@@ -26,6 +26,13 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool IsDarkMode { get; set; }
+
+        protected string LanteanCodeWordmarkClass => IsDarkMode
+            ? "about-page__wordmark about-page__wordmark--dark"
+            : "about-page__wordmark about-page__wordmark--light";
+
         protected string? QtVersion { get; private set; }
 
         protected string? LibtorrentVersion { get; private set; }

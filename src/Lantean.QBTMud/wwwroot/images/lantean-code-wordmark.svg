@@ -1,57 +1,90 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 400" role="img" aria-labelledby="title description" style="--lantean-aqua: #22D3EE; --lantean-emerald: #10B981; --lantean-wordmark: #F5F7FA" data-font-outlined="Rubik Regular">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 400" role="img" aria-labelledby="title description" style="--lantean-aqua: #22D3EE; --lantean-emerald: #10B981" data-font-outlined="Rubik Regular" class="lantean-code-wordmark" data-theme="auto">
   <title id="title">Lantean Code</title>
-  <desc id="description">Lantean Code horizontal logo with the left half of its aperture mark used as the letter C.</desc>
+  <desc id="description">Lantean Code horizontal logo with the left half of its aperture mark used as the letter C. Lantean lettering changes from dark indigo in light mode to off-white in dark mode; the aqua and emerald stay unchanged. Transparent background. All lettering is outlined.</desc>
 
   <style>
-    .primary { fill: var(--lantean-aqua, #22D3EE); }
-    .accent { fill: var(--lantean-emerald, #10B981); }
-    .name { fill: var(--lantean-wordmark, #F5F7FA); }
-    .symbol-primary,
-    .symbol-accent {
+    /* Default: light theme. Internal media query follows the browser preference
+       when opened directly, or the embedding img element's color-scheme.
+       For inline SVG, set data-theme="light" or data-theme="dark" on this SVG,
+       or provide --lantean-wordmark on the SVG or one of its ancestors.
+       No JavaScript, font files or external stylesheets are required. */
+
+    .lantean-code-primary {
+      fill: #22D3EE;
+      fill: var(--lantean-aqua, #22D3EE);
+    }
+    .lantean-code-accent {
+      fill: #10B981;
+      fill: var(--lantean-emerald, #10B981);
+    }
+    .lantean-code-name {
+      fill: #1A1D3D;
+      fill: var(--lantean-wordmark, #1A1D3D);
+    }
+    @media (prefers-color-scheme: dark) {
+      .lantean-code-name {
+        fill: #F5F7FA;
+        fill: var(--lantean-wordmark, #F5F7FA);
+      }
+    }
+    svg.lantean-code-wordmark[data-theme="light"] .lantean-code-name {
+      fill: #1A1D3D;
+      fill: var(--lantean-wordmark, #1A1D3D);
+    }
+    svg.lantean-code-wordmark[data-theme="dark"] .lantean-code-name {
+      fill: #F5F7FA;
+      fill: var(--lantean-wordmark, #F5F7FA);
+    }
+    .lantean-code-symbol-primary,
+    .lantean-code-symbol-accent {
       stroke-width: 8;
       stroke-linejoin: miter;
       paint-order: stroke fill;
     }
-    .symbol-primary {
+    .lantean-code-symbol-primary {
+      fill: #22D3EE;
       fill: var(--lantean-aqua, #22D3EE);
+      stroke: #22D3EE;
       stroke: var(--lantean-aqua, #22D3EE);
     }
-    .symbol-accent {
+    .lantean-code-symbol-accent {
+      fill: #10B981;
       fill: var(--lantean-emerald, #10B981);
+      stroke: #10B981;
       stroke: var(--lantean-emerald, #10B981);
     }
   </style>
 
   <defs>
-    <path id="aperture-diagonal" d="M 240 57 L 240 139 L 224 139 L 224 108.0267              L 120 171.92 L 84 152.84 Z" />
-    <path id="aperture-side" d="M 80 174.72 L 120 195.92 L 120 316.08 L 80 337.28 Z" />
-    <path id="code-bracket" d="M 224 194 L 224 224 L 188 256 L 224 288              L 224 318 L 152 256 Z" />
+    <path id="aperture-diagonal" d="M 240 57 L 240 139 L 224 139 L 224 108.0267              L 120 171.92 L 84 152.84 Z"/>
+    <path id="aperture-side" d="M 80 174.72 L 120 195.92 L 120 316.08 L 80 337.28 Z"/>
+    <path id="code-bracket" d="M 224 194 L 224 224 L 188 256 L 224 288              L 224 318 L 152 256 Z"/>
 
     <g id="mark">
-      <g class="primary">
-        <use href="#aperture-diagonal" />
-        <use href="#aperture-diagonal" transform="translate(512 512) scale(-1 -1)" />
-        <use href="#aperture-side" />
-        <use href="#aperture-side" transform="translate(512 0) scale(-1 1)" />
-        <use href="#code-bracket" />
-        <use href="#code-bracket" transform="translate(512 0) scale(-1 1)" />
+      <g class="lantean-code-primary">
+        <use href="#aperture-diagonal"/>
+        <use href="#aperture-diagonal" transform="translate(512 512) scale(-1 -1)"/>
+        <use href="#aperture-side"/>
+        <use href="#aperture-side" transform="translate(512 0) scale(-1 1)"/>
+        <use href="#code-bracket"/>
+        <use href="#code-bracket" transform="translate(512 0) scale(-1 1)"/>
       </g>
-      <g class="accent">
-        <use href="#aperture-diagonal" transform="translate(512 0) scale(-1 1)" />
-        <use href="#aperture-diagonal" transform="translate(0 512) scale(1 -1)" />
+      <g class="lantean-code-accent">
+        <use href="#aperture-diagonal" transform="translate(512 0) scale(-1 1)"/>
+        <use href="#aperture-diagonal" transform="translate(0 512) scale(1 -1)"/>
       </g>
     </g>
 
     <g id="symbol-c">
-      <use class="symbol-primary" href="#aperture-diagonal" />
-      <use class="symbol-primary" href="#aperture-side" />
-      <use class="symbol-accent" href="#aperture-diagonal" transform="translate(0 512) scale(1 -1)" />
+      <use class="lantean-code-symbol-primary" href="#aperture-diagonal"/>
+      <use class="lantean-code-symbol-primary" href="#aperture-side"/>
+      <use class="lantean-code-symbol-accent" href="#aperture-diagonal" transform="translate(0 512) scale(1 -1)"/>
     </g>
   </defs>
 
-  <use href="#mark" transform="translate(30 30) scale(0.6640625)" />
+  <use href="#mark" transform="translate(30 30) scale(0.6640625)"/>
 
-  <g class="name" aria-label="Lantean"><path d="M547 63V27Q547 16 539.0 8.0Q531 0 520 0H113Q102 0 94.0 8.0Q86 16 86 27V673Q86 684 94.0 692.0Q102 700 113 700H154Q165 700 173.0 692.0Q181 684 181 673V90H520Q531 90 539.0 82.0Q547 74 547 63Z" transform="translate(405.000 239.000) scale(0.118000 -0.118000)" /><path d="M384 329V342Q384 391 351.5 417.5Q319 444 267 444Q227 444 204.5 430.5Q182 417 162 390Q156 382 149.0 379.0Q142 376 130 376H100Q89 376 80.5 384.0Q72 392 73 403Q76 433 102.5 462.5Q129 492 173.0 511.0Q217 530 267 530Q360 530 417.5 478.0Q475 426 475 332V27Q475 16 467.0 8.0Q459 0 448 0H411Q400 0 392.0 8.0Q384 16 384 27V68Q368 32 316.0 11.0Q264 -10 212 -10Q161 -10 121.0 8.5Q81 27 59.5 59.0Q38 91 38 131Q38 206 94.0 248.5Q150 291 243 306ZM384 249 266 230Q201 220 165.0 197.5Q129 175 129 141Q129 116 152.0 96.0Q175 76 222 76Q294 76 339.0 117.0Q384 158 384 224Z" transform="translate(471.788 239.000) scale(0.118000 -0.118000)" /><path d="M510 0H473Q462 0 454.0 8.0Q446 16 446 27V291Q446 366 409.0 405.0Q372 444 306 444Q241 444 203.5 405.0Q166 366 166 291V27Q166 16 158.0 8.0Q150 0 139 0H102Q91 0 83.0 8.0Q75 16 75 27V493Q75 504 83.0 512.0Q91 520 102 520H139Q150 520 158.0 512.0Q166 504 166 493V462Q188 491 226.5 510.5Q265 530 321 530Q384 530 433.0 503.0Q482 476 509.5 425.5Q537 375 537 306V27Q537 16 529.0 8.0Q521 0 510 0Z" transform="translate(536.216 239.000) scale(0.118000 -0.118000)" /><path d="M295 86H348Q359 86 367.0 78.0Q375 70 375 59V27Q375 16 367.0 8.0Q359 0 348 0H285Q200 0 160.0 44.5Q120 89 120 175V434H46Q35 434 27.0 442.0Q19 450 19 461V493Q19 504 27.0 512.0Q35 520 46 520H120V683Q120 694 128.0 702.0Q136 710 147 710H184Q195 710 203.0 702.0Q211 694 211 683V520H338Q349 520 357.0 512.0Q365 504 365 493V461Q365 450 357.0 442.0Q349 434 338 434H211V175Q211 132 228.5 109.0Q246 86 295 86Z" transform="translate(607.842 239.000) scale(0.118000 -0.118000)" /><path d="M511 277V250Q511 239 503.0 231.0Q495 223 484 223H140V217Q142 151 180.5 113.5Q219 76 280 76Q330 76 357.5 89.0Q385 102 407 126Q415 134 421.5 137.0Q428 140 439 140H469Q481 140 489.0 132.0Q497 124 496 113Q492 86 466.5 57.5Q441 29 393.5 9.5Q346 -10 280 -10Q216 -10 166.0 19.5Q116 49 86.5 101.0Q57 153 51 218Q49 248 49 264Q49 280 51 310Q57 372 86.5 422.0Q116 472 165.5 501.0Q215 530 280 530Q387 530 449.0 462.0Q511 394 511 277ZM421 307V310Q421 371 382.5 407.5Q344 444 280 444Q222 444 181.5 407.0Q141 370 140 310V307Z" transform="translate(655.042 239.000) scale(0.118000 -0.118000)" /><path d="M384 329V342Q384 391 351.5 417.5Q319 444 267 444Q227 444 204.5 430.5Q182 417 162 390Q156 382 149.0 379.0Q142 376 130 376H100Q89 376 80.5 384.0Q72 392 73 403Q76 433 102.5 462.5Q129 492 173.0 511.0Q217 530 267 530Q360 530 417.5 478.0Q475 426 475 332V27Q475 16 467.0 8.0Q459 0 448 0H411Q400 0 392.0 8.0Q384 16 384 27V68Q368 32 316.0 11.0Q264 -10 212 -10Q161 -10 121.0 8.5Q81 27 59.5 59.0Q38 91 38 131Q38 206 94.0 248.5Q150 291 243 306ZM384 249 266 230Q201 220 165.0 197.5Q129 175 129 141Q129 116 152.0 96.0Q175 76 222 76Q294 76 339.0 117.0Q384 158 384 224Z" transform="translate(720.768 239.000) scale(0.118000 -0.118000)" /><path d="M510 0H473Q462 0 454.0 8.0Q446 16 446 27V291Q446 366 409.0 405.0Q372 444 306 444Q241 444 203.5 405.0Q166 366 166 291V27Q166 16 158.0 8.0Q150 0 139 0H102Q91 0 83.0 8.0Q75 16 75 27V493Q75 504 83.0 512.0Q91 520 102 520H139Q150 520 158.0 512.0Q166 504 166 493V462Q188 491 226.5 510.5Q265 530 321 530Q384 530 433.0 503.0Q482 476 509.5 425.5Q537 375 537 306V27Q537 16 529.0 8.0Q521 0 510 0Z" transform="translate(785.196 239.000) scale(0.118000 -0.118000)" /></g><use href="#symbol-c" transform="translate(870.4 131.035) scale(0.245)" />
+  <g class="lantean-code-name" aria-label="Lantean"><path d="M547 63V27Q547 16 539.0 8.0Q531 0 520 0H113Q102 0 94.0 8.0Q86 16 86 27V673Q86 684 94.0 692.0Q102 700 113 700H154Q165 700 173.0 692.0Q181 684 181 673V90H520Q531 90 539.0 82.0Q547 74 547 63Z" transform="translate(405.000 239.000) scale(0.118000 -0.118000)"/><path d="M384 329V342Q384 391 351.5 417.5Q319 444 267 444Q227 444 204.5 430.5Q182 417 162 390Q156 382 149.0 379.0Q142 376 130 376H100Q89 376 80.5 384.0Q72 392 73 403Q76 433 102.5 462.5Q129 492 173.0 511.0Q217 530 267 530Q360 530 417.5 478.0Q475 426 475 332V27Q475 16 467.0 8.0Q459 0 448 0H411Q400 0 392.0 8.0Q384 16 384 27V68Q368 32 316.0 11.0Q264 -10 212 -10Q161 -10 121.0 8.5Q81 27 59.5 59.0Q38 91 38 131Q38 206 94.0 248.5Q150 291 243 306ZM384 249 266 230Q201 220 165.0 197.5Q129 175 129 141Q129 116 152.0 96.0Q175 76 222 76Q294 76 339.0 117.0Q384 158 384 224Z" transform="translate(471.788 239.000) scale(0.118000 -0.118000)"/><path d="M510 0H473Q462 0 454.0 8.0Q446 16 446 27V291Q446 366 409.0 405.0Q372 444 306 444Q241 444 203.5 405.0Q166 366 166 291V27Q166 16 158.0 8.0Q150 0 139 0H102Q91 0 83.0 8.0Q75 16 75 27V493Q75 504 83.0 512.0Q91 520 102 520H139Q150 520 158.0 512.0Q166 504 166 493V462Q188 491 226.5 510.5Q265 530 321 530Q384 530 433.0 503.0Q482 476 509.5 425.5Q537 375 537 306V27Q537 16 529.0 8.0Q521 0 510 0Z" transform="translate(536.216 239.000) scale(0.118000 -0.118000)"/><path d="M295 86H348Q359 86 367.0 78.0Q375 70 375 59V27Q375 16 367.0 8.0Q359 0 348 0H285Q200 0 160.0 44.5Q120 89 120 175V434H46Q35 434 27.0 442.0Q19 450 19 461V493Q19 504 27.0 512.0Q35 520 46 520H120V683Q120 694 128.0 702.0Q136 710 147 710H184Q195 710 203.0 702.0Q211 694 211 683V520H338Q349 520 357.0 512.0Q365 504 365 493V461Q365 450 357.0 442.0Q349 434 338 434H211V175Q211 132 228.5 109.0Q246 86 295 86Z" transform="translate(607.842 239.000) scale(0.118000 -0.118000)"/><path d="M511 277V250Q511 239 503.0 231.0Q495 223 484 223H140V217Q142 151 180.5 113.5Q219 76 280 76Q330 76 357.5 89.0Q385 102 407 126Q415 134 421.5 137.0Q428 140 439 140H469Q481 140 489.0 132.0Q497 124 496 113Q492 86 466.5 57.5Q441 29 393.5 9.5Q346 -10 280 -10Q216 -10 166.0 19.5Q116 49 86.5 101.0Q57 153 51 218Q49 248 49 264Q49 280 51 310Q57 372 86.5 422.0Q116 472 165.5 501.0Q215 530 280 530Q387 530 449.0 462.0Q511 394 511 277ZM421 307V310Q421 371 382.5 407.5Q344 444 280 444Q222 444 181.5 407.0Q141 370 140 310V307Z" transform="translate(655.042 239.000) scale(0.118000 -0.118000)"/><path d="M384 329V342Q384 391 351.5 417.5Q319 444 267 444Q227 444 204.5 430.5Q182 417 162 390Q156 382 149.0 379.0Q142 376 130 376H100Q89 376 80.5 384.0Q72 392 73 403Q76 433 102.5 462.5Q129 492 173.0 511.0Q217 530 267 530Q360 530 417.5 478.0Q475 426 475 332V27Q475 16 467.0 8.0Q459 0 448 0H411Q400 0 392.0 8.0Q384 16 384 27V68Q368 32 316.0 11.0Q264 -10 212 -10Q161 -10 121.0 8.5Q81 27 59.5 59.0Q38 91 38 131Q38 206 94.0 248.5Q150 291 243 306ZM384 249 266 230Q201 220 165.0 197.5Q129 175 129 141Q129 116 152.0 96.0Q175 76 222 76Q294 76 339.0 117.0Q384 158 384 224Z" transform="translate(720.768 239.000) scale(0.118000 -0.118000)"/><path d="M510 0H473Q462 0 454.0 8.0Q446 16 446 27V291Q446 366 409.0 405.0Q372 444 306 444Q241 444 203.5 405.0Q166 366 166 291V27Q166 16 158.0 8.0Q150 0 139 0H102Q91 0 83.0 8.0Q75 16 75 27V493Q75 504 83.0 512.0Q91 520 102 520H139Q150 520 158.0 512.0Q166 504 166 493V462Q188 491 226.5 510.5Q265 530 321 530Q384 530 433.0 503.0Q482 476 509.5 425.5Q537 375 537 306V27Q537 16 529.0 8.0Q521 0 510 0Z" transform="translate(785.196 239.000) scale(0.118000 -0.118000)"/></g><use href="#symbol-c" transform="translate(870.4 131.035) scale(0.245)"/>
 
-  <g class="primary" aria-label="ode"><path d="M527 259Q527 235 525 213Q516 111 454.5 50.5Q393 -10 288 -10Q183 -10 121.5 50.5Q60 111 51 213Q50 224 50 259Q50 296 51 307Q59 409 121.0 469.5Q183 530 288 530Q393 530 455.0 469.5Q517 409 525 307Q527 285 527 259ZM288 444Q221 444 184.5 405.0Q148 366 142 302Q141 290 141 259Q141 229 142 218Q148 154 184.5 115.0Q221 76 288 76Q355 76 391.5 115.0Q428 154 434 218Q436 240 436 259Q436 278 434 302Q428 366 391.5 405.0Q355 444 288 444Z" transform="translate(930.000 239.000) scale(0.118000 -0.118000)" /><path d="M432 683Q432 694 440.0 702.0Q448 710 459 710H496Q507 710 515.0 702.0Q523 694 523 683V27Q523 16 515.0 8.0Q507 0 496 0H459Q448 0 440.0 8.0Q432 16 432 27V58Q381 -10 277 -10Q215 -10 164.5 19.0Q114 48 83.5 102.0Q53 156 50 228L49 261L50 293Q53 365 83.5 418.5Q114 472 164.0 501.0Q214 530 277 530Q333 530 371.5 510.5Q410 491 432 462ZM287 444Q222 444 183.5 402.0Q145 360 141 288L140 260L141 232Q145 160 183.5 118.0Q222 76 287 76Q349 76 389.0 114.5Q429 153 432 217Q433 227 433 257Q433 286 432 296Q429 366 390.0 405.0Q351 444 287 444Z" transform="translate(998.086 239.000) scale(0.118000 -0.118000)" /><path d="M511 277V250Q511 239 503.0 231.0Q495 223 484 223H140V217Q142 151 180.5 113.5Q219 76 280 76Q330 76 357.5 89.0Q385 102 407 126Q415 134 421.5 137.0Q428 140 439 140H469Q481 140 489.0 132.0Q497 124 496 113Q492 86 466.5 57.5Q441 29 393.5 9.5Q346 -10 280 -10Q216 -10 166.0 19.5Q116 49 86.5 101.0Q57 153 51 218Q49 248 49 264Q49 280 51 310Q57 372 86.5 422.0Q116 472 165.5 501.0Q215 530 280 530Q387 530 449.0 462.0Q511 394 511 277ZM421 307V310Q421 371 382.5 407.5Q344 444 280 444Q222 444 181.5 407.0Q141 370 140 310V307Z" transform="translate(1068.650 239.000) scale(0.118000 -0.118000)" /></g></svg>
+  <g class="lantean-code-primary" aria-label="ode"><path d="M527 259Q527 235 525 213Q516 111 454.5 50.5Q393 -10 288 -10Q183 -10 121.5 50.5Q60 111 51 213Q50 224 50 259Q50 296 51 307Q59 409 121.0 469.5Q183 530 288 530Q393 530 455.0 469.5Q517 409 525 307Q527 285 527 259ZM288 444Q221 444 184.5 405.0Q148 366 142 302Q141 290 141 259Q141 229 142 218Q148 154 184.5 115.0Q221 76 288 76Q355 76 391.5 115.0Q428 154 434 218Q436 240 436 259Q436 278 434 302Q428 366 391.5 405.0Q355 444 288 444Z" transform="translate(930.000 239.000) scale(0.118000 -0.118000)"/><path d="M432 683Q432 694 440.0 702.0Q448 710 459 710H496Q507 710 515.0 702.0Q523 694 523 683V27Q523 16 515.0 8.0Q507 0 496 0H459Q448 0 440.0 8.0Q432 16 432 27V58Q381 -10 277 -10Q215 -10 164.5 19.0Q114 48 83.5 102.0Q53 156 50 228L49 261L50 293Q53 365 83.5 418.5Q114 472 164.0 501.0Q214 530 277 530Q333 530 371.5 510.5Q410 491 432 462ZM287 444Q222 444 183.5 402.0Q145 360 141 288L140 260L141 232Q145 160 183.5 118.0Q222 76 287 76Q349 76 389.0 114.5Q429 153 432 217Q433 227 433 257Q433 286 432 296Q429 366 390.0 405.0Q351 444 287 444Z" transform="translate(998.086 239.000) scale(0.118000 -0.118000)"/><path d="M511 277V250Q511 239 503.0 231.0Q495 223 484 223H140V217Q142 151 180.5 113.5Q219 76 280 76Q330 76 357.5 89.0Q385 102 407 126Q415 134 421.5 137.0Q428 140 439 140H469Q481 140 489.0 132.0Q497 124 496 113Q492 86 466.5 57.5Q441 29 393.5 9.5Q346 -10 280 -10Q216 -10 166.0 19.5Q116 49 86.5 101.0Q57 153 51 218Q49 248 49 264Q49 280 51 310Q57 372 86.5 422.0Q116 472 165.5 501.0Q215 530 280 530Q387 530 449.0 462.0Q511 394 511 277ZM421 307V310Q421 371 382.5 407.5Q344 444 280 444Q222 444 181.5 407.0Q141 370 140 310V307Z" transform="translate(1068.650 239.000) scale(0.118000 -0.118000)"/></g></svg>

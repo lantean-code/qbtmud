@@ -158,7 +158,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             logo.Instance.GetState(image => image.Src).Should().Be("images/qbtmud-wordmark.svg");
             logo.Instance.Width.Should().Be(320);
-            logo.Instance.Height.Should().Be(84);
+            logo.Instance.Height.Should().Be(104);
             logo.Instance.ObjectFit.Should().Be(ObjectFit.Contain);
         }
 

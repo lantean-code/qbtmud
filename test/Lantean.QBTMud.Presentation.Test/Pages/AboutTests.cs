@@ -69,6 +69,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var wordmark = FindComponentByTestId<MudImage>(target, "LanteanCodeWordmark");
             wordmark.Instance.GetState(image => image.Src).Should().Be("images/lantean-code-wordmark.svg");
             wordmark.Instance.Alt.Should().Be("Lantean Code");
+            wordmark.Instance.Class.Should().Contain("about-page__wordmark--light");
             GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudCopyright").Instance.ChildContent)
                 .Should().Be("Copyright © 2026 Lantean Code");
             FindComponentByTestId<MudLink>(target, "QbtMudHomeLink").Instance.Href.Should().Be("https://github.com/lantean-code/qbtmud");
@@ -79,6 +80,15 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudDocsLink").Instance.ChildContent).Should().Be("https://lantean-code.github.io/qbtmud/");
             FindComponentByTestId<MudLink>(target, "LanteanCodeLink").Instance.Href.Should().Be("https://lantean-code.github.io");
             target.FindComponents<MudImage>().Should().Contain(image => image.Instance.GetState(component => component.Src) == "images/qbittorrent-tray.svg");
+        }
+
+        [Fact]
+        public void GIVEN_DarkTheme_WHEN_AboutTabRendered_THEN_UsesDarkWordmarkColourScheme()
+        {
+            var target = RenderPage(isDarkMode: true);
+
+            FindComponentByTestId<MudImage>(target, "LanteanCodeWordmark")
+                .Instance.Class.Should().Contain("about-page__wordmark--dark");
         }
 
         [Fact]
@@ -285,11 +295,12 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             });
         }
 
-        private IRenderedComponent<About> RenderPage()
+        private IRenderedComponent<About> RenderPage(bool isDarkMode = false)
         {
             return TestContext.Render<About>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
+                parameters.AddCascadingValue("IsDarkMode", isDarkMode);
             });
         }
 

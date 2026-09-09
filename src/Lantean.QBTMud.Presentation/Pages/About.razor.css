@@ -15,3 +15,11 @@
     padding: 8px 0 0;
     border-radius: var(--mud-default-borderradius);
 }
+
+.about-page ::deep .about-page__wordmark--light {
+    color-scheme: light;
+}
+
+.about-page ::deep .about-page__wordmark--dark {
+    color-scheme: dark;
+}
