@@ -1,0 +1,176 @@
+name: Publish Public Container
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Published stable qbtmud release tag
+        required: true
+        default: '3.0.0'
+      check_upstream:
+        description: Check LinuxServer latest and select the newest stable UI automatically
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# All future upstream/rollback publishers must share this group.
+concurrency:
+  group: qbtmud-public-container-publication
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  prepare:
+    if: github.repository == 'lantean-code/qbtmud' && (github.event_name == 'release' || github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      reuse: ${{ steps.prepare.outputs.reuse }}
+      digest: ${{ steps.prepare.outputs.digest }}
+      commit: ${{ steps.prepare.outputs.packaging_commit }}
+      build_required: ${{ steps.prepare.outputs.build_required }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - run: sudo apt-get update && sudo apt-get install -y skopeo
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify release provenance and immutable identity
+        id: prepare
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release }}
+          CHECK_UPSTREAM: ${{ github.event_name == 'schedule' || inputs.check_upstream }}
+        run: |
+          args=()
+          if [ "$CHECK_UPSTREAM" = true ]; then args+=(--upstream); fi
+          python3 docker/release.py prepare --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: steps.prepare.outputs.build_required == 'true'
+        with:
+          name: container-publication-inputs
+          path: docker/.build/publication/
+          retention-days: 30
+
+  test:
+    needs: prepare
+    if: needs.prepare.outputs.build_required == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            architecture: amd64
+          - runner: ubuntu-24.04-arm
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: read
+    env:
+      ARCHITECTURE: ${{ matrix.architecture }}
+      REUSE_DIGEST: ${{ needs.prepare.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: container-publication-inputs
+          path: docker/.build/publication/
+      - run: sudo apt-get update && sudo apt-get install -y skopeo
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build once or load exact previously published image
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $inputs = Get-Content docker/.build/publication/publication-inputs.json -Raw | ConvertFrom-Json
+          if ($env:REUSE_DIGEST) {
+            docker pull --platform "linux/$env:ARCHITECTURE" "ghcr.io/lantean-code/qbtmud@$env:REUSE_DIGEST"
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot pull previously published image.' }
+            docker tag "ghcr.io/lantean-code/qbtmud@$env:REUSE_DIGEST" qbtmud:local
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot tag previously published image for testing.' }
+          } else {
+            ./docker/build-local.ps1 -BaseImage $inputs.baseImage -UpstreamTag $inputs.upstreamTag `
+              -Archive "docker/.build/publication/$($inputs.archive)" -ArchiveSha256 $inputs.uiSha256 `
+              -UiVersion $inputs.version -UiCommit $inputs.uiCommit -Platform "linux/$env:ARCHITECTURE" `
+              -PackageRevision "r$($inputs.revision)" -ReleaseId $inputs.releaseId -AssetId $inputs.assetId
+          }
+      - name: Smoke test exact platform image
+        shell: pwsh
+        run: ./docker/test-local.ps1
+      - name: Retain tested image and manifest evidence
+        if: needs.prepare.outputs.reuse != 'true'
+        run: python3 docker/export-tested.py "$ARCHITECTURE"
+      - uses: actions/upload-artifact@v4
+        if: needs.prepare.outputs.reuse != 'true'
+        with:
+          name: tested-container-${{ matrix.architecture }}
+          path: docker/.build/publication/${{ matrix.architecture }}/
+          retention-days: 30
+
+  publish:
+    needs: [prepare, test]
+    if: needs.prepare.outputs.build_required == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REUSE: ${{ needs.prepare.outputs.reuse }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+      - run: sudo apt-get update && sudo apt-get install -y skopeo
+      - uses: docker/setup-buildx-action@v3
+      - uses: actions/download-artifact@v4
+        with:
+          name: container-publication-inputs
+          path: docker/.build/publication/
+      - uses: actions/download-artifact@v4
+        if: needs.prepare.outputs.reuse != 'true'
+        with:
+          name: tested-container-amd64
+          path: docker/.build/publication/amd64/
+      - uses: actions/download-artifact@v4
+        if: needs.prepare.outputs.reuse != 'true'
+        with:
+          name: tested-container-arm64
+          path: docker/.build/publication/arm64/
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish tested index, verify public pull and promote eligible aliases
+        run: |
+          args=()
+          if [ "$REUSE" = true ]; then args+=(--reuse); fi
+          python3 docker/release.py publish --repo "$GITHUB_REPOSITORY" "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-publication-result
+          path: docker/.build/publication/published.json
+          if-no-files-found: ignore
+          retention-days: 90

@@ -1,0 +1,21 @@
+services:
+  qbittorrent:
+    image: ${QBTMUD_IMAGE:-qbtmud:local}
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/London
+      WEBUI_PORT: "18080"
+      TORRENTING_PORT: "16881"
+    volumes:
+      - test-config:/config
+      - test-downloads:/downloads
+    ports:
+      - "18080:18080"
+      - "16881:16881"
+      - "16881:16881/udp"
+    restart: unless-stopped
+
+volumes:
+  test-config:
+  test-downloads:

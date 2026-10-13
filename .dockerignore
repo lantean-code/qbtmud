@@ -1,0 +1,8 @@
+*
+!LICENSE
+!docker/
+!docker/public/
+!docker/public/**
+!docker/.build/
+!docker/.build/alternative-ui/
+!docker/.build/alternative-ui/**

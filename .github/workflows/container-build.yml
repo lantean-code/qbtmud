@@ -1,0 +1,96 @@
+name: Build and Test Local Container
+
+on:
+  pull_request:
+    paths:
+      - 'docker/**'
+      - '.dockerignore'
+      - '.gitattributes'
+      - '.github/workflows/container-build.yml'
+      - '.github/workflows/container-publish.yml'
+      - '.github/workflows/dotnet.yml'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Published stable qbtmud release tag
+        required: true
+        default: '3.0.0'
+      ui_commit:
+        description: Verified full UI build commit matching the release tag
+        required: true
+        default: 'ec93ae97ed294d4730b414511a36ebc26aeb3037'
+
+permissions:
+  contents: read
+
+jobs:
+  config:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell and awk line endings
+        run: |
+          if grep -Il $'\r' docker/public/*.sh docker/public/*.awk docker/tests/*.sh; then
+            echo 'Linux executable sources must use LF.' >&2
+            exit 1
+          fi
+          for script in docker/public/*.sh docker/tests/*.sh; do bash -n "$script"; done
+      - name: Configuration safety tests
+        run: bash docker/tests/test-config.sh
+      - name: Release provenance and promotion policy tests
+        run: python3 -B -m unittest discover -s docker/tests -p 'test_release.py'
+
+  image:
+    if: github.event_name == 'workflow_dispatch'
+    needs: config
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            architecture: amd64
+          - runner: ubuntu-24.04-arm
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release }}
+      UI_COMMIT: ${{ inputs.ui_commit }}
+      IMAGE_ARCHITECTURE: ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify release and build exact local image
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
+            throw 'Select a stable semantic version; RC, beta and alpha builds are excluded.'
+          }
+          $release = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json assets,isPrerelease,isDraft,tagName | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $release.isDraft -or $release.isPrerelease) { throw 'Release is not published stable.' }
+          $commit = gh api "repos/$env:GITHUB_REPOSITORY/commits/$env:RELEASE_TAG" --jq '.sha'
+          if ($LASTEXITCODE -ne 0 -or $commit -ne $env:UI_COMMIT) { throw 'UI build commit must match the release tag.' }
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          $asset = @($release.assets | Where-Object name -eq "qbt-mud-v$version-intl.zip")
+          if ($asset.Count -ne 1 -or $asset[0].digest -notmatch '^sha256:[a-f0-9]{64}$') { throw 'Expected one checksummed international asset.' }
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern $asset[0].name --dir docker/.build
+          if ($LASTEXITCODE -ne 0) { throw 'Release download failed.' }
+          $base = Get-Content docker/base-image.json -Raw | ConvertFrom-Json
+          ./docker/build-local.ps1 -BaseImage $base.image -UpstreamTag $base.tag `
+            -Archive "docker/.build/$($asset[0].name)" -ArchiveSha256 ($asset[0].digest -replace '^sha256:', '') `
+            -UiVersion $version -UiCommit $env:UI_COMMIT -Platform "linux/$env:IMAGE_ARCHITECTURE"
+      - name: Smoke test exact image
+        shell: pwsh
+        run: ./docker/test-local.ps1
+      - name: Export tested image and digest
+        run: |
+          docker image inspect qbtmud:local --format '{{.Id}}' > docker/.build/image-id.txt
+          docker save qbtmud:local | gzip > docker/.build/qbtmud-local-${IMAGE_ARCHITECTURE}.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qbtmud-local-${{ matrix.architecture }}
+          path: |
+            docker/.build/qbtmud-local-*.tar.gz
+            docker/.build/build-inputs.json
+            docker/.build/image-id.txt
+          retention-days: 7

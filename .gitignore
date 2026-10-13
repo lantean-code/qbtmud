@@ -8,6 +8,7 @@
 artifacts/
 out/
 output/
+docker/.build/
 publish/
 TestResults/
 BenchmarkDotNet.Artifacts/

@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch the full history for GitVersion
           submodules: recursive
@@ -208,6 +208,28 @@ jobs:
           echo "::error::Expected an existing git tag '${VERSION}' (or 'v${VERSION}') before creating a release."
           exit 1
 
+      - name: Verify Stable Release Commit and Record Provenance
+        if: steps.release_channel.outputs.channel == 'stable'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.resolve_tag.outputs.tag }}
+        run: |
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$GITHUB_SHA" || {
+            echo '::error::Stable release tag does not identify this UI build commit.'
+            exit 1
+          }
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          version = os.environ['VERSION']
+          name = 'qbt-mud-v' + os.environ['VERSION_SAFE'] + '-intl.zip'
+          value = {'channel': 'stable', 'tag': os.environ['RELEASE_TAG'], 'version': version,
+                   'commit': os.environ['GITHUB_SHA'], 'archive': name,
+                   'sha256': hashlib.sha256((Path('output') / name).read_bytes()).hexdigest(),
+                   'runId': os.environ['GITHUB_RUN_ID']}
+          (Path('output') / ('qbt-mud-v' + version + '-provenance.json')).write_text(json.dumps(value, indent=2) + '\n')
+          PY
+
       - name: Create GitHub Release
         if: steps.release_channel.outputs.channel != 'none' && (steps.resolve_tag.outputs.exists == 'true' || steps.release_channel.outputs.channel != 'stable')
         id: create_release
@@ -239,5 +261,16 @@ jobs:
           asset_path: output/qbt-mud-v${{ env.VERSION_SAFE }}-intl.zip
           asset_name: qbt-mud-v${{ env.VERSION_SAFE }}-intl.zip
           asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Stable Release Provenance
+        if: steps.release_channel.outputs.channel == 'stable'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: output/qbt-mud-v${{ env.VERSION }}-provenance.json
+          asset_name: qbt-mud-v${{ env.VERSION }}-provenance.json
+          asset_content_type: application/json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
