@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 spec = importlib.util.spec_from_file_location("release", Path(__file__).resolve().parents[1] / "release.py")
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
+from image_archive import verify_saved_image
 
 
 class PolicyTests(unittest.TestCase):
@@ -223,6 +224,52 @@ class PolicyTests(unittest.TestCase):
             self.assertEqual(release.inspect("localhost:5000/repo:version@" + digest), ({}, digest))
             self.assertTrue(all(call.args[-1] == "docker://localhost:5000/repo@" + digest
                                 for call in commands.call_args_list))
+
+    def test_saved_classic_image_uses_config_digest_despite_inspect_defaults(self):
+        config = json.dumps({"architecture": "amd64", "os": "linux", "config": {"Cmd": ["/init"]},
+                             "rootfs": {"diff_ids": ["sha256:" + "1" * 64]}}).encode()
+        digest = "sha256:" + hashlib.sha256(config).hexdigest()
+        image = {"Id": digest, "Architecture": "amd64", "Os": "linux",
+                 "Config": {"Cmd": ["/init"], "OnBuild": None}, "RootFS": {"Layers": ["sha256:" + "1" * 64]}}
+        stream = io.BytesIO()
+        with tarfile.open(fileobj=stream, mode="w") as archive:
+            for name, data in {"manifest.json": json.dumps([{"Config": "config.json"}]).encode(),
+                               "config.json": config}.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        stream.seek(0)
+        with tarfile.open(fileobj=stream) as archive:
+            self.assertEqual(verify_saved_image(image, archive), digest)
+        image["RootFS"]["Layers"] = ["sha256:" + "2" * 64]
+        stream.seek(0)
+        with tarfile.open(fileobj=stream) as archive, self.assertRaisesRegex(ValueError, "filesystem"):
+            verify_saved_image(image, archive)
+
+    def test_saved_containerd_image_requires_config_link_from_captured_index(self):
+        config = json.dumps({"architecture": "amd64", "os": "linux", "config": {}, "rootfs": {"diff_ids": []}}).encode()
+        config_digest = "sha256:" + hashlib.sha256(config).hexdigest()
+        manifest = json.dumps({"config": {"digest": config_digest}}).encode()
+        manifest_digest = "sha256:" + hashlib.sha256(manifest).hexdigest()
+        index = json.dumps({"manifests": [{"digest": manifest_digest}]}).encode()
+        index_digest = "sha256:" + hashlib.sha256(index).hexdigest()
+        image = {"Id": index_digest, "Architecture": "amd64", "Os": "linux", "RootFS": {"Layers": []}}
+        stream = io.BytesIO()
+        with tarfile.open(fileobj=stream, mode="w") as archive:
+            for name, data in {"manifest.json": json.dumps([{"Config": "config.json"}]).encode(), "config.json": config,
+                               "index.json": json.dumps({"manifests": [{"digest": index_digest}]}).encode(),
+                               "blobs/sha256/" + index_digest[7:]: index,
+                               "blobs/sha256/" + manifest_digest[7:]: manifest}.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        stream.seek(0)
+        with tarfile.open(fileobj=stream) as archive:
+            self.assertEqual(verify_saved_image(image, archive), config_digest)
+        image["Id"] = "sha256:" + "3" * 64
+        stream.seek(0)
+        with tarfile.open(fileobj=stream) as archive, self.assertRaisesRegex(ValueError, "identity"):
+            verify_saved_image(image, archive)
 
     def test_oci_index_preserves_platform_manifest_digests_and_annotations(self):
         with tempfile.TemporaryDirectory() as directory:
