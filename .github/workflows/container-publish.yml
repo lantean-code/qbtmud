@@ -99,6 +99,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Local helper staging regressions
+        shell: pwsh
+        run: ./docker/tests/test-build-local.ps1
       - name: Build once or load exact previously published image
         shell: pwsh
         run: |

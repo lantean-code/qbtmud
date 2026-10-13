@@ -40,7 +40,7 @@ if (-not $StageOnly) {
     if ($LASTEXITCODE -ne 0) { throw 'Docker is not running. Start your Docker engine, then retry.' }
 }
 $buildRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '.build'))
-if ((Test-Path -LiteralPath $buildRoot) -and ((Get-Item -LiteralPath $buildRoot).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+if ((Test-Path -LiteralPath $buildRoot) -and ((Get-Item -LiteralPath $buildRoot -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
     throw 'The generated build directory must not be a symbolic link or junction.'
 }
 New-Item -ItemType Directory -Path $buildRoot -Force | Out-Null
@@ -88,7 +88,7 @@ try {
     if (-not $bootSettings.Contains("'$UiVersion-all'")) { throw 'UI version/international flavour does not match boot.settings.js.' }
     # Only replace this generated tree, and never traverse links during cleanup.
     if (Test-Path -LiteralPath $staging) {
-        $existing = Get-Item -LiteralPath $staging
+        $existing = Get-Item -LiteralPath $staging -Force
         if (-not $existing.PSIsContainer -or ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
             throw 'The generated staging tree must be a regular directory.'
         }
