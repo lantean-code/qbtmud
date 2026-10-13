@@ -54,6 +54,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Docker installation: docker.md
   - Advanced setup: advanced-setup.md
   - Reverse proxy hosting: reverse-proxy.md
   - Separate API and UI hosting: separate-api-ui-hosting.md

@@ -1,6 +1,6 @@
 # Local container validation
 
-Validated on 13 October 2026. This delivery implements public local packaging, config/startup tests, Compose documentation, a build-only manual workflow and a public publication workflow. No Git commits, pushes, public registry publications, package settings or private infrastructure were created. A disposable localhost registry was used to validate transfer and promotion.
+Validation history for 13 October 2026, covering local packaging, startup tests, native GitHub Actions publication and public registry acceptance. Earlier local results are retained below; the final public image is recorded in the acceptance section.
 
 ## Inputs and output
 
@@ -38,7 +38,7 @@ docker compose -f docker/compose.yaml up -d
 
 ## Remaining delivery stages
 
-The public publication implementation is described in `PUBLISHING.md`. Native arm64 GitHub Actions execution, actual GHCR publication and public visibility/access verification remain pending; workflows cannot be dispatched from these uncommitted files. Bundled-software redistribution/source-delivery requirements still need maintainer review before distribution. Scheduled upstream refresh is implemented and validated below; a separate private derivative remains deferred. Do not infer those completion gates from local image validation.
+The public publication implementation is described in `PUBLISHING.md`. Native builds/tests, GHCR publication and anonymous access are confirmed in the acceptance section below. Scheduled refresh is configured but has not yet had its first scheduled run. Bundled-software source distribution remains a maintainer responsibility, and the private derivative is deferred.
 
 ## Publication implementation validation
 
@@ -60,3 +60,12 @@ The public publication implementation is described in `PUBLISHING.md`. Native ar
 - Actionlint passed for all three container/UI workflows. The same reviewer confirmed the upstream automation and freshness remediation with **No findings**.
 - The required .NET invocation again reported zero tests with native-runner exit code 5; no .NET source changed. Existing image smoke validation remains applicable because the image runtime was unchanged by this scheduling work.
 - No scheduled workflow was activated remotely, and no images or settings were published or changed on GitHub. Activation requires pushing these files to the default branch and completing the first-publication setup.
+
+## Public registry acceptance
+
+- [Publication run 38460225086](https://github.com/lantean-code/qbtmud/actions/runs/38460225086) succeeded on native amd64 and arm64. Both re-tested the exact image originally uploaded by run 38458988430.
+- Public image: `ghcr.io/lantean-code/qbtmud`; index digest `sha256:a187b2ea139b9e8e08396ce20733a56de132ca180e9a314577e718e0d3a3065e`. Immutable tag `3.0.0-qbt5.2.4-lt2.0.15-ls480-r1`, version alias `3.0.0` and `latest` were each checked anonymously and resolve to that same digest.
+- A real Docker pull with an empty credential configuration succeeded. A disposable Docker Desktop Compose install with bind-mounted config/downloads served the 3.0.0 international assets. Authentication passed in both native suites and through container-local curl. Browser automation of the extra local installation was blocked; host-side scripted login did not produce a session cookie, so no host-browser login verification is claimed.
+- Native CI exposed two export/staging differences missed locally. Commit `bf712c8` adds forced hidden-directory lookup and repeat-staging regressions. Commit `e3d9360` verifies exact classic-Docker config identities and containerd manifest/index chains instead of comparing Docker API convenience fields. Twenty-six policy, orchestration and archive tests passed, and the same reviewer confirmed both fixes with **No findings**.
+- The image's packaging commit is `e3d9360e406f49e12d786b8e895152d249dfc47c`. The UI commit/checksum and upstream pin match the verified inputs above. The first anonymous-access gate failed while the package was private; the organisation owner enabled public packages and made this package public before the successful retry.
+- The public README and installation docs now cover Compose setup, credentials, persistent storage, ports/permissions, tags/digests, updates and compatible LinuxServer-container migration. Other image layouts and bundled features require explicit migration. The strict MkDocs build and rendered page checks passed.

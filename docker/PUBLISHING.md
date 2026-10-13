@@ -6,7 +6,7 @@ Image: `ghcr.io/lantean-code/qbtmud`.
 
 1. Merge the container implementation into the repository's default branch.
 2. Review [bundled-software licences and source requirements](public/THIRD-PARTY-NOTICES.md), and arrange any required source distribution.
-3. Ensure repository Actions can create and write the organisation's GHCR package using `GITHUB_TOKEN`.
+3. In organisation **Settings → Packages → Package Creation**, enable **Public**. Ensure repository Actions can create and write the organisation's GHCR package using `GITHUB_TOKEN`.
 4. Run **Publish Public Container** from the default branch with release `3.0.0`.
 5. Once the `qbtmud` package exists in GHCR, confirm its repository connection and set its visibility to **Public**. If the workflow failed its anonymous-pull check, rerun it after changing visibility.
 6. Check that the workflow succeeded on both architectures and review the published digest and tags in its summary.
