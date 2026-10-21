@@ -9,7 +9,7 @@
             <MudItem xs="12">
                 <PathAutocomplete Label="@LanguageLocalizer.Translate("TransferListWidget", "Location:")"
                                   @bind-Value="Location"
-                                  Mode="DirectoryContentMode.Directories"
+                                  Mode="DirectoryContentMode.Directories" ShowFreeSpace="true"
                                   data-test-id="@TestIdHelper.For("SetLocationPath")" />
             </MudItem>
         </MudGrid>

@@ -32,6 +32,8 @@ namespace Lantean.QBTMud.Presentation.Test.Services
 
         private readonly DialogWorkflow _target;
 
+        private readonly IWebApiCapabilityService _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
+
         public DialogWorkflowTests()
         {
             _languageLocalizer = Mock.Of<ILanguageLocalizer>();
@@ -59,7 +61,47 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 _appSettingsService,
                 _apiFeedbackWorkflow,
                 _preferencesDataManager,
-                _qBittorrentPreferencesStateService);
+                _qBittorrentPreferencesStateService,
+                _webApiCapabilityService);
+            Mock.Get(_webApiCapabilityService).Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 15, 1), true));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_Version53Category_WHEN_Saved_THEN_UsesCategoryOptionsOverload(bool edit)
+        {
+            Mock.Get(_webApiCapabilityService).Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 16, 2), true));
+            var options = new TorrentCategoryOptions { SavePath = "SavePath", InheritDownloadPath = true, RatioLimit = -2, ShareLimitsMode = ShareLimitsMode.MatchAll };
+            var category = new MudCategory("Category", "SavePath") { Options = options };
+            Mock.Get(_dialogService).Setup(service => service.ShowAsync<CategoryPropertiesDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
+                .ReturnsAsync(CreateReference(DialogResult.Ok(category)));
+            Mock.Get(_apiClient).Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsSuccessAsync(new Dictionary<string, QbtCategory> { ["Category"] = new QbtCategory("Category", "SavePath", null) });
+            Mock.Get(_apiClient).Setup(client => client.AddCategoryAsync("Category", options, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.CreateSuccess());
+            Mock.Get(_apiClient).Setup(client => client.EditCategoryAsync("Category", options, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.CreateSuccess());
+            var result = edit ? await _target.InvokeEditCategoryDialog("Category") : await _target.InvokeAddCategoryDialog();
+            result.Should().Be("Category");
+            Mock.Get(_apiClient).Verify(client => client.AddCategoryAsync("Category", options, It.IsAny<CancellationToken>()), edit ? Times.Never() : Times.Once());
+            Mock.Get(_apiClient).Verify(client => client.EditCategoryAsync("Category", options, It.IsAny<CancellationToken>()), edit ? Times.Once() : Times.Never());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(ShareLimitsMode.MatchAny)]
+        [InlineData(ShareLimitsMode.MatchAll)]
+        public async Task GIVEN_Version53ShareLimits_WHEN_Saved_THEN_ForwardsExplicitMode(ShareLimitsMode? mode)
+        {
+            Mock.Get(_webApiCapabilityService).Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 16, 2), true));
+            Mock.Get(_dialogService).Setup(service => service.ShowAsync<ShareRatioDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(CreateReference(DialogResult.Ok(new ShareLimit { RatioLimit = 2, SeedingTimeLimit = 60, InactiveSeedingTimeLimit = 30, ShareLimitsMode = mode })));
+            Mock.Get(_apiClient).Setup(client => client.SetTorrentShareLimitAsync(It.IsAny<TorrentSelector>(), 2, 60, 30, ShareLimitAction.Default, mode ?? ShareLimitsMode.Default, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            await _target.InvokeShareRatioDialog(new[] { CreateTorrent("Hash", 2, 60, 30, ShareLimitAction.Default) });
+            Mock.Get(_apiClient).Verify(client => client.SetTorrentShareLimitAsync(It.IsAny<TorrentSelector>(), 2, 60, 30, ShareLimitAction.Default, mode ?? ShareLimitsMode.Default, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

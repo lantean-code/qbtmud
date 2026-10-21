@@ -26,42 +26,42 @@
         <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Behavior")">
                 <div class="options-tab-contents">
-                    <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Downloads")">
                 <div class="options-tab-contents">
-                    <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Connection")">
                 <div class="options-tab-contents">
-                    <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Speed")">
                 <div class="options-tab-contents">
-                    <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "BitTorrent")">
                 <div class="options-tab-contents">
-                    <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "RSS")">
                 <div class="options-tab-contents">
-                    <RSSOptions @ref="RSSOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <RSSOptions @ref="RSSOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "WebUI")">
                 <div class="options-tab-contents">
-                    <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" @bind-ApiKey="WebUiApiKey" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Advanced")">
                 <div class="options-tab-contents">
-                    <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
         </MudTabs>

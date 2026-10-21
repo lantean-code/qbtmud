@@ -65,6 +65,54 @@
             <MudItem xs="12">
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable port forwarding for embedded tracker:")" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" data-test-id="@TestIdHelper.For("EmbeddedTrackerPortForwarding")" />
             </MudItem>
+            @if (Compatibility?.SupportsRemoveAllTagsConfirmationPreference == true)
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("AppOptions53", "Confirm removal of all tags:")" Value="ConfirmRemoveAllTags" ValueChanged="ConfirmRemoveAllTagsChanged" data-test-id="@TestIdHelper.For("ConfirmRemoveAllTags")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsRemoveTrackerFromAllTorrentsConfirmationPreference == true)
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("AppOptions53", "Confirm removal of trackers from all torrents:")" Value="ConfirmRemoveTrackerFromAllTorrents" ValueChanged="ConfirmRemoveTrackerFromAllTorrentsChanged" data-test-id="@TestIdHelper.For("ConfirmRemoveTrackerFromAllTorrents")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsStartPausedPreference == true)
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Start BitTorrent session in paused state:")" Value="StartPaused" ValueChanged="StartPausedChanged" data-test-id="@TestIdHelper.For("StartPaused")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsShutdownTimeoutPreference == true)
+            {
+                <MudItem xs="12">
+                    <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "BitTorrent session shutdown timeout [-1: unlimited]:")" Value="ShutdownTimeout" ValueChanged="ShutdownTimeoutChanged" Min="-1" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" data-test-id="@TestIdHelper.For("ShutdownTimeout")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsSeedingOutgoingConnectionsPreference == true)
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Allow outgoing connections when seeding:")" Value="SeedingOutgoingConnections" ValueChanged="SeedingOutgoingConnectionsChanged" data-test-id="@TestIdHelper.For("SeedingOutgoingConnections")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsMultipleConnectionsFromSamePeerIdPreference == true)
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Allow multiple connections from the same Peer ID:")" Value="EnableMultiConnectionsFromSamePeerId" ValueChanged="EnableMultiConnectionsFromSamePeerIdChanged" data-test-id="@TestIdHelper.For("EnableMultiConnectionsFromSamePeerId")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsMaxOutstandingBlockRequestsPreference == true)
+            {
+                <MudItem xs="12">
+                    <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum outstanding block requests from a peer:")" Value="MaxOutstandingBlockRequests" ValueChanged="MaxOutstandingBlockRequestsChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" data-test-id="@TestIdHelper.For("MaxOutstandingBlockRequests")" />
+                </MudItem>
+            }
+            @if (Compatibility?.SupportsWebTorrentStunServerPreference == true)
+            {
+                <MudItem xs="12">
+                    <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "STUN server for WebTorrent NAT traversal:")" Value="WebTorrentStunServer" ValueChanged="WebTorrentStunServerChanged" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" data-test-id="@TestIdHelper.For("WebTorrentStunServer")" />
+                </MudItem>
+            }
         </MudGrid>
     </MudCardContent>
 </MudCard>

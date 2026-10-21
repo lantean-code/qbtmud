@@ -13,6 +13,19 @@ namespace Lantean.QBTMud.Components.UI
     {
         private MudAutocomplete<string>? _autocomplete;
         private bool _touched;
+        private string? _freeSpacePath;
+        private long? _freeSpace;
+        private bool? _supportsFreeSpace;
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
+        [Parameter]
+        public bool ShowFreeSpace { get; set; }
+
+        protected string? ResolvedHelperText => _freeSpace.HasValue
+            ? LanguageLocalizer.Translate("HttpServer", "Free space: %1", Lantean.QBTMud.Core.Helpers.DisplayHelpers.Size(_freeSpace))
+            : HelperText;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -117,6 +130,44 @@ namespace Lantean.QBTMud.Components.UI
             }
         }
 
+        protected override async Task OnParametersSetAsync()
+        {
+            await UpdateFreeSpace();
+        }
+
+        private async Task UpdateFreeSpace()
+        {
+            if (!ShowFreeSpace)
+            {
+                return;
+            }
+
+            if (!_supportsFreeSpace.HasValue)
+            {
+                var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+                _supportsFreeSpace = capabilities.CompatibilityProfile?.SupportsApplicationFreeSpace == true;
+            }
+
+            var path = Value?.Trim();
+            if (_supportsFreeSpace != true || path == _freeSpacePath)
+            {
+                return;
+            }
+
+            _freeSpacePath = path;
+            _freeSpace = null;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            var result = await ApiClient.GetFreeSpaceAtPathAsync(path);
+            if (_freeSpacePath == path && result.IsSuccess)
+            {
+                _freeSpace = result.Value;
+            }
+        }
+
         protected async Task HandleBlur(FocusEventArgs focusEventArgs)
         {
             _touched = true;
@@ -135,6 +186,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             Value = value;
             await ValueChanged.InvokeAsync(value);
+            await UpdateFreeSpace();
         }
 
         protected async Task OpenBrowseDialog()

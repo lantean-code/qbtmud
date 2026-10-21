@@ -140,6 +140,56 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ServerPersistedJobs_WHEN_Render_THEN_ServerMetadataOverridesLocalMetadata()
+        {
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = 11,
+                    Pattern = "Ubuntu",
+                    Category = "movies",
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus>
+            {
+                new SearchStatus(11, SearchJobStatus.Stopped, 2, "ServerPattern", "ServerCategory", new[] { "ServerPlugin" })
+            });
+            apiMock.Setup(client => client.GetSearchResultsAsync(11, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>
+            {
+                new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
+            }, SearchJobStatus.Stopped, 2));
+
+            _popoverProvider = TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+
+            target.WaitForState(() =>
+            {
+                return string.Equals(GetChildContentText(FindComponentByTestId<MudText>(target, "JobSummary").Instance.ChildContent), "1/2", StringComparison.Ordinal);
+            });
+
+            var jobTabSummary = FindComponentByTestId<MudText>(target, "JobSummary");
+            GetChildContentText(jobTabSummary.Instance.ChildContent).Should().Be("1/2");
+
+            var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
+            var items = resultsTable.Instance.Items.Should().NotBeNull().And.Subject;
+            items.Should().ContainSingle(result => result.FileName == "Ubuntu 24.04");
+            var metadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            metadata.Should().ContainSingle();
+            metadata![0].Pattern.Should().Be("ServerPattern");
+            metadata[0].Category.Should().Be("ServerCategory");
+            metadata[0].Plugins.Should().Equal("ServerPlugin");
+        }
+
+        [Fact]
         public async Task GIVEN_CorruptStoredState_WHEN_Render_THEN_DefaultPreferencesApplied()
         {
             await TestContext.LocalStorage.SetItemAsStringAsync(_preferencesStorageKey, "{", Xunit.TestContext.Current.CancellationToken);

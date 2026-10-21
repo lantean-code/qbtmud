@@ -5,6 +5,16 @@
 <MudDialog>
     <DialogContent>
         <MudGrid>
+            @if (SupportsShareLimitsMode)
+            {
+                <MudItem xs="12">
+                    <MudSelect T="ShareLimitsMode" Label="@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Mode:")" Value="SelectedShareLimitsMode" ValueChanged="ShareLimitsModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ShareLimitsMode")">
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.Default">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Default")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.MatchAny">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Match any limit")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.MatchAll">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Match all the limits")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
             <MudItem xs="12">
                 <MudRadioGroup T="int" Value="ShareRatioType" ValueChanged="ShareRatioTypeChanged" data-test-id="@TestIdHelper.For("ShareRatioType")">
                     <MudItem xs="12">

@@ -542,7 +542,8 @@ namespace Lantean.QBTMud.Components
         {
             var parameters = new DialogParameters
             {
-                { nameof(ManageTagsDialog.Hashes), Hashes }
+                { nameof(ManageTagsDialog.Hashes), Hashes },
+                { nameof(ManageTagsDialog.ConfirmRemoveAllTags), Preferences?.ConfirmRemoveAllTags == true }
             };
 
             await DialogService.ShowAsync<ManageTagsDialog>(

@@ -1,8 +1,11 @@
 using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
@@ -12,6 +15,92 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class RssRulesDialog
     {
         private readonly List<string> _unsavedRuleNames = [];
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
+
+        protected bool SupportsRuleExportImport { get; set; }
+
+        protected bool SupportsRuleCloning { get; set; }
+
+        protected async Task ExportRules()
+        {
+            var result = await ApiClient.ExportRssAutoDownloadingRulesAsync();
+            if (result.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(result);
+                return;
+            }
+
+            await JSRuntime.FileDownload($"data:application/json;base64,{Convert.ToBase64String(result.Value)}", "rss-downloader-rules.json");
+        }
+
+        protected async Task ImportRules(IBrowserFile? file)
+        {
+            if (file is null)
+            {
+                return;
+            }
+
+            try
+            {
+                await using var stream = file.OpenReadStream(4 * 1024 * 1024);
+                var result = await ApiClient.ImportRssAutoDownloadingRulesAsync(stream, file.Name);
+                if (await ApiFeedbackWorkflow.ProcessResultAsync(result))
+                {
+                    await ReloadRules();
+                }
+            }
+            catch (IOException exception)
+            {
+                SnackbarWorkflow.ShowTransientMessage(exception.Message, Severity.Error);
+            }
+        }
+
+        protected async Task CloneRule()
+        {
+            if (SelectedRuleName is null)
+            {
+                return;
+            }
+
+            var name = await DialogWorkflow.ShowStringFieldDialog(
+                LanguageLocalizer.Translate("RSSCloneRule", "Clone"),
+                LanguageLocalizer.Translate("RSSCloneRule", "Please type the name for the clone of the download rule."),
+                null);
+            if (string.IsNullOrWhiteSpace(name) || Rules.ContainsKey(name))
+            {
+                return;
+            }
+
+            var result = await ApiClient.CloneRssAutoDownloadingRuleAsync(SelectedRuleName, name);
+            if (await ApiFeedbackWorkflow.ProcessResultAsync(result))
+            {
+                await ReloadRules();
+                await SelectedRuleChanged(name);
+            }
+        }
+
+        private async Task ReloadRules()
+        {
+            var result = await ApiClient.GetAllRssAutoDownloadingRulesAsync();
+            if (result.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(result);
+                return;
+            }
+
+            Rules = result.Value.ToDictionary(pair => pair.Key, pair => (AutoDownloadingRule?)pair.Value);
+            _unsavedRuleNames.Clear();
+            SelectedRuleName = null;
+            MatchingArticles = null;
+        }
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -176,6 +265,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
+            var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+            SupportsRuleExportImport = capabilities.CompatibilityProfile?.SupportsRssRuleExportImport == true;
+            SupportsRuleCloning = capabilities.CompatibilityProfile?.SupportsRssRuleCloning == true;
             var rulesResult = await ApiClient.GetAllRssAutoDownloadingRulesAsync();
             if (rulesResult.IsFailure)
             {

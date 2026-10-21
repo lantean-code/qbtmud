@@ -1,4 +1,8 @@
 {
+  "AppOptions53|Confirm removal of all tags:": "Confirm removal of all tags:",
+  "AppOptions53|Confirm removal of trackers from all torrents:": "Confirm removal of trackers from all torrents:",
+  "AppWebUIOptions|Hide API key": "Hide API key",
+  "AppWebUIOptions|Show API key": "Show API key",
   "App|Added %1 torrent": "Added %1 torrent",
   "App|Added %1 torrents": "Added %1 torrents",
   "App|Added torrent(s)": "Added torrent(s)",
@@ -539,5 +543,6 @@
   "AppWelcomeWizard|Settings stay in this browser profile.": "Settings stay in this browser profile.",
   "AppWelcomeWizard|qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.": "qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.",
   "AppWelcomeWizard|Storage: %1": "Storage: %1",
-  "AppWelcomeWizard|Select a storage type to continue.": "Select a storage type to continue."
+  "AppWelcomeWizard|Select a storage type to continue.": "Select a storage type to continue.",
+  "AppManageTagsDialog|Remove all tags from selected torrents?": "Remove all tags from selected torrents?"
 }

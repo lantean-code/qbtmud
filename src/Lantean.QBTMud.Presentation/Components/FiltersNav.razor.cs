@@ -379,6 +379,13 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
+            if (Preferences?.ConfirmRemoveTrackerFromAllTorrents == true && !await DialogWorkflow.ShowConfirmDialog(
+                LanguageLocalizer.Translate("TrackerFiltersList", "Remove tracker"),
+                LanguageLocalizer.Translate("TrackersFilterWidget", "Are you sure you want to remove tracker %1 from all torrents?", ContextMenuTracker)))
+            {
+                return;
+            }
+
             var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
             await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }

@@ -4,10 +4,12 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core;
 using Lantean.QBTMud.Core.Filter;
 using Lantean.QBTMud.Core.Helpers;
+using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Extensions;
 using QBittorrent.ApiClient;
@@ -35,6 +37,17 @@ namespace Lantean.QBTMud.Components
         private string? _previousHash;
         private string? _sortColumn;
         private SortDirection _sortDirection;
+
+        private bool _supportsFileDownload;
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
+        [Inject]
+        protected IApiUrlResolver ApiUrlResolver { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter]
         public bool Active { get; set; }
@@ -82,6 +95,23 @@ namespace Lantean.QBTMud.Components
         private MudMenu? ContextMenu { get; set; }
 
         private MudTextField<string>? SearchInput { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+            var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+            _supportsFileDownload = capabilities.CompatibilityProfile?.SupportsTorrentFileDownload == true;
+        }
+
+        protected async Task DownloadFile(ContentItem? item)
+        {
+            if (!_supportsFileDownload || item is null || item.IsFolder || item.Progress < 1)
+            {
+                return;
+            }
+
+            var url = ApiUrlResolver.BuildAbsoluteUrl($"torrents/downloadFile?hash={Uri.EscapeDataString(Hash)}&file={Uri.EscapeDataString(item.Name)}");
+            await JSRuntime.FileDownload(url, item.DisplayName);
+        }
 
         protected async Task ColumnOptions()
         {

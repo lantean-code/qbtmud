@@ -95,6 +95,18 @@
                         <MudField Label="@LanguageLocalizer.Translate("StatsDialog", "Total queued size:")"
                                   data-test-id="@TestIdHelper.For("TotalQueuedSize")">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
                     </MudItem>
+                    @if (ServerState?.QueuedTrackerAnnounces is not null)
+                    {
+                        <MudItem xs="12">
+                            <MudField Label='@LanguageLocalizer.Translate("StatsDialog", "Queued tracker announces:")' data-test-id='@TestIdHelper.For("QueuedTrackerAnnounces")'>@DisplayHelpers.EmptyIfNull(ServerState.QueuedTrackerAnnounces)</MudField>
+                        </MudItem>
+                    }
+                    @if (ServerState?.RequestLatency is not null)
+                    {
+                        <MudItem xs="12">
+                            <MudField Label='@LanguageLocalizer.Translate("StatsDialog", "Request latency:")' data-test-id='@TestIdHelper.For("RequestLatency")'>@DisplayHelpers.EmptyIfNull(ServerState.RequestLatency, suffix: "µs")</MudField>
+                        </MudItem>
+                    }
                 </MudGrid>
             </MudCardContent>
         </MudCard>

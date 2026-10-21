@@ -71,7 +71,10 @@ namespace Lantean.QBTMud.Application.Services
                 peer.Progress.GetValueOrDefault(),
                 peer.Relevance.GetValueOrDefault(),
                 peer.Uploaded.GetValueOrDefault(),
-                peer.UploadSpeed.GetValueOrDefault());
+                peer.UploadSpeed.GetValueOrDefault())
+            {
+                Contribution = peer.Contribution
+            };
         }
 
         private static void UpdatePeer(MudPeer existingPeer, ClientPeer peer)
@@ -89,6 +92,7 @@ namespace Lantean.QBTMud.Application.Services
             existingPeer.IPAddress = peer.IPAddress ?? existingPeer.IPAddress;
             existingPeer.Port = peer.Port ?? existingPeer.Port;
             existingPeer.Progress = peer.Progress ?? existingPeer.Progress;
+            existingPeer.Contribution = peer.Contribution ?? existingPeer.Contribution;
             existingPeer.Relevance = peer.Relevance ?? existingPeer.Relevance;
             existingPeer.Uploaded = peer.Uploaded ?? existingPeer.Uploaded;
             existingPeer.UploadSpeed = peer.UploadSpeed ?? existingPeer.UploadSpeed;

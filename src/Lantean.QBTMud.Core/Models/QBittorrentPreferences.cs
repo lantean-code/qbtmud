@@ -13,6 +13,16 @@ namespace Lantean.QBTMud.Core.Models
         public string? Locale { get; init; }
 
         /// <summary>
+        /// Gets whether removing all tags from selected torrents requires confirmation.
+        /// </summary>
+        public bool ConfirmRemoveAllTags { get; init; }
+
+        /// <summary>
+        /// Gets whether removing a tracker from all torrents requires confirmation.
+        /// </summary>
+        public bool ConfirmRemoveTrackerFromAllTorrents { get; init; }
+
+        /// <summary>
         /// Gets a value indicating whether automatic torrent management is enabled by default.
         /// </summary>
         public bool AutoTmmEnabled { get; init; }

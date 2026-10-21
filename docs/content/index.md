@@ -11,13 +11,19 @@ This site covers installation, hosting, and build guidance for qbtmud.
 
 Product overview, screenshots, and release downloads are on the main [GitHub repository](https://github.com/lantean-code/qbtmud).
 
-## Basic installation
+## Installation
+
+### Docker
+
+The [Docker installation guide](docker.md) runs qBittorrent with the international qbtmud UI already installed and enabled. It covers Compose setup, first login, persistent storage, ports, updates and migration. Prebuilt images support amd64 and arm64.
+
+### Existing qBittorrent
 
 1. Download a release.
 2. Point qBittorrent at the extracted folder that contains `public`.
 3. Open your normal qBittorrent WebUI address.
 
-See [Installation](installation.md) for more details.
+See [Installation](installation.md) for the release archive instructions.
 
 
 ## Advanced hosting setups

@@ -24,6 +24,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];
 
+        [Parameter]
+        public bool ConfirmRemoveAllTags { get; set; }
+
         protected HashSet<string> Tags { get; set; } = [];
 
         protected IList<IReadOnlyList<string>> TorrentTags { get; private set; } = [];
@@ -152,6 +155,13 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task RemoveAllTags()
         {
+            if (ConfirmRemoveAllTags && !await DialogWorkflow.ShowConfirmDialog(
+                LanguageLocalizer.Translate("TransferListWidget", "Remove All"),
+                LanguageLocalizer.Translate("AppManageTagsDialog", "Remove all tags from selected torrents?")))
+            {
+                return;
+            }
+
             var removeResult = await ApiClient.RemoveTorrentTagsAsync(TorrentSelector.FromHashes(Hashes), Tags);
             if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
             {

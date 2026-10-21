@@ -78,6 +78,12 @@ namespace Lantean.QBTMud.Core.Models
 
         public long QueuedIOJobs { get; set; }
 
+        public bool? SessionState { get; set; }
+
+        public long? QueuedTrackerAnnounces { get; set; }
+
+        public long? RequestLatency { get; set; }
+
         public bool Queuing { get; set; }
 
         public double ReadCacheHits { get; set; }

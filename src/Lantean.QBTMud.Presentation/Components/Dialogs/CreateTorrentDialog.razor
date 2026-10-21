@@ -39,6 +39,12 @@
             <MudItem xs="12">
                 <FieldSwitch Label="@StartSeedingImmediatelyLabel" @bind-Value="_startSeeding" data-test-id="@TestIdHelper.For("StartSeeding")" />
             </MudItem>
+            @if (SupportsIgnoreDotfiles)
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label='@TranslateTorrentCreator("Ignore dotfiles")' @bind-Value="IgnoreDotfiles" data-test-id='@TestIdHelper.For("IgnoreDotfiles")' />
+                </MudItem>
+            }
             @if (SupportsTorrentFormat)
             {
                 <MudItem xs="12" sm="6">

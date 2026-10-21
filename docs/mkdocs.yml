@@ -7,6 +7,7 @@ docs_dir: content
 site_dir: ../site
 theme:
   name: material
+  font: false
   custom_dir: overrides
   logo: assets/images/qbtmud-icon-transparent.svg
   favicon: assets/images/qbtmud-icon-transparent-32.png
@@ -38,6 +39,8 @@ theme:
     - navigation.sections
     - navigation.top
     - content.code.copy
+    - search.highlight
+    - search.suggest
 extra_css:
   - stylesheets/brand.css
 plugins:
@@ -54,6 +57,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Docker installation: docker.md
   - Advanced setup: advanced-setup.md
   - Reverse proxy hosting: reverse-proxy.md
   - Separate API and UI hosting: separate-api-ui-hosting.md

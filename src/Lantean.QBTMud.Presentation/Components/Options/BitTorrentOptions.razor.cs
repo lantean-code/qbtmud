@@ -4,6 +4,8 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class BitTorrentOptions : Options
     {
+        protected ShareLimitsMode ShareLimitsMode { get; private set; }
+
         protected bool? Dht { get; private set; }
         protected bool? Pex { get; private set; }
         protected bool? Lsd { get; private set; }
@@ -136,6 +138,14 @@ namespace Lantean.QBTMud.Components.Options
             return null;
         }
 
+
+        protected async Task ShareLimitsModeChanged(ShareLimitsMode value)
+        {
+            ShareLimitsMode = value;
+            UpdatePreferences.ShareLimitsMode = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -186,6 +196,8 @@ namespace Lantean.QBTMud.Components.Options
 
             AddTrackersEnabled = Preferences.AddTrackersEnabled;
             AddTrackers = Preferences.AddTrackers;
+
+            ShareLimitsMode = Preferences.ShareLimitsMode;
 
             return true;
         }

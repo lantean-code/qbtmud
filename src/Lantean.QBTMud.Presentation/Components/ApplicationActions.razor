@@ -24,6 +24,12 @@
 
     <MudDivider />
 
+    @if (_supportsSessionPauseResume)
+    {
+        <MudMenuItem Icon="@Icons.Material.Filled.Pause" Disabled="@(_sessionActionInProgress || MainData?.ServerState.SessionState == true)" OnClick="@(() => SetSessionPaused(true))" data-test-id='@TestIdHelper.For("PauseSession")'>@LanguageLocalizer.Translate("MainWindow", "Pause Session")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" Disabled="@(_sessionActionInProgress || MainData?.ServerState.SessionState == false)" OnClick="@(() => SetSessionPaused(false))" data-test-id='@TestIdHelper.For("ResumeSession")'>@LanguageLocalizer.Translate("MainWindow", "Resume Session")</MudMenuItem>
+    }
+
     <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow"
                  IconColor="Color.Success"
                  Disabled="@(_startAllInProgress)"

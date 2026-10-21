@@ -56,6 +56,8 @@ namespace Lantean.QBTMud.Core.Models
         public string IPAddress { get; set; }
         public int Port { get; set; }
         public double Progress { get; set; }
+        public double? Contribution { get; set; }
+
         public double Relevance { get; set; }
         public long Uploaded { get; set; }
         public int UploadSpeed { get; set; }

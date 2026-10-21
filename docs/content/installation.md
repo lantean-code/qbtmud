@@ -1,8 +1,9 @@
 # Installation
 
-This page covers the normal way to run qbtmud: as qBittorrent's alternative WebUI.
+Choose between a prebuilt container and installing the release archive into an existing qBittorrent installation. Both run qbtmud as qBittorrent's alternative WebUI.
 
-This is the standard deployment model.
+- **Docker:** run qBittorrent and the international qbtmud UI together using the [Docker installation guide](docker.md).
+- **Existing qBittorrent:** follow the release archive instructions below.
 
 ## Before you start
 

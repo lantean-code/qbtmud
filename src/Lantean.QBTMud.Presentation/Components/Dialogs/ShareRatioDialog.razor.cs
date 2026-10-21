@@ -23,6 +23,16 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public bool Disabled { get; set; }
 
+        [Parameter]
+        public bool SupportsShareLimitsMode { get; set; }
+
+        protected ShareLimitsMode SelectedShareLimitsMode { get; set; } = ShareLimitsMode.Default;
+
+        protected void ShareLimitsModeChanged(ShareLimitsMode value)
+        {
+            SelectedShareLimitsMode = value;
+        }
+
         protected int ShareRatioType { get; set; }
 
         protected bool RatioEnabled { get; set; }
@@ -83,6 +93,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             InactiveMinutesEnabled = false;
 
             var baseline = Value ?? CurrentValue;
+            SelectedShareLimitsMode = baseline?.ShareLimitsMode ?? ShareLimitsMode.Default;
             SelectedShareLimitAction = baseline?.ShareLimitAction ?? ShareLimitAction.Default;
 
             if (baseline is null
@@ -144,6 +155,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 TotalMinutesEnabled = false;
                 InactiveMinutesEnabled = false;
                 SelectedShareLimitAction = ShareLimitAction.Default;
+                SelectedShareLimitsMode = ShareLimitsMode.Default;
             }
         }
 
@@ -176,6 +188,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : Limits.NoInactiveSeedingTimeLimit;
                 result.ShareLimitAction = SelectedShareLimitAction;
             }
+            result.ShareLimitsMode = CustomEnabled ? SelectedShareLimitsMode : ShareLimitsMode.Default;
             MudDialog.Close(DialogResult.Ok(result));
         }
 

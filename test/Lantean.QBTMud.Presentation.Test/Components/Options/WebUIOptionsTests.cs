@@ -1,8 +1,13 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Options;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
@@ -11,6 +16,192 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Options
 {
     public sealed class WebUIOptionsTests : RazorComponentTestBase<WebUIOptions>
     {
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("WebUiApiKey")]
+        public void GIVEN_ApiKeyManagementSupported_WHEN_Rendered_THEN_ShouldShowReadOnlyMaskedKeyAndAvailableActions(string? apiKey)
+        {
+            var target = RenderApiKeyTarget(apiKey);
+
+            var field = FindTextField(target, "WebUiApiKey").Instance;
+            field.GetState(x => x.Value).Should().Be(apiKey ?? string.Empty);
+            field.ReadOnly.Should().BeTrue();
+            field.InputType.Should().Be(InputType.Password);
+            FindButton(target, "ApiKeyRotate").Instance.Disabled.Should().BeFalse();
+            FindButton(target, "ApiKeyDelete").Instance.Disabled.Should().Be(string.IsNullOrEmpty(apiKey));
+            FindComponentByTestId<MudIconButton>(target, "ApiKeyCopy").Instance.Disabled.Should().Be(string.IsNullOrEmpty(apiKey));
+            FindComponentByTestId<MudIconButton>(target, "ApiKeyVisibility").Instance.Disabled.Should().Be(string.IsNullOrEmpty(apiKey));
+        }
+
+        [Fact]
+        public void GIVEN_ApiKeyManagementUnsupported_WHEN_Rendered_THEN_ShouldHideApiKeyControls()
+        {
+            var target = RenderApiKeyTarget("WebUiApiKey", supported: false);
+
+            target.FindComponents<MudTextField<string>>().Should().NotContain(component => HasTestId(component, "WebUiApiKey"));
+            target.FindComponents<MudButton>().Should().NotContain(component => HasTestId(component, "ApiKeyRotate"));
+            target.FindComponents<MudButton>().Should().NotContain(component => HasTestId(component, "ApiKeyDelete"));
+        }
+
+        [Fact]
+        public async Task GIVEN_ExistingApiKey_WHEN_VisibilityToggledAndCopied_THEN_ShouldRevealMaskAndCopyKey()
+        {
+            var target = RenderApiKeyTarget("WebUiApiKey");
+            var visibility = FindComponentByTestId<MudIconButton>(target, "ApiKeyVisibility");
+
+            await target.InvokeAsync(() => visibility.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            FindTextField(target, "WebUiApiKey").Instance.InputType.Should().Be(InputType.Text);
+
+            await target.InvokeAsync(() => visibility.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "ApiKeyCopy").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            FindTextField(target, "WebUiApiKey").Instance.InputType.Should().Be(InputType.Password);
+            Mock.Get(TestContext.Services.GetRequiredService<IClipboardService>()).Verify(service => service.WriteToClipboard("WebUiApiKey"), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("WebUiApiKey")]
+        public async Task GIVEN_ConfirmedGenerationOrRotation_WHEN_Clicked_THEN_ShouldReplaceKeyImmediatelyAndPreserveItOnReset(string apiKey)
+        {
+            var target = RenderApiKeyTarget(apiKey);
+            var apiClient = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            apiClient.Setup(client => client.RotateAPIKeyAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(new ApiKey("Key"));
+            if (apiKey.Length > 0)
+            {
+                await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "ApiKeyVisibility").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            }
+
+            await target.InvokeAsync(() => FindButton(target, "ApiKeyRotate").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.Instance.ResetAsync();
+
+            FindTextField(target, "WebUiApiKey").Instance.GetState(x => x.Value).Should().Be("Key");
+            FindTextField(target, "WebUiApiKey").Instance.InputType.Should().Be(InputType.Password);
+            await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "ApiKeyCopy").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            Mock.Get(TestContext.Services.GetRequiredService<IClipboardService>()).Verify(service => service.WriteToClipboard("Key"), Times.Once);
+            target.Instance.UpdatePreferences.WebUiApiKey.Should().BeNull();
+            var title = apiKey.Length == 0 ? "Generate API key" : "Rotate API key";
+            var confirmation = apiKey.Length == 0
+                ? "Generate an API key? This key can be used to interact with qBittorrent's API."
+                : "Rotate this API key? The current key will immediately stop working and a new key will be generated.";
+            Mock.Get(TestContext.Services.GetRequiredService<IDialogWorkflow>()).Verify(service => service.ShowConfirmDialog(title, confirmation), Times.Once);
+            apiClient.Verify(client => client.RotateAPIKeyAsync(It.IsAny<CancellationToken>()), Times.Once);
+            apiClient.Verify(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ConfirmedDeletion_WHEN_Clicked_THEN_ShouldClearKeyImmediatelyAndPreserveDeletionOnReset()
+        {
+            var target = RenderApiKeyTarget("WebUiApiKey");
+            var apiClient = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            apiClient.Setup(client => client.DeleteAPIKeyAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.CreateSuccess());
+            await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "ApiKeyVisibility").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            await target.InvokeAsync(() => FindButton(target, "ApiKeyDelete").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.Instance.ResetAsync();
+
+            FindTextField(target, "WebUiApiKey").Instance.GetState(x => x.Value).Should().BeEmpty();
+            FindTextField(target, "WebUiApiKey").Instance.InputType.Should().Be(InputType.Password);
+            FindButton(target, "ApiKeyDelete").Instance.Disabled.Should().BeTrue();
+            FindComponentByTestId<MudIconButton>(target, "ApiKeyCopy").Instance.Disabled.Should().BeTrue();
+            FindButton(target, "ApiKeyRotate").Instance.Disabled.Should().BeFalse();
+            target.Instance.UpdatePreferences.WebUiApiKey.Should().BeNull();
+            Mock.Get(TestContext.Services.GetRequiredService<IDialogWorkflow>()).Verify(service => service.ShowConfirmDialog("Delete API key", "Delete this API key? The current key will immediately stop working."), Times.Once);
+            apiClient.Verify(client => client.DeleteAPIKeyAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(false, "")]
+        [InlineData(false, "WebUiApiKey")]
+        [InlineData(true, "WebUiApiKey")]
+        public async Task GIVEN_ConfirmationDeclined_WHEN_KeyActionClicked_THEN_ShouldKeepKeyAndSkipApiCall(bool delete, string apiKey)
+        {
+            var target = RenderApiKeyTarget(apiKey);
+            Mock.Get(TestContext.Services.GetRequiredService<IDialogWorkflow>())
+                .Setup(service => service.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
+
+            await target.InvokeAsync(() => FindButton(target, delete ? "ApiKeyDelete" : "ApiKeyRotate").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            FindTextField(target, "WebUiApiKey").Instance.GetState(x => x.Value).Should().Be(apiKey);
+            FindButton(target, "ApiKeyRotate").Instance.Disabled.Should().BeFalse();
+            var apiClient = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            apiClient.Verify(client => client.RotateAPIKeyAsync(It.IsAny<CancellationToken>()), Times.Never);
+            apiClient.Verify(client => client.DeleteAPIKeyAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_ApiFailure_WHEN_KeyActionClicked_THEN_ShouldKeepKeyAndShowFailureFeedback(bool delete)
+        {
+            var target = RenderApiKeyTarget("WebUiApiKey");
+            var apiClient = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            apiClient.Setup(client => client.RotateAPIKeyAsync(It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+            apiClient.Setup(client => client.DeleteAPIKeyAsync(It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            await target.InvokeAsync(() => FindButton(target, delete ? "ApiKeyDelete" : "ApiKeyRotate").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            FindTextField(target, "WebUiApiKey").Instance.GetState(x => x.Value).Should().Be("WebUiApiKey");
+            FindButton(target, "ApiKeyRotate").Instance.Disabled.Should().BeFalse();
+            FindButton(target, "ApiKeyDelete").Instance.Disabled.Should().BeFalse();
+            var message = delete ? "Unable to delete API key." : "Unable to rotate API key.";
+            Mock.Get(TestContext.Services.GetRequiredService<IApiFeedbackWorkflow>()).Verify(service => service.HandleFailureAsync(
+                It.Is<ApiResultBase>(result => result.IsFailure),
+                It.Is<Func<string?, string>>(builder => builder(null) == message),
+                Severity.Error,
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingConfirmation_WHEN_KeyActionsClickedAgain_THEN_ShouldDisableControlsAndPreventDuplicateOperations(bool delete)
+        {
+            var target = RenderApiKeyTarget("WebUiApiKey");
+            var confirmation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var dialog = Mock.Get(TestContext.Services.GetRequiredService<IDialogWorkflow>());
+            dialog.Setup(service => service.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>())).Returns(confirmation.Task);
+            var rotate = FindButton(target, "ApiKeyRotate");
+            var remove = FindButton(target, "ApiKeyDelete");
+
+            var pending = target.InvokeAsync(() => (delete ? remove : rotate).Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            target.WaitForAssertion(() => rotate.Instance.Disabled.Should().BeTrue());
+            remove.Instance.Disabled.Should().BeTrue();
+            FindComponentByTestId<MudIconButton>(target, "ApiKeyCopy").Instance.Disabled.Should().BeTrue();
+            FindComponentByTestId<MudIconButton>(target, "ApiKeyVisibility").Instance.Disabled.Should().BeTrue();
+            await target.InvokeAsync(() => rotate.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            confirmation.SetResult(false);
+            await pending;
+
+            rotate.Instance.Disabled.Should().BeFalse();
+            dialog.Verify(service => service.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+
+        private IRenderedComponent<WebUIOptions> RenderApiKeyTarget(string? apiKey, bool supported = true)
+        {
+            var capabilities = new Mock<IWebApiCapabilityService>();
+            capabilities.Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 14, 1), true, supportsApiKeyManagement: supported));
+            var dialog = new Mock<IDialogWorkflow>();
+            dialog.Setup(service => service.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            TestContext.Services.AddSingleton(capabilities.Object);
+            TestContext.Services.AddSingleton(dialog.Object);
+            TestContext.Services.AddSingleton(new Mock<IApiClient>().Object);
+            TestContext.Services.AddSingleton(new Mock<IApiFeedbackWorkflow>().Object);
+            TestContext.Services.AddSingleton(new Mock<IClipboardService>().Object);
+            TestContext.Render<MudPopoverProvider>();
+
+            return TestContext.Render<WebUIOptions>(parameters =>
+            {
+                parameters.Add(component => component.Preferences, apiKey is null ? null : PreferencesFactory.CreatePreferences(spec => spec.WebUiApiKey = apiKey));
+                parameters.Add(component => component.UpdatePreferences, new UpdatePreferences());
+            });
+        }
+
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {

@@ -16,6 +16,7 @@ qbtmud is a drop-in replacement for qBittorrent's default WebUI. It keeps qBitto
 - **Browser notifications with per-event controls** so you can decide exactly which torrent events should interrupt you.
 - **Persistent UI personalisation** including remembered layout and table preferences, so the interface stays the way you set it up.
 - **Dedicated qbtmud app settings and built-in update checks** for qbtmud-specific behaviour that does not belong in qBittorrent's own settings surface.
+- **Prebuilt Docker image** with qBittorrent and the international qbtmud UI already installed and enabled, persistent configuration/downloads, and tested updates to the LinuxServer base.
 
 ### What qbtmud supports
 
@@ -31,6 +32,14 @@ For a detailed explanation of qBittorrent's underlying options, refer to the [qB
 
 ### Quick start
 
+#### Docker
+
+Use `ghcr.io/lantean-code/qbtmud:latest` to run qBittorrent with qbtmud already enabled. Images are available for amd64 and arm64, with no release archive or manual alternative WebUI configuration needed.
+
+Follow the [Docker installation guide](https://lantean-code.github.io/qbtmud/docker/) for a ready-to-use Compose file, first login, storage/port settings, updates and migration from a compatible LinuxServer container. Available versions are listed on the [GHCR package page](https://github.com/orgs/lantean-code/packages/container/package/qbtmud).
+
+#### Existing qBittorrent installation
+
 1. Download the latest archive from the [qbtmud Releases](https://github.com/lantean-code/qbtmud/releases) page.
 2. Extract the archive and locate the directory that contains the `public` subdirectory.
 3. In qBittorrent, go to `Tools` > `Options` > `Web UI`.
@@ -42,10 +51,11 @@ For more detail on qBittorrent's alternative WebUI mechanism, refer to the [Alte
 
 ### Documentation
 
-If you need more than the standard release-and-extract setup, use the docs section:
+Choose an installation method or explore advanced hosting setups:
 
 - [Docs index](https://lantean-code.github.io/qbtmud/)
 - [Installation](https://lantean-code.github.io/qbtmud/installation/)
+- [Docker installation](https://lantean-code.github.io/qbtmud/docker/)
 - [Advanced setup](https://lantean-code.github.io/qbtmud/advanced-setup/)
 - [Build from source](https://lantean-code.github.io/qbtmud/build-from-source/)
 - [Reverse proxy hosting](https://lantean-code.github.io/qbtmud/reverse-proxy/)
