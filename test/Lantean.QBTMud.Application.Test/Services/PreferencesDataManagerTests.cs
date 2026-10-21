@@ -12,6 +12,49 @@ namespace Lantean.QBTMud.Application.Test.Services
             _target = new PreferencesDataManager();
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void GIVEN_Version53PreferenceUpdates_WHEN_Merged_THEN_ShouldCopyOverwriteOrRetainEveryField(int scenario)
+        {
+            var original = scenario == 0 ? null : CreateVersion53Preferences(false);
+            var changed = scenario == 2 ? new UpdatePreferences() : CreateVersion53Preferences(true);
+            var expected = scenario == 2 ? CreateVersion53Preferences(false) : CreateVersion53Preferences(true);
+
+            var result = _target.MergePreferences(original, changed);
+
+            result.Should().BeEquivalentTo(expected);
+        }
+
+        private static UpdatePreferences CreateVersion53Preferences(bool secondary)
+        {
+            return new UpdatePreferences
+            {
+                StoreSearchJobs = !secondary,
+                ConfirmRemoveAllTags = !secondary,
+                ConfirmRemoveTrackerFromAllTorrents = !secondary,
+                StoreSearchJobResults = !secondary,
+                TorrentFilesBackupEnabled = !secondary,
+                TorrentFilesBackupDirectory = secondary ? string.Empty : "TorrentFilesBackupDirectory",
+                TorrentFilesFinishedBackupDirectoryEnabled = !secondary,
+                TorrentFilesFinishedBackupDirectory = secondary ? string.Empty : "TorrentFilesFinishedBackupDirectory",
+                RemoveTorrentFileBackup = !secondary,
+                MailNotificationEncryptionType = secondary ? SmtpEncryptionType.None : SmtpEncryptionType.STARTTLS,
+                I2pPexEnabled = !secondary,
+                I2pInboundLengthVariance = secondary ? 0 : 2,
+                I2pOutboundLengthVariance = secondary ? 0 : 2,
+                ShareLimitsMode = secondary ? ShareLimitsMode.MatchAny : ShareLimitsMode.MatchAll,
+                WebUiSessionsCountLimit = secondary ? 0 : 2,
+                StartPaused = !secondary,
+                ShutdownTimeout = secondary ? 0 : 2,
+                SeedingOutgoingConnections = !secondary,
+                EnableMultiConnectionsFromSamePeerId = !secondary,
+                MaxOutstandingBlockRequests = secondary ? 0 : 2,
+                WebTorrentStunServer = secondary ? string.Empty : "WebTorrentStunServer",
+            };
+        }
+
         // ---------- Builders ----------
 
         private static UpdatePreferences BuildAllSetA()

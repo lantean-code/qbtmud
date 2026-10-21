@@ -22,6 +22,8 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
         public OptionsTests()
         {
+            TestContext.Services.RemoveAll<Lantean.QBTMud.Application.Services.IWebApiCapabilityService>();
+            TestContext.Services.AddScoped<Lantean.QBTMud.Application.Services.IWebApiCapabilityService, Lantean.QBTMud.Infrastructure.Services.WebApiCapabilityService>();
             _apiClient = Mock.Of<IApiClient>();
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
@@ -44,6 +46,101 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .ReturnsSuccessAsync("2.14.1");
 
             TestContext.Render<MudPopoverProvider>();
+        }
+
+        [Fact]
+        public async Task GIVEN_Version53NonSpeedChange_WHEN_Saving_THEN_DoesNotReadOrWriteBatchLimits()
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync("2.16.2");
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            var target = RenderPage();
+            await SetSwitchValue(target, "ConfirmTorrentDeletion", true);
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.GetSpeedLimitsAsync(It.IsAny<CancellationToken>()), Times.Never());
+            Mock.Get(_apiClient).Verify(client => client.SetSpeedLimitsAsync(It.IsAny<SpeedLimits>(), It.IsAny<CancellationToken>()), Times.Never());
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.ConfirmTorrentDeletion == true)), Times.Once());
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData("2.13.1", false)]
+        [InlineData("2.15.1", false)]
+        [InlineData("2.16.2", true)]
+        public async Task GIVEN_SpeedLimitEdited_WHEN_Saving_THEN_UsesBatchApiOnlyWhenSupported(string version, bool supported)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(version);
+            Mock.Get(_apiClient).Setup(client => client.GetSpeedLimitsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new SpeedLimits(1024, 2048, 3072, 4096));
+            Mock.Get(_apiClient).Setup(client => client.SetSpeedLimitsAsync(It.IsAny<SpeedLimits>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            var target = RenderPage();
+            await ActivateTab(target, 3);
+            var upload = FindComponentByTestId<MudNumericField<int>>(target, "UpLimit");
+            await target.InvokeAsync(() => upload.Instance.ValueChanged.InvokeAsync(0));
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.GetSpeedLimitsAsync(It.IsAny<CancellationToken>()), supported ? Times.Once() : Times.Never());
+            Mock.Get(_apiClient).Verify(client => client.SetSpeedLimitsAsync(
+                It.Is<SpeedLimits>(limits => limits.UploadLimit == 0 && limits.DownloadLimit == 2048 && limits.AlternativeUploadLimit == 3072 && limits.AlternativeDownloadLimit == 4096),
+                It.IsAny<CancellationToken>()), supported ? Times.Once() : Times.Never());
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(
+                It.Is<UpdatePreferences>(preferences => supported ? preferences.UpLimit == null : preferences.UpLimit == 0)), Times.Once());
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData("UpLimit")]
+        [InlineData("DlLimit")]
+        [InlineData("AltUpLimit")]
+        [InlineData("AltDlLimit")]
+        public async Task GIVEN_Version53SpeedField_WHEN_Saving_THEN_PreservesOtherCurrentServerLimits(string field)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync("2.16.2");
+            Mock.Get(_apiClient).Setup(client => client.GetSpeedLimitsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new SpeedLimits(1024, 2048, 3072, 4096));
+            Mock.Get(_apiClient).Setup(client => client.SetSpeedLimitsAsync(It.IsAny<SpeedLimits>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            var target = RenderPage();
+            await ActivateTab(target, 3);
+            var input = FindComponentByTestId<MudNumericField<int>>(target, field);
+            await target.InvokeAsync(() => input.Instance.ValueChanged.InvokeAsync(10));
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.SetSpeedLimitsAsync(
+                It.Is<SpeedLimits>(limits => limits.UploadLimit == (field == "UpLimit" ? 10240 : 1024)
+                    && limits.DownloadLimit == (field == "DlLimit" ? 10240 : 2048)
+                    && limits.AlternativeUploadLimit == (field == "AltUpLimit" ? 10240 : 3072)
+                    && limits.AlternativeDownloadLimit == (field == "AltDlLimit" ? 10240 : 4096)), It.IsAny<CancellationToken>()), Times.Once());
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences =>
+                preferences.UpLimit == null && preferences.DlLimit == null && preferences.AltUpLimit == null && preferences.AltDlLimit == null)), Times.Once());
+        }
+
+        [Theory]
+        [InlineData("Read")]
+        [InlineData("BatchWrite")]
+        [InlineData("PreferencesWrite")]
+        public async Task GIVEN_SpeedSaveFailure_WHEN_Saving_THEN_RetainsPendingChangesForRetry(string operation)
+        {
+            var failure = new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = operation, UserMessage = "Failure" };
+            Mock.Get(_apiClient).Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync("2.16.2");
+            Mock.Get(_apiClient).Setup(client => client.GetSpeedLimitsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(operation == "Read" ? ApiResult.CreateFailure<SpeedLimits>(failure) : ApiResult.CreateSuccess(new SpeedLimits(1024, 2048, 3072, 4096)));
+            Mock.Get(_apiClient).Setup(client => client.SetSpeedLimitsAsync(It.IsAny<SpeedLimits>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(operation == "BatchWrite" ? ApiResult.CreateFailure(failure) : ApiResult.CreateSuccess());
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsAsync(operation == "PreferencesWrite" ? ApiResult.CreateFailure(failure) : ApiResult.CreateSuccess());
+            var target = RenderPage();
+            await ActivateTab(target, 3);
+            var input = FindComponentByTestId<MudNumericField<int>>(target, "AltDlLimit");
+            await target.InvokeAsync(() => input.Instance.ValueChanged.InvokeAsync(10));
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeFalse();
+            target.FindComponents<NavigationLock>().Should().ContainSingle();
+            input.Instance.GetState(component => component.Value).Should().Be(10);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()), operation == "PreferencesWrite" ? Times.Once() : Times.Never());
         }
 
         [Theory]

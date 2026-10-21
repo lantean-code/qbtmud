@@ -4,6 +4,10 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class ConnectionOptions : Options
     {
+        protected bool I2pPexEnabled { get; private set; }
+        protected int I2pInboundLengthVariance { get; private set; }
+        protected int I2pOutboundLengthVariance { get; private set; }
+
         protected BittorrentProtocol BittorrentProtocol { get; private set; }
         protected int ListenPort { get; private set; }
         protected bool? Upnp { get; private set; }
@@ -85,6 +89,28 @@ namespace Lantean.QBTMud.Components.Options
             return null;
         }
 
+
+        protected async Task I2pPexEnabledChanged(bool value)
+        {
+            I2pPexEnabled = value;
+            UpdatePreferences.I2pPexEnabled = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task I2pInboundLengthVarianceChanged(int value)
+        {
+            I2pInboundLengthVariance = value;
+            UpdatePreferences.I2pInboundLengthVariance = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task I2pOutboundLengthVarianceChanged(int value)
+        {
+            I2pOutboundLengthVariance = value;
+            UpdatePreferences.I2pOutboundLengthVariance = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -162,6 +188,10 @@ namespace Lantean.QBTMud.Components.Options
             IpFilterPath = Preferences.IpFilterPath;
             IpFilterTrackers = Preferences.IpFilterTrackers;
             BannedIPs = Preferences.BannedIPs;
+
+            I2pPexEnabled = Preferences.I2pPexEnabled;
+            I2pInboundLengthVariance = Preferences.I2pInboundLengthVariance;
+            I2pOutboundLengthVariance = Preferences.I2pOutboundLengthVariance;
 
             return true;
         }

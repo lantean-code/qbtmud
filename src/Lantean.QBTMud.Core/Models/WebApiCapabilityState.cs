@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient;
+
 namespace Lantean.QBTMud.Core.Models
 {
     /// <summary>
@@ -9,6 +11,11 @@ namespace Lantean.QBTMud.Core.Models
         /// Gets the Web API version, when available.
         /// </summary>
         public Version? WebApiVersion { get; }
+
+        /// <summary>
+        /// Gets the detected feature compatibility profile, or null when the version is unavailable.
+        /// </summary>
+        public WebApiCompatibilityProfile? CompatibilityProfile { get; }
 
         /// <summary>
         /// Gets a value indicating whether ClientData endpoints are supported.
@@ -35,6 +42,7 @@ namespace Lantean.QBTMud.Core.Models
         public WebApiCapabilityState(Version? webApiVersion, bool supportsClientData, bool supportsTrackerErrorFilters = false, bool supportsApiKeyManagement = false)
         {
             WebApiVersion = webApiVersion;
+            CompatibilityProfile = webApiVersion is null ? null : new WebApiCompatibilityProfile(webApiVersion);
             SupportsClientData = supportsClientData;
             SupportsTrackerErrorFilters = supportsTrackerErrorFilters;
             SupportsApiKeyManagement = supportsApiKeyManagement;

@@ -14,9 +14,68 @@
                                   @bind-Value="SavePath"
                                   Required="true"
                                   RequiredErrorText="@LanguageLocalizer.Translate("TorrentsController", "Save path is empty")"
-                                  Mode="DirectoryContentMode.Directories"
+                                  Mode="DirectoryContentMode.Directories" ShowFreeSpace="true"
                                   data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
             </MudItem>
+            @if (SupportsCategoryOptions)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int" Label='@LanguageLocalizer.Translate("OptionsDialog", "Keep incomplete torrents in:")' @bind-Value="DownloadPathMode" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id='@TestIdHelper.For("CategoryDownloadPathMode")'>
+                        <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Default")</MudSelectItem>
+                        <MudSelectItem T="int" Value="1">@LanguageLocalizer.Translate("TrackerListWidget", "Disabled")</MudSelectItem>
+                        <MudSelectItem T="int" Value="2">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Set to")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <PathAutocomplete Label='@LanguageLocalizer.Translate("OptionsDialog", "Keep incomplete torrents in:")' @bind-Value="DownloadPath" Disabled="@(DownloadPathMode != 2)" Mode="DirectoryContentMode.Directories" ShowFreeSpace="true" data-test-id='@TestIdHelper.For("CategoryDownloadPath")' />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int" Label='@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Ratio:")' @bind-Value="RatioMode" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id='@TestIdHelper.For("CategoryRatioMode")'>
+                        <MudSelectItem T="int" Value="-2">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Default")</MudSelectItem>
+                        <MudSelectItem T="int" Value="-1">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Unlimited")</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Set to")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="double" @bind-Value="RatioLimit" Disabled="@(RatioMode != 0)" Min="0" Variant="Variant.Outlined" data-test-id='@TestIdHelper.For("CategoryRatioLimit")' />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int" Label='@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Seeding time:")' @bind-Value="SeedingTimeMode" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id='@TestIdHelper.For("CategorySeedingTimeMode")'>
+                        <MudSelectItem T="int" Value="-2">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Default")</MudSelectItem>
+                        <MudSelectItem T="int" Value="-1">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Unlimited")</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Set to")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" @bind-Value="SeedingTimeLimit" Disabled="@(SeedingTimeMode != 0)" Min="0" Variant="Variant.Outlined" data-test-id='@TestIdHelper.For("CategorySeedingTimeLimit")' />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int" Label='@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Inactive seeding time:")' @bind-Value="InactiveSeedingTimeMode" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id='@TestIdHelper.For("CategoryInactiveSeedingTimeMode")'>
+                        <MudSelectItem T="int" Value="-2">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Default")</MudSelectItem>
+                        <MudSelectItem T="int" Value="-1">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Unlimited")</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Set to")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" @bind-Value="InactiveSeedingTimeLimit" Disabled="@(InactiveSeedingTimeMode != 0)" Min="0" Variant="Variant.Outlined" data-test-id='@TestIdHelper.For("CategoryInactiveSeedingTimeLimit")' />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="ShareLimitsMode" Label='@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Mode:")' @bind-Value="ShareLimitsMode" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id='@TestIdHelper.For("CategoryShareLimitsMode")'>
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.Default">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Default")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.MatchAny">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Match any limit")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.MatchAll">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Match all the limits")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="ShareLimitAction" Label='@LanguageLocalizer.Translate("OptionsDialog", "then")' @bind-Value="ShareLimitAction" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id='@TestIdHelper.For("CategoryShareLimitAction")'>
+                        <MudSelectItem T="ShareLimitAction" Value="ShareLimitAction.Default">@LanguageLocalizer.Translate("OptionsDialog", "Default")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitAction" Value="ShareLimitAction.Stop">@LanguageLocalizer.Translate("OptionsDialog", "Stop torrent")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitAction" Value="ShareLimitAction.Remove">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitAction" Value="ShareLimitAction.RemoveWithContent">@LanguageLocalizer.Translate("OptionsDialog", "Remove torrent and its files")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitAction" Value="ShareLimitAction.EnableSuperSeeding">@LanguageLocalizer.Translate("OptionsDialog", "Enable super seeding for torrent")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
         </MudGrid>
     </DialogContent>
     <DialogActions>

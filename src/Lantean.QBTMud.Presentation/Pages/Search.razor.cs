@@ -196,9 +196,16 @@ namespace Lantean.QBTMud.Pages
                 }
 
                 var metadata = GetMetadataForJob(status.Id);
-                var job = new SearchJobViewModel(status.Id, metadata.Pattern, metadata.Plugins, metadata.Category);
+                var job = new SearchJobViewModel(status.Id,
+                    status.Pattern ?? metadata.Pattern,
+                    status.Pattern is null ? metadata.Plugins : status.Plugins,
+                    status.Category ?? metadata.Category);
                 job.UpdateStatus(status.Status, status.Total);
                 TrackJob(job);
+                if (status.Pattern is not null)
+                {
+                    await PersistJobMetadataAsync(job);
+                }
                 await FetchJobSnapshot(job);
             }
 

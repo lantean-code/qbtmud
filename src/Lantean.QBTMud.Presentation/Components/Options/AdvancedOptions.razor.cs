@@ -7,6 +7,15 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class AdvancedOptions : Options
     {
+        protected bool ConfirmRemoveAllTags { get; private set; }
+        protected bool ConfirmRemoveTrackerFromAllTorrents { get; private set; }
+        protected bool StartPaused { get; private set; }
+        protected int ShutdownTimeout { get; private set; }
+        protected bool SeedingOutgoingConnections { get; private set; }
+        protected bool EnableMultiConnectionsFromSamePeerId { get; private set; }
+        protected int MaxOutstandingBlockRequests { get; private set; }
+        protected string WebTorrentStunServer { get; private set; } = string.Empty;
+
         [Inject]
         public IApiClient ApiClient { get; set; } = default!;
 
@@ -98,6 +107,63 @@ namespace Lantean.QBTMud.Components.Options
             }
         }
 
+
+        protected async Task ConfirmRemoveAllTagsChanged(bool value)
+        {
+            ConfirmRemoveAllTags = value;
+            UpdatePreferences.ConfirmRemoveAllTags = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task ConfirmRemoveTrackerFromAllTorrentsChanged(bool value)
+        {
+            ConfirmRemoveTrackerFromAllTorrents = value;
+            UpdatePreferences.ConfirmRemoveTrackerFromAllTorrents = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task StartPausedChanged(bool value)
+        {
+            StartPaused = value;
+            UpdatePreferences.StartPaused = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task ShutdownTimeoutChanged(int value)
+        {
+            ShutdownTimeout = value;
+            UpdatePreferences.ShutdownTimeout = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task SeedingOutgoingConnectionsChanged(bool value)
+        {
+            SeedingOutgoingConnections = value;
+            UpdatePreferences.SeedingOutgoingConnections = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task EnableMultiConnectionsFromSamePeerIdChanged(bool value)
+        {
+            EnableMultiConnectionsFromSamePeerId = value;
+            UpdatePreferences.EnableMultiConnectionsFromSamePeerId = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task MaxOutstandingBlockRequestsChanged(int value)
+        {
+            MaxOutstandingBlockRequests = value;
+            UpdatePreferences.MaxOutstandingBlockRequests = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task WebTorrentStunServerChanged(string value)
+        {
+            WebTorrentStunServer = value;
+            UpdatePreferences.WebTorrentStunServer = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -170,6 +236,15 @@ namespace Lantean.QBTMud.Components.Options
             I2pOutboundQuantity = Preferences.I2pOutboundQuantity;
             I2pInboundLength = Preferences.I2pInboundLength;
             I2pOutboundLength = Preferences.I2pOutboundLength;
+
+            ConfirmRemoveAllTags = Preferences.ConfirmRemoveAllTags;
+            ConfirmRemoveTrackerFromAllTorrents = Preferences.ConfirmRemoveTrackerFromAllTorrents;
+            StartPaused = Preferences.StartPaused;
+            ShutdownTimeout = Preferences.ShutdownTimeout;
+            SeedingOutgoingConnections = Preferences.SeedingOutgoingConnections;
+            EnableMultiConnectionsFromSamePeerId = Preferences.EnableMultiConnectionsFromSamePeerId;
+            MaxOutstandingBlockRequests = Preferences.MaxOutstandingBlockRequests;
+            WebTorrentStunServer = Preferences.WebTorrentStunServer;
 
             return true;
         }

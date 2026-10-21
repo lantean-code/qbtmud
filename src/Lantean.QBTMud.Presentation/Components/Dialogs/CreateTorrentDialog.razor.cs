@@ -50,6 +50,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         private bool _optimizeAlignment = true;
         private bool _startSeeding = true;
 
+        protected bool IgnoreDotfiles { get; set; } = true;
+
+        protected bool SupportsIgnoreDotfiles { get; set; }
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -92,6 +99,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
+            var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+            SupportsIgnoreDotfiles = capabilities.CompatibilityProfile?.SupportsTorrentCreationIgnoreDotfiles == true;
             await LoadFormStateAsync();
             await LoadBuildInfoAsync();
         }
@@ -136,6 +145,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 TorrentFilePath = string.IsNullOrWhiteSpace(_torrentFilePath) ? null : _torrentFilePath.Trim(),
                 PieceSize = _pieceSize,
                 Private = _isPrivate,
+                IgnoreDotfiles = SupportsIgnoreDotfiles ? IgnoreDotfiles : null,
                 StartSeeding = _startSeeding,
                 Comment = string.IsNullOrWhiteSpace(_comment) ? null : _comment.Trim(),
                 Source = string.IsNullOrWhiteSpace(_source) ? null : _source.Trim(),
@@ -185,6 +195,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             _torrentFilePath = state.TorrentFilePath;
             _pieceSize = state.PieceSize;
             _isPrivate = state.Private;
+            IgnoreDotfiles = state.IgnoreDotfiles;
             _startSeeding = state.StartSeeding;
             _trackers = state.Trackers;
             _urlSeeds = state.UrlSeeds;
@@ -224,6 +235,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 PieceSize = _pieceSize,
                 Private = _isPrivate,
                 StartSeeding = _startSeeding,
+                IgnoreDotfiles = IgnoreDotfiles,
                 Trackers = _trackers ?? string.Empty,
                 UrlSeeds = _urlSeeds ?? string.Empty,
                 Comment = _comment ?? string.Empty,

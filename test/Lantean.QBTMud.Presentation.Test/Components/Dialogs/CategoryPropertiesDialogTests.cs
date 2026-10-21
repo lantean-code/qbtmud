@@ -140,6 +140,45 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             category.SavePath.Should().Be("SavePath");
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        public async Task GIVEN_CategoryOptions_WHEN_Saved_THEN_PreservesInheritanceAndShareLimits(int pathMode)
+        {
+            var original = new QBittorrent.ApiClient.Models.Category("Category", "SavePath",
+                pathMode == 0 ? null : new QBittorrent.ApiClient.Models.DownloadPathOption(pathMode == 2, "DownloadPath"))
+            {
+                RatioLimit = 2.5,
+                SeedingTimeLimit = 60,
+                InactiveSeedingTimeLimit = -1,
+                ShareLimitsMode = QBittorrent.ApiClient.Models.ShareLimitsMode.MatchAll,
+                ShareLimitAction = QBittorrent.ApiClient.Models.ShareLimitAction.Stop
+            };
+            var provider = TestContext.Render<MudDialogProvider>();
+            var service = TestContext.Services.GetRequiredService<IDialogService>();
+            var reference = await service.ShowAsync<CategoryPropertiesDialog>("Category", new DialogParameters
+            {
+                { nameof(CategoryPropertiesDialog.Category), "Category" },
+                { nameof(CategoryPropertiesDialog.SavePath), "SavePath" },
+                { nameof(CategoryPropertiesDialog.SupportsCategoryOptions), true },
+                { nameof(CategoryPropertiesDialog.OriginalCategory), original }
+            });
+            var target = provider.FindComponent<CategoryPropertiesDialog>();
+            var save = FindComponentByTestId<MudButton>(target, "CategoryPropertiesSave");
+            await save.Find("button").ClickAsync(new MouseEventArgs());
+            var result = await reference.Result;
+            var category = (Category)result!.Data!;
+            category.Options.Should().NotBeNull();
+            category.Options!.InheritDownloadPath.Should().Be(pathMode == 0);
+            category.Options.DownloadPath.Should().BeEquivalentTo(original.DownloadPath);
+            category.Options.RatioLimit.Should().Be(2.5);
+            category.Options.SeedingTimeLimit.Should().Be(60);
+            category.Options.InactiveSeedingTimeLimit.Should().Be(-1);
+            category.Options.ShareLimitsMode.Should().Be(QBittorrent.ApiClient.Models.ShareLimitsMode.MatchAll);
+            category.Options.ShareLimitAction.Should().Be(QBittorrent.ApiClient.Models.ShareLimitAction.Stop);
+        }
+
         private void UsePreferences(string savePath)
         {
             var preferences = PreferencesFactory.CreateQBittorrentPreferences(spec =>

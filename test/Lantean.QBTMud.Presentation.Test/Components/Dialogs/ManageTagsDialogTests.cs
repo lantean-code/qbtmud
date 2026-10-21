@@ -32,6 +32,29 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _target = new ManageTagsDialogTestDriver(TestContext);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_RemoveAllConfirmationEnabled_WHEN_UserDecides_THEN_RemovesOnlyAfterConfirmation(bool confirmed)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAllTagsAsync()).ReturnsSuccessAsync(new List<string> { "Tag" });
+            Mock.Get(_apiClient).Setup(client => client.RemoveTorrentTagsAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(confirmed);
+            Mock.Get(_apiClient).Setup(client => client.GetTorrentListAsync(
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<bool?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<bool?>(), It.IsAny<TorrentSelector?>(), It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent(["Tag"]) });
+            var provider = TestContext.Render<MudDialogProvider>();
+            var service = TestContext.Services.GetRequiredService<IDialogService>();
+            await service.ShowAsync<ManageTagsDialog>("Tags", new DialogParameters { { nameof(ManageTagsDialog.ConfirmRemoveAllTags), true }, { nameof(ManageTagsDialog.Hashes), new[] { "Hash" } } });
+            var target = provider.FindComponent<ManageTagsDialog>();
+            var remove = FindComponentByTestId<MudListItem<string>>(target, "TagRemoveAll");
+            await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.RemoveTorrentTagsAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), confirmed ? Times.Once() : Times.Never());
+        }
+
         [Fact]
         public async Task GIVEN_NoHashes_WHEN_Rendered_THEN_RendersCheckedIcon()
         {

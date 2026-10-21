@@ -344,6 +344,7 @@ namespace Lantean.QBTMud.Components
                 new ColumnDefinition<MudPeer>(downloadedLabel, p => p.Downloaded, p => DisplayHelpers.Size(p.Downloaded), id: "downloaded"),
                 new ColumnDefinition<MudPeer>(uploadedLabel, p => p.Uploaded, p => DisplayHelpers.Size(p.Uploaded), id: "uploaded"),
                 new ColumnDefinition<MudPeer>(relevanceLabel, p => p.Relevance, p => DisplayHelpers.Percentage(p.Relevance), id: "relevance"),
+                new ColumnDefinition<MudPeer>(LanguageLocalizer.Translate("PeerListWidget", "Contribution"), p => p.Contribution, p => DisplayHelpers.Percentage(p.Contribution), id: "contribution") { Enabled = false },
                 new ColumnDefinition<MudPeer>(filesLabel, p => p.Files, id: "files"),
             ];
         }

@@ -75,6 +75,12 @@
             <MudItem xs="12">
                 <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Session timeout:")" Value="WebUiSessionTimeout" ValueChanged="WebUiSessionTimeoutChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "sec")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiSessionTimeout")" />
             </MudItem>
+            @if (Compatibility?.SupportsWebUiSessionCountLimitPreference == true)
+            {
+                <MudItem xs="12">
+                    <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Sessions count limit:")" Value="WebUiSessionsCountLimit" ValueChanged="WebUiSessionsCountLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" data-test-id="@TestIdHelper.For("WebUiSessionsCountLimit")" />
+                </MudItem>
+            }
         </MudGrid>
     </MudCardContent>
 </MudCard>

@@ -69,6 +69,20 @@ namespace Lantean.QBTMud.Services
         private readonly IPreferencesDataManager _preferencesDataManager;
         private readonly IQBittorrentPreferencesStateService _qBittorrentPreferencesStateService;
 
+        private readonly IWebApiCapabilityService _webApiCapabilityService;
+
+        /// <summary>
+        /// Initializes the dialog workflows and their API and presentation dependencies.
+        /// </summary>
+        /// <param name="dialogService">The dialog service.</param>
+        /// <param name="apiClient">The qBittorrent API client.</param>
+        /// <param name="snackbarWorkflow">The notification workflow.</param>
+        /// <param name="languageLocalizer">The language localizer.</param>
+        /// <param name="appSettingsService">The application settings service.</param>
+        /// <param name="apiFeedbackWorkflow">The API failure feedback workflow.</param>
+        /// <param name="preferencesDataManager">The preferences mapper.</param>
+        /// <param name="qBittorrentPreferencesStateService">The current preferences state.</param>
+        /// <param name="webApiCapabilityService">The detected API capabilities.</param>
         public DialogWorkflow(
             IDialogService dialogService,
             IApiClient apiClient,
@@ -77,7 +91,8 @@ namespace Lantean.QBTMud.Services
             IAppSettingsService appSettingsService,
             IApiFeedbackWorkflow apiFeedbackWorkflow,
             IPreferencesDataManager preferencesDataManager,
-            IQBittorrentPreferencesStateService qBittorrentPreferencesStateService)
+            IQBittorrentPreferencesStateService qBittorrentPreferencesStateService,
+            IWebApiCapabilityService webApiCapabilityService)
         {
             _dialogService = dialogService;
             _apiClient = apiClient;
@@ -87,12 +102,16 @@ namespace Lantean.QBTMud.Services
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
             _preferencesDataManager = preferencesDataManager;
             _qBittorrentPreferencesStateService = qBittorrentPreferencesStateService;
+            _webApiCapabilityService = webApiCapabilityService;
         }
 
         /// <inheritdoc />
         public async Task<string?> InvokeAddCategoryDialog(string? initialCategory = null, string? initialSavePath = null)
         {
             var parameters = new DialogParameters();
+            var capabilities = await _webApiCapabilityService.GetCapabilityStateAsync();
+            var supportsCategoryOptions = capabilities.CompatibilityProfile?.SupportsCategoryShareLimitOptions == true;
+            parameters.Add(nameof(CategoryPropertiesDialog.SupportsCategoryOptions), supportsCategoryOptions);
             if (initialCategory is not null)
             {
                 parameters.Add(nameof(CategoryPropertiesDialog.Category), initialCategory);
@@ -113,7 +132,9 @@ namespace Lantean.QBTMud.Services
             }
 
             var category = (MudCategory)dialogResult.Data;
-            var addCategoryResult = await _apiClient.AddCategoryAsync(category.Name, category.SavePath);
+            var addCategoryResult = supportsCategoryOptions && category.Options is not null
+                ? await _apiClient.AddCategoryAsync(category.Name, category.Options)
+                : await _apiClient.AddCategoryAsync(category.Name, category.SavePath);
             if (!await _apiFeedbackWorkflow.ProcessResultAsync(addCategoryResult))
             {
                 return null;
@@ -423,10 +444,14 @@ namespace Lantean.QBTMud.Services
 
             var categories = categoriesResult.Value;
             var category = categories.FirstOrDefault(c => c.Key == categoryName).Value;
+            var capabilities = await _webApiCapabilityService.GetCapabilityStateAsync();
+            var supportsCategoryOptions = capabilities.CompatibilityProfile?.SupportsCategoryShareLimitOptions == true;
             var parameters = new DialogParameters
             {
                 { nameof(CategoryPropertiesDialog.Category), category?.Name },
                 { nameof(CategoryPropertiesDialog.SavePath), category?.SavePath },
+                { nameof(CategoryPropertiesDialog.OriginalCategory), category },
+                { nameof(CategoryPropertiesDialog.SupportsCategoryOptions), supportsCategoryOptions },
             };
             AddCurrentPreferences(parameters, nameof(CategoryPropertiesDialog.Preferences));
 
@@ -438,7 +463,9 @@ namespace Lantean.QBTMud.Services
             }
 
             var updatedCategory = (MudCategory)dialogResult.Data;
-            var editCategoryResult = await _apiClient.EditCategoryAsync(updatedCategory.Name, updatedCategory.SavePath);
+            var editCategoryResult = supportsCategoryOptions && updatedCategory.Options is not null
+                ? await _apiClient.EditCategoryAsync(updatedCategory.Name, updatedCategory.Options)
+                : await _apiClient.EditCategoryAsync(updatedCategory.Name, updatedCategory.SavePath);
             if (!await _apiFeedbackWorkflow.ProcessResultAsync(editCategoryResult))
             {
                 return null;
@@ -515,16 +542,20 @@ namespace Lantean.QBTMud.Services
                     RatioLimit = (float)t.RatioLimit,
                     SeedingTimeLimit = t.SeedingTimeLimit,
                     ShareLimitAction = t.ShareLimitAction,
+                    ShareLimitsMode = t.ShareLimitsMode,
                 })
                 .ToList();
 
             var referenceValue = shareLimitValues[0];
+            var capabilities = await _webApiCapabilityService.GetCapabilityStateAsync();
+            var supportsMode = capabilities.CompatibilityProfile?.SupportsShareLimitsMode == true;
             var torrentsHaveSameShareRatio = shareLimitValues.Distinct().Count() == 1;
 
             var parameters = new DialogParameters
             {
                 { nameof(ShareRatioDialog.Value), torrentsHaveSameShareRatio ? referenceValue : null },
                 { nameof(ShareRatioDialog.CurrentValue), referenceValue },
+                { nameof(ShareRatioDialog.SupportsShareLimitsMode), supportsMode },
             };
 
             var result = await _dialogService.ShowAsync<ShareRatioDialog>(_languageLocalizer.Translate("UpDownRatioDialog", "Torrent Upload/Download Ratio Limiting"), parameters, FormDialogOptions);
@@ -535,7 +566,15 @@ namespace Lantean.QBTMud.Services
             }
 
             var shareLimit = (ShareLimit)dialogResult.Data;
-            var setShareLimitResult = await _apiClient.SetTorrentShareLimitAsync(
+            var setShareLimitResult = supportsMode
+                ? await _apiClient.SetTorrentShareLimitAsync(
+                    TorrentSelector.FromHashes(torrentList.Select(t => t.Hash)),
+                    shareLimit.RatioLimit,
+                    shareLimit.SeedingTimeLimit,
+                    shareLimit.InactiveSeedingTimeLimit,
+                    shareLimit.ShareLimitAction ?? ShareLimitAction.Default,
+                    shareLimit.ShareLimitsMode ?? ShareLimitsMode.Default)
+                : await _apiClient.SetTorrentShareLimitAsync(
                 TorrentSelector.FromHashes(torrentList.Select(t => t.Hash)),
                 shareLimit.RatioLimit,
                 shareLimit.SeedingTimeLimit,

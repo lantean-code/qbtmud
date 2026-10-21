@@ -10,6 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Playwright" Version="1.62.0" />
-    <PackageReference Include="QBittorrent.ApiClient" Version="1.2.0" />
+    <PackageReference Include="QBittorrent.ApiClient" Version="1.3.0" />
   </ItemGroup>
 </Project>

@@ -94,3 +94,24 @@
         </MudGrid>
     </MudCardContent>
 </MudCard>
+
+@if (Compatibility?.SupportsSearchJobPersistencePreferences == true)
+{
+    <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Search")</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12">
+                    <FieldSwitch Label='@LanguageLocalizer.Translate("OptionsDialog", "Save search tabs")' Value="StoreSearchJobs" ValueChanged="StoreSearchJobsChanged" data-test-id='@TestIdHelper.For("StoreSearchJobs")' />
+                </MudItem>
+                <MudItem xs="12">
+                    <FieldSwitch Label='@LanguageLocalizer.Translate("OptionsDialog", "Also save search results")' Value="StoreSearchJobResults" ValueChanged="StoreSearchJobResultsChanged" Disabled="@(!StoreSearchJobs)" data-test-id='@TestIdHelper.For("StoreSearchJobResults")' />
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+}

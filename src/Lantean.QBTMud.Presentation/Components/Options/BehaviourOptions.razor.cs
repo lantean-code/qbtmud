@@ -6,6 +6,9 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class BehaviourOptions : Options
     {
+        protected bool StoreSearchJobs { get; private set; }
+        protected bool StoreSearchJobResults { get; private set; }
+
         protected string? Locale { get; set; }
 
         protected bool? ConfirmTorrentDeletion { get; set; }
@@ -36,6 +39,21 @@ namespace Lantean.QBTMud.Components.Options
             LanguageOptions = LanguageCatalog.Languages;
         }
 
+
+        protected async Task StoreSearchJobsChanged(bool value)
+        {
+            StoreSearchJobs = value;
+            UpdatePreferences.StoreSearchJobs = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task StoreSearchJobResultsChanged(bool value)
+        {
+            StoreSearchJobResults = value;
+            UpdatePreferences.StoreSearchJobResults = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -54,6 +72,9 @@ namespace Lantean.QBTMud.Components.Options
             FileLogAge = Preferences.FileLogAge;
             FileLogAgeType = Preferences.FileLogAgeType;
             PerformanceWarning = Preferences.PerformanceWarning;
+
+            StoreSearchJobs = Preferences.StoreSearchJobs;
+            StoreSearchJobResults = Preferences.StoreSearchJobResults;
 
             return true;
         }

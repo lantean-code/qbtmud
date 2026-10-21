@@ -12,6 +12,8 @@ namespace Lantean.QBTMud.Core.Models
 
         public bool Private { get; init; }
 
+        public bool IgnoreDotfiles { get; init; } = true;
+
         public bool StartSeeding { get; init; } = true;
 
         public string Trackers { get; init; } = string.Empty;

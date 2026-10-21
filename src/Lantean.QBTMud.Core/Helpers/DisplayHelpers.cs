@@ -284,6 +284,21 @@ namespace Lantean.QBTMud.Core.Helpers
         }
 
         /// <summary>
+        /// Formats a torrent creation timestamp, accepting epoch seconds and legacy date strings.
+        /// </summary>
+        /// <param name="value">The timestamp returned by the server.</param>
+        /// <returns>The local date and time, or the original legacy value.</returns>
+        public static string TorrentCreationDateTime(string? value)
+        {
+            if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds))
+            {
+                return seconds > 0 && seconds <= 253402300799 ? DateTime(seconds) : string.Empty;
+            }
+
+            return value ?? string.Empty;
+        }
+
+        /// <summary>
         /// Formats a value into a percentage or empty string if null.
         /// </summary>
         /// <param name="value"></param>

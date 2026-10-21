@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Application.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Options
@@ -18,6 +19,9 @@ namespace Lantean.QBTMud.Components.Options
         [Parameter]
         [EditorRequired]
         public Preferences? Preferences { get; set; }
+
+        [Parameter]
+        public WebApiCompatibilityProfile? Compatibility { get; set; }
 
         [Parameter]
         [EditorRequired]

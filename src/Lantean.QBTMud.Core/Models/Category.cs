@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Core.Models
 {
     public record Category
@@ -10,5 +12,7 @@ namespace Lantean.QBTMud.Core.Models
 
         public string Name { get; set; }
         public string SavePath { get; set; }
+
+        public TorrentCategoryOptions? Options { get; set; }
     }
 }

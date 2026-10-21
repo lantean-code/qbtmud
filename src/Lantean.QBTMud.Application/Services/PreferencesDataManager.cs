@@ -13,6 +13,8 @@ namespace Lantean.QBTMud.Application.Services
             return new QBittorrentPreferences
             {
                 Locale = preferences.Locale,
+                ConfirmRemoveAllTags = preferences.ConfirmRemoveAllTags,
+                ConfirmRemoveTrackerFromAllTorrents = preferences.ConfirmRemoveTrackerFromAllTorrents,
                 AutoTmmEnabled = preferences.AutoTmmEnabled,
                 SavePath = preferences.SavePath,
                 TempPath = preferences.TempPath,
@@ -48,6 +50,27 @@ namespace Lantean.QBTMud.Application.Services
             {
                 original = new UpdatePreferences
                 {
+                    StoreSearchJobs = changed.StoreSearchJobs,
+                    ConfirmRemoveAllTags = changed.ConfirmRemoveAllTags,
+                    ConfirmRemoveTrackerFromAllTorrents = changed.ConfirmRemoveTrackerFromAllTorrents,
+                    StoreSearchJobResults = changed.StoreSearchJobResults,
+                    TorrentFilesBackupEnabled = changed.TorrentFilesBackupEnabled,
+                    TorrentFilesBackupDirectory = changed.TorrentFilesBackupDirectory,
+                    TorrentFilesFinishedBackupDirectoryEnabled = changed.TorrentFilesFinishedBackupDirectoryEnabled,
+                    TorrentFilesFinishedBackupDirectory = changed.TorrentFilesFinishedBackupDirectory,
+                    RemoveTorrentFileBackup = changed.RemoveTorrentFileBackup,
+                    MailNotificationEncryptionType = changed.MailNotificationEncryptionType,
+                    I2pPexEnabled = changed.I2pPexEnabled,
+                    I2pInboundLengthVariance = changed.I2pInboundLengthVariance,
+                    I2pOutboundLengthVariance = changed.I2pOutboundLengthVariance,
+                    ShareLimitsMode = changed.ShareLimitsMode,
+                    WebUiSessionsCountLimit = changed.WebUiSessionsCountLimit,
+                    StartPaused = changed.StartPaused,
+                    ShutdownTimeout = changed.ShutdownTimeout,
+                    SeedingOutgoingConnections = changed.SeedingOutgoingConnections,
+                    EnableMultiConnectionsFromSamePeerId = changed.EnableMultiConnectionsFromSamePeerId,
+                    MaxOutstandingBlockRequests = changed.MaxOutstandingBlockRequests,
+                    WebTorrentStunServer = changed.WebTorrentStunServer,
                     AddToTopOfQueue = changed.AddToTopOfQueue,
                     AddStoppedEnabled = changed.AddStoppedEnabled,
                     AddTrackers = changed.AddTrackers,
@@ -279,6 +302,27 @@ namespace Lantean.QBTMud.Application.Services
             }
 
             original.AddToTopOfQueue = changed.AddToTopOfQueue ?? original.AddToTopOfQueue;
+            original.StoreSearchJobs = changed.StoreSearchJobs ?? original.StoreSearchJobs;
+            original.ConfirmRemoveAllTags = changed.ConfirmRemoveAllTags ?? original.ConfirmRemoveAllTags;
+            original.ConfirmRemoveTrackerFromAllTorrents = changed.ConfirmRemoveTrackerFromAllTorrents ?? original.ConfirmRemoveTrackerFromAllTorrents;
+            original.StoreSearchJobResults = changed.StoreSearchJobResults ?? original.StoreSearchJobResults;
+            original.TorrentFilesBackupEnabled = changed.TorrentFilesBackupEnabled ?? original.TorrentFilesBackupEnabled;
+            original.TorrentFilesBackupDirectory = changed.TorrentFilesBackupDirectory ?? original.TorrentFilesBackupDirectory;
+            original.TorrentFilesFinishedBackupDirectoryEnabled = changed.TorrentFilesFinishedBackupDirectoryEnabled ?? original.TorrentFilesFinishedBackupDirectoryEnabled;
+            original.TorrentFilesFinishedBackupDirectory = changed.TorrentFilesFinishedBackupDirectory ?? original.TorrentFilesFinishedBackupDirectory;
+            original.RemoveTorrentFileBackup = changed.RemoveTorrentFileBackup ?? original.RemoveTorrentFileBackup;
+            original.MailNotificationEncryptionType = changed.MailNotificationEncryptionType ?? original.MailNotificationEncryptionType;
+            original.I2pPexEnabled = changed.I2pPexEnabled ?? original.I2pPexEnabled;
+            original.I2pInboundLengthVariance = changed.I2pInboundLengthVariance ?? original.I2pInboundLengthVariance;
+            original.I2pOutboundLengthVariance = changed.I2pOutboundLengthVariance ?? original.I2pOutboundLengthVariance;
+            original.ShareLimitsMode = changed.ShareLimitsMode ?? original.ShareLimitsMode;
+            original.WebUiSessionsCountLimit = changed.WebUiSessionsCountLimit ?? original.WebUiSessionsCountLimit;
+            original.StartPaused = changed.StartPaused ?? original.StartPaused;
+            original.ShutdownTimeout = changed.ShutdownTimeout ?? original.ShutdownTimeout;
+            original.SeedingOutgoingConnections = changed.SeedingOutgoingConnections ?? original.SeedingOutgoingConnections;
+            original.EnableMultiConnectionsFromSamePeerId = changed.EnableMultiConnectionsFromSamePeerId ?? original.EnableMultiConnectionsFromSamePeerId;
+            original.MaxOutstandingBlockRequests = changed.MaxOutstandingBlockRequests ?? original.MaxOutstandingBlockRequests;
+            original.WebTorrentStunServer = changed.WebTorrentStunServer ?? original.WebTorrentStunServer;
             original.AddStoppedEnabled = changed.AddStoppedEnabled ?? original.AddStoppedEnabled;
             original.AddTrackers = changed.AddTrackers ?? original.AddTrackers;
             original.AddTrackersEnabled = changed.AddTrackersEnabled ?? original.AddTrackersEnabled;

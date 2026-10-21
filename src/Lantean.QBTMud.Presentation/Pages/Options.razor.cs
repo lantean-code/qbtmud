@@ -16,6 +16,9 @@ namespace Lantean.QBTMud.Pages
         private const string _languageReloadSnackbarKey = "options-language-reload";
 
         [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
+        [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
@@ -45,6 +48,8 @@ namespace Lantean.QBTMud.Pages
         protected int ActiveTab { get; set; }
 
         protected Preferences? Preferences { get; set; }
+
+        protected WebApiCompatibilityProfile? Compatibility { get; set; }
 
         protected string? WebUiApiKey { get; set; }
 
@@ -76,6 +81,8 @@ namespace Lantean.QBTMud.Pages
             }
 
             Preferences = preferencesResult.Value;
+            var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+            Compatibility = capabilities.CompatibilityProfile;
         }
 
         protected void PreferencesChanged(UpdatePreferences preferences)
@@ -155,7 +162,13 @@ namespace Lantean.QBTMud.Pages
             var selectedLocale = UpdatePreferences.Locale;
             var localeChanged = !string.IsNullOrWhiteSpace(selectedLocale)
                 && !string.Equals(selectedLocale, Preferences?.Locale, StringComparison.Ordinal);
-            var updateResult = await ApiClient.SetApplicationPreferencesAsync(UpdatePreferences);
+            var preferencesToSave = await SaveSpeedLimitsAndPreparePreferences(UpdatePreferences);
+            if (preferencesToSave is null)
+            {
+                return;
+            }
+
+            var updateResult = await ApiClient.SetApplicationPreferencesAsync(preferencesToSave);
             if (updateResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(
@@ -189,6 +202,44 @@ namespace Lantean.QBTMud.Pages
             }
 
             await InvokeAsync(StateHasChanged);
+        }
+
+        private async Task<UpdatePreferences?> SaveSpeedLimitsAndPreparePreferences(UpdatePreferences preferences)
+        {
+            if (Compatibility?.SupportsSpeedLimitBatchOperations != true
+                || !(preferences.UpLimit.HasValue || preferences.DlLimit.HasValue
+                    || preferences.AltUpLimit.HasValue || preferences.AltDlLimit.HasValue))
+            {
+                return preferences;
+            }
+
+            var limitsResult = await ApiClient.GetSpeedLimitsAsync();
+            if (limitsResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(limitsResult, _ => TranslateOptions("Unable to save options."));
+                return null;
+            }
+
+            var current = limitsResult.Value;
+            var limits = new SpeedLimits(
+                preferences.UpLimit ?? current.UploadLimit,
+                preferences.DlLimit ?? current.DownloadLimit,
+                preferences.AltUpLimit ?? current.AlternativeUploadLimit,
+                preferences.AltDlLimit ?? current.AlternativeDownloadLimit);
+            var updateResult = await ApiClient.SetSpeedLimitsAsync(limits);
+            if (updateResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(updateResult, _ => TranslateOptions("Unable to save options."));
+                return null;
+            }
+
+            return preferences with
+            {
+                UpLimit = null,
+                DlLimit = null,
+                AltUpLimit = null,
+                AltDlLimit = null
+            };
         }
 
         private void ShowLanguageReloadPrompt()

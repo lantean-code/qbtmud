@@ -17,6 +17,24 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
         }
 
         [Theory]
+        [InlineData("2.11.9", false)]
+        [InlineData("2.15.1", false)]
+        [InlineData("2.16.1", false)]
+        [InlineData("2.16.2", true)]
+        [InlineData("not-a-version", false)]
+        public async Task GIVEN_WebApiVersion_WHEN_GettingProfile_THEN_ShouldGateVersion53Features(string version, bool supported)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(version);
+
+            var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
+
+            (result.CompatibilityProfile?.SupportsShareLimitsMode ?? false).Should().Be(supported);
+            (result.CompatibilityProfile?.SupportsTorrentFileBackupPreferences ?? false).Should().Be(supported);
+            (result.CompatibilityProfile?.SupportsSessionPauseResume ?? false).Should().Be(supported);
+            (result.CompatibilityProfile?.SupportsRssRuleExportImport ?? false).Should().Be(supported);
+        }
+
+        [Theory]
         [InlineData("2.14.0", false)]
         [InlineData("2.14.1", true)]
         [InlineData("2.15.1", true)]

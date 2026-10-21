@@ -4,6 +4,13 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class DownloadsOptions : Options
     {
+        protected bool TorrentFilesBackupEnabled { get; private set; }
+        protected string TorrentFilesBackupDirectory { get; private set; } = string.Empty;
+        protected bool TorrentFilesFinishedBackupDirectoryEnabled { get; private set; }
+        protected string TorrentFilesFinishedBackupDirectory { get; private set; } = string.Empty;
+        protected bool RemoveTorrentFileBackup { get; private set; }
+        protected SmtpEncryptionType MailNotificationEncryptionType { get; private set; }
+
         protected TorrentContentLayout TorrentContentLayout { get; set; }
         protected bool? AddToTopOfQueue { get; set; }
         protected bool? AddStoppedEnabled { get; set; }
@@ -40,6 +47,49 @@ namespace Lantean.QBTMud.Components.Options
         protected string? AutorunProgram { get; set; }
 
         protected List<KeyValuePair<string, SaveLocation>> AddedScanDirs { get; set; } = [];
+
+
+        protected async Task TorrentFilesBackupEnabledChanged(bool value)
+        {
+            TorrentFilesBackupEnabled = value;
+            UpdatePreferences.TorrentFilesBackupEnabled = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task TorrentFilesBackupDirectoryChanged(string value)
+        {
+            TorrentFilesBackupDirectory = value;
+            UpdatePreferences.TorrentFilesBackupDirectory = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task TorrentFilesFinishedBackupDirectoryEnabledChanged(bool value)
+        {
+            TorrentFilesFinishedBackupDirectoryEnabled = value;
+            UpdatePreferences.TorrentFilesFinishedBackupDirectoryEnabled = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task TorrentFilesFinishedBackupDirectoryChanged(string value)
+        {
+            TorrentFilesFinishedBackupDirectory = value;
+            UpdatePreferences.TorrentFilesFinishedBackupDirectory = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task RemoveTorrentFileBackupChanged(bool value)
+        {
+            RemoveTorrentFileBackup = value;
+            UpdatePreferences.RemoveTorrentFileBackup = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task MailNotificationEncryptionTypeChanged(SmtpEncryptionType value)
+        {
+            MailNotificationEncryptionType = value;
+            UpdatePreferences.MailNotificationEncryptionType = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
 
         protected override bool SetOptions()
         {
@@ -98,6 +148,13 @@ namespace Lantean.QBTMud.Components.Options
 
             AddedScanDirs.Clear();
             AddDefaultScanDir();
+
+            TorrentFilesBackupEnabled = Preferences.TorrentFilesBackupEnabled;
+            TorrentFilesBackupDirectory = Preferences.TorrentFilesBackupDirectory;
+            TorrentFilesFinishedBackupDirectoryEnabled = Preferences.TorrentFilesFinishedBackupDirectoryEnabled;
+            TorrentFilesFinishedBackupDirectory = Preferences.TorrentFilesFinishedBackupDirectory;
+            RemoveTorrentFileBackup = Preferences.RemoveTorrentFileBackup;
+            MailNotificationEncryptionType = Preferences.MailNotificationEncryptionType;
 
             return true;
         }

@@ -10,6 +10,8 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class WebUIOptions : Options
     {
+        protected int WebUiSessionsCountLimit { get; private set; }
+
         // Key operations take effect immediately and must survive resetting pending preferences.
         private string? _apiKeyOverride;
 
@@ -251,6 +253,14 @@ namespace Lantean.QBTMud.Components.Options
             return LanguageLocalizer.Translate("OptionsDialog", "The alternative WebUI files location cannot be blank.");
         }
 
+
+        protected async Task WebUiSessionsCountLimitChanged(int value)
+        {
+            WebUiSessionsCountLimit = value;
+            UpdatePreferences.WebUiSessionsCountLimit = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -290,6 +300,8 @@ namespace Lantean.QBTMud.Components.Options
             DyndnsDomain = Preferences.DyndnsDomain;
             DyndnsUsername = Preferences.DyndnsUsername;
             DyndnsPassword = Preferences.DyndnsPassword;
+
+            WebUiSessionsCountLimit = Preferences.WebUiSessionsCountLimit;
 
             return true;
         }

@@ -152,6 +152,8 @@ namespace Lantean.QBTMud.Core.Models
 
         public string Hash { get; }
 
+        public ShareLimitsMode? ShareLimitsMode { get; set; }
+
         public long AddedOn { get; set; }
 
         public long AmountLeft { get; set; }

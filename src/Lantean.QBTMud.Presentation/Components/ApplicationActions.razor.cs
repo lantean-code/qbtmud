@@ -17,6 +17,14 @@ namespace Lantean.QBTMud.Components
         private bool _stopAllInProgress;
         private bool _registerMagnetHandlerInProgress;
         private bool _disposedValue;
+        private bool _supportsSessionPauseResume;
+        private bool _sessionActionInProgress;
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
+        [CascadingParameter]
+        public Lantean.QBTMud.Core.Models.MainData? MainData { get; set; }
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -94,6 +102,31 @@ namespace Lantean.QBTMud.Components
             ];
 
             AppSettingsStateService.Changed += OnAppSettingsChanged;
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+            _supportsSessionPauseResume = capabilities.CompatibilityProfile?.SupportsSessionPauseResume == true;
+        }
+
+        protected async Task SetSessionPaused(bool paused)
+        {
+            if (_sessionActionInProgress)
+            {
+                return;
+            }
+
+            _sessionActionInProgress = true;
+            try
+            {
+                var result = paused ? await ApiClient.PauseSessionAsync() : await ApiClient.ResumeSessionAsync();
+                await ApiFeedbackWorkflow.ProcessResultAsync(result);
+            }
+            finally
+            {
+                _sessionActionInProgress = false;
+            }
         }
 
         public void Dispose()

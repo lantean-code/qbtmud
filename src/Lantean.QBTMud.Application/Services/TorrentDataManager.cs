@@ -147,7 +147,12 @@ namespace Lantean.QBTMud.Application.Services
                 serverState.UseSubcategories.GetValueOrDefault(),
                 serverState.WriteCacheOverload.GetValueOrDefault(),
                 serverState.LastExternalAddressV4 ?? string.Empty,
-                serverState.LastExternalAddressV6 ?? string.Empty);
+                serverState.LastExternalAddressV6 ?? string.Empty)
+            {
+                SessionState = serverState.SessionState,
+                QueuedTrackerAnnounces = serverState.QueuedTrackerAnnounces,
+                RequestLatency = serverState.RequestLatency
+            };
         }
 
         public bool MergeMainData(ClientMainData mainData, MudMainData torrentList, out bool filterChanged)
@@ -484,6 +489,24 @@ namespace Lantean.QBTMud.Application.Services
         {
             var changed = false;
 
+            if (serverState.SessionState.HasValue && existingServerState.SessionState != serverState.SessionState.Value)
+            {
+                existingServerState.SessionState = serverState.SessionState.Value;
+                changed = true;
+            }
+
+            if (serverState.QueuedTrackerAnnounces.HasValue && existingServerState.QueuedTrackerAnnounces != serverState.QueuedTrackerAnnounces.Value)
+            {
+                existingServerState.QueuedTrackerAnnounces = serverState.QueuedTrackerAnnounces.Value;
+                changed = true;
+            }
+
+            if (serverState.RequestLatency.HasValue && existingServerState.RequestLatency != serverState.RequestLatency.Value)
+            {
+                existingServerState.RequestLatency = serverState.RequestLatency.Value;
+                changed = true;
+            }
+
             if (serverState.AllTimeDownloaded.HasValue && existingServerState.AllTimeDownloaded != serverState.AllTimeDownloaded.Value)
             {
                 existingServerState.AllTimeDownloaded = serverState.AllTimeDownloaded.Value;
@@ -722,7 +745,10 @@ namespace Lantean.QBTMud.Application.Services
                 torrent.RootPath ?? string.Empty,
                 torrent.IsPrivate.GetValueOrDefault(),
                 torrent.ShareLimitAction ?? ShareLimitAction.Default,
-                torrent.Comment ?? string.Empty);
+                torrent.Comment ?? string.Empty)
+            {
+                ShareLimitsMode = torrent.ShareLimitsMode
+            };
         }
 
         internal static string NormalizeTag(string? tag)
@@ -1460,6 +1486,12 @@ namespace Lantean.QBTMud.Application.Services
             if (torrent.Comment is not null && !string.Equals(existingTorrent.Comment, torrent.Comment, StringComparison.Ordinal))
             {
                 existingTorrent.Comment = torrent.Comment;
+                dataChanged = true;
+            }
+
+            if (torrent.ShareLimitsMode.HasValue && existingTorrent.ShareLimitsMode != torrent.ShareLimitsMode)
+            {
+                existingTorrent.ShareLimitsMode = torrent.ShareLimitsMode;
                 dataChanged = true;
             }
 

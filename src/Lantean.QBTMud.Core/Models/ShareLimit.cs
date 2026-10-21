@@ -8,6 +8,8 @@ namespace Lantean.QBTMud.Core.Models
         public int SeedingTimeLimit { get; set; }
         public int InactiveSeedingTimeLimit { get; set; }
         public ShareLimitAction? ShareLimitAction { get; set; }
+
+        public ShareLimitsMode? ShareLimitsMode { get; set; }
     }
 
     public record ShareLimitMax : ShareLimit

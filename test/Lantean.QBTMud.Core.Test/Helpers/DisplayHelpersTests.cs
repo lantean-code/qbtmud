@@ -9,6 +9,23 @@ namespace Lantean.QBTMud.Core.Test.Helpers
 {
     public sealed class DisplayHelpersTests
     {
+        [Theory]
+        [InlineData(null, "")]
+        [InlineData("LegacyDate", "LegacyDate")]
+        [InlineData("0", "")]
+        [InlineData("-1", "")]
+        [InlineData("253402300800", "")]
+        public void GIVEN_CreatorTimestamp_WHEN_Formatted_THEN_PreservesLegacyValuesAndEmptySentinels(string? value, string expected)
+        {
+            DisplayHelpers.TorrentCreationDateTime(value).Should().Be(expected);
+        }
+
+        [Fact]
+        public void GIVEN_EpochCreatorTimestamp_WHEN_Formatted_THEN_UsesLocalDateTime()
+        {
+            DisplayHelpers.TorrentCreationDateTime("946684800").Should().Be(DisplayHelpers.DateTime(946684800));
+        }
+
         [Fact]
         public void GIVEN_Duration_WHEN_NullOrSpecialValues_THEN_ShouldReturnExpectedTokens()
         {

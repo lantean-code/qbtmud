@@ -3,6 +3,7 @@ using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Helpers;
 using Lantean.QBTMud.Core.Interop;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Services;
@@ -373,9 +374,9 @@ namespace Lantean.QBTMud.Pages
                 new ColumnDefinition<TorrentCreationTaskStatus>(nameLabel, t => ResolveFileName(t), id: "name"),
                 new ColumnDefinition<TorrentCreationTaskStatus>(sourcePathLabel, t => t.SourcePath, id: "source_path"),
                 new ColumnDefinition<TorrentCreationTaskStatus>(TranslateTorrentCreator("Torrent File"), t => t.TorrentFilePath ?? string.Empty, id: "torrent_file") { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(addedOnLabel, t => t.TimeAdded ?? string.Empty, id: "added") { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(startedOnLabel, t => t.TimeStarted ?? string.Empty, id: "started") { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(completedOnLabel, t => t.TimeFinished ?? string.Empty, id: "finished") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(addedOnLabel, t => t.TimeAdded ?? string.Empty, t => DisplayHelpers.TorrentCreationDateTime(t.TimeAdded), id: "added") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(startedOnLabel, t => t.TimeStarted ?? string.Empty, t => DisplayHelpers.TorrentCreationDateTime(t.TimeStarted), id: "started") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(completedOnLabel, t => t.TimeFinished ?? string.Empty, t => DisplayHelpers.TorrentCreationDateTime(t.TimeFinished), id: "finished") { Enabled = false },
                 new ColumnDefinition<TorrentCreationTaskStatus>(errorLabel, t => t.ErrorMessage ?? string.Empty, id: "error") { Enabled = false },
                 new ColumnDefinition<TorrentCreationTaskStatus>(TranslateTorrentCreator("Actions"), t => t.TaskId, ActionsColumn, id: "actions") { Width = 140 }
             ];

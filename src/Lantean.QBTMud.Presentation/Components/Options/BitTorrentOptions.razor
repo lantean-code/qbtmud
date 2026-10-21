@@ -115,6 +115,15 @@
                     <MudSelectItem T="MaxRatioAction" Value="MaxRatioAction.EnableSuperSeeding">@LanguageLocalizer.Translate("OptionsDialog", "Enable super seeding for torrent")</MudSelectItem>
                 </MudSelect>
             </MudItem>
+            @if (Compatibility?.SupportsShareLimitsMode == true)
+            {
+                <MudItem xs="12">
+                    <MudSelect T="ShareLimitsMode" Label="@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Mode:")" Value="ShareLimitsMode" ValueChanged="ShareLimitsModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ShareLimitsMode")">
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.MatchAny">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Match any limit")</MudSelectItem>
+                        <MudSelectItem T="ShareLimitsMode" Value="ShareLimitsMode.MatchAll">@LanguageLocalizer.Translate("TorrentShareLimitsWidget", "Match all the limits")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
         </MudGrid>
     </MudCardContent>
 </MudCard>

@@ -282,6 +282,31 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             shareLimit.ShareLimitAction.Should().Be(ShareLimitAction.Default);
         }
 
+        [Theory]
+        [InlineData(ShareLimitsMode.Default)]
+        [InlineData(ShareLimitsMode.MatchAny)]
+        [InlineData(ShareLimitsMode.MatchAll)]
+        public async Task GIVEN_ExplicitMatchMode_WHEN_Saved_THEN_PreservesMode(ShareLimitsMode mode)
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var service = TestContext.Services.GetRequiredService<IDialogService>();
+            var value = CreateShareRatioMax(2, 60, 30, ShareLimitAction.Stop);
+            value.ShareLimitsMode = mode;
+            var reference = await service.ShowAsync<ShareRatioDialog>("ShareLimits", new DialogParameters
+            {
+                { nameof(ShareRatioDialog.Value), value },
+                { nameof(ShareRatioDialog.SupportsShareLimitsMode), true }
+            });
+            var target = provider.FindComponent<ShareRatioDialog>();
+            var selector = FindComponentByTestId<MudSelect<ShareLimitsMode>>(target, "ShareLimitsMode");
+            selector.Instance.GetState(x => x.Value).Should().Be(mode);
+            await target.InvokeAsync(() => selector.Instance.ValueChanged.InvokeAsync(ShareLimitsMode.MatchAll));
+            var save = FindComponentByTestId<MudButton>(target, "ShareRatioSave");
+            await save.Find("button").ClickAsync(new MouseEventArgs());
+            var result = await reference.Result;
+            ((ShareLimit)result!.Data!).ShareLimitsMode.Should().Be(ShareLimitsMode.MatchAll);
+        }
+
         private static ShareLimitMax CreateShareRatioMax(float ratio, int seedingTimeLimit, int inactiveSeedingTimeLimit, ShareLimitAction action, bool maxValuesNoLimit = false)
         {
             return new ShareLimitMax

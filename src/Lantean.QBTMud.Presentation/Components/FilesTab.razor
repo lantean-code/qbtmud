@@ -2,6 +2,10 @@
 
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu" data-test-id="@TestIdHelper.For("ContextMenuRename")">@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")</MudMenuItem>
+    @if (_supportsFileDownload)
+    {
+        <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@(ContextMenuItem is null || ContextMenuItem.IsFolder || ContextMenuItem.Progress < 1)" OnClick="@(() => DownloadFile(ContextMenuItem))" data-test-id='@TestIdHelper.For("ContextMenuDownload")'>@LanguageLocalizer.Translate("PropertiesWidget", "Download")</MudMenuItem>
+    }
 </MudMenu>
 
 <div class="files-tab">
@@ -9,6 +13,10 @@
     <ToolbarContent>
         <MudToolBar Gutters="false" Dense="true">
             <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")" data-test-id="@TestIdHelper.For("RenameToolbar")" />
+            @if (_supportsFileDownload)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Download" Disabled="@(SelectedItem is null || SelectedItem.IsFolder || SelectedItem.Progress < 1)" OnClick="@(() => DownloadFile(SelectedItem))" title='@LanguageLocalizer.Translate("PropertiesWidget", "Download")' data-test-id='@TestIdHelper.For("DownloadFileToolbar")' />
+            }
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@LanguageLocalizer.Translate("AppFilesTab", "Choose Columns")" data-test-id="@TestIdHelper.For("ColumnOptions")" />
             <MudDivider Vertical="true" />

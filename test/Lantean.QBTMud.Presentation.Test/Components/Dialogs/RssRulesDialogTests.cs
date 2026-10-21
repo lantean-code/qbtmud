@@ -32,6 +32,86 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _target = new RssRulesDialogTestDriver(TestContext);
         }
 
+        [Theory]
+        [InlineData("2.13.1", false)]
+        [InlineData("2.15.1", false)]
+        [InlineData("2.16.2", true)]
+        public async Task GIVEN_ApiVersion_WHEN_ExportingRules_THEN_OnlySupportedVersionsOfferExport(string version, bool supported)
+        {
+            var capabilities = new Mock<Lantean.QBTMud.Application.Services.IWebApiCapabilityService>();
+            capabilities.Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Lantean.QBTMud.Core.Models.WebApiCapabilityState(Version.Parse(version), true));
+            TestContext.Services.AddSingleton(capabilities.Object);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_apiClient).Setup(client => client.ExportRssAutoDownloadingRulesAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(new byte[] { 123, 125 });
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            if (!supported)
+            {
+                target.FindComponents<MudButton>().Should().NotContain(component => HasTestId(component, "RssRulesExport"));
+                return;
+            }
+
+            var download = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            download.SetVoidResult();
+            var export = FindComponentByTestId<MudButton>(target, "RssRulesExport");
+            await target.InvokeAsync(() => export.Instance.OnClick.InvokeAsync());
+            download.Invocations.Should().ContainSingle();
+            Mock.Get(_apiClient).Verify(client => client.ExportRssAutoDownloadingRulesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("RuleA", false)]
+        [InlineData("Clone", true)]
+        public async Task GIVEN_SelectedRule_WHEN_Cloned_THEN_ValidatesNameAndReloadsRules(string? name, bool cloned)
+        {
+            SetupVersion53();
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = CreateRule(true) });
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), null)).ReturnsAsync(name);
+            Mock.Get(_apiClient).Setup(client => client.CloneRssAutoDownloadingRuleAsync("RuleA", "Clone", It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.CreateSuccess());
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            if (cloned)
+            {
+                Mock.Get(_apiClient).Setup(client => client.GetAllRssAutoDownloadingRulesAsync())
+                    .ReturnsSuccessAsync(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = CreateRule(true), ["Clone"] = CreateRule(false) });
+            }
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            var clone = FindComponentByTestId<MudButton>(target, "RssRulesClone");
+            await target.InvokeAsync(() => clone.Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.CloneRssAutoDownloadingRuleAsync("RuleA", "Clone", It.IsAny<CancellationToken>()), cloned ? Times.Once() : Times.Never());
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GIVEN_RulesFile_WHEN_Imported_THEN_ReloadsOnlyOnSuccess(bool success)
+        {
+            SetupVersion53();
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_apiClient).Setup(client => client.ImportRssAutoDownloadingRulesAsync(It.IsAny<Stream>(), "Rules.json", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(success ? ApiResult.CreateSuccess() : ApiResult.CreateFailure(new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = "Import", UserMessage = "Failure" }));
+            var file = new Mock<Microsoft.AspNetCore.Components.Forms.IBrowserFile>();
+            file.SetupGet(value => value.Name).Returns("Rules.json");
+            file.Setup(value => value.OpenReadStream(It.IsAny<long>(), It.IsAny<CancellationToken>())).Returns(new MemoryStream(new byte[] { 123, 125 }));
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var upload = FindComponentByTestId<MudFileUpload<Microsoft.AspNetCore.Components.Forms.IBrowserFile>>(target, "RssRulesImport");
+            await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(file.Object));
+            Mock.Get(_apiClient).Verify(client => client.ImportRssAutoDownloadingRulesAsync(It.IsAny<Stream>(), "Rules.json", It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetAllRssAutoDownloadingRulesAsync(), success ? Times.Exactly(2) : Times.Once());
+        }
+
+        private void SetupVersion53()
+        {
+            var capabilities = new Mock<Lantean.QBTMud.Application.Services.IWebApiCapabilityService>();
+            capabilities.Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Lantean.QBTMud.Core.Models.WebApiCapabilityState(new Version(2, 16, 2), true));
+            TestContext.Services.AddSingleton(capabilities.Object);
+        }
+
         [Fact]
         public async Task GIVEN_NoSelection_WHEN_SaveClicked_THEN_DoesNotCallApi()
         {

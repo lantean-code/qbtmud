@@ -104,7 +104,10 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<IApiFeedbackWorkflow, ApiFeedbackWorkflow>();
             Services.AddScoped<IAppSettingsService, AppSettingsService>();
-            Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
+            var capabilities = Mock.Of<IWebApiCapabilityService>();
+            Mock.Get(capabilities).Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(null, false));
+            Services.AddSingleton(capabilities);
             Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
             Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
             Services.AddScoped<IStorageRoutingService, StorageRoutingService>();

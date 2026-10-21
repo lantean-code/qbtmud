@@ -1,11 +1,12 @@
 @using QBittorrent.ApiClient.Models
+@using Microsoft.AspNetCore.Components.Forms
 @using Lantean.QBTMud.Components.UI
 
 <MudDialog>
     <DialogContent>
         <div class="rss-rules-dialog">
             <MudGrid>
-            <MudItem xs="3">
+            <MudItem xs="12" md="3">
                 <MudToolBar Class="px-0" Dense>
                     <MudText Class="no-wrap">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Download Rules")</MudText>
                     <MudSpacer />
@@ -32,7 +33,7 @@
                     }
                 </MudList>
             </MudItem>
-            <MudItem xs="6">
+            <MudItem xs="12" md="6">
                 <MudGrid>
                     <MudItem xs="12">
                         <FieldSwitch Label="@LanguageLocalizer.Translate("AutomatedRssDownloader", "Use Regular Expressions")" Value="UseRegex" ValueChanged="UseRegexChanged" Disabled="@(SelectedRuleName is null)" data-test-id="@TestIdHelper.For("RssRulesUseRegex")" />
@@ -102,7 +103,7 @@
                     </MudItem>
                 </MudGrid>
             </MudItem>
-            <MudItem xs="3">
+            <MudItem xs="12" md="3">
                 <MudText Class="no-wrap">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Matching RSS Articles")</MudText>
                 <MudList T="string" ReadOnly Dense>
                     @if (MatchingArticles is not null)
@@ -126,7 +127,24 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("RssRulesClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("RssRulesSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Class="mud-width-full">
+
+            @if (SupportsRuleCloning)
+            {
+                <MudButton OnClick="CloneRule" Disabled="@(SelectedRuleName is null || _unsavedRuleNames.Contains(SelectedRuleName))" data-test-id='@TestIdHelper.For("RssRulesClone")'>@LanguageLocalizer.Translate("AutomatedRssDownloader", "Clone rule...")</MudButton>
+            }
+            @if (SupportsRuleExportImport)
+            {
+                <MudButton OnClick="ExportRules" data-test-id='@TestIdHelper.For("RssRulesExport")'>@LanguageLocalizer.Translate("AutomatedRssDownloader", "Export")</MudButton>
+                <MudFileUpload T="IBrowserFile" FilesChanged="ImportRules" Accept=".json" data-test-id='@TestIdHelper.For("RssRulesImport")'>
+                    <SelectedTemplate></SelectedTemplate>
+                    <CustomContent>
+                        <MudButton OnClick="@context.OpenFilePickerAsync">@LanguageLocalizer.Translate("AutomatedRssDownloader", "Import")</MudButton>
+                    </CustomContent>
+                </MudFileUpload>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("RssRulesClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("RssRulesSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
+        </MudStack>
     </DialogActions>
 </MudDialog>

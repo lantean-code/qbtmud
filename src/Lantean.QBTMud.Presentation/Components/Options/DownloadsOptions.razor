@@ -120,40 +120,61 @@
                     </MudItem>
                 </MudGrid>
             </MudItem>
-            <MudItem xs="12">
-                <MudGrid>
-                    <MudItem xs="12" sm="6" md="3">
-                        <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Copy .torrent files to:")" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirEnabled")" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="9">
-                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
-                                          Value="@ExportDir"
-                                          ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
-                                          Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(!ExportDirEnabled)"
-                                          Immediate="true"
-                                          DebounceInterval="300"
-                                          data-test-id="@TestIdHelper.For("ExportDir")" />
-                    </MudItem>
-                </MudGrid>
-            </MudItem>
-            <MudItem xs="12">
-                <MudGrid>
-                    <MudItem xs="12" sm="6" md="3">
-                        <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Copy .torrent files for finished downloads to:")" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirFinEnabled")" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="9">
-                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
-                                          Value="@ExportDirFin"
-                                          ValueChanged="@(value => ExportDirFinChanged(value ?? string.Empty))"
-                                          Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(!ExportDirFinEnabled)"
-                                          Immediate="true"
-                                          DebounceInterval="300"
-                                          data-test-id="@TestIdHelper.For("ExportDirFin")" />
-                    </MudItem>
-                </MudGrid>
-            </MudItem>
+            @if (Compatibility?.SupportsTorrentFileBackupPreferences != true)
+            {
+                <MudItem xs="12">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="3">
+                            <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Copy .torrent files to:")" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirEnabled")" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="9">
+                            <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
+                                              Value="@ExportDir"
+                                              ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
+                                              Mode="DirectoryContentMode.Directories"
+                                              Disabled="@(!ExportDirEnabled)"
+                                              Immediate="true"
+                                              DebounceInterval="300"
+                                              data-test-id="@TestIdHelper.For("ExportDir")" />
+                        </MudItem>
+                    </MudGrid>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="3">
+                            <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Copy .torrent files for finished downloads to:")" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirFinEnabled")" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="9">
+                            <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
+                                              Value="@ExportDirFin"
+                                              ValueChanged="@(value => ExportDirFinChanged(value ?? string.Empty))"
+                                              Mode="DirectoryContentMode.Directories"
+                                              Disabled="@(!ExportDirFinEnabled)"
+                                              Immediate="true"
+                                              DebounceInterval="300"
+                                              data-test-id="@TestIdHelper.For("ExportDirFin")" />
+                        </MudItem>
+                    </MudGrid>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Store backup .torrent file")" Value="TorrentFilesBackupEnabled" ValueChanged="TorrentFilesBackupEnabledChanged" data-test-id="@TestIdHelper.For("TorrentFilesBackupEnabled")" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Store backup in:")" Value="TorrentFilesBackupDirectory" ValueChanged="TorrentFilesBackupDirectoryChanged" Disabled="@(!TorrentFilesBackupEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" data-test-id="@TestIdHelper.For("TorrentFilesBackupDirectory")" />
+                </MudItem>
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "When torrent finished move backup to:")" Value="TorrentFilesFinishedBackupDirectoryEnabled" ValueChanged="TorrentFilesFinishedBackupDirectoryEnabledChanged" Disabled="@(!TorrentFilesBackupEnabled)" data-test-id="@TestIdHelper.For("TorrentFilesFinishedBackupDirectoryEnabled")" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "When torrent finished move backup to:")" Value="TorrentFilesFinishedBackupDirectory" ValueChanged="TorrentFilesFinishedBackupDirectoryChanged" Disabled="@(!TorrentFilesBackupEnabled || !TorrentFilesFinishedBackupDirectoryEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" data-test-id="@TestIdHelper.For("TorrentFilesFinishedBackupDirectory")" />
+                </MudItem>
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Remove backup when removing torrent")" Value="RemoveTorrentFileBackup" ValueChanged="RemoveTorrentFileBackupChanged" Disabled="@(!TorrentFilesBackupEnabled)" data-test-id="@TestIdHelper.For("RemoveTorrentFileBackup")" />
+                </MudItem>
+            }
         </MudGrid>
     </MudCardContent>
 </MudCard>
@@ -323,9 +344,22 @@
             <MudItem xs="12">
                 <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "SMTP server:")" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSmtp")" />
             </MudItem>
-            <MudItem xs="12">
-                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "This server requires a secure connection (SSL)")" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationSslEnabled")" />
-            </MudItem>
+            @if (Compatibility?.SupportsMailNotificationEncryptionPreference == true)
+            {
+                <MudItem xs="12">
+                    <MudSelect T="SmtpEncryptionType" Label="@LanguageLocalizer.Translate("OptionsDialog", "SMTP encryption:")" Value="MailNotificationEncryptionType" ValueChanged="MailNotificationEncryptionTypeChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MailNotificationEncryptionType")">
+                        <MudSelectItem T="SmtpEncryptionType" Value="SmtpEncryptionType.None">@LanguageLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
+                        <MudSelectItem T="SmtpEncryptionType" Value="SmtpEncryptionType.STARTTLS">@LanguageLocalizer.Translate("OptionsDialog", "STARTTLS")</MudSelectItem>
+                        <MudSelectItem T="SmtpEncryptionType" Value="SmtpEncryptionType.SMTPS">@LanguageLocalizer.Translate("OptionsDialog", "SMTPS")</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12">
+                    <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "This server requires a secure connection (SSL)")" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationSslEnabled")" />
+                </MudItem>
+            }
             <MudItem xs="12">
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Authentication")" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationAuthEnabled")" />
             </MudItem>

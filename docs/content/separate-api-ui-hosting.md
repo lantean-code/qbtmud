@@ -17,6 +17,12 @@ In a split-host model, the browser must cross an origin boundary to reach the AP
 
 qbtmud includes credentials with API requests. If the API host does not allow that cross-origin flow, the deployment fails.
 
+### qBittorrent 5.3 request-origin checks
+
+qBittorrent 5.3 also checks the browser's `Sec-Fetch-Site` header when CSRF protection is enabled. Cookie-authenticated requests must be `same-origin` or `none`. Different ports, subdomains or schemes can therefore cause HTTP 401 responses even when the CORS headers are correct.
+
+Use a [same-origin reverse proxy](reverse-proxy.md) for the UI and API where possible. When maintaining a split-host deployment, review qBittorrent's CSRF protection settings explicitly; CORS alone does not satisfy this check. qbtmud does not change the server's security settings automatically.
+
 ## Basic setup flow
 
 1. Deploy the qbtmud `public` directory to the UI host.

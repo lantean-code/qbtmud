@@ -30,6 +30,35 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _target = new CreateTorrentDialogTestDriver(TestContext);
         }
 
+        [Theory]
+        [InlineData("2.13.1", false)]
+        [InlineData("2.15.1", false)]
+        [InlineData("2.16.2", true)]
+        public async Task GIVEN_ApiVersion_WHEN_CreatingTorrent_THEN_DotfileOptionIsVersionGatedAndPersisted(string version, bool supported)
+        {
+            var capabilities = TestContext.Services.GetRequiredService<Lantean.QBTMud.Application.Services.IWebApiCapabilityService>();
+            Mock.Get(capabilities).Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(Version.Parse(version), true));
+            Mock.Get(_apiClient).Setup(client => client.GetBuildInfoAsync()).ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            if (supported)
+            {
+                await SetFieldSwitchAsync(target, "IgnoreDotfiles", false);
+            }
+            else
+            {
+                target.FindComponents<FieldSwitch>().Should().NotContain(component => HasTestId(component, "IgnoreDotfiles"));
+            }
+
+            await SetSourcePathAsync(target, "SourcePath");
+            await target.InvokeAsync(() => FindButton(target, "CreateTorrentSubmit").Instance.OnClick.InvokeAsync());
+            var result = await dialog.Reference.Result;
+            ((TorrentCreationTaskRequest)result!.Data!).IgnoreDotfiles.Should().Be(supported ? false : null);
+            var state = await TestContext.LocalStorage.GetItemAsync<TorrentCreationFormState>(_storageKey, Xunit.TestContext.Current.CancellationToken);
+            state!.IgnoreDotfiles.Should().Be(!supported);
+        }
+
         [Fact]
         public async Task GIVEN_NoSourcePath_WHEN_SubmitClicked_THEN_ShowsWarningAndKeepsDialogOpen()
         {

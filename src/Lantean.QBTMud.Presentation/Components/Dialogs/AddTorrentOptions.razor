@@ -20,6 +20,7 @@
                               Value="@SavePath"
                               ValueChanged="@(value => SavePathChanged(value ?? string.Empty))"
                               Mode="DirectoryContentMode.Directories"
+                              ShowFreeSpace="true"
                               Disabled="@TorrentManagementMode"
                               data-test-id="@TestIdHelper.For("SaveFilesLocation")" />
         </MudItem>
@@ -31,6 +32,7 @@
                               Value="@DownloadPath"
                               ValueChanged="@(value => DownloadPathChanged(value ?? string.Empty))"
                               Mode="DirectoryContentMode.Directories"
+                              ShowFreeSpace="true"
                               Disabled="@DownloadPathDisabled"
                               data-test-id="@TestIdHelper.For("IncompleteSavePath")" />
         </MudItem>
