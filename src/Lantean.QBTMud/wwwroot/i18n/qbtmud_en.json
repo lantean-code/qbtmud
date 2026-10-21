@@ -1,4 +1,6 @@
 {
+  "AppWebUIOptions|Hide API key": "Hide API key",
+  "AppWebUIOptions|Show API key": "Show API key",
   "App|Added %1 torrent": "Added %1 torrent",
   "App|Added %1 torrents": "Added %1 torrents",
   "App|Added torrent(s)": "Added torrent(s)",

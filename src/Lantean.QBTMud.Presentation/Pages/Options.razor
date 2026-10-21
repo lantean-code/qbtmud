@@ -56,7 +56,7 @@
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "WebUI")">
                 <div class="options-tab-contents">
-                    <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+                    <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" @bind-ApiKey="WebUiApiKey" />
                 </div>
             </MudTabPanel>
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Advanced")">

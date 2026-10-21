@@ -16,6 +16,26 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             _target = new WebApiCapabilityService(_apiClient);
         }
 
+        [Theory]
+        [InlineData("2.14.0", false)]
+        [InlineData("2.14.1", true)]
+        [InlineData("2.15.1", true)]
+        [InlineData("not-a-version", false)]
+        [InlineData("", false)]
+        public async Task GIVEN_WebApiVersion_WHEN_GetCapabilityStateAsync_THEN_ShouldReportApiKeyManagementSupport(string version, bool supported)
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(version);
+
+            var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
+            var cached = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
+
+            result.SupportsApiKeyManagement.Should().Be(supported);
+            cached.Should().BeSameAs(result);
+            Mock.Get(_apiClient).Verify(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         [Fact]
         public async Task GIVEN_WebApiVersionAtClientDataThreshold_WHEN_GetCapabilityStateAsync_THEN_ShouldReportClientDataSupported()
         {
@@ -83,6 +103,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
 
             result.SupportsClientData.Should().BeFalse();
             result.SupportsTrackerErrorFilters.Should().BeFalse();
+            result.SupportsApiKeyManagement.Should().BeFalse();
             result.WebApiVersion.Should().BeNull();
         }
 

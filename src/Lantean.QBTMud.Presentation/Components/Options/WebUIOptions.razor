@@ -79,6 +79,28 @@
     </MudCardContent>
 </MudCard>
 
+@if (SupportsApiKeyManagement)
+{
+    <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "API Key")</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pt-0">
+            <MudStack Spacing="2">
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "API Key")" Value="WebUiApiKey" ReadOnly="true" InputType="@(ApiKeyVisible ? InputType.Text : InputType.Password)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("WebUiApiKey")" />
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                    <MudIconButton Icon="@(ApiKeyVisible ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)" OnClick="ToggleApiKeyVisibility" Disabled="@(ApiKeyBusy || !HasApiKey)" aria-label="@LanguageLocalizer.Translate("AppWebUIOptions", ApiKeyVisible ? "Hide API key" : "Show API key")" data-test-id="@TestIdHelper.For("ApiKeyVisibility")" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" OnClick="CopyApiKey" Disabled="@(ApiKeyBusy || !HasApiKey)" aria-label="@LanguageLocalizer.Translate("OptionsDialog", "Copy API key")" data-test-id="@TestIdHelper.For("ApiKeyCopy")" />
+                    <MudButton OnClick="RotateApiKey" Disabled="@ApiKeyBusy" Variant="Variant.Filled" data-test-id="@TestIdHelper.For("ApiKeyRotate")">@LanguageLocalizer.Translate("OptionsDialog", HasApiKey ? "Rotate API key" : "Generate API key")</MudButton>
+                    <MudButton OnClick="DeleteApiKey" Disabled="@(ApiKeyBusy || !HasApiKey)" Color="Color.Error" data-test-id="@TestIdHelper.For("ApiKeyDelete")">@LanguageLocalizer.Translate("OptionsDialog", "Delete API key")</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+}
+
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>

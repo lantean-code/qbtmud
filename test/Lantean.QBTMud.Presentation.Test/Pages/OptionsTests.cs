@@ -39,8 +39,40 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetNetworkInterfacesAsync())
                 .ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync("2.14.1");
 
             TestContext.Render<MudPopoverProvider>();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_ImmediateApiKeyChange_WHEN_SwitchingTabsAndUndoingOtherSettings_THEN_ShouldPreserveKeyWithoutPendingKeyEdit(bool delete)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetApplicationPreferencesAsync())
+                .ReturnsSuccessAsync(PreferencesFactory.CreatePreferences(spec => spec.WebUiApiKey = "WebUiApiKey"));
+            Mock.Get(_apiClient).Setup(client => client.RotateAPIKeyAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new ApiKey("Key"));
+            Mock.Get(_apiClient).Setup(client => client.DeleteAPIKeyAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            Mock.Get(_dialogWorkflow).Setup(service => service.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            var target = RenderPage();
+            await ActivateTab(target, 6);
+
+            await target.InvokeAsync(() => FindButton(target, delete ? "ApiKeyDelete" : "ApiKeyRotate").Instance.OnClick.InvokeAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
+            await ActivateTab(target, 0);
+            await ActivateTab(target, 6);
+
+            var expectedKey = delete ? string.Empty : "Key";
+            FindComponentByTestId<MudTextField<string>>(target, "WebUiApiKey").Instance.GetState(field => field.Value).Should().Be(expectedKey);
+            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
+            await target.InvokeAsync(() => FindComponentByTestId<MudTextField<string>>(target, "WebUiAddress").Instance.ValueChanged.InvokeAsync("WebUiAddress"));
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Undo).Instance.OnClick.InvokeAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
+
+            FindComponentByTestId<MudTextField<string>>(target, "WebUiApiKey").Instance.GetState(field => field.Value).Should().Be(expectedKey);
+            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
         }
 
         [Fact]

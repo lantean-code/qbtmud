@@ -54,7 +54,8 @@ namespace Lantean.QBTMud.Infrastructure.Services
                 _cachedState = new WebApiCapabilityState(
                     compatibilityProfile.WebApiVersion,
                     supportsClientData: compatibilityProfile.SupportsClientData,
-                    supportsTrackerErrorFilters: compatibilityProfile.SupportsTrackerErrorFilters);
+                    supportsTrackerErrorFilters: compatibilityProfile.SupportsTrackerErrorFilters,
+                    supportsApiKeyManagement: compatibilityProfile.SupportsApiKeyManagement);
                 return _cachedState;
             }
             finally

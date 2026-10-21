@@ -1,14 +1,47 @@
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Core.Interop;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Options
 {
     public partial class WebUIOptions : Options
     {
+        // Key operations take effect immediately and must survive resetting pending preferences.
+        private string? _apiKeyOverride;
+
+        [Parameter]
+        public string? ApiKey { get; set; }
+
+        [Parameter]
+        public EventCallback<string> ApiKeyChanged { get; set; }
+
+        [Inject]
+        protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
+
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = default!;
+
+        protected bool SupportsApiKeyManagement { get; private set; }
+        protected bool ApiKeyBusy { get; private set; }
+        protected bool ApiKeyVisible { get; private set; }
+        protected string WebUiApiKey => _apiKeyOverride ?? ApiKey ?? Preferences?.WebUiApiKey ?? string.Empty;
+        protected bool HasApiKey => !string.IsNullOrEmpty(WebUiApiKey);
 
         protected string? Locale { get; private set; }
         protected bool? PerformanceWarning { get; private set; }
@@ -54,6 +87,94 @@ namespace Lantean.QBTMud.Components.Options
         protected Func<string?, string?> WebUiPasswordValidation => WebUiPasswordValidationFunc;
 
         protected Func<string?, string?> AlternativeWebuiPathValidation => AlternativeWebuiPathValidationFunc;
+
+        protected override async Task OnInitializedAsync()
+        {
+            var capabilities = await WebApiCapabilityService.GetCapabilityStateAsync();
+            SupportsApiKeyManagement = capabilities.SupportsApiKeyManagement;
+        }
+
+        protected void ToggleApiKeyVisibility()
+        {
+            ApiKeyVisible = !ApiKeyVisible;
+        }
+
+        protected async Task CopyApiKey()
+        {
+            await ClipboardService.WriteToClipboard(WebUiApiKey);
+        }
+
+        protected async Task RotateApiKey()
+        {
+            if (ApiKeyBusy)
+            {
+                return;
+            }
+
+            ApiKeyBusy = true;
+            try
+            {
+                var title = HasApiKey ? "Rotate API key" : "Generate API key";
+                var confirmation = HasApiKey
+                    ? "Rotate this API key? The current key will immediately stop working and a new key will be generated."
+                    : "Generate an API key? This key can be used to interact with qBittorrent's API.";
+                if (!await DialogWorkflow.ShowConfirmDialog(
+                    LanguageLocalizer.Translate("OptionsDialog", title),
+                    LanguageLocalizer.Translate("confirmRotateAPIKeyDialog", confirmation)))
+                {
+                    return;
+                }
+
+                var result = await ApiClient.RotateAPIKeyAsync();
+                if (result.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(result, _ => LanguageLocalizer.Translate("HttpServer", "Unable to rotate API key."));
+                    return;
+                }
+
+                _apiKeyOverride = result.Value.Key;
+                ApiKeyVisible = false;
+                await ApiKeyChanged.InvokeAsync(_apiKeyOverride);
+            }
+            finally
+            {
+                ApiKeyBusy = false;
+            }
+        }
+
+        protected async Task DeleteApiKey()
+        {
+            if (ApiKeyBusy)
+            {
+                return;
+            }
+
+            ApiKeyBusy = true;
+            try
+            {
+                if (!await DialogWorkflow.ShowConfirmDialog(
+                    LanguageLocalizer.Translate("OptionsDialog", "Delete API key"),
+                    LanguageLocalizer.Translate("confirmRotateAPIKeyDialog", "Delete this API key? The current key will immediately stop working.")))
+                {
+                    return;
+                }
+
+                var result = await ApiClient.DeleteAPIKeyAsync();
+                if (result.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(result, _ => LanguageLocalizer.Translate("HttpServer", "Unable to delete API key."));
+                    return;
+                }
+
+                _apiKeyOverride = string.Empty;
+                ApiKeyVisible = false;
+                await ApiKeyChanged.InvokeAsync(_apiKeyOverride);
+            }
+            finally
+            {
+                ApiKeyBusy = false;
+            }
+        }
 
         private string? WebUiPortValidationFunc(int value)
         {

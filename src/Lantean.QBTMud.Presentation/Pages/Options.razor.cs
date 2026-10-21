@@ -46,6 +46,8 @@ namespace Lantean.QBTMud.Pages
 
         protected Preferences? Preferences { get; set; }
 
+        protected string? WebUiApiKey { get; set; }
+
         protected BehaviourOptions? BehaviourOptions { get; set; }
 
         protected DownloadsOptions? DownloadsOptions { get; set; }
