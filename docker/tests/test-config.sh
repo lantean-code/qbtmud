@@ -5,6 +5,11 @@ export QBTMUD_CONFIG_PARSER="$root/docker/public/config.awk"
 target="$root/docker/public/configure.sh"
 workspace=$(mktemp -d)
 trap 'rm -rf -- "$workspace"' EXIT
+mkdir "$workspace/bin"
+printf '#!/bin/bash\nprintf "qBittorrent v%%s\\n" "$QBTMUD_TEST_VERSION"\n' > "$workspace/bin/qbittorrent-nox"
+chmod 755 "$workspace/bin/qbittorrent-nox"
+export PATH="$workspace/bin:$PATH"
+export QBTMUD_TEST_VERSION=5.2.4
 config="$workspace/qBittorrent.conf"
 passed=0
 check() { "$@" || { echo "FAIL: $*" >&2; exit 1; }; }
@@ -109,4 +114,64 @@ chmod 640 "$config"
 ln -s "$config" "$workspace/link"
 if bash "$target" "$workspace/link"; then echo 'Symbolic link was accepted.' >&2; exit 1; fi
 if bash "$target" "$workspace/missing"; then echo 'Missing input was accepted.' >&2; exit 1; fi
+for version in 5.1.4 5.2.4 5.3.0 5.3.1 6.0.0; do
+    export QBTMUD_TEST_VERSION=$version
+    : > "$config"
+    repair
+    if [[ $version == 5.1.* || $version == 5.2.* ]]; then
+        check grep -Fx '[Preferences]' "$config"
+        check grep -Fx 'WebUI\RootFolder=/opt/qbtmud' "$config"
+    else
+        check grep -Fx '[WebUI]' "$config"
+        check grep -Fx 'RootFolder=/opt/qbtmud' "$config"
+    fi
+done
+
+export QBTMUD_TEST_VERSION=5.3.0
+# Legacy values must not overwrite repaired values during qBittorrent's migration.
+for modern in '' '[WebUI]\nRootFolder=/old\nAlternativeUIEnabled=false\nPassword_PBKDF2=@ByteArray(modern==)\n'; do
+    printf '[Preferences]\nWebUI\\RootFolder=/wrong\nWebUI\\AlternativeUIEnabled=false\nWebUI\\Password_PBKDF2=@ByteArray(legacy==)\nOther=preserved\n%b' "$modern" > "$config"
+    repair
+    check grep -Fx 'RootFolder=/opt/qbtmud' "$config"
+    check grep -Fx 'AlternativeUIEnabled=true' "$config"
+    check grep -Fx 'WebUI\Password_PBKDF2=@ByteArray(legacy==)' "$config"
+    check grep -Fx 'Other=preserved' "$config"
+    check test "$(grep -Fc 'WebUI\RootFolder=' "$config")" = 0
+    check test "$(grep -Fc 'WebUI\AlternativeUIEnabled=' "$config")" = 0
+    if [[ -n $modern ]]; then check grep -Fx 'Password_PBKDF2=@ByteArray(modern==)' "$config"; fi
+    cp "$config" "$workspace/expected"
+    before=$(stat -c '%u:%g:%a:%y' "$config")
+    repair
+    check cmp "$config" "$workspace/expected"
+    check test "$(stat -c '%u:%g:%a:%y' "$config")" = "$before"
+done
+
+printf '[WebUI]\r\nRootFolder=/wrong\r\nRootFolder=/another\r\nAlternativeUIEnabled=false\r\nOther="quoted; value"\r\n' > "$config"
+repair
+check test "$(grep -Fc 'RootFolder=' "$config")" = 1
+check test "$(awk '/\r$/ { count++ } END { print count }' "$config")" = 4
+
+canonical='[WebUI]\nRootFolder=/opt/qbtmud\nAlternativeUIEnabled=true\n'
+for alias in \
+    '[ WebUI ]\nRootFolder=/wrong\n' \
+    '[%57ebUI]\nRootFolder=/wrong\n' \
+    '%52ootFolder=/wrong\n' \
+    '%U0041lternativeUIEnabled=false\n' \
+    '[General]\nWebUI\\RootFolder=/wrong\n' \
+    '[WebUI]\nRootFolder=/wrong\n'; do
+    printf '%b' "$canonical$alias" > "$config"
+    cp "$config" "$workspace/expected"
+    for mode in verify write; do
+        if bash "$target" "$config" "$mode"; then echo 'Modern managed alias was accepted.' >&2; exit 1; fi
+        check cmp "$config" "$workspace/expected"
+    done
+    passed=$((passed + 1))
+done
+
+export QBTMUD_TEST_VERSION=unknown
+printf '%b' "$canonical" > "$config"
+cp "$config" "$workspace/expected"
+if bash "$target" "$config"; then echo 'Unknown backend version was accepted.' >&2; exit 1; fi
+check cmp "$config" "$workspace/expected"
+
 echo "Passed $passed configuration scenarios plus read-only, symlink and missing-file checks."

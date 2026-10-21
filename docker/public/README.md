@@ -41,13 +41,23 @@ docker compose -p qbtmud-local-test -f docker/compose.yaml up -d
 
 Adjust identities, timezone and host ports for your installation. Compose uses dedicated named test volumes for `/config` and `/downloads`. Use isolated paths for testing and never share a production profile with an experiment. The test WebUI is available at port 18080; obtain the initial temporary admin password from container logs and set a permanent password. The standard contract starts container initialisation as root and runs qBittorrent as `abc` using `PUID`/`PGID`. Docker `--user`/Compose `user:` is not supported by this derivative yet.
 
-The image enforces exactly these preferences on each startup:
+The image enforces exactly these preferences on each startup. With qBittorrent 5.3 and later:
+
+```ini
+[WebUI]
+AlternativeUIEnabled=true
+RootFolder=/opt/qbtmud
+```
+
+With qBittorrent 5.1 and 5.2:
 
 ```ini
 [Preferences]
 WebUI\AlternativeUIEnabled=true
 WebUI\RootFolder=/opt/qbtmud
 ```
+
+The helper selects the layout from the installed backend version using an isolated temporary profile. During an upgrade, it removes obsolete copies of these two managed keys so qBittorrent's migration cannot overwrite the repaired values. Other settings migrate through qBittorrent itself.
 
 Other preferences, including credentials, authentication protections, ports and download paths, remain under LinuxServer/qBittorrent/user control. Changing either managed preference in the running UI takes effect temporarily; the next start restores it. The compiled UI lives at `/opt/qbtmud/public/` independently of persisted configuration. Avoid mounting over `/opt/qbtmud` or `/custom-cont-init.d`.
 

@@ -109,6 +109,7 @@ try:
                  "--data-urlencode", "password=" + match.group(1))
     assert login.strip() in ("Ok.", ""), "Initial login response: " + repr(login)
     run("exec", name, "grep", "-q", "SID", cookie)
+    backend_version = curl(name, "/api/v2/app/version", "-b", cookie).strip().lstrip("v")
     password = uuid.uuid4().hex
     preferences = {"web_ui_password": password, "save_path": "/downloads/preserved/"}
     curl(name, "/api/v2/app/setPreferences", "-b", cookie,
@@ -120,12 +121,46 @@ try:
     run("exec", name, "/usr/local/libexec/qbtmud/configure", "/config/qBittorrent/qBittorrent.conf", "verify")
     assert current["listen_port"] == 16881
     run("stop", "--time", "15", name)
+    if tuple(map(int, backend_version.split(".")[:2])) >= (5, 3):
+        # Recreate a pre-5.3 WebUI section with the real saved password and ports.
+        original = helper(config, "cat /config/qBittorrent/qBittorrent.conf")
+        preserved, legacy, section = [], [], ""
+        for line in original.splitlines():
+            if line.startswith("[") and line.endswith("]"):
+                section = line
+                if section in ("[Preferences]", "[WebUI]"):
+                    continue
+            elif section == "[WebUI]":
+                if line.strip():
+                    legacy.append("WebUI\\" + line)
+                continue
+            elif section == "[Preferences]":
+                legacy.append(line)
+                continue
+            preserved.append(line)
+        migrated = "\n".join(preserved + ["[Preferences]"] + legacy) + "\n"
+        migrated, replaced = re.subn(r"(?m)^MigrationVersion=\d+$", "MigrationVersion=10", migrated)
+        assert replaced == 1 and "WebUI\\Password_PBKDF2=" in migrated
+        run("run", "--rm", "--network", "none", "--entrypoint", "/bin/bash", "-i",
+            "-v", config + ":/config", args.image, "-c",
+            "cat > /config/qBittorrent/qBittorrent.conf", input=migrated)
+        run("start", name)
+        ready(name)
+        assert curl(name, "/api/v2/auth/login", "-c", cookie, "--data-urlencode", "username=admin",
+                    "--data-urlencode", "password=" + password).strip() in ("Ok.", "")
+        run("exec", name, "grep", "-q", "SID", cookie)
+        upgraded = json.loads(curl(name, "/api/v2/app/preferences", "-b", cookie))
+        assert upgraded["alternative_webui_enabled"] and upgraded["save_path"] == preserved_path
+        assert upgraded["web_ui_port"] == 18080 and upgraded["listen_port"] == 16881
+        run("exec", name, "/usr/local/libexec/qbtmud/configure", "/config/qBittorrent/qBittorrent.conf", "verify")
+        run("stop", "--time", "15", name)
+        print("PASS: pre-5.3 settings migration preserves authentication, paths, ports and alternative WebUI")
     # No running qBittorrent while deliberately changing the managed keys.
-    helper(config, "sed -i 's|^WebUI\\\\RootFolder=.*|WebUI\\\\RootFolder=/wrong|; "
-           "s|^WebUI\\\\AlternativeUIEnabled=.*|WebUI\\\\AlternativeUIEnabled=false|' "
+    helper(config, "sed -i -E 's|^(WebUI\\\\)?RootFolder=.*|\\1RootFolder=/wrong|; "
+           "s|^(WebUI\\\\)?AlternativeUIEnabled=.*|\\1AlternativeUIEnabled=false|' "
            "/config/qBittorrent/qBittorrent.conf")
     # Prove this test actually introduced wrong values before restarting.
-    assert "WebUI\\RootFolder=/wrong" in helper(config, "cat /config/qBittorrent/qBittorrent.conf")
+    assert "RootFolder=/wrong" in helper(config, "cat /config/qBittorrent/qBittorrent.conf")
     run("start", name)
     ready(name)
     assert curl(name, "/api/v2/auth/login", "-c", cookie, "--data-urlencode", "username=admin",
