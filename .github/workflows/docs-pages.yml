@@ -14,6 +14,9 @@ on:
       - docs/**
       - .github/workflows/docs-pages.yml
 
+env:
+  QBTMUD_DOCS_SITE_URL: ${{ vars.QBTMUD_DOCS_SITE_URL || 'https://lantean-code.github.io/qbtmud/' }}
+
 permissions:
   contents: read
   pages: write

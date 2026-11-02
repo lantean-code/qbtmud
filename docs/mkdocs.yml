@@ -1,5 +1,5 @@
 site_name: qbtmud
-site_url: https://lantean-code.github.io/qbtmud/
+site_url: !ENV [QBTMUD_DOCS_SITE_URL, "https://lantean-code.github.io/qbtmud/"]
 site_description: Documentation for qbtmud, a drop-in replacement for qBittorrent's default WebUI.
 repo_name: lantean-code/qbtmud
 repo_url: https://github.com/lantean-code/qbtmud
