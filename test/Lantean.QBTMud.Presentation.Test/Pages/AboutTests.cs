@@ -75,6 +75,10 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             FindComponentByTestId<MudLink>(target, "QbtMudHomeLink").Instance.Href.Should().Be("https://github.com/lantean-code/qbtmud");
             FindComponentByTestId<MudLink>(target, "QbtMudIssuesLink").Instance.Href.Should().Be("https://github.com/lantean-code/qbtmud/issues");
             FindComponentByTestId<MudLink>(target, "QbtMudDocsLink").Instance.Href.Should().Be("https://lantean-code.github.io/qbtmud/");
+            var sponsorLink = FindComponentByTestId<MudLink>(target, "QbtMudSponsorLink");
+            sponsorLink.Instance.Href.Should().Be("https://github.com/sponsors/ahjephson");
+            sponsorLink.Instance.Target.Should().Be("_blank");
+            GetChildContentText(sponsorLink.Instance.ChildContent).Should().Be("Sponsor qbtmud");
             GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudHomeLink").Instance.ChildContent).Should().Be("https://github.com/lantean-code/qbtmud");
             GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudIssuesLink").Instance.ChildContent).Should().Be("https://github.com/lantean-code/qbtmud/issues");
             GetChildContentText(FindComponentByTestId<MudLink>(target, "QbtMudDocsLink").Instance.ChildContent).Should().Be("https://lantean-code.github.io/qbtmud/");
