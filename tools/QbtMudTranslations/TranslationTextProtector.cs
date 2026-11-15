@@ -40,12 +40,12 @@ namespace QbtMudTranslations
         /// <returns>The translation with the original protected fragments restored.</returns>
         public static string RestoreFromHtml(string translatedText, IReadOnlyDictionary<string, string> tokenMap)
         {
-            var restoredText = StripProtectionTagsRegex().Replace(translatedText, string.Empty);
-            restoredText = WebUtility.HtmlDecode(restoredText);
-            return ProtectedTokenRegex().Replace(restoredText, match =>
+            var restoredText = ProtectedTokenRegex().Replace(translatedText, match =>
             {
-                return tokenMap.TryGetValue(match.Value, out var fragment) ? fragment : match.Value;
+                return tokenMap.TryGetValue(match.Value, out var fragment) ? WebUtility.HtmlEncode(fragment) : match.Value;
             });
+            restoredText = StripProtectionTagsRegex().Replace(restoredText, string.Empty);
+            return WebUtility.HtmlDecode(restoredText);
         }
 
         private static ProtectedTranslationText ProtectAsHtml(string sourceText, bool useAzureDynamicDictionary)

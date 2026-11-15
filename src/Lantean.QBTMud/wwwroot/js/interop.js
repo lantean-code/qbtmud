@@ -848,6 +848,12 @@ function shouldIgnoreKeyPress(event) {
         return false;
     }
 
+    if ((event.key === 'Enter' || event.key === ' ')
+        && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey
+        && target.closest('button') !== null) {
+        return true;
+    }
+
     const isEditable = target.isContentEditable
         || target.closest('input, textarea, select, [contenteditable="true"]') !== null;
     if (!isEditable) {

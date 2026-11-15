@@ -8,6 +8,20 @@ namespace QbtMudTranslations.Test
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
+        public void GIVEN_ProtectedFragmentsFollowedByDigits_WHEN_RoundTripped_THEN_ShouldPreserveBoundariesAndLiteralMarkup(bool useAzure)
+        {
+            ITranslationTextProtector target = useAzure ? new AzureTranslationTextProtector() : new GoogleTranslationTextProtector();
+            var source = "&quot;123 &amp;4 <span>Literal</span> &lt;div&gt;";
+            var protectedText = target.Protect([source]).Single();
+
+            var result = target.Restore(protectedText.ProtectedText, protectedText.TokenMap);
+
+            result.Should().Be(source);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
         public void GIVEN_MoreThanTenProtectedFragments_WHEN_ProviderTextRestored_THEN_ShouldPreserveEveryFragment(bool useAzure)
         {
             ITranslationTextProtector target = useAzure ? new AzureTranslationTextProtector() : new GoogleTranslationTextProtector();

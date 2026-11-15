@@ -55,6 +55,60 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _apiFeedbackWorkflow);
         }
 
+        [Theory]
+        [InlineData("typed", false)]
+        [InlineData("typed", true)]
+        [InlineData("string", false)]
+        [InlineData("string", true)]
+        [InlineData("remove", false)]
+        [InlineData("remove", true)]
+        public async Task GIVEN_PendingChangeAndLoadingRead_WHEN_NewerMutationStarts_THEN_ShouldPersistNewerState(string operation, bool pendingRemoval)
+        {
+            ConfigureClientDataRouting();
+            var cancellationToken = TestContext.Current.CancellationToken;
+            await _localStorageService.SetItemAsync("SettingsStorage.PendingClientData.v1",
+                new Dictionary<string, JsonElement?> { ["QbtMud.Key"] = pendingRemoval ? null : JsonSerializer.SerializeToElement("Pending") }, cancellationToken);
+            var response = new TaskCompletionSource<ClientDataLoadResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            string? remoteValue = "Original";
+            Mock.Get(_clientDataStorageAdapter).Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    started.SetResult();
+                    return response.Task;
+                });
+            Mock.Get(_clientDataStorageAdapter).Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .Returns((IReadOnlyDictionary<string, object?> entries, CancellationToken _) =>
+                {
+                    remoteValue = entries["QbtMud.Key"] is JsonElement element ? element.GetString() : (string?)entries["QbtMud.Key"];
+                    return Task.FromResult(ClientDataStorageResult.Success);
+                });
+            Mock.Get(_clientDataStorageAdapter).Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    remoteValue = null;
+                    return Task.FromResult(ClientDataStorageResult.Success);
+                });
+            var read = _target.GetItemAsStringAsync("Key", cancellationToken).AsTask();
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+            var mutation = operation switch
+            {
+                "typed" => _target.SetItemAsync("Key", "Updated", cancellationToken).AsTask(),
+                "string" => _target.SetItemAsStringAsync("Key", "Updated", cancellationToken).AsTask(),
+                _ => _target.RemoveItemAsync("Key", cancellationToken).AsTask()
+            };
+            response.SetResult(ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>
+            {
+                ["QbtMud.Key"] = JsonSerializer.SerializeToElement("Original")
+            }));
+            await Task.WhenAll(read, mutation).WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+            remoteValue.Should().Be(operation == "remove" ? null : "Updated");
+            (await _target.GetItemAsStringAsync("Key", cancellationToken)).Should().Be(remoteValue);
+            (await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", cancellationToken)).Should().BeNull();
+        }
+
         [Fact]
         public async Task GIVEN_FailedTypedWrite_WHEN_RemoteReadsRecoverAfterReload_THEN_ShouldReplayThePendingValue()
         {

@@ -2,7 +2,8 @@
 <html lang="en">
 <head><meta charset="utf-8"><title>JavaScript regression tests</title></head>
 <body>
-    <button id="keyboard-target" type="button">Keyboard target</button>
+    <div id="keyboard-target" role="button" tabindex="0">Keyboard target</div>
+    <button id="native-action" type="button"><span>Native action</span></button>
     <label for="editor">Editor</label><input id="editor">
     <script>
         window.Blazor = {

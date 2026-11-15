@@ -456,3 +456,13 @@ Native V8 coverage was collected against the exact source returned by Chromium. 
 CI installs the matching Chromium runtime, runs the browser tests within the normal solution suite, checks changed executable lines against the PR merge base or preceding commit, and uploads raw V8 data plus LCOV, JSON and text reports. Empty, missing or stale coverage fails the check. Reporter regressions cover nested ranges, complementary tests, UTF-16/CRLF offsets, invalid data and changed-line parsing, including increment statements that resemble diff headers.
 
 Run instructions and scope are documented in [the browser regression README](test/Lantean.QBTMud.Test/JavaScript/README.md). These tests use a small page rather than the complete Blazor application or qBittorrent. Changed C# files were formatted; CRLF-governed files were normalised, and Python files retain LF.
+
+## Follow-up develop-to-master review
+
+Addressed the three regressions found in the branch comparison against master at `1bb741a1`.
+
+- [x] **P2 — Serialise successful writes with pending-change replay.** ClientData writes and removals now hold the shared cache semaphore throughout their remote request, journal update and cache update. Six deterministic regressions overlap a loading read with a newer typed write, raw write or removal, starting with either a pending value or tombstone, and check both remote and cached state.
+- [x] **P2 — Preserve Enter activation for the pieces toggle.** Global shortcuts leave unmodified Enter and Space on native buttons to the browser. Eight Chromium regressions cover activation with registered background shortcuts, focused keyboard ownership and explicitly registered modified Enter shortcuts. The existing pieces component tests retain coverage of its native button and click behaviour.
+- [x] **P3 — Preserve protected-token boundaries during restoration.** Tokens are restored before protection markup is removed. Inserted fragments are HTML-encoded until the final decode so literal markup and entities survive. Both provider wrappers have round-trip regressions for protected entities immediately followed by digits and literal markup.
+
+Validation: all 3,580 solution tests passed with no failures or skips, including 30 Chromium regressions. Release publishing succeeded with the pinned SDK. JavaScript coverage covers all four changed executable lines, and the coverage reporter passed all 19 Python tests. Changed C# files were formatted and CRLF-governed files were normalised.

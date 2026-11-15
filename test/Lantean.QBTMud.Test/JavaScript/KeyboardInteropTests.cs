@@ -20,6 +20,52 @@ namespace Lantean.QBTMud.Test.JavaScript
             window.preview = window.createKeyboardOwner("Preview", "Preview");
             """;
 
+        [Theory]
+        [InlineData("Enter", false)]
+        [InlineData("Enter", true)]
+        [InlineData(" ", false)]
+        [InlineData(" ", true)]
+        public async Task GIVEN_RegisteredTableShortcut_WHEN_NativeButtonActivated_THEN_ShouldClickWithoutDispatchingShortcut(string key, bool focusedOwner)
+        {
+            await using var target = await JavaScriptTestPage.CreateAsync("interop.js", _callbackInitialization);
+            await target.Page.EvaluateAsync("""
+                args => {
+                    qbt.registerKeypressEvent({ key: args.key }, window.background);
+                    if (args.focusedOwner) {
+                        qbt.keyPressFocusInstance(window.background);
+                    }
+                    const button = document.getElementById("native-action");
+                    button.setAttribute("aria-expanded", "false");
+                    button.addEventListener("click", () => button.setAttribute("aria-expanded", "true"));
+                    document.addEventListener("keydown", event => window.keydowns.push(event.defaultPrevented));
+                }
+                """, new { key, focusedOwner });
+            var button = target.Page.GetByRole(AriaRole.Button, new() { Name = "Native action" });
+            await button.FocusAsync();
+
+            await target.Page.Keyboard.PressAsync(key == " " ? "Space" : key);
+
+            (await button.GetAttributeAsync("aria-expanded")).Should().Be("true");
+            (await target.Page.EvaluateAsync<string[]>("() => window.calls.map(call => call.owner)")).Should().BeEmpty();
+            (await target.Page.EvaluateAsync<bool[]>("() => window.keydowns")).Should().Equal(false);
+        }
+
+        [Theory]
+        [InlineData("Control", "ctrlKey")]
+        [InlineData("Shift", "shiftKey")]
+        [InlineData("Alt", "altKey")]
+        [InlineData("Meta", "metaKey")]
+        public async Task GIVEN_NativeButton_WHEN_ModifiedEnterPressed_THEN_ShouldDispatchExplicitShortcut(string modifier, string property)
+        {
+            await using var target = await JavaScriptTestPage.CreateAsync("interop.js", _callbackInitialization);
+            await target.Page.EvaluateAsync("args => qbt.registerKeypressEvent({ key: 'Enter', [args]: true }, window.background)", property);
+            await target.Page.GetByRole(AriaRole.Button, new() { Name = "Native action" }).FocusAsync();
+
+            await target.Page.Keyboard.PressAsync(modifier + "+Enter");
+
+            (await target.Page.EvaluateAsync<string[]>("() => window.calls.map(call => call.owner)")).Should().Equal("Background");
+        }
+
         [Fact]
         public async Task GIVEN_NestedKeyboardOwners_WHEN_PreviewCloses_THEN_ShouldRestoreWizardBeforeBackground()
         {
