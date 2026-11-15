@@ -58,6 +58,11 @@ namespace Lantean.QBTMud.Core.Models
         public ThemeModePreference ThemeModePreference { get; set; } = ThemeModePreference.System;
 
         /// <summary>
+        /// Gets or sets whether torrent details appear below the list when space permits.
+        /// </summary>
+        public bool TorrentSplitViewEnabled { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether notifications should be shown for completed downloads.
         /// </summary>
         public bool DownloadFinishedNotificationsEnabled { get; set; } = true;
@@ -104,6 +109,7 @@ namespace Lantean.QBTMud.Core.Models
                 && left.UpdateChecksEnabled == right.UpdateChecksEnabled
                 && left.NotificationsEnabled == right.NotificationsEnabled
                 && left.ThemeModePreference == right.ThemeModePreference
+                && left.TorrentSplitViewEnabled == right.TorrentSplitViewEnabled
                 && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
                 && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
                 && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
@@ -125,6 +131,7 @@ namespace Lantean.QBTMud.Core.Models
                 UpdateChecksEnabled = UpdateChecksEnabled,
                 NotificationsEnabled = NotificationsEnabled,
                 ThemeModePreference = ThemeModePreference,
+                TorrentSplitViewEnabled = TorrentSplitViewEnabled,
                 DownloadFinishedNotificationsEnabled = DownloadFinishedNotificationsEnabled,
                 TorrentAddedNotificationsEnabled = TorrentAddedNotificationsEnabled,
                 TorrentAddedSnackbarsEnabledWithNotifications = TorrentAddedSnackbarsEnabledWithNotifications,

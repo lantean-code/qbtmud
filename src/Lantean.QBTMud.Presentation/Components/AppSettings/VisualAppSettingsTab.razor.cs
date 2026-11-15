@@ -28,6 +28,17 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             await SettingsChanged.InvokeAsync();
         }
 
+        private async Task OnTorrentSplitViewEnabledChanged(bool value)
+        {
+            if (Settings.TorrentSplitViewEnabled == value)
+            {
+                return;
+            }
+
+            Settings.TorrentSplitViewEnabled = value;
+            await SettingsChanged.InvokeAsync();
+        }
+
         private async Task OnThemeRepositoryIndexUrlChanged(string value)
         {
             if (string.Equals(Settings.ThemeRepositoryIndexUrl, value, StringComparison.Ordinal))

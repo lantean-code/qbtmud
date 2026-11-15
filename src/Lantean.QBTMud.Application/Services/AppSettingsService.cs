@@ -68,6 +68,7 @@ namespace Lantean.QBTMud.Application.Services
                 UpdateChecksEnabled = settings.UpdateChecksEnabled,
                 NotificationsEnabled = settings.NotificationsEnabled,
                 ThemeModePreference = NormalizeThemeModePreference(settings.ThemeModePreference),
+                TorrentSplitViewEnabled = settings.TorrentSplitViewEnabled,
                 DownloadFinishedNotificationsEnabled = settings.DownloadFinishedNotificationsEnabled,
                 TorrentAddedNotificationsEnabled = settings.TorrentAddedNotificationsEnabled,
                 TorrentAddedSnackbarsEnabledWithNotifications = settings.TorrentAddedSnackbarsEnabledWithNotifications,

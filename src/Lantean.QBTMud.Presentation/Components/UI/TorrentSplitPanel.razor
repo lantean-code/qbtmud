@@ -1,0 +1,35 @@
+@using Lantean.QBTMud.Pages
+
+<qbt-torrent-split @ref="_element" class="torrent-split" data-open="@IsOpen.ToString().ToLowerInvariant()" data-test-id="@TestIdHelper.For("TorrentSplitPanel")">
+    <div class="torrent-split__list">
+        @ChildContent
+    </div>
+    @if (IsOpen)
+    {
+        <div class="torrent-split__divider">
+            <button type="button" class="torrent-split__grip" role="separator" aria-orientation="horizontal"
+                    aria-label="@Translate("Resize torrent details")" aria-valuemin="30" aria-valuemax="60" aria-valuenow="@_ratio"
+                    data-test-id="@TestIdHelper.For("TorrentSplitResize")">
+                <span aria-hidden="true"></span>
+            </button>
+        </div>
+        <section class="torrent-split__details" aria-label="@Translate("Torrent details")">
+            <Details Hash="@Hash" Embedded="true" OnHide="ToggleDetails">
+                <HeaderContent>
+                    <div class="torrent-split__sizes">
+                        <MudSelect T="int" Value="_ratio" ValueChanged="ChangeRatio" Dense="false" Margin="Margin.Dense"
+                                   Label="@Translate("Details size")" data-test-id="@TestIdHelper.For("TorrentSplitSize")">
+                            <MudSelectItem Value="30">@LanguageLocalizer.Translate("OptionsDialog", "Compact")</MudSelectItem>
+                            <MudSelectItem Value="40">@Translate("Balanced")</MudSelectItem>
+                            <MudSelectItem Value="55">@Translate("Expanded")</MudSelectItem>
+                            @if (_ratio != 30 && _ratio != 40 && _ratio != 55)
+                            {
+                                <MudSelectItem Value="_ratio">@(_ratio)%</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </HeaderContent>
+            </Details>
+        </section>
+    }
+</qbt-torrent-split>

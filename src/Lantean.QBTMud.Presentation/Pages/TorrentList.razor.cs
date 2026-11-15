@@ -18,6 +18,8 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class TorrentList : IAsyncDisposable
     {
+        private const string _selectionStorageKey = "TorrentList.SelectedHash";
+        private bool _selectionRestored;
         private bool _disposedValue;
         private bool _shortcutsRegistered;
 
@@ -38,6 +40,12 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
+        [Inject]
+        protected IAppSettingsStateService AppSettingsStateService { get; set; } = default!;
+
+        [Inject]
+        protected ISessionStorageService SessionStorage { get; set; } = default!;
 
         public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
@@ -74,6 +82,24 @@ namespace Lantean.QBTMud.Pages
         protected bool ToolbarButtonsEnabled => _toolbarButtonsEnabled;
 
         protected DynamicTable<MudTorrent>? Table { get; set; }
+
+        protected TorrentSplitPanel? SplitPanel { get; set; }
+
+        protected string? SelectedDetailsHash
+        {
+            get
+            {
+                if (SelectedItems.Count != 1)
+                {
+                    return null;
+                }
+
+                var hash = SelectedItems.Single().Hash;
+                return MainData.Torrents.ContainsKey(hash) && Torrents?.Any(torrent => torrent.Hash == hash) == true
+                    ? hash
+                    : null;
+            }
+        }
 
         protected MudTorrent? ContextMenuItem { get; set; }
 
@@ -113,6 +139,34 @@ namespace Lantean.QBTMud.Pages
             if (_locationChangeRenderTask is not null && _locationChangeRenderTask.IsCompleted)
             {
                 _locationChangeRenderTask = null;
+            }
+        }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            if (Torrents is null)
+            {
+                return;
+            }
+
+            if (!_selectionRestored && AppSettingsStateService.Current?.TorrentSplitViewEnabled == true)
+            {
+                _selectionRestored = true;
+                var hash = await SessionStorage.GetItemAsync<string>(_selectionStorageKey);
+                var torrent = Torrents.FirstOrDefault(item => item.Hash == hash);
+                if (torrent is not null)
+                {
+                    SelectedItems = [torrent];
+                    _toolbarButtonsEnabled = true;
+                    _pendingSelectionChange = true;
+                }
+            }
+
+            if (SelectedItems.RemoveWhere(item => !MainData.Torrents.ContainsKey(item.Hash) || !Torrents.Any(torrent => torrent.Hash == item.Hash)) > 0)
+            {
+                _toolbarButtonsEnabled = SelectedItems.Count > 0;
+                _pendingSelectionChange = true;
+                await SessionStorage.RemoveItemAsync(_selectionStorageKey);
             }
         }
 
@@ -174,12 +228,31 @@ namespace Lantean.QBTMud.Pages
             return false;
         }
 
-        protected void SelectedItemsChanged(HashSet<MudTorrent> selectedItems)
+        protected async Task SelectedItemsChanged(HashSet<MudTorrent> selectedItems)
         {
             SelectedItems = selectedItems;
             _toolbarButtonsEnabled = SelectedItems.Count > 0;
             _pendingSelectionChange = true;
-            InvokeAsync(StateHasChanged);
+            if (AppSettingsStateService.Current?.TorrentSplitViewEnabled == true)
+            {
+                if (SelectedDetailsHash is { } hash)
+                {
+                    await SessionStorage.SetItemAsync(_selectionStorageKey, hash);
+                }
+                else
+                {
+                    await SessionStorage.RemoveItemAsync(_selectionStorageKey);
+                }
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private async Task ToggleDetailsPanel()
+        {
+            if (SplitPanel is not null)
+            {
+                await SplitPanel.ToggleDetails();
+            }
         }
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)

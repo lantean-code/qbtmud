@@ -8,6 +8,15 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
+                <MudSelect T="bool" Value="Settings.TorrentSplitViewEnabled" ValueChanged="OnTorrentSplitViewEnabledChanged"
+                           Label="@TranslateSettings("Torrent details")" Variant="Variant.Outlined" ShrinkLabel="true"
+                           HelperText="@TranslateSettings("Split view is used when there is enough screen space.")"
+                           data-test-id="@TestIdHelper.For("AppSettingsTorrentSplitView")">
+                    <MudSelectItem Value="false">@TranslateSettings("Separate page")</MudSelectItem>
+                    <MudSelectItem Value="true">@TranslateSettings("Below torrent list")</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
                 <MudSelect T="ThemeModePreference"
                            Value="@Settings.ThemeModePreference"
                            ValueChanged="OnThemeModePreferenceChanged"

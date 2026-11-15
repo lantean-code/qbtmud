@@ -50,6 +50,15 @@ namespace Lantean.QBTMud.Pages
         [Parameter]
         public string? Hash { get; set; }
 
+        [Parameter]
+        public bool Embedded { get; set; }
+
+        [Parameter]
+        public EventCallback OnHide { get; set; }
+
+        [Parameter]
+        public RenderFragment? HeaderContent { get; set; }
+
         protected int ActiveTab { get; set; } = 0;
 
         protected int RefreshInterval => MainData?.ServerState.RefreshInterval ?? 1500;
@@ -65,7 +74,10 @@ namespace Lantean.QBTMud.Pages
             if (!IsTorrentAvailable())
             {
                 ShowTabs = false;
-                NavigationManager.NavigateToHome(forceLoad: true);
+                if (!Embedded)
+                {
+                    NavigationManager.NavigateToHome(forceLoad: true);
+                }
                 return;
             }
 
@@ -74,7 +86,7 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            if (firstRender && !Embedded)
             {
                 await RegisterShortcutAsync();
             }
@@ -98,6 +110,11 @@ namespace Lantean.QBTMud.Pages
         protected void NavigateBack()
         {
             NavigationManager.NavigateToHome();
+        }
+
+        private void OpenFullPage()
+        {
+            NavigationManager.NavigateTo($"./details/{Hash}");
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

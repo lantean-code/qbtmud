@@ -113,7 +113,8 @@ namespace Lantean.QBTMud.Components.UI
 
         protected IEnumerable<T>? OrderedItems => GetOrderedItems();
 
-        protected HashSet<T> SelectedItems { get; set; } = [];
+        [Parameter]
+        public HashSet<T> SelectedItems { get; set; } = [];
 
         protected HashSet<string> SelectedColumns { get; set; } = [];
 

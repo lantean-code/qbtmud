@@ -1,0 +1,87 @@
+.torrent-split {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.torrent-split__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.torrent-split__divider {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    flex: 0 0 6px;
+    min-height: 0;
+    background: var(--mud-palette-background);
+    border-block: 1px solid var(--mud-palette-divider);
+}
+
+.torrent-split__grip {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: var(--mud-palette-text-secondary);
+    cursor: row-resize;
+    touch-action: none;
+}
+
+.torrent-split__grip span {
+    width: 48px;
+    border-top: 2px solid currentColor;
+    border-radius: 2px;
+}
+
+.torrent-split__sizes {
+    flex: 0 0 156px;
+    margin-right: 12px;
+}
+
+.torrent-split__sizes ::deep .mud-input-control {
+    margin: 0;
+}
+
+.torrent-split__details {
+    flex: 0 0 var(--torrent-details-height, 40%);
+    min-height: 240px;
+    overflow: hidden;
+}
+
+.torrent-split ::deep .torrent-split-toggle {
+    display: none;
+}
+
+.torrent-split[data-available="true"] ::deep .torrent-split-toggle {
+    display: inline-flex;
+}
+
+@media (max-width: 1023px), (max-height: 767px) {
+    .torrent-split__divider,
+    .torrent-split__details,
+    .torrent-split[data-available="true"] ::deep .torrent-split-toggle {
+        display: none;
+    }
+}
+
+@media (any-pointer: coarse) {
+    .torrent-split__details ::deep .mud-icon-button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .torrent-split__sizes ::deep .mud-input-control-input-container {
+        min-height: 44px;
+    }
+}

@@ -8,6 +8,7 @@
 </MudMenu>
 
 <div class="torrent-list-page">
+    <TorrentSplitPanel @ref="SplitPanel" Enabled="@(AppSettingsStateService.Current?.TorrentSplitViewEnabled ?? false)" Hash="@SelectedDetailsHash">
     <ContentPanel ToolbarScroll="true" UseContainer="true" ContainerClass="ma-0 pa-0">
         <ToolbarContent>
             <MudToolBar Gutters="false" Dense="true">
@@ -18,6 +19,10 @@
                 <MudDivider Vertical="true" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrentToolbar" title="View torrent details" data-test-id="@TestIdHelper.For("TorrentListToolbarViewDetails")" />
                 <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" data-test-id="@TestIdHelper.For("TorrentListColumnOptions")" />
+                @if (AppSettingsStateService.Current?.TorrentSplitViewEnabled == true)
+                {
+                    <MudIconButton Icon="@Icons.Material.Outlined.VerticalSplit" Class="torrent-split-toggle" Disabled="@(SelectedDetailsHash is null)" OnClick="ToggleDetailsPanel" title="@LanguageLocalizer.Translate("AppTorrentSplit", "Show or hide details panel")" data-test-id="@TestIdHelper.For("TorrentListToggleDetailsPanel")" />
+                }
                 <MudSpacer />
                 <MudSelect T="TorrentFilterField" @bind-Value="SearchField" @bind-Value:after="OnSearchFieldChanged" Dense="true" Class="mt-0 mr-2 filter-field-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" data-test-id="@TestIdHelper.For("TorrentListSearchField")">
                     <MudSelectItem Value="TorrentFilterField.Name">@LanguageLocalizer.Translate("TransferListModel", "Name")</MudSelectItem>
@@ -37,6 +42,7 @@
                 Items="Torrents"
                 OnRowClick="RowClick"
                 MultiSelection="true"
+                SelectedItems="SelectedItems"
                 SelectOnRowClick="true"
                 SelectedItemsChanged="SelectedItemsChanged"
                 OnSelectedItemEnter="NavigateToTorrent"
@@ -48,4 +54,5 @@
             />
         </ChildContent>
     </ContentPanel>
+    </TorrentSplitPanel>
 </div>

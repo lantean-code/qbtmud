@@ -82,6 +82,68 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_EmbeddedDetails_WHEN_Opened_THEN_UsesPanelActionsAndLeavesListShortcutsAlone()
+        {
+            var hidden = false;
+            var target = TestContext.Render<Details>(parameters => parameters
+                .Add(component => component.Hash, _hashValue)
+                .Add(component => component.Embedded, true)
+                .Add(component => component.OnHide, () => { hidden = true; })
+                .AddCascadingValue(CreateMainData(_hashValue))
+                .AddCascadingValue(CreatePreferences())
+                .AddCascadingValue(new MudTheme()));
+
+            _handlers.Should().NotContain(item => item.Criteria.Key == "Backspace" || item.Criteria.AltKey);
+            var close = FindComponentByTestId<MudIconButton>(target, "TorrentDetailsHidePanel");
+            await target.InvokeAsync(() => close.Instance.OnClick.InvokeAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
+            hidden.Should().BeTrue();
+
+            var open = FindComponentByTestId<MudIconButton>(target, "TorrentDetailsOpenFullPage");
+            await target.InvokeAsync(() => open.Instance.OnClick.InvokeAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
+
+            _navigationManager.Uri.Should().EndWith("/details/Hash");
+        }
+
+        [Fact]
+        public void GIVEN_EmbeddedUnavailableTorrent_WHEN_Rendered_THEN_HidesTabsWithoutNavigatingAway()
+        {
+            var originalUri = _navigationManager.Uri;
+            var target = TestContext.Render<Details>(parameters => parameters
+                .Add(component => component.Hash, "MissingHash")
+                .Add(component => component.Embedded, true)
+                .AddCascadingValue(CreateMainData(_hashValue))
+                .AddCascadingValue(CreatePreferences()));
+
+            target.FindComponents<MudTabs>().Should().BeEmpty();
+            _navigationManager.Uri.Should().Be(originalUri);
+        }
+
+        [Fact]
+        public async Task GIVEN_EmbeddedDetails_WHEN_TorrentChanges_THEN_PreservesTabAndReplacesTorrentContent()
+        {
+            Mock.Get(TestContext.Services.GetRequiredService<IApiClient>())
+                .Setup(client => client.GetTorrentTrackersAsync("OtherHash"))
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.TorrentTracker>());
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            var target = TestContext.Render<Details>(parameters => parameters
+                .Add(component => component.Hash, _hashValue)
+                .Add(component => component.Embedded, true)
+                .AddCascadingValue(mainData)
+                .AddCascadingValue(CreatePreferences())
+                .AddCascadingValue(new MudTheme()));
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(1));
+            var previous = target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance;
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            target.FindComponent<MudTabs>().Instance.GetState(component => component.ActivePanelIndex).Should().Be(1);
+            target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Should().NotBeSameAs(previous);
+            target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Hash.Should().Be("OtherHash");
+        }
+
+        [Fact]
         public async Task GIVEN_DetailsRendered_WHEN_AltNumberPressed_THEN_ActivatesRequestedTab()
         {
             var target = RenderDetails(_hashValue, CreateMainData(_hashValue));
