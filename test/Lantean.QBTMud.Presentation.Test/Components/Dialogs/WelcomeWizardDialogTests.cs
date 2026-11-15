@@ -1799,7 +1799,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var stepTitles = dialog.Component
                 .FindComponents<MudStep>()
-                .Select(component => component.Instance.Title)
+                .Select(component => component.Instance.GetState(step => step.Title))
                 .ToList();
 
             stepTitles.Should().ContainInOrder(["Theme", "Notifications", "Done"]);

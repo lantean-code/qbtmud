@@ -210,6 +210,11 @@ code {
         user-select: none; /* Disable selection on modern browsers */
     }
 
+/* MudBlazor 9.13.0: anchor portal-rendered close buttons until upstream #14205 is fixed. */
+.mud-dialog {
+    position: relative;
+}
+
 .mud-dialog .mud-dialog-content {
     padding-top: 4px !important;
 }
