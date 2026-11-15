@@ -14,6 +14,7 @@ namespace Lantean.QBTMud.Components.UI
         private bool _available;
         private bool _hidden;
         private bool _disposed;
+        private bool _initializing;
         private int _ratio = 40;
 
         [Inject]
@@ -38,12 +39,34 @@ namespace Lantean.QBTMud.Components.UI
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (Enabled && _module is null)
+            if (!Enabled || _disposed || _initializing || _module is not null)
+            {
+                return;
+            }
+
+            _initializing = true;
+            try
             {
                 _ratio = Math.Clamp(await LocalStorage.GetItemAsync<int?>(_sizeStorageKey) ?? 40, 30, 60);
-                _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js");
+                if (_disposed || !Enabled)
+                {
+                    return;
+                }
+
+                var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js");
+                if (_disposed || !Enabled)
+                {
+                    await module.DisposeAsync();
+                    return;
+                }
+
+                _module = module;
                 _reference = DotNetObjectReference.Create(this);
                 await _module.InvokeVoidAsync("initialize", _element, _reference, _ratio);
+            }
+            finally
+            {
+                _initializing = false;
             }
         }
 
@@ -72,6 +95,11 @@ namespace Lantean.QBTMud.Components.UI
         [JSInvokable]
         public async Task ChangeRatio(int ratio)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             _ratio = Math.Clamp(ratio, 30, 60);
             await LocalStorage.SetItemAsync(_sizeStorageKey, _ratio);
             if (_module is not null)
@@ -94,6 +122,11 @@ namespace Lantean.QBTMud.Components.UI
         /// <inheritdoc />
         public async ValueTask DisposeAsync()
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             _disposed = true;
             _reference?.Dispose();
             if (_module is not null)

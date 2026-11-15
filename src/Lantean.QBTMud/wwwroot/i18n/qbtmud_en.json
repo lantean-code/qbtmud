@@ -558,5 +558,6 @@
   "AppWelcomeWizard|Storage: %1": "Storage: %1",
   "AppWelcomeWizard|Select a storage type to continue.": "Select a storage type to continue.",
   "AppManageTagsDialog|Remove all tags from selected torrents?": "Remove all tags from selected torrents?",
-  "App|Enter a valid rate limit.": "Enter a valid rate limit."
+  "App|Enter a valid rate limit.": "Enter a valid rate limit.",
+  "AppFilterOptionsDialog|Enter a valid filter value.": "Enter a valid filter value."
 }

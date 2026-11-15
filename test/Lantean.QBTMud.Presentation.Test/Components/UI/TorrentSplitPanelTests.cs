@@ -3,6 +3,9 @@ using Bunit;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Pages;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.JSInterop;
+using Microsoft.JSInterop.Infrastructure;
 using Moq;
 using MudBlazor;
 
@@ -150,6 +153,104 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
 
             Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", 55, It.IsAny<CancellationToken>()), Times.Once);
             _module.Invocations.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingStorageRead_WHEN_DisposedOrDisabled_THEN_ShouldNotImportModule(bool disable)
+        {
+            var response = new TaskCompletionSource<int?>();
+            Mock.Get(_storage).Setup(service => service.GetItemAsync<int?>("TorrentList.DetailsRatio", It.IsAny<CancellationToken>()))
+                .Returns(new ValueTask<int?>(response.Task));
+            var runtime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            TestContext.Services.RemoveAll<IJSRuntime>();
+            TestContext.Services.AddSingleton(runtime.Object);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            if (disable)
+            {
+                target.Render(parameters => parameters.Add(component => component.Enabled, false));
+            }
+            else
+            {
+                await target.Instance.DisposeAsync();
+            }
+            await target.InvokeAsync(() => response.SetResult(55));
+
+            runtime.Verify(service => service.InvokeAsync<IJSObjectReference>(It.IsAny<string>(), It.IsAny<object?[]?>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingModuleImport_WHEN_DisposedOrDisabled_THEN_ShouldReleaseLateModule(bool disable)
+        {
+            var response = new TaskCompletionSource<IJSObjectReference>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var released = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var module = new Mock<IJSObjectReference>(MockBehavior.Strict);
+            module.Setup(reference => reference.DisposeAsync()).Returns(() =>
+            {
+                released.SetResult();
+                return ValueTask.CompletedTask;
+            });
+            var runtime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            runtime.Setup(service => service.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<IJSObjectReference>(response.Task));
+            TestContext.Services.RemoveAll<IJSRuntime>();
+            TestContext.Services.AddSingleton(runtime.Object);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            if (disable)
+            {
+                target.Render(parameters => parameters.Add(component => component.Enabled, false));
+            }
+            else
+            {
+                await target.Instance.DisposeAsync();
+            }
+            response.SetResult(module.Object);
+            await released.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+            module.Verify(reference => reference.DisposeAsync(), Times.Once);
+            module.Verify(reference => reference.InvokeAsync<IJSVoidResult>("initialize", It.IsAny<object?[]?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingModuleImport_WHEN_RenderedAgain_THEN_ShouldInitialiseOnceAndReleaseOwnedResources()
+        {
+            var response = new TaskCompletionSource<IJSObjectReference>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var initialized = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            DotNetObjectReference<TorrentSplitPanel>? callbackReference = null;
+            var module = new Mock<IJSObjectReference>(MockBehavior.Strict);
+            module.Setup(reference => reference.InvokeAsync<IJSVoidResult>("initialize", It.IsAny<object?[]?>()))
+                .Callback<string, object?[]?>((_, arguments) =>
+                {
+                    callbackReference = (DotNetObjectReference<TorrentSplitPanel>)arguments![1]!;
+                    initialized.SetResult();
+                })
+                .Returns(new ValueTask<IJSVoidResult>(default(IJSVoidResult)!));
+            module.Setup(reference => reference.DisposeAsync()).Returns(ValueTask.CompletedTask);
+            var runtime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            runtime.Setup(service => service.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<IJSObjectReference>(response.Task));
+            TestContext.Services.RemoveAll<IJSRuntime>();
+            TestContext.Services.AddSingleton(runtime.Object);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "Hash"));
+            response.SetResult(module.Object);
+            await initialized.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+            await target.Instance.DisposeAsync();
+            await target.Instance.DisposeAsync();
+            await target.Instance.ChangeRatio(55);
+
+            runtime.Verify(service => service.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()), Times.Once);
+            module.Verify(reference => reference.InvokeAsync<IJSVoidResult>("initialize", It.IsAny<object?[]?>()), Times.Once);
+            module.Verify(reference => reference.DisposeAsync(), Times.Once);
+            var getDisposedValue = () => callbackReference!.Value;
+            getDisposedValue.Should().Throw<ObjectDisposedException>();
+            Mock.Get(_storage).Verify(service => service.SetItemAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using FilterExpressionGenerator = Lantean.QBTMud.Core.Filter.FilterExpressionGenerator;
 using FilterOperator = Lantean.QBTMud.Core.Filter.FilterOperator;
 
 namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
@@ -112,8 +113,10 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             result!.Canceled.Should().BeFalse();
             var resultDefinitions = (List<PropertyFilterDefinition<FilterItem>>)result.Data!;
             resultDefinitions.Should().ContainSingle();
-            resultDefinitions[0].Operator.Should().Be(initialOperator);
-            resultDefinitions[0].Value.Should().Be("Value");
+            resultDefinitions[0].Operator.Should().Be(ignoredOperator);
+            resultDefinitions[0].Value.Should().Be("Ignored");
+            definitions[0].Operator.Should().Be(initialOperator);
+            definitions[0].Value.Should().Be("Value");
         }
 
         [Fact]
@@ -135,7 +138,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             var resultDefinitions = (List<PropertyFilterDefinition<FilterItem>>)result!.Data!;
-            resultDefinitions.Should().ContainSingle();
+            resultDefinitions.Should().BeEmpty();
+            definitions.Should().ContainSingle();
         }
 
         [Fact]
@@ -155,6 +159,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "FilterAdd");
             await dialog.Component.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync(null));
+
+            FindComponentByTestId<MudTextField<object>>(dialog.Component, "FilterValue-Name").Instance.GetState(field => field.Value).Should().Be("Value");
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "FilterSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -268,6 +274,91 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_EditedDefinition_WHEN_ParametersRepeatAndCancel_THEN_ShouldPreserveWorkingValueAndCaller()
+        {
+            var definitions = new List<PropertyFilterDefinition<FilterItem>> { new("Name", FilterOperator.String.Contains, "Value") };
+            var dialog = await _target.RenderDialogAsync(definitions);
+            var target = dialog.Component;
+            await target.InvokeAsync(() => FindComponentByTestId<MudTextField<object>>(target, "FilterValue-Name").Instance.ValueChanged.InvokeAsync("Updated"));
+
+            target.Render(parameters => parameters.Add(component => component.FilterDefinitions, definitions));
+
+            FindComponentByTestId<MudTextField<object>>(target, "FilterValue-Name").Instance.GetState(field => field.Value).Should().Be("Updated");
+            await target.InvokeAsync(() => FindComponentByTestId<MudButton>(target, "FilterCancel").Instance.OnClick.InvokeAsync());
+            (await dialog.Reference.Result)!.Canceled.Should().BeTrue();
+            definitions[0].Value.Should().Be("Value");
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_InvalidNumericValue_WHEN_AddingOrSaving_THEN_ShouldRemainOpenUntilCorrected(bool addFirst)
+        {
+            var dialog = await _target.RenderDialogAsync(null);
+            var target = dialog.Component;
+            await target.InvokeAsync(() => FindComponentByTestId<MudSelect<string>>(target, "FilterNewColumn").Instance.ValueChanged.InvokeAsync("Size"));
+            await target.InvokeAsync(() => FindComponentByTestId<MudSelect<string>>(target, "FilterNewOperator").Instance.ValueChanged.InvokeAsync(FilterOperator.Number.GreaterThan));
+            await target.InvokeAsync(() => FindComponentByTestId<MudTextField<string>>(target, "FilterNewValue").Instance.ValueChanged.InvokeAsync("Invalid"));
+
+            if (addFirst)
+            {
+                await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "FilterAdd").Instance.OnClick.InvokeAsync());
+            }
+            else
+            {
+                await target.InvokeAsync(() => FindComponentByTestId<MudButton>(target, "FilterSave").Instance.OnClick.InvokeAsync());
+            }
+
+            FindComponentByTestId<MudAlert>(target, "FilterValidationError").Instance.Severity.Should().Be(Severity.Error);
+            dialog.Reference.Result!.IsCompleted.Should().BeFalse();
+            await target.InvokeAsync(() => FindComponentByTestId<MudTextField<string>>(target, "FilterNewValue").Instance.ValueChanged.InvokeAsync("10"));
+            await target.InvokeAsync(() => FindComponentByTestId<MudButton>(target, "FilterSave").Instance.OnClick.InvokeAsync());
+
+            var result = (List<PropertyFilterDefinition<FilterItem>>)(await dialog.Reference.Result)!.Data!;
+            result.Should().ContainSingle();
+            result[0].Value.Should().Be(10);
+            var predicate = FilterExpressionGenerator.GenerateExpression(result[0], false).Compile();
+            predicate(new FilterItem { Size = 11 }).Should().BeTrue();
+            predicate(new FilterItem { Size = 10 }).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_EmptyStringOperator_WHEN_SavingWithoutValue_THEN_ShouldCompileAndMatchEmptyNames()
+        {
+            var dialog = await _target.RenderDialogAsync(null);
+            var target = dialog.Component;
+            await target.InvokeAsync(() => FindComponentByTestId<MudSelect<string>>(target, "FilterNewColumn").Instance.ValueChanged.InvokeAsync("Name"));
+            await target.InvokeAsync(() => FindComponentByTestId<MudSelect<string>>(target, "FilterNewOperator").Instance.ValueChanged.InvokeAsync(FilterOperator.String.Empty));
+            await target.InvokeAsync(() => FindComponentByTestId<MudButton>(target, "FilterSave").Instance.OnClick.InvokeAsync());
+
+            var result = (List<PropertyFilterDefinition<FilterItem>>)(await dialog.Reference.Result)!.Data!;
+            var predicate = FilterExpressionGenerator.GenerateExpression(result.Single(), false).Compile();
+            predicate(new FilterItem { Name = " " }).Should().BeTrue();
+            predicate(new FilterItem { Name = "Name" }).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Invalid")]
+        public async Task GIVEN_InvalidExistingDefinition_WHEN_Saving_THEN_ShouldRequireCorrectionBeforeClosing(string? value)
+        {
+            var definitions = new List<PropertyFilterDefinition<FilterItem>> { new("Size", FilterOperator.Number.Equal, value) };
+            var dialog = await _target.RenderDialogAsync(definitions);
+            var target = dialog.Component;
+
+            await target.InvokeAsync(() => FindComponentByTestId<MudButton>(target, "FilterSave").Instance.OnClick.InvokeAsync());
+
+            dialog.Reference.Result!.IsCompleted.Should().BeFalse();
+            FindComponentByTestId<MudAlert>(target, "FilterValidationError").Instance.Severity.Should().Be(Severity.Error);
+            await target.InvokeAsync(() => FindComponentByTestId<MudTextField<object>>(target, "FilterValue-Size").Instance.ValueChanged.InvokeAsync("10"));
+            await target.InvokeAsync(() => FindComponentByTestId<MudButton>(target, "FilterSave").Instance.OnClick.InvokeAsync());
+
+            var result = (List<PropertyFilterDefinition<FilterItem>>)(await dialog.Reference.Result)!.Data!;
+            result.Single().Value.Should().Be(10);
+            definitions.Single().Value.Should().Be(value);
         }
 
         [Fact]

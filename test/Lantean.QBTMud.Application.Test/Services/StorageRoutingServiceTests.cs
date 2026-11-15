@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _storageCatalogService,
                 new LocalStorageEntryAdapter(_jsRuntime.Object),
                 _clientDataCacheInvalidationService,
-                _apiFeedbackWorkflow);
+                _apiFeedbackWorkflow, new ClientDataCacheState());
         }
 
         [Fact]
@@ -696,7 +696,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 customCatalogService.Object,
                 new LocalStorageEntryAdapter(jsRuntime.Object),
                 _clientDataCacheInvalidationService,
-                apiFeedbackWorkflow.Object);
+                apiFeedbackWorkflow.Object, new ClientDataCacheState());
 
             await customTarget.SaveSettingsAsync(new StorageRoutingSettings
             {
@@ -892,7 +892,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 storageCatalogService,
                 new LocalStorageEntryAdapter(jsRuntime.Object),
                 Mock.Of<IClientDataCacheInvalidationService>(),
-                apiFeedbackWorkflow.Object);
+                apiFeedbackWorkflow.Object, new ClientDataCacheState());
 
             var firstTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
             var secondTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
@@ -1020,7 +1020,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Loaded(new Dictionary<string, JsonElement>()));
             var target = new StorageRoutingService(localStorage.Object, _clientDataStorageAdapter, _webApiCapabilityService,
-                _storageCatalogService, new LocalStorageEntryAdapter(_jsRuntime.Object), _clientDataCacheInvalidationService, _apiFeedbackWorkflow);
+                _storageCatalogService, new LocalStorageEntryAdapter(_jsRuntime.Object), _clientDataCacheInvalidationService, _apiFeedbackWorkflow, new ClientDataCacheState());
 
             var action = async () => await target.SaveSettingsAsync(new StorageRoutingSettings
             {

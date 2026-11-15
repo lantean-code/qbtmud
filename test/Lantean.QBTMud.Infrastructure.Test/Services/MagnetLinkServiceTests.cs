@@ -144,6 +144,27 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
             _target.IsSupportedDownloadLink("https://example.com/file.torrent").Should().BeTrue();
         }
 
+        [Theory]
+        [InlineData("magnet:?xt=urn:btih:0123456789012345678901234567890123456789")]
+        [InlineData("magnet:?xt=urn:btmh:12200123456789012345678901234567890123456789012345678901234567890123")]
+        [InlineData("magnet:?xt=urn:btmh:12200123456789012345678901234567890123456789012345678901234567890123&xt=urn:btih:0123456789012345678901234567890123456789")]
+        public void GIVEN_ValidV1V2OrHybridMagnet_WHEN_CapturedFromHandlerUri_THEN_ShouldReturnOriginalLink(string magnet)
+        {
+            _target.IsSupportedDownloadLink(magnet).Should().BeTrue();
+            _target.ExtractDownloadLink("https://localhost/#/?download=" + Uri.EscapeDataString(magnet)).Should().Be(magnet);
+        }
+
+        [Theory]
+        [InlineData("magnet:?xt=urn:btmh:")]
+        [InlineData("magnet:?xt=urn:btih:")]
+        [InlineData("magnet:?xt=urn:other:Hash")]
+        [InlineData("magnet:?dn=xt=urn:btmh:Hash")]
+        [InlineData("magnet:?xt=urn:btmh:Hash\n")]
+        public void GIVEN_InvalidMagnetTopic_WHEN_Validated_THEN_ShouldRejectTheLink(string magnet)
+        {
+            _target.IsSupportedDownloadLink(magnet).Should().BeFalse();
+        }
+
         [Fact]
         public void GIVEN_UnsupportedLinks_WHEN_IsSupportedDownloadLink_THEN_ShouldReturnFalse()
         {

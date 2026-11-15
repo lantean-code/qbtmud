@@ -1,6 +1,8 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Infrastructure.Services;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using Moq;
 
 namespace Lantean.QBTMud.Presentation.Test.Services
@@ -9,6 +11,34 @@ namespace Lantean.QBTMud.Presentation.Test.Services
     {
         private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_V2OnlyMagnet_WHEN_CapturedOrRestored_THEN_ShouldReachTheAddDialogUnchanged(bool restore)
+        {
+            const string magnet = "magnet:?xt=urn:btmh:12200123456789012345678901234567890123456789012345678901234567890123&dn=Name";
+            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            var sessionStorage = new TestSessionStorageService();
+            var magnetService = new MagnetLinkService(Mock.Of<IJSRuntime>(), Mock.Of<IInternalUrlProvider>());
+            var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflow.Setup(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(magnet)).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
+            var target = CreateTarget(sessionStorage, magnetService, dialogWorkflow.Object, new TestNavigationManager());
+            if (restore)
+            {
+                await sessionStorage.SetItemAsync(_pendingDownloadStorageKey, magnet, cancellationToken);
+                await target.RestoreAsync(cancellationToken);
+            }
+            else
+            {
+                await target.CaptureFromUriAsync("https://localhost/#/?download=" + Uri.EscapeDataString(magnet), cancellationToken);
+            }
+
+            await target.ProcessAsync(cancellationToken);
+
+            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(magnet), Times.Once);
+            (await sessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey, cancellationToken)).Should().Be(magnet);
+        }
 
         [Fact]
         public async Task GIVEN_RestoredPendingDownload_WHEN_Processed_THEN_ShouldShowDialogPersistLastProcessedAndNavigateHome()

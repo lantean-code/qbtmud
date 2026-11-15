@@ -93,7 +93,10 @@ namespace Lantean.QBTMud.Infrastructure.Services
 
             if (value.StartsWith("magnet:", StringComparison.OrdinalIgnoreCase))
             {
-                return value.Contains("xt=urn:btih", StringComparison.OrdinalIgnoreCase);
+                return value["magnet:".Length..].TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Any(parameter => parameter.Length > "xt=urn:btih:".Length
+                        && (parameter.StartsWith("xt=urn:btih:", StringComparison.OrdinalIgnoreCase)
+                            || parameter.StartsWith("xt=urn:btmh:", StringComparison.OrdinalIgnoreCase)));
             }
 
             if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))

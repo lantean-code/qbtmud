@@ -556,6 +556,37 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             target.WaitForAssertion(() => target.Instance.Filters.Should().BeNull());
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_NumericOrEmptyStringDefinition_WHEN_FilterApplied_THEN_ShouldRenderMatchingFiles(bool emptyString)
+        {
+            ApiClientMock.Setup(client => client.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(new List<FileData>
+            {
+                new(1, "file1.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f),
+                new(2, "file2.txt", 200, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f)
+            });
+            var definitions = new List<PropertyFilterDefinition<ContentItem>>
+            {
+                emptyString ? new("Name", FilterOperator.String.Empty, null) : new("Size", FilterOperator.Number.GreaterThan, "100")
+            };
+            DialogWorkflowMock.Setup(workflow => workflow.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>())).ReturnsAsync(definitions);
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+
+            await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            var items = target.FindComponent<DynamicTable<ContentItem>>().Instance.Items!;
+            if (emptyString)
+            {
+                items.Should().BeEmpty();
+            }
+            else
+            {
+                items.Should().ContainSingle().Which.Name.Should().Be("file2.txt");
+            }
+        }
+
         [Fact]
         public async Task GIVEN_AppliedFilter_WHEN_FilterDialogCancelled_THEN_ShouldPreserveRowsDefinitionsAndPriorityTargets()
         {

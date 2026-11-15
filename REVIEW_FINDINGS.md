@@ -4,8 +4,8 @@ Static review dated 15 November 2026. This checklist records all 55 findings fro
 
 ## Progress and scope
 
-- Total: **55 findings** — **2 P1**, **46 P2**, **7 P3**.
-- Completed: **55 findings**. No deferred findings remain.
+- Original review total: **55 findings** — **2 P1**, **46 P2**, **7 P3**.
+- Original review completed: **55 findings**. No original findings remain deferred. The deeper review below records **7 additional P2 findings (R56–R62), all addressed with regression tests**: 3 branch regressions and 4 pre-existing defects.
 - Mark a finding complete after addressing its cause and validating the affected scenario. Record any decision to defer or dismiss it alongside the item.
 - P1: urgent defect to address next. P2: ordinary defect to fix. P3: lower-impact defect worth fixing.
 - The previously deferred JavaScript findings R11, R22 and R50 are covered by C# Playwright browser regressions and JavaScript coverage in CI.
@@ -461,8 +461,86 @@ Run instructions and scope are documented in [the browser regression README](tes
 
 Addressed the three regressions found in the branch comparison against master at `1bb741a1`.
 
-- [x] **P2 � Serialise successful writes with pending-change replay.** ClientData writes and removals now hold the shared cache semaphore throughout their remote request, journal update and cache update. Six deterministic regressions overlap a loading read with a newer typed write, raw write or removal, starting with either a pending value or tombstone, and check both remote and cached state.
-- [x] **P2 � Preserve Enter activation for the pieces toggle.** Global shortcuts leave unmodified Enter and Space on native buttons to the browser. Eight Chromium regressions cover activation with registered background shortcuts, focused keyboard ownership and explicitly registered modified Enter shortcuts. The existing pieces component tests retain coverage of its native button and click behaviour.
-- [x] **P3 � Preserve protected-token boundaries during restoration.** Tokens are restored before protection markup is removed. Inserted fragments are HTML-encoded until the final decode so literal markup and entities survive. Both provider wrappers have round-trip regressions for protected entities immediately followed by digits and literal markup.
+- [x] **P2 — Serialise successful writes with pending-change replay.** ClientData writes and removals now hold the shared cache semaphore throughout their remote request, journal update and cache update. Six deterministic regressions overlap a loading read with a newer typed write, raw write or removal, starting with either a pending value or tombstone, and check both remote and cached state.
+- [x] **P2 — Preserve Enter activation for the pieces toggle.** Global shortcuts leave unmodified Enter and Space on native buttons to the browser. Eight Chromium regressions cover activation with registered background shortcuts, focused keyboard ownership and explicitly registered modified Enter shortcuts. The existing pieces component tests retain coverage of its native button and click behaviour.
+- [x] **P3 — Preserve protected-token boundaries during restoration.** Tokens are restored before protection markup is removed. Inserted fragments are HTML-encoded until the final decode so literal markup and entities survive. Both provider wrappers have round-trip regressions for protected entities immediately followed by digits and literal markup.
 
 Validation: all 3,580 solution tests passed with no failures or skips, including 30 Chromium regressions. Release publishing succeeded with the pinned SDK. JavaScript coverage covers all four changed executable lines, and the coverage reporter passed all 19 Python tests. Changed C# files were formatted and CRLF-governed files were normalised.
+
+## Deeper review findings and resolutions
+
+Static follow-up dated 15 November 2026 against `develop` at `21a377ee288fe9eabfca24e0f12b8b42bf5b2475`. The comparison base is `master` at `1bb741a1dd7e2cdf3a7ecf0cd52f534825e9b380`, also the merge base. R56 and R57 retain the IDs assigned when the preceding review was recorded. R58–R62 were identified during the deeper follow-up. The review itself was static. All seven were subsequently addressed in the remediation recorded below; the descriptions retain the failure scenarios observed at the reviewed commit.
+
+**Three branch regressions:** R56–R58. **Four pre-existing defects missed by the original whole-codebase review:** R59–R62. The earlier 55 completed items remain a historical checklist, not assurance that all defects have been found. See [the follow-up review assessment](REVIEW_REAUDIT.md) for evidence, coverage and limits.
+
+### Storage, migration and diagnostics — P2
+
+- [x] **R56 — Synchronise migration's pending-journal updates.** [StorageRoutingService.cs:331](src/Lantean.QBTMud.Application/Services/StorageRoutingService.cs#L331)
+
+    **Branch regression; high confidence.** `RemoveMigratedSourceAsync` reads and rewrites the shared pending journal without the semaphore used by settings mutations and recovery. If cleanup reads a journal containing migrated key A, an overlapping failed save can persist pending key B before cleanup deletes the journal or writes its older snapshot. B is then lost and a later successful remote read restores its old value. This crosses a real asynchronous boundary: `BrowserStorageService` uses `IJSRuntime.InvokeAsync` for browser reads and writes, while shell speed-history persistence can run during storage-settings migration. The existing unrelated-entry migration test is sequential.
+
+    **Regression required:** hold migration's journal read/write boundary open, fail a settings write for another key that remains routed to ClientData, complete cleanup, then recover connectivity. Check B survives both in the journal and in the recovered remote value. Exercise cleanup with and without remaining journal entries, plus overlap with pending-removal replay. All writers of the shared journal must follow the same synchronisation rule.
+
+- [x] **R58 — Cancel pending replay when diagnostics deletes an entry.** [SettingsStorageService.cs:331](src/Lantean.QBTMud.Application/Services/SettingsStorageService.cs#L331); [StorageDiagnosticsService.cs:123](src/Lantean.QBTMud.Application/Services/StorageDiagnosticsService.cs#L123)
+
+    **Branch regression; high confidence.** A failed ClientData write leaves a queued value in the new journal. Deleting that remote entry through Storage Diagnostics calls the adapter directly and invalidates the cache, but leaves the queued value intact. The next settings read loads remote data and replays the journal, recreating the entry the user just deleted. The diagnostics tab calls this path at `StorageAppSettingsTab.razor.cs:347`. Existing diagnostics tests verify deletion and cache invalidation in isolation, without a pending write or subsequent settings read.
+
+    **Regression required:** fail a write, delete that ClientData entry through diagnostics, then recover and read through settings storage. Assert that the entry stays absent remotely and locally in the effective settings view, and that unrelated pending entries survive. Include deletion overlapping recovery; cache invalidation alone does not serialise the whole operation.
+
+### Split view and component lifetime — P2
+
+- [x] **R57 — Stop split-panel initialisation after disposal.** [TorrentSplitPanel.razor.cs:44](src/Lantean.QBTMud.Presentation/Components/UI/TorrentSplitPanel.razor.cs#L44)
+
+    **Branch regression; high confidence.** Navigation can dispose the component while storage loading or module import is pending. Disposal sees no module/reference to release, but the continuation subsequently creates them and calls `initialize` on the removed element. It leaves late resources unowned and can produce an interop failure. A further render while import is pending can also enter initialisation again because `_module` remains null, creating multiple references while retaining only the last one. The existing late-notification test disposes a disabled component; it never interrupts initialisation.
+
+    **Regression required:** defer the storage read and module import separately, dispose before each completes, and verify late resources are released and no removed element is initialised. Trigger a second render during import and assert one initialisation and one owned callback reference. Browser coverage should also check actual connect/disconnect behaviour of the custom element.
+
+### File-filter editor and expression generation — P2
+
+- [x] **R59 — Render and edit the working filter definitions.** [FilterOptionsDialog.razor:9](src/Lantean.QBTMud.Presentation/Components/Dialogs/FilterOptionsDialog.razor#L9); [FilterOptionsDialog.razor.cs:24](src/Lantean.QBTMud.Presentation/Components/Dialogs/FilterOptionsDialog.razor.cs#L24)
+
+    **Pre-existing; high confidence.** The dialog renders `FilterDefinitions` but clones them into `_workingDefinitions` for submission. Callbacks receive the original records and search/remove those records in the cloned list. Each clone constructs a different expression object, which participates in record equality, so those lookups/removals do not match. Editing or removing an existing filter is ignored; adding a working definition does not render its row. Unconditional cloning in `OnParametersSet` can also discard working edits on later parameter updates. The tests named `DefinitionReflectsChanges` and `DefinitionListEmpty` actually assert the original value and a single remaining definition, respectively.
+
+    **Regression required:** use rendered controls to add, repeatedly edit and remove definitions, assert the visible rows and submitted values, and verify Cancel preserves the caller's list. Trigger an unrelated cascading update before saving. Correct the contradictory assertions at [FilterOptionsDialogTests.cs:115](test/Lantean.QBTMud.Presentation.Test/Components/Dialogs/FilterOptionsDialogTests.cs#L115) and [line 138](test/Lantean.QBTMud.Presentation.Test/Components/Dialogs/FilterOptionsDialogTests.cs#L138).
+
+- [x] **R60 — Build filter comparisons with the property's actual type.** [ExpressionModifier.cs:83](src/Lantean.QBTMud.Core/Filter/ExpressionModifier.cs#L83); [FilterExpressionGenerator.cs:39](src/Lantean.QBTMud.Core/Filter/FilterExpressionGenerator.cs#L39)
+
+    **Pre-existing; high confidence.** Property selectors box every value as `object`, and binary comparisons retain that type. Numeric/date ordering therefore throws, while equality compares boxed references: even Size 10 equal to 10 evaluates false. String Empty/NotEmpty substitutes an object expression where `string.IsNullOrWhiteSpace` requires a string and throws. Null comparisons can become unconditional true predicates. The file-filter workflow compiles these expressions without handling those failures, and the new-value input supplies text without conversion to the selected property type. Existing tests explicitly expect the exceptions and false equality results, including numeric, Boolean, enum and GUID examples.
+
+    **Regression required:** replace the failure expectations with a truth table for each advertised operator and supported property type, including nullable values, whitespace and equal values held in distinct boxes. Convert and validate entered text before building expressions. Add a dialog-to-FilesTab regression using an ordinary numeric filter and string Empty, plus invalid-input feedback. See [FilterExpressionGeneratorTests.cs:34](test/Lantean.QBTMud.Core.Test/Filter/FilterExpressionGeneratorTests.cs#L34), [line 107](test/Lantean.QBTMud.Core.Test/Filter/FilterExpressionGeneratorTests.cs#L107) and [line 188](test/Lantean.QBTMud.Core.Test/Filter/FilterExpressionGeneratorTests.cs#L188).
+
+### Magnet handling — P2
+
+- [x] **R61 — Accept v2-only magnet links in the registered handler.** [MagnetLinkService.cs:96](src/Lantean.QBTMud.Infrastructure/Services/MagnetLinkService.cs#L96)
+
+    **Pre-existing; high confidence.** Supported magnets must contain `xt=urn:btih`, so a valid v2-only magnet containing `xt=urn:btmh` is rejected. URI capture consequently drops it before opening the add dialog; session restoration also removes a pending v2-only link. Hybrid links with a v1 topic conceal the issue. [BEP 9 specifies both v1 and v2 exact topics](https://www.bittorrent.org/beps/bep_0009.html#magnet-uri-format). Current magnet tests only exercise the v1 topic.
+
+    **Regression required:** validate v1, v2-only and hybrid links, their encoded handler URLs, and pending-link restoration. Confirm each accepted URI reaches the add dialog unchanged, while malformed topics and existing newline/length restrictions remain rejected.
+
+### Options save workflow — P2
+
+- [x] **R62 — Preserve edits made while options are being saved.** [Options.razor.cs:185](src/Lantean.QBTMud.Presentation/Pages/Options.razor.cs#L185)
+
+    **Pre-existing; high confidence.** Options remain editable while `SetApplicationPreferencesAsync` is awaiting its response. For example, submit ListenPort 7000, then enter 8000 after the request has been sent. The successful continuation unconditionally clears `UpdatePreferences`, discarding the second edit and its navigation warning. Retained child panels do not reload their fields after the first initialisation, so 8000 can remain displayed while the server has 7000 and Save is disabled. Existing page tests complete saves without an intervening edit.
+
+    **Regression required:** hold a save response pending, change the same field and a different field, then complete the save and preferences refresh. Either prevent edits throughout saving or retain later changes as dirty and submit them on the next save. Verify displayed values, request snapshots, Save state and the navigation warning; also cover a repeated Save and an unsuccessful first request.
+
+### Resolution and regression coverage
+
+Addressed R56–R62 on 15 November 2026. The regression assertions now check intended outcomes, including the older filter tests which previously accepted failures.
+
+| Finding | Fix and regression coverage |
+| --- | --- |
+| R56 | Migration's journal read/modify/write holds the shared cache semaphore. Four deterministic regressions overlap cleanup with failed writes or removals, with and without another queued entry, then verify recovery preserves the newer change. |
+| R57 | Initialisation is guarded across renders and checks disposal/enabled state after each await. Late modules are released, disposal is idempotent, and late ratio callbacks are ignored. Tests interrupt storage loading and module import, disable/dispose while pending, and verify one initialisation and disposal of the owned callback reference. |
+| R58 | Diagnostics deletion and clearing share the recovery semaphore, remove queued changes and invalidate cached state while locked. Six regressions exercise failed writes followed by deletion, deletion overlapping recovery, unrelated journal preservation, removing the last pending entry, and clearing while no remote entry exists. |
+| R59 | The dialog renders its working definitions, retains them across repeated parameters, and derives available columns from that working list. Tests verify repeated edits, removal, newly rendered rows, cancellation isolation and retaining edits after parameter updates. |
+| R60 | Binary comparisons use the property's actual type. String empty checks accept the selector's boxed form; value parsing uses non-throwing, type-specific parsers, and the dialog reports invalid input before closing. Numeric/date/Boolean/enum/GUID comparisons, nullable/whitespace cases, invalid existing/new definitions, numeric types and actual FilesTab filtering have regression coverage. |
+| R61 | Magnet validation recognises v1 and v2 exact-topic parameters, including hybrid links, and rejects empty or misplaced topics. Tests cover encoded handler capture and pending-link restoration through the real magnet service into the add-dialog workflow. |
+| R62 | Saves capture a preferences snapshot and edit version. Later edits remain pending after success or failure; duplicate Save and Undo requests are blocked while saving. Four delayed-response regressions cover same-field and different-field edits, displayed values, submitted snapshots, navigation warnings and a subsequent successful save. |
+
+The application storage constructors and the shared component-test registrations use the same scoped cache state. These are application-owned services; their in-repository construction sites were updated together. No API-client package or qBittorrent contract changed.
+
+Coverage collected for the production changes covers all 216 changed executable C# lines and their reported branches. Existing uncovered defensive or unused paths elsewhere in the affected files remain outside this change; no reflection or test-only hooks were introduced. The split-panel regressions use controlled interop to verify C# lifetime ownership. Full-page Blazor/qBittorrent browser testing was not performed.
+
+Validation: all 3,687 solution tests passed with no failures or skips, including the existing Chromium regressions. Restore, Debug build and Release publishing succeeded with the pinned .NET 10.0.100 SDK. Changed C# files were formatted, and CRLF-governed files were normalised. The SDK's Microsoft.Testing.Platform runner and formatter reject the repository's `--artifacts-path` argument, so their invocations used the equivalent `ArtifactsPath` and `UseArtifactsOutput` environment settings. Restore, build and publish used the required argument. Outputs remained under `/tmp/artifacts/qbtmud`.

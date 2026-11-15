@@ -14,6 +14,7 @@ namespace Lantean.QBTMud.Pages
     public partial class Options
     {
         private const string _languageReloadSnackbarKey = "options-language-reload";
+        private int _preferencesVersion;
 
         [Inject]
         protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
@@ -71,6 +72,8 @@ namespace Lantean.QBTMud.Pages
 
         private UpdatePreferences? UpdatePreferences { get; set; }
 
+        protected bool IsSaving { get; private set; }
+
         protected override async Task OnInitializedAsync()
         {
             var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
@@ -88,6 +91,7 @@ namespace Lantean.QBTMud.Pages
         protected void PreferencesChanged(UpdatePreferences preferences)
         {
             UpdatePreferences = PreferencesDataManager.MergePreferences(UpdatePreferences, preferences);
+            _preferencesVersion++;
         }
 
         protected async Task ValidateExit(LocationChangingContext context)
@@ -114,6 +118,11 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task Undo()
         {
+            if (IsSaving)
+            {
+                return;
+            }
+
             if (BehaviourOptions is not null)
             {
                 await BehaviourOptions.ResetAsync();
@@ -154,15 +163,28 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task Save()
         {
-            if (UpdatePreferences is null)
+            if (UpdatePreferences is null || IsSaving)
             {
                 return;
             }
 
-            var selectedLocale = UpdatePreferences.Locale;
+            IsSaving = true;
+            try
+            {
+                await SaveCore(UpdatePreferences with { }, _preferencesVersion);
+            }
+            finally
+            {
+                IsSaving = false;
+            }
+        }
+
+        private async Task SaveCore(UpdatePreferences preferences, int version)
+        {
+            var selectedLocale = preferences.Locale;
             var localeChanged = !string.IsNullOrWhiteSpace(selectedLocale)
                 && !string.Equals(selectedLocale, Preferences?.Locale, StringComparison.Ordinal);
-            var preferencesToSave = await SaveSpeedLimitsAndPreparePreferences(UpdatePreferences);
+            var preferencesToSave = await SaveSpeedLimitsAndPreparePreferences(preferences);
             if (preferencesToSave is null)
             {
                 return;
@@ -182,7 +204,10 @@ namespace Lantean.QBTMud.Pages
                 await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, selectedLocale!);
             }
 
-            UpdatePreferences = null;
+            if (version == _preferencesVersion)
+            {
+                UpdatePreferences = null;
+            }
             SnackbarWorkflow.ShowTransient("AppOptions", "Options saved.", Severity.Success);
 
             var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();

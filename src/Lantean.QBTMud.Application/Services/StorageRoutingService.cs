@@ -17,6 +17,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly ILocalStorageEntryAdapter _localStorageEntryAdapter;
         private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
+        private readonly ClientDataCacheState _clientDataCacheState;
         private StorageRoutingSettings? _cachedSettings;
 
         /// <summary>
@@ -29,6 +30,7 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="localStorageEntryAdapter">The local storage entry adapter.</param>
         /// <param name="clientDataCacheInvalidationService">The ClientData cache invalidation service.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
+        /// <param name="clientDataCacheState">The shared ClientData cache and journal synchronisation state.</param>
         public StorageRoutingService(
             ILocalStorageService localStorageService,
             IClientDataStorageAdapter clientDataStorageAdapter,
@@ -36,7 +38,8 @@ namespace Lantean.QBTMud.Application.Services
             IStorageCatalogService storageCatalogService,
             ILocalStorageEntryAdapter localStorageEntryAdapter,
             IClientDataCacheInvalidationService clientDataCacheInvalidationService,
-            IApiFeedbackWorkflow apiFeedbackWorkflow)
+            IApiFeedbackWorkflow apiFeedbackWorkflow,
+            ClientDataCacheState clientDataCacheState)
         {
             _localStorageService = localStorageService;
             _clientDataStorageAdapter = clientDataStorageAdapter;
@@ -45,6 +48,7 @@ namespace Lantean.QBTMud.Application.Services
             _localStorageEntryAdapter = localStorageEntryAdapter;
             _clientDataCacheInvalidationService = clientDataCacheInvalidationService;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
+            _clientDataCacheState = clientDataCacheState;
         }
 
         /// <inheritdoc />
@@ -328,17 +332,25 @@ namespace Lantean.QBTMud.Application.Services
 
         private async Task RemoveMigratedSourceAsync(string key, StorageType sourceStorageType, CancellationToken cancellationToken)
         {
-            var pendingChanges = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-            if (pendingChanges is not null && pendingChanges.Remove(ToPrefixedKey(key)))
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
             {
-                if (pendingChanges.Count == 0)
+                var pendingChanges = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
+                if (pendingChanges is not null && pendingChanges.Remove(ToPrefixedKey(key)))
                 {
-                    await _localStorageService.RemoveItemAsync(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
+                    if (pendingChanges.Count == 0)
+                    {
+                        await _localStorageService.RemoveItemAsync(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
+                    }
+                    else
+                    {
+                        await _localStorageService.SetItemAsync(SettingsStorageService._pendingChangesStorageKey, pendingChanges, cancellationToken);
+                    }
                 }
-                else
-                {
-                    await _localStorageService.SetItemAsync(SettingsStorageService._pendingChangesStorageKey, pendingChanges, cancellationToken);
-                }
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
             }
 
             if (sourceStorageType == StorageType.LocalStorage)
