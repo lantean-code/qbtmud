@@ -787,7 +787,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 logger => logger.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("Background repository theme preload", StringComparison.Ordinal)),
+                    It.Is<It.IsAnyType>((state, _) => state != null && (state.ToString() ?? string.Empty).Contains("Background repository theme preload", StringComparison.Ordinal)),
                     It.IsAny<Exception?>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
