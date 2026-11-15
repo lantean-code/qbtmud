@@ -18,6 +18,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly ClientDataCacheState _clientDataCacheState;
+        private readonly IPendingClientDataJournal _journal;
         private StorageRoutingSettings? _cachedSettings;
 
         /// <summary>
@@ -31,6 +32,7 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="clientDataCacheInvalidationService">The ClientData cache invalidation service.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         /// <param name="clientDataCacheState">The shared ClientData cache and journal synchronisation state.</param>
+        /// <param name="journal">The journal shared across browser tabs.</param>
         public StorageRoutingService(
             ILocalStorageService localStorageService,
             IClientDataStorageAdapter clientDataStorageAdapter,
@@ -39,7 +41,8 @@ namespace Lantean.QBTMud.Application.Services
             ILocalStorageEntryAdapter localStorageEntryAdapter,
             IClientDataCacheInvalidationService clientDataCacheInvalidationService,
             IApiFeedbackWorkflow apiFeedbackWorkflow,
-            ClientDataCacheState clientDataCacheState)
+            ClientDataCacheState clientDataCacheState,
+            IPendingClientDataJournal journal)
         {
             _localStorageService = localStorageService;
             _clientDataStorageAdapter = clientDataStorageAdapter;
@@ -49,6 +52,7 @@ namespace Lantean.QBTMud.Application.Services
             _clientDataCacheInvalidationService = clientDataCacheInvalidationService;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
             _clientDataCacheState = clientDataCacheState;
+            _journal = journal;
         }
 
         /// <inheritdoc />
@@ -100,6 +104,7 @@ namespace Lantean.QBTMud.Application.Services
                 throw new InvalidOperationException("ClientData storage is not supported by the current Web API version.");
             }
 
+            var pendingBefore = await _journal.ReadAsync(cancellationToken);
             var sourceEntries = new List<(string Key, StorageType SourceStorageType)>();
             foreach (var item in _storageCatalogService.Items)
             {
@@ -125,7 +130,7 @@ namespace Lantean.QBTMud.Application.Services
             _cachedSettings = normalizedSettings.Clone();
             foreach (var (key, sourceStorageType) in sourceEntries)
             {
-                await RemoveMigratedSourceAsync(key, sourceStorageType, cancellationToken);
+                await RemoveMigratedSourceAsync(key, sourceStorageType, pendingBefore, cancellationToken);
             }
 
             return _cachedSettings.Clone();
@@ -214,13 +219,10 @@ namespace Lantean.QBTMud.Application.Services
             }
 
             var clientEntries = new Dictionary<string, JsonElement>(clientEntriesResult.Entries, StringComparer.Ordinal);
-            var pendingChanges = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-            if (pendingChanges is not null)
+            var pendingChanges = await _journal.ReadAsync(cancellationToken);
+            foreach (var (key, value) in pendingChanges)
             {
-                foreach (var (key, value) in pendingChanges)
-                {
-                    clientEntries[key] = value ?? JsonSerializer.SerializeToElement<object?>(null);
-                }
+                clientEntries[key] = value ?? JsonSerializer.SerializeToElement<object?>(null);
             }
 
             foreach (var entry in clientEntries)
@@ -289,8 +291,8 @@ namespace Lantean.QBTMud.Application.Services
             if (sourceStorageType == StorageType.ClientData && targetStorageType == StorageType.LocalStorage)
             {
                 JsonElement? clientValue = sourceClientValue;
-                var pendingChanges = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-                if (pendingChanges is not null && pendingChanges.TryGetValue(prefixedKey, out var pendingValue))
+                var pendingChanges = await _journal.ReadAsync(cancellationToken);
+                if (pendingChanges.TryGetValue(prefixedKey, out var pendingValue))
                 {
                     clientValue = pendingValue ?? JsonSerializer.SerializeToElement<object?>(null);
                 }
@@ -330,33 +332,26 @@ namespace Lantean.QBTMud.Application.Services
             return true;
         }
 
-        private async Task RemoveMigratedSourceAsync(string key, StorageType sourceStorageType, CancellationToken cancellationToken)
+        private async Task RemoveMigratedSourceAsync(string key, StorageType sourceStorageType, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
         {
             await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
             try
             {
-                var pendingChanges = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-                if (pendingChanges is not null && pendingChanges.Remove(ToPrefixedKey(key)))
+                if (pendingBefore.TryGetValue(ToPrefixedKey(key), out var value))
                 {
-                    if (pendingChanges.Count == 0)
-                    {
-                        await _localStorageService.RemoveItemAsync(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-                    }
-                    else
-                    {
-                        await _localStorageService.SetItemAsync(SettingsStorageService._pendingChangesStorageKey, pendingChanges, cancellationToken);
-                    }
+                    await _journal.CompleteAsync(new Dictionary<string, JsonElement?> { [ToPrefixedKey(key)] = value }, cancellationToken);
                 }
+
+                if (sourceStorageType == StorageType.LocalStorage)
+                {
+                    await _journal.RemoveLocalSourceAsync(key, cancellationToken);
+                    return;
+                }
+
             }
             finally
             {
                 _clientDataCacheState.CacheSemaphore.Release();
-            }
-
-            if (sourceStorageType == StorageType.LocalStorage)
-            {
-                await _localStorageService.RemoveItemAsync(key, cancellationToken);
-                return;
             }
 
             var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);

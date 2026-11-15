@@ -6,6 +6,7 @@ Static review dated 15 November 2026. This checklist records all 55 findings fro
 
 - Original review total: **55 findings** — **2 P1**, **46 P2**, **7 P3**.
 - Original review completed: **55 findings**. No original findings remain deferred. The deeper review below records **7 additional P2 findings (R56–R62), all addressed with regression tests**: 3 branch regressions and 4 pre-existing defects.
+- The subsequent branch review records **3 further findings (R63–R65), all addressed with regression tests: 2 P2 storage defects and 1 P3 test-command defect**. Their fixes and validation are tracked below.
 - Mark a finding complete after addressing its cause and validating the affected scenario. Record any decision to defer or dismiss it alongside the item.
 - P1: urgent defect to address next. P2: ordinary defect to fix. P3: lower-impact defect worth fixing.
 - The previously deferred JavaScript findings R11, R22 and R50 are covered by C# Playwright browser regressions and JavaScript coverage in CI.
@@ -544,3 +545,35 @@ The application storage constructors and the shared component-test registrations
 Coverage collected for the production changes covers all 216 changed executable C# lines and their reported branches. Existing uncovered defensive or unused paths elsewhere in the affected files remain outside this change; no reflection or test-only hooks were introduced. The split-panel regressions use controlled interop to verify C# lifetime ownership. Full-page Blazor/qBittorrent browser testing was not performed.
 
 Validation: all 3,687 solution tests passed with no failures or skips, including the existing Chromium regressions. Restore, Debug build and Release publishing succeeded with the pinned .NET 10.0.100 SDK. Changed C# files were formatted, and CRLF-governed files were normalised. The SDK's Microsoft.Testing.Platform runner and formatter reject the repository's `--artifacts-path` argument, so their invocations used the equivalent `ArtifactsPath` and `UseArtifactsOutput` environment settings. Restore, build and publish used the required argument. Outputs remained under `/tmp/artifacts/qbtmud`.
+
+## Subsequent branch review — R63–R65
+
+Reviewed `develop` at `bdcf952695e1fce482e4b21636ad7f6536a350de` against `master` at `1bb741a1dd7e2cdf3a7ecf0cd52f534825e9b380` on 15 November 2026. These findings extend the storage review beyond operations sharing one tab's cache semaphore.
+
+### Storage journal and migration — P2
+
+- [x] **R63 — Preserve pending changes across browser tabs.** [SettingsStorageService.cs](src/Lantean.QBTMud.Application/Services/SettingsStorageService.cs)
+
+    Each tab has its own semaphore, but the pending journal is one localStorage dictionary. Overlapping read/modify/write operations can replace unrelated failed saves. Recovery can also acknowledge a stale snapshot and remove a newer pending value.
+
+    **Fix and regression coverage:** journal mutations use overlapping IndexedDB readwrite transactions to serialise localStorage updates across tabs, including ordinary HTTP hosting. Recovery acknowledges only matching snapshot values, overlays any newer pending values and avoids caching incomplete recovery. Successful direct saves also preserve newer pending edits. C# Playwright regressions exercise the production JavaScript in two tabs sharing a browser context; service regressions interrupt replay and direct requests with newer writes and removals. Adapter tests cover operation payloads, cancellation forwarding and browser failures. Legacy journals retain their existing format and are migrated atomically.
+
+- [x] **R64 — Preserve newer fallbacks while migration cleans later source keys.** [StorageRoutingService.cs](src/Lantean.QBTMud.Application/Services/StorageRoutingService.cs)
+
+    After migration commits its routing, source cleanup runs sequentially. A failed save for a later key can complete while an earlier key is being cleaned; subsequent cleanup must preserve that newer journal entry and its local fallback.
+
+    **Fix and regression coverage:** migration captures its journal snapshot before copying and conditionally acknowledges those original values after commit. Browser-side source cleanup removes local keys only if no pending fallback remains, within the same transaction used for journal updates. Deterministic service regressions pause earlier cleanup and fail later typed saves, raw-string saves and removals from another cache scope. Browser tests verify that prefixed and legacy source keys survive while pending and are removed after acknowledgement.
+
+### Browser-test instructions and CI — P3
+
+- [x] **R65 — Use test arguments supported by the pinned SDK.** [JavaScript test README](test/Lantean.QBTMud.Test/JavaScript/README.md); [CI workflow](.github/workflows/dotnet.yml)
+
+    The documented browser-test command passes `--artifacts-path` to the pinned SDK's native Microsoft.Testing.Platform runner, which rejects it before executing tests. The CI test step also forwards this argument and an MSBuild property argument.
+
+    **Fix and regression coverage:** test invocations now configure `ArtifactsPath`, `UseArtifactsOutput` and the CI build version through environment properties. Restore, build and publish retain their supported arguments. Repository tests check the documented command and CI test step retain output configuration without unsupported runner arguments. The documented browser command is validated separately with the pinned SDK.
+
+### Validation of R63–R65
+
+All 3,724 solution tests passed with no failures or skips, including 37 additional cases. The corrected README command separately passed all 45 JavaScript browser tests with the pinned .NET 10.0.100 SDK. Coverage covers all 82 changed executable C# lines and their reported branches, and all 52 changed executable JavaScript lines pass the CI coverage gate. Native V8 ranges remain a separate measure rather than an Istanbul branch-coverage claim.
+
+Restore, Debug build and Release publishing succeeded. Changed C# files were formatted and CRLF-governed files were normalised. Tests and formatting used `ArtifactsPath` and `UseArtifactsOutput` environment properties because the pinned tools reject the repository's blanket `--artifacts-path` argument; restore, build and publish used that supported argument. No complete Blazor/qBittorrent browser run was added; the browser regressions execute the production scripts on the existing small test page.

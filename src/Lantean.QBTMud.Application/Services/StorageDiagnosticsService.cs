@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
-        private readonly ILocalStorageService _localStorageService;
+        private readonly IPendingClientDataJournal _journal;
         private readonly ClientDataCacheState _clientDataCacheState;
 
         /// <summary>
@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="clientDataCacheInvalidationService">The ClientData cache invalidation service.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
-        /// <param name="localStorageService">The local storage containing pending changes.</param>
+        /// <param name="journal">The journal shared across browser tabs.</param>
         /// <param name="clientDataCacheState">The shared ClientData cache and journal synchronisation state.</param>
         public StorageDiagnosticsService(
             ILocalStorageEntryAdapter localStorageEntryAdapter,
@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Application.Services
             IWebApiCapabilityService webApiCapabilityService,
             IClientDataCacheInvalidationService clientDataCacheInvalidationService,
             IApiFeedbackWorkflow apiFeedbackWorkflow,
-            ILocalStorageService localStorageService,
+            IPendingClientDataJournal journal,
             ClientDataCacheState clientDataCacheState)
         {
             _localStorageEntryAdapter = localStorageEntryAdapter;
@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.Application.Services
             _webApiCapabilityService = webApiCapabilityService;
             _clientDataCacheInvalidationService = clientDataCacheInvalidationService;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
-            _localStorageService = localStorageService;
+            _journal = journal;
             _clientDataCacheState = clientDataCacheState;
         }
 
@@ -212,24 +212,11 @@ namespace Lantean.QBTMud.Application.Services
         {
             if (prefixedKey is null)
             {
-                await _localStorageService.RemoveItemAsync(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
+                await _journal.ClearAsync(cancellationToken);
                 return;
             }
 
-            var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-            if (pending is null || !pending.Remove(prefixedKey))
-            {
-                return;
-            }
-
-            if (pending.Count == 0)
-            {
-                await _localStorageService.RemoveItemAsync(SettingsStorageService._pendingChangesStorageKey, cancellationToken);
-            }
-            else
-            {
-                await _localStorageService.SetItemAsync(SettingsStorageService._pendingChangesStorageKey, pending, cancellationToken);
-            }
+            await _journal.RemoveAsync(prefixedKey, cancellationToken);
         }
 
         private async Task HandleClientDataFailureAsync(ApiResultBase? failureResult, CancellationToken cancellationToken)

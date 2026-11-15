@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _storageRoutingService,
                 _webApiCapabilityService,
                 _clientDataStorageAdapter,
-                _apiFeedbackWorkflow);
+                _apiFeedbackWorkflow, _localStorageService);
         }
 
         [Theory]
@@ -127,7 +127,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             var journal = await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken);
             await _localStorageService.SetItemAsStringAsync("SettingsStorage.PendingClientData.v1", journal!, TestContext.Current.CancellationToken);
             var target = new SettingsStorageService(new ClientDataCacheState(), _localStorageService,
-                _storageRoutingService, _webApiCapabilityService, _clientDataStorageAdapter, _apiFeedbackWorkflow);
+                _storageRoutingService, _webApiCapabilityService, _clientDataStorageAdapter, _apiFeedbackWorkflow, _localStorageService);
 
             var result = await target.GetItemAsync<Dictionary<string, bool>>("Key", TestContext.Current.CancellationToken);
 

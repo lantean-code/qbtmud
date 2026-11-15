@@ -3,7 +3,7 @@ using Lantean.QBTMud.Application.Services;
 
 namespace Lantean.QBTMud.TestSupport.Infrastructure
 {
-    internal sealed class TestLocalStorageService : ILocalStorageService, ISettingsStorageService, IClientDataCacheInvalidationService
+    internal sealed class TestLocalStorageService : ILocalStorageService, ISettingsStorageService, IClientDataCacheInvalidationService, IPendingClientDataJournal
     {
         private readonly Dictionary<string, object?> _store = new(StringComparer.Ordinal);
         private readonly Lock _lock = new();
@@ -96,6 +96,93 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
         public Task InvalidateClientDataCacheAsync(CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
+        }
+
+        public ValueTask<Dictionary<string, JsonElement?>> ReadAsync(CancellationToken cancellationToken = default)
+        {
+            lock (_lock)
+            {
+                return ValueTask.FromResult(ReadPending());
+            }
+        }
+
+        public ValueTask SetAsync(string key, JsonElement? value, CancellationToken cancellationToken = default)
+        {
+            lock (_lock)
+            {
+                var pending = ReadPending();
+                pending[key] = value;
+                WritePending(pending);
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        public ValueTask<Dictionary<string, JsonElement?>> CompleteAsync(IReadOnlyDictionary<string, JsonElement?> changes, CancellationToken cancellationToken = default)
+        {
+            lock (_lock)
+            {
+                var pending = ReadPending();
+                foreach (var (key, expected) in changes)
+                {
+                    if (pending.TryGetValue(key, out var current) && current?.GetRawText() == expected?.GetRawText())
+                    {
+                        pending.Remove(key);
+                    }
+                }
+                WritePending(pending);
+                return ValueTask.FromResult(pending);
+            }
+        }
+
+        public ValueTask RemoveAsync(string key, CancellationToken cancellationToken = default)
+        {
+            lock (_lock)
+            {
+                var pending = ReadPending();
+                pending.Remove(key);
+                WritePending(pending);
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        public ValueTask ClearAsync(CancellationToken cancellationToken = default)
+        {
+            RemoveItemInternal(SettingsStorageService._pendingChangesStorageKey);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask RemoveLocalSourceAsync(string key, CancellationToken cancellationToken = default)
+        {
+            lock (_lock)
+            {
+                var prefixedKey = key.StartsWith("QbtMud.", StringComparison.Ordinal) ? key : "QbtMud." + key;
+                if (!ReadPending().ContainsKey(prefixedKey))
+                {
+                    _store.Remove(key);
+                    _store.Remove(prefixedKey);
+                    _store.Remove(prefixedKey["QbtMud.".Length..]);
+                }
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        private Dictionary<string, JsonElement?> ReadPending()
+        {
+            return _store.TryGetValue(SettingsStorageService._pendingChangesStorageKey, out var value) && value is not null
+                ? JsonSerializer.Deserialize<Dictionary<string, JsonElement?>>(value is string text ? text : JsonSerializer.Serialize(value))!
+                : [];
+        }
+
+        private void WritePending(Dictionary<string, JsonElement?> pending)
+        {
+            if (pending.Count == 0)
+            {
+                _store.Remove(SettingsStorageService._pendingChangesStorageKey);
+            }
+            else
+            {
+                SetItemInternal(SettingsStorageService._pendingChangesStorageKey, JsonSerializer.Serialize(pending));
+            }
         }
 
         public void Clear()

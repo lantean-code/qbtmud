@@ -22,6 +22,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
+        private readonly IPendingClientDataJournal _journal;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsStorageService"/> class.
@@ -32,13 +33,15 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="clientDataStorageAdapter">The client data storage adapter.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
+        /// <param name="journal">The journal shared across browser tabs.</param>
         public SettingsStorageService(
             ClientDataCacheState clientDataCacheState,
             ILocalStorageService localStorageService,
             IStorageRoutingService storageRoutingService,
             IWebApiCapabilityService webApiCapabilityService,
             IClientDataStorageAdapter clientDataStorageAdapter,
-            IApiFeedbackWorkflow apiFeedbackWorkflow)
+            IApiFeedbackWorkflow apiFeedbackWorkflow,
+            IPendingClientDataJournal journal)
         {
             _clientDataCacheState = clientDataCacheState;
             _localStorageService = localStorageService;
@@ -46,6 +49,7 @@ namespace Lantean.QBTMud.Application.Services
             _webApiCapabilityService = webApiCapabilityService;
             _clientDataStorageAdapter = clientDataStorageAdapter;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
+            _journal = journal;
         }
 
         /// <inheritdoc />
@@ -133,6 +137,7 @@ namespace Lantean.QBTMud.Application.Services
             {
                 var prefixedKey = ToPrefixedKey(key);
                 var valueElement = JsonSerializer.SerializeToElement(data, _serializerOptions);
+                var pendingBefore = await _journal.ReadAsync(cancellationToken);
                 var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
                     new Dictionary<string, object?>(StringComparer.Ordinal)
                     {
@@ -149,7 +154,7 @@ namespace Lantean.QBTMud.Application.Services
                     return;
                 }
 
-                await StoreCachedClientDataEntryAsync(prefixedKey, valueElement, cancellationToken);
+                await StoreCachedClientDataEntryAsync(prefixedKey, valueElement, pendingBefore, cancellationToken);
             }
             finally
             {
@@ -174,6 +179,7 @@ namespace Lantean.QBTMud.Application.Services
             try
             {
                 var prefixedKey = ToPrefixedKey(key);
+                var pendingBefore = await _journal.ReadAsync(cancellationToken);
                 var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
                     new Dictionary<string, object?>(StringComparer.Ordinal)
                     {
@@ -190,7 +196,7 @@ namespace Lantean.QBTMud.Application.Services
                     return;
                 }
 
-                await StoreCachedClientDataEntryAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), cancellationToken);
+                await StoreCachedClientDataEntryAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), pendingBefore, cancellationToken);
             }
             finally
             {
@@ -213,6 +219,7 @@ namespace Lantean.QBTMud.Application.Services
             await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
             try
             {
+                var pendingBefore = await _journal.ReadAsync(cancellationToken);
                 var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);
                 if (!removeResult.Succeeded)
                 {
@@ -223,7 +230,7 @@ namespace Lantean.QBTMud.Application.Services
                     return;
                 }
 
-                await RemoveCachedClientDataEntryAsync(ToPrefixedKey(key), cancellationToken);
+                await RemoveCachedClientDataEntryAsync(ToPrefixedKey(key), pendingBefore, cancellationToken);
             }
             finally
             {
@@ -282,9 +289,9 @@ namespace Lantean.QBTMud.Application.Services
             }
         }
 
-        private async Task StoreCachedClientDataEntryAsync(string prefixedKey, JsonElement value, CancellationToken cancellationToken)
+        private async Task StoreCachedClientDataEntryAsync(string prefixedKey, JsonElement value, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
         {
-            await RemovePendingChangeAsync(prefixedKey, cancellationToken);
+            await RemovePendingChangeAsync(prefixedKey, pendingBefore, cancellationToken);
             if (_clientDataCacheState.CachedEntries is null)
             {
                 return;
@@ -297,9 +304,9 @@ namespace Lantean.QBTMud.Application.Services
             _clientDataCacheState.CachedEntries = updatedEntries;
         }
 
-        private async Task RemoveCachedClientDataEntryAsync(string prefixedKey, CancellationToken cancellationToken)
+        private async Task RemoveCachedClientDataEntryAsync(string prefixedKey, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
         {
-            await RemovePendingChangeAsync(prefixedKey, cancellationToken);
+            await RemovePendingChangeAsync(prefixedKey, pendingBefore, cancellationToken);
             if (_clientDataCacheState.CachedEntries is null)
             {
                 return;
@@ -312,32 +319,36 @@ namespace Lantean.QBTMud.Application.Services
 
         private async Task RetainPendingChangeAsync(string key, JsonElement? value, CancellationToken cancellationToken)
         {
-            var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(_pendingChangesStorageKey, cancellationToken)
-                ?? new Dictionary<string, JsonElement?>(StringComparer.Ordinal);
-            pending[key] = value;
-            await _localStorageService.SetItemAsync(_pendingChangesStorageKey, pending, cancellationToken);
+            await _journal.SetAsync(key, value, cancellationToken);
             _clientDataCacheState.CachedEntries = null;
         }
 
-        private async Task RemovePendingChangeAsync(string key, CancellationToken cancellationToken)
+        private async Task RemovePendingChangeAsync(string key, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
         {
-            var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(_pendingChangesStorageKey, cancellationToken);
-            if (pending is not null && pending.Remove(key))
+            var completed = new Dictionary<string, JsonElement?>();
+            if (pendingBefore.TryGetValue(key, out var value))
             {
-                await PersistPendingChangesAsync(pending, cancellationToken);
+                completed[key] = value;
+            }
+
+            var remaining = await _journal.CompleteAsync(completed, cancellationToken);
+            if (remaining.Count > 0)
+            {
+                _clientDataCacheState.CachedEntries = null;
             }
         }
 
         private async Task<bool> ReconcilePendingChangesAsync(Dictionary<string, JsonElement> entries, CancellationToken cancellationToken)
         {
-            var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(_pendingChangesStorageKey, cancellationToken);
-            if (pending is null || pending.Count == 0)
+            var pending = await _journal.ReadAsync(cancellationToken);
+            if (pending.Count == 0)
             {
                 return true;
             }
 
             var writes = new Dictionary<string, object?>(StringComparer.Ordinal);
             var removals = new List<string>();
+            var completed = new Dictionary<string, JsonElement?>();
             foreach (var (key, value) in pending)
             {
                 if (value.HasValue)
@@ -359,7 +370,7 @@ namespace Lantean.QBTMud.Application.Services
                 {
                     foreach (var key in writes.Keys)
                     {
-                        pending.Remove(key);
+                        completed[key] = pending[key];
                     }
                 }
                 else
@@ -375,7 +386,7 @@ namespace Lantean.QBTMud.Application.Services
                 {
                     foreach (var key in removals)
                     {
-                        pending.Remove(key);
+                        completed[key] = pending[key];
                     }
                 }
                 else
@@ -384,20 +395,19 @@ namespace Lantean.QBTMud.Application.Services
                 }
             }
 
-            await PersistPendingChangesAsync(pending, cancellationToken);
-            return pending.Count == 0;
-        }
-
-        private async Task PersistPendingChangesAsync(Dictionary<string, JsonElement?> pending, CancellationToken cancellationToken)
-        {
-            if (pending.Count == 0)
+            var remaining = await _journal.CompleteAsync(completed, cancellationToken);
+            foreach (var (key, value) in remaining)
             {
-                await _localStorageService.RemoveItemAsync(_pendingChangesStorageKey, cancellationToken);
+                if (value.HasValue)
+                {
+                    entries[key] = value.Value;
+                }
+                else
+                {
+                    entries.Remove(key);
+                }
             }
-            else
-            {
-                await _localStorageService.SetItemAsync(_pendingChangesStorageKey, pending, cancellationToken);
-            }
+            return remaining.Count == 0;
         }
 
         private static string ToPrefixedKey(string key)

@@ -112,6 +112,7 @@ namespace Lantean.QBTMud.TestSupport.Infrastructure
             Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
             Services.AddScoped<IStorageRoutingService, StorageRoutingService>();
             Services.AddScoped<ClientDataCacheState>();
+            Services.AddSingleton<IPendingClientDataJournal>(_localStorage);
             Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();

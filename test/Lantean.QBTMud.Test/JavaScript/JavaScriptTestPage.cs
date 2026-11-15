@@ -95,7 +95,7 @@ namespace Lantean.QBTMud.Test.JavaScript
                     ["callCount"] = true,
                     ["detailed"] = true
                 });
-                await page.RouteAsync("**/*", async route =>
+                await context.RouteAsync("**/*", async route =>
                 {
                     if (route.Request.Url == $"{_origin}/")
                     {

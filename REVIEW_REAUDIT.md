@@ -88,3 +88,9 @@ This is a substantially deeper workflow review, with explicit source and asserti
 - [ ] If an independent exhaustive repository audit is required, maintain a file-level coverage ledger as it proceeds. This follow-up's area ledger records its actual reach without claiming that work has already been completed.
 
 The review itself was static. Its subsequent remediation includes the seven fixes, their regression tests and the validation recorded in REVIEW_FINDINGS.md. Broader review and full-page browser work listed above remain separate follow-ups.
+
+## Subsequent branch-review remediation
+
+The next comparison of `develop` at `bdcf952695e1fce482e4b21636ad7f6536a350de` with the same `master` found R63–R65, recorded in [the findings checklist](REVIEW_FINDINGS.md#subsequent-branch-review--r63r65). R63 extends the journal review to separate browser tabs, which cannot share the scoped C# semaphore. R64 concerns a later migrated key receiving a failed save during earlier source cleanup. R65 concerns the pinned SDK rejecting the browser-test instructions and CI test arguments.
+
+The fixes retain the existing journal format, coordinate mutations through browser-wide IndexedDB transactions, conditionally acknowledge captured values and preserve pending local fallbacks during cleanup. Regression coverage includes actual production JavaScript in two browser tabs, delayed service requests with separate cache states, migration snapshots and the documented/CI test commands. This closes these three identified defects; it does not turn the earlier reviews into an exhaustive guarantee of the repository.

@@ -121,8 +121,11 @@ jobs:
 
       - name: Run Tests with Coverage
         env:
+          ArtifactsPath: /tmp/artifacts/qbtmud
+          UseArtifactsOutput: 'true'
+          QbtMudBuildVersion: ${{ env.VERSION }}
           QBTMUD_JS_COVERAGE_DIR: ${{ github.workspace }}/TestResults/javascript-coverage
-        run: dotnet test --no-build --configuration Release --coverlet --coverlet-output-format cobertura --results-directory TestResults --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
+        run: dotnet test --no-build --configuration Release --coverlet --coverlet-output-format cobertura --results-directory TestResults
 
       - name: Report and Check JavaScript Coverage
         if: always()

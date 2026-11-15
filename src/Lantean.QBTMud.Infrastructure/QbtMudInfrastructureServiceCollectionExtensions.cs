@@ -36,6 +36,7 @@ namespace Lantean.QBTMud.Infrastructure
             ArgumentNullException.ThrowIfNull(resourceAssembly);
 
             services.AddLocalization(options => options.ResourcesPath = "Resources");
+            services.TryAddScoped<IPendingClientDataJournal, PendingClientDataJournal>();
             services
                 .AddOptions<AssemblyResourceAccessorOptions>()
                 .Configure(options => options.ResourceAssembly = resourceAssembly)
