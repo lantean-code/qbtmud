@@ -226,47 +226,66 @@ Validation: all 3,441 solution tests passed with no failures or skips. Release p
 
 ### P2
 
-- [ ] **R23 — Expand rename references without reprocessing captured values.** [FileNameMatcher.cs:144](src/Lantean.QBTMud.Presentation/Services/FileNameMatcher.cs#L144)
+- [x] **R23 — Expand rename references without reprocessing captured values.** [FileNameMatcher.cs:144](src/Lantean.QBTMud.Presentation/Services/FileNameMatcher.cs#L144)
 
     Replacement handles `$1` before `$10`, corrupting multi-digit references, and later passes reinterpret dollar signs introduced by captured filenames. Parse replacement tokens once and append captures literally. Cover ten or more groups and capture values containing replacement syntax.
 
-- [ ] **R32 — Sort renamed folders by a comparable depth key.** [RenameFilesDialog.razor.cs:421](src/Lantean.QBTMud.Presentation/Components/Dialogs/RenameFilesDialog.razor.cs#L421)
+- [x] **R32 — Sort renamed folders by a comparable depth key.** [RenameFilesDialog.razor.cs:421](src/Lantean.QBTMud.Presentation/Components/Dialogs/RenameFilesDialog.razor.cs#L421)
 
     Replace All orders folders by `string[]` keys, which the default comparer cannot compare. Two renamed folders throw, potentially after file renames have succeeded. Use comparable depth keys and process children first. Existing coverage includes only one renamed folder.
 
-- [ ] **R33 — Exclude successful renames when retrying failures.** [RenameFilesDialog.razor.cs:410](src/Lantean.QBTMud.Presentation/Components/Dialogs/RenameFilesDialog.razor.cs#L410)
+- [x] **R33 — Exclude successful renames when retrying failures.** [RenameFilesDialog.razor.cs:410](src/Lantean.QBTMud.Presentation/Components/Dialogs/RenameFilesDialog.razor.cs#L410)
 
     After partial success, successful rows retain their old source paths and are submitted again on retry, failing against paths already renamed. Update their source state or exclude completed rows. Cover a successful row followed by failure, then retry.
 
-- [ ] **R34 — Include uncategorised torrents in category selection state.** [ManageCategoriesDialog.razor.cs:60](src/Lantean.QBTMud.Presentation/Components/Dialogs/ManageCategoriesDialog.razor.cs#L60)
+- [x] **R34 — Include uncategorised torrents in category selection state.** [ManageCategoriesDialog.razor.cs:60](src/Lantean.QBTMud.Presentation/Components/Dialogs/ManageCategoriesDialog.razor.cs#L60)
 
     Empty categories are removed before All/Partial calculation. Movies plus an uncategorised torrent therefore appears entirely Movies; clicking Movies clears both instead of assigning Movies to both. Include every selected torrent. Existing partial-selection tests use two non-empty categories.
 
-- [ ] **R38 — Expose cookies for torrent URL downloads.** [AddTorrentLinkDialog.razor:22](src/Lantean.QBTMud.Presentation/Components/Dialogs/AddTorrentLinkDialog.razor#L22)
+- [x] **R38 — Expose cookies for torrent URL downloads.** [AddTorrentLinkDialog.razor:22](src/Lantean.QBTMud.Presentation/Components/Dialogs/AddTorrentLinkDialog.razor#L22)
 
     The URL dialog hides the Cookie input needed for authenticated `.torrent` downloads, while file upload displays it. The workflow already maps cookies into API parameters. Enable the relevant field and cover authenticated URL additions. See the [API cookies parameter](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-v3.2.0-v4.0.4%29).
 
-- [ ] **R44 — Preserve parent paths during individual file renames.** [FilesTab.razor.cs:379](src/Lantean.QBTMud.Presentation/Components/FilesTab.razor.cs#L379)
+- [x] **R44 — Preserve parent paths during individual file renames.** [FilesTab.razor.cs:379](src/Lantean.QBTMud.Presentation/Components/FilesTab.razor.cs#L379)
 
     `contentItem.Path + value` omits the separator: renaming `root/file.txt` to `renamed.txt` sends `rootrenamed.txt`, moving it out of its parent. Join with the torrent's `/` separator. Existing tests explicitly assert the incorrect destination and need corrected expectations.
 
-- [ ] **R45 — Use the folder endpoint when renaming folders.** [FilesTab.razor.cs:379](src/Lantean.QBTMud.Presentation/Components/FilesTab.razor.cs#L379)
+- [x] **R45 — Use the folder endpoint when renaming folders.** [FilesTab.razor.cs:379](src/Lantean.QBTMud.Presentation/Components/FilesTab.razor.cs#L379)
 
     Direct rename accepts folder rows but always calls `RenameFileAsync`, so folder rename fails. Select `RenameFolderAsync` for folders and construct the destination from the parent path. Direct-rename tests cover files only; the bulk dialog already distinguishes endpoints.
 
-- [ ] **R46 — Use forward slashes for subcategory names.** [FiltersNav.razor.cs:304](src/Lantean.QBTMud.Presentation/Components/FiltersNav.razor.cs#L304)
+- [x] **R46 — Use forward slashes for subcategory names.** [FiltersNav.razor.cs:304](src/Lantean.QBTMud.Presentation/Components/FiltersNav.razor.cs#L304)
 
     Add Subcategory prefills `Movies\`, while hierarchy logic recognises `Movies/…`. The result behaves as an unrelated flat category. Use the category separator independently of filesystem conventions. Existing tests mirror the backslash; validate parent/child membership instead.
 
-- [ ] **R48 — Preserve file filters when their dialog is cancelled.** [FilesTab.razor.cs:129](src/Lantean.QBTMud.Presentation/Components/FilesTab.razor.cs#L129)
+- [x] **R48 — Preserve file filters when their dialog is cancelled.** [FilesTab.razor.cs:129](src/Lantean.QBTMud.Presentation/Components/FilesTab.razor.cs#L129)
 
     Cancel returns null, which clears existing filter definitions/predicates and changes visible files and possibly bulk-priority targets. Leave applied filters unchanged and use the existing removal action explicitly. The cancellation test currently begins without an applied filter.
 
 ### P3
 
-- [ ] **R53 — Persist and restore remembered rename settings consistently.** [RenameFilesDialog.razor.cs:235](src/Lantean.QBTMud.Presentation/Components/Dialogs/RenameFilesDialog.razor.cs#L235)
+- [x] **R53 — Persist and restore remembered rename settings consistently.** [RenameFilesDialog.razor.cs:235](src/Lantean.QBTMud.Presentation/Components/Dialogs/RenameFilesDialog.razor.cs#L235)
 
     Search changes update previews without persisting `MultiRenamePreferences.Search`, despite loading it when reopening. The remembered-settings switch is also not restored. Persist the search and restore the switch. The persistence test omits the stored-search assertion.
+
+### Resolution and regression coverage
+
+Addressed all ten findings in this section on 15 November 2026.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R23 | Replacement tokens are expanded once and captures are appended literally. Tests cover multi-digit, named, empty, unmatched and sparse captures, escaped dollars, unknown/overflowing references, and enumeration widths. |
+| R32 | Folder renames use descending depth. A strict sequence test verifies nested children are renamed before their parents. |
+| R33 | Completed renames are excluded from retries and regenerated previews. Failed descendants defer ancestor folder renames. Tests cover partial failure, successful siblings, nested/unrelated folders, direct retry and preview regeneration. |
+| R34 | Category selection includes empty and null categories. Tests verify Partial state and assigning Movies to both categorised and uncategorised selections. |
+| R38 | URL additions expose the Cookie field. A dialog regression enters an authenticated URL and cookie and verifies the returned options; existing workflow tests verify the cookie reaches API parameters. |
+| R44 | Direct renames join the parent path with `/`. Root and nested-file regressions verify the destination path. |
+| R45 | Folder rows use the folder rename endpoint. Root and nested-folder regressions verify the destination and exclude file-endpoint calls. |
+| R46 | Subcategory prefixes use `/`, including existing trailing separators. Menu tests verify the prefill and its compatibility with parent/child filtering. |
+| R48 | Cancelling filter editing retains applied filters. Tests preserve visible rows, dialog definitions and filtered priority targets, then verify explicit removal restores all rows. |
+| R53 | Remembered search changes persist, enabling Remember captures current settings, and the switch restores on reopening. Persistence and restore regressions cover these paths. |
+
+Validation: all 3,471 solution tests passed with no failures or skips. Release publishing succeeded. Coverage includes all 73 changed executable source lines and their branches. Changed C# files were formatted and changed files use CRLF. Output used `/tmp/artifacts/qbtmud`, with the formatter environment settings described above. Sub-agents made scoped changes and read-only reviews; only the parent ran formatting, builds/tests and publishing. No browser automation was run.
 
 ## RSS rules and path browsing dialogs
 

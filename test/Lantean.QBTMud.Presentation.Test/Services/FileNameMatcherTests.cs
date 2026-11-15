@@ -7,6 +7,84 @@ namespace Lantean.QBTMud.Presentation.Test.Services
     public class FileNameMatcherTests
     {
         [Fact]
+        public void GIVEN_TenCapturingGroups_WHEN_ExpandingReferences_THEN_ShouldTreatEachNumericReferenceAsOneToken()
+        {
+            var rows = new[] { CreateFile("File", "abcdefghij.txt") };
+
+            var result = FileNameMatcher.GetRenamedFiles(rows, "(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)", true,
+                "$10-$1-$0", false, true, AppliesTo.Filename, true, false, false, 0);
+
+            result.Should().ContainSingle().Which.NewName.Should().Be("j-a-abcdefghij.txt");
+        }
+
+        [Theory]
+        [InlineData("$1", "(.*)", "$1-$ddd-007.txt")]
+        [InlineData("$name", "(?<name>.*)", "$1-$ddd-007.txt")]
+        public void GIVEN_CapturesContainingReplacementSyntax_WHEN_Expanding_THEN_ShouldAppendCapturedValuesLiterally(string replacement, string pattern, string expected)
+        {
+            var rows = new[] { CreateFile("File", "$1-$ddd.txt") };
+
+            var result = FileNameMatcher.GetRenamedFiles(rows, pattern, true, replacement + "-$ddd", false, true,
+                AppliesTo.Filename, true, false, false, 7);
+
+            result.Should().ContainSingle().Which.NewName.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(@"\$1", "$1")]
+        [InlineData(@"\$name", "$name")]
+        [InlineData("$99", "99")]
+        [InlineData("$99999999999999999999", "99999999999999999999")]
+        [InlineData("$unknown$", "unknown")]
+        [InlineData("$$", "")]
+        [InlineData(@"trailing\", @"trailing\")]
+        [InlineData("$ddddddddd", "00000007d")]
+        [InlineData("$", "")]
+        [InlineData("", "")]
+        public void GIVEN_ReplacementTokensAndEscapes_WHEN_Expanding_THEN_ShouldPreserveLiteralAndEnumerationSemantics(string replacement, string expected)
+        {
+            var rows = new[] { CreateFile("File", "Name.txt") };
+
+            var result = FileNameMatcher.GetRenamedFiles(rows, "(Name)", true, replacement, false, true,
+                AppliesTo.Filename, true, false, false, 7);
+
+            result.Should().ContainSingle().Which.NewName.Should().Be(expected + ".txt");
+        }
+
+        [Fact]
+        public void GIVEN_EmptyAndOverlappingNamedGroups_WHEN_Expanding_THEN_ShouldUseCompleteNamesAndEmptyCaptures()
+        {
+            var rows = new[] { CreateFile("File", "Name.txt") };
+
+            var result = FileNameMatcher.GetRenamedFiles(rows, "(?<name>Name)(?<n>)(?<empty>)", true,
+                "$name-$n-$empty-$1", false, true, AppliesTo.Filename, true, false, false, 0);
+
+            result.Should().ContainSingle().Which.NewName.Should().Be("Name---Name.txt");
+        }
+
+        [Fact]
+        public void GIVEN_UnmatchedCapture_WHEN_Expanding_THEN_ShouldAppendAnEmptyCapture()
+        {
+            var rows = new[] { CreateFile("File", "Name.txt") };
+
+            var result = FileNameMatcher.GetRenamedFiles(rows, "(Name)(Absent)?", true, "$2-$1", false, true,
+                AppliesTo.Filename, true, false, false, 0);
+
+            result.Should().ContainSingle().Which.NewName.Should().Be("-Name.txt");
+        }
+
+        [Fact]
+        public void GIVEN_SparseExplicitGroupNumber_WHEN_Expanding_THEN_ShouldRecogniseOnlyAssignedNumbers()
+        {
+            var rows = new[] { CreateFile("File", "Name.txt") };
+
+            var result = FileNameMatcher.GetRenamedFiles(rows, "(?<12>Name)", true, "$12-$1", false, true,
+                AppliesTo.Filename, true, false, false, 0);
+
+            result.Should().ContainSingle().Which.NewName.Should().Be("Name-1.txt");
+        }
+
+        [Fact]
         public void GIVEN_EmptySearch_WHEN_GetRenamedFiles_THEN_ShouldReturnEmpty()
         {
             var files = new[]

@@ -128,9 +128,6 @@ namespace Lantean.QBTMud.Components
             var filterDefinitions = await DialogWorkflow.ShowFilterOptionsDialog(_filterDefinitions);
             if (filterDefinitions is null)
             {
-                _filterDefinitions = null;
-                Filters = null;
-                MarkFilesDirty();
                 return;
             }
             else
@@ -376,7 +373,11 @@ namespace Lantean.QBTMud.Components
                     name,
                     async value =>
                     {
-                        var renameResult = await ApiClient.RenameFileAsync(Hash, contentItem.Name, contentItem.Path + value);
+                        var parentPath = contentItem.Name.GetDirectoryPath();
+                        var destination = string.IsNullOrEmpty(parentPath) ? value : string.Concat(parentPath, "/", value);
+                        var renameResult = contentItem.IsFolder
+                            ? await ApiClient.RenameFolderAsync(Hash, contentItem.Name, destination)
+                            : await ApiClient.RenameFileAsync(Hash, contentItem.Name, destination);
                         await ApiFeedbackWorkflow.ProcessResultAsync(renameResult);
                     });
             }

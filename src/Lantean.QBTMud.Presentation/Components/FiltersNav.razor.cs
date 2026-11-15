@@ -301,9 +301,9 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var prefix = ContextMenuCategory.EndsWith("\\", StringComparison.Ordinal)
+            var prefix = ContextMenuCategory.EndsWith("/", StringComparison.Ordinal)
                 ? ContextMenuCategory
-                : $"{ContextMenuCategory}\\";
+                : $"{ContextMenuCategory}/";
 
             string? initialSavePath = null;
             if (MainData?.Categories.TryGetValue(ContextMenuCategory, out var category) == true)

@@ -402,7 +402,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             dialogMock.Setup(d => d.InvokeAddCategoryDialog(null, null)).ReturnsAsync("Category");
             dialogMock.Setup(d => d.InvokeEditCategoryDialog("Movies")).ReturnsAsync("Movies");
-            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Movies\\", "C:\\Movies")).ReturnsAsync("Movies\\Sub");
+            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Movies/", "C:\\Movies")).ReturnsAsync("Movies/Sub");
             apiClientMock.Setup(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" })).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
@@ -424,7 +424,10 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             dialogMock.Verify(d => d.InvokeAddCategoryDialog(null, null), Times.Once);
             dialogMock.Verify(d => d.InvokeEditCategoryDialog("Movies"), Times.Once);
-            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Movies\\", "C:\\Movies"), Times.Once);
+            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Movies/", "C:\\Movies"), Times.Once);
+            dialogMock.Verify(d => d.InvokeAddCategoryDialog(It.Is<string>(prefix =>
+                FilterHelper.FilterCategory(CreateTorrent("ChildHash", prefix + "Sub", Array.Empty<string>(), string.Empty, 0, TorrentState.Downloading), "Movies", true)),
+                "C:\\Movies"), Times.Once);
             apiClientMock.Verify(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" }), Times.Once);
         }
 
@@ -459,18 +462,18 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var mainData = CreateMainData(includeGamesCategory: true, includeGamesDefinition: false);
 
-            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Games\\", null)).ReturnsAsync("Games\\Sub");
+            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Games/", null)).ReturnsAsync("Games/Sub");
 
             var target = RenderFiltersNav(mainData);
 
-            var games = FindComponentByTestId<CustomNavLink>(target, "Category-Games%5C");
+            var games = FindComponentByTestId<CustomNavLink>(target, "Category-Games%2F");
             await target.InvokeAsync(() => games.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
             var addSubcategory = WaitForMenuItemByTestId("CategoryAddSubcategory");
             await target.InvokeAsync(() => addSubcategory.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
-            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Games\\", null), Times.Once);
+            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Games/", null), Times.Once);
         }
 
         [Fact]
@@ -1046,7 +1049,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             if (includeGamesDefinition)
             {
-                categories["Games\\"] = new MudCategory("Games\\", "C:\\Games");
+                categories["Games/"] = new MudCategory("Games/", "C:\\Games");
             }
 
             var tags = new[] { "Tag1", "Tag2" };
@@ -1075,7 +1078,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             if (includeGamesCategory)
             {
-                categoriesState["Games\\"] = new HashSet<string> { "Hash2" };
+                categoriesState["Games/"] = new HashSet<string> { "Hash2" };
             }
 
             var statusState = new Dictionary<string, HashSet<string>>

@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var torrentList = torrentsResult.Value;
-            TorrentCategories = torrentList.Where(t => !string.IsNullOrEmpty(t.Category)).Select(t => t.Category!).ToList();
+            TorrentCategories = torrentList.Select(t => t.Category ?? string.Empty).ToList();
         }
 
         protected string GetIcon(string tag)

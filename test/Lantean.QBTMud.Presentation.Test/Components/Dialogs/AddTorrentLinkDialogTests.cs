@@ -71,6 +71,25 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_AuthenticatedTorrentUrl_WHEN_CookieEnteredAndSubmitted_THEN_ShouldIncludeCookieInResult()
+        {
+            UseApiClientMock();
+            var dialog = await _target.RenderDialogAsync();
+            var url = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTorrentLinkUrls");
+            var cookie = FindComponentByTestId<MudTextField<string>>(dialog.Component, "Cookie");
+            await dialog.Component.InvokeAsync(() => url.Instance.ValueChanged.InvokeAsync("https://tracker.example/download.torrent"));
+            await dialog.Component.InvokeAsync(() => cookie.Instance.ValueChanged.InvokeAsync("session=CookieValue"));
+            var submit = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentLinkSubmit");
+
+            await dialog.Component.InvokeAsync(() => submit.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            var result = await dialog.Reference.Result;
+            var options = (AddTorrentLinkOptions)result!.Data!;
+            options.Cookie.Should().Be("session=CookieValue");
+            options.Urls.Should().ContainSingle().Which.Should().Be("https://tracker.example/download.torrent");
+        }
+
+        [Fact]
         public async Task GIVEN_UrlsEntered_WHEN_SubmitInvoked_THEN_ResultContainsUrls()
         {
             UseApiClientMock();
