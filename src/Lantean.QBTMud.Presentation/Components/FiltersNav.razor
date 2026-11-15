@@ -46,13 +46,13 @@
     <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Categories")" @bind-Expanded="_categoriesExpanded">
         @foreach (var (category, count) in Categories)
         {
-            <CustomNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))" data-test-id="@TestIdHelper.For($"Category-{category}")">@($"{GetCategoryDisplayName(category)} ({count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))" data-test-id="@TestIdHelper.For($"Category-{Uri.EscapeDataString(category)}")">@($"{GetCategoryDisplayName(category)} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Tags")" @bind-Expanded="_tagsExpanded">
         @foreach (var (tag, count) in Tags)
         {
-            <CustomNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))" data-test-id="@TestIdHelper.For($"Tag-{tag}")">@($"{GetTagDisplayName(tag)} ({count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))" data-test-id="@TestIdHelper.For($"Tag-{Uri.EscapeDataString(tag)}")">@($"{GetTagDisplayName(tag)} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Trackers")" @bind-Expanded="_trackersExpanded">

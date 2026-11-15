@@ -112,13 +112,13 @@ namespace Lantean.QBTMud.Components
             var category = await SettingsStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
             if (category is not null)
             {
-                TorrentQueryState.SetCategory(category);
+                TorrentQueryState.SetCategory(DecodeSelection(category, FilterHelper.CATEGORY_ALL, FilterHelper.CATEGORY_UNCATEGORIZED, "Uncategorized"));
             }
 
             var tag = await SettingsStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
             if (tag is not null)
             {
-                TorrentQueryState.SetTag(tag);
+                TorrentQueryState.SetTag(DecodeSelection(tag, FilterHelper.TAG_ALL, FilterHelper.TAG_UNTAGGED, "Untagged"));
             }
 
             var tracker = await SettingsStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
@@ -179,7 +179,7 @@ namespace Lantean.QBTMud.Components
 
             if (value != FilterHelper.CATEGORY_ALL)
             {
-                await SettingsStorage.SetItemAsStringAsync(_categorySelectionStorageKey, value);
+                await SettingsStorage.SetItemAsStringAsync(_categorySelectionStorageKey, "\0" + value);
             }
             else
             {
@@ -218,7 +218,7 @@ namespace Lantean.QBTMud.Components
 
             if (value != FilterHelper.TAG_ALL)
             {
-                await SettingsStorage.SetItemAsStringAsync(_tagSelectionStorageKey, value);
+                await SettingsStorage.SetItemAsStringAsync(_tagSelectionStorageKey, "\0" + value);
             }
             else
             {
@@ -680,11 +680,26 @@ namespace Lantean.QBTMud.Components
                         return [];
                     }
 
-                    return MainData.Torrents.Where(t => FilterHelper.FilterTracker(t.Value, ContextMenuTracker)).Select(t => t.Value.Hash).ToList();
+                    return MainData.Torrents.Values.FilterTracker(ContextMenuTracker, MainData.Trackers).Select(t => t.Hash).ToList();
 
                 default:
                     return [];
             }
+        }
+
+        private static string DecodeSelection(string selection, string allKey, string emptyKey, string emptyName)
+        {
+            if (selection.StartsWith('\0'))
+            {
+                return selection[1..];
+            }
+
+            if (selection == "All")
+            {
+                return allKey;
+            }
+
+            return selection == emptyName ? emptyKey : selection;
         }
 
         private void AppendSpecialTrackerItem(string key, List<TrackerFilterItem> items)

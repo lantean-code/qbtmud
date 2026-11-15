@@ -8,6 +8,83 @@ namespace Lantean.QBTMud.Core.Test.Helpers
 {
     public sealed class FilterHelperTests
     {
+        [Theory]
+        [InlineData("All")]
+        [InlineData("Untagged")]
+        [InlineData("Uncategorized")]
+        public void GIVEN_UserDefinedReservedNames_WHEN_Filtering_THEN_ShouldKeepSyntheticFiltersDistinct(string name)
+        {
+            var named = CreateTorrent("Named", category: name, tags: [name]);
+            var empty = CreateTorrent("Empty");
+
+            FilterHelper.FilterTag(named, name).Should().BeTrue();
+            FilterHelper.FilterTag(empty, name).Should().BeFalse();
+            FilterHelper.FilterCategory(named, name, false).Should().BeTrue();
+            FilterHelper.FilterCategory(empty, name, false).Should().BeFalse();
+            FilterHelper.FilterTag(empty, FilterHelper.TAG_ALL).Should().BeTrue();
+            FilterHelper.FilterCategory(empty, FilterHelper.CATEGORY_ALL, false).Should().BeTrue();
+            FilterHelper.FilterTag(named, FilterHelper.TAG_UNTAGGED).Should().BeFalse();
+            FilterHelper.FilterCategory(named, FilterHelper.CATEGORY_UNCATEGORIZED, false).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("secondary.example.com")]
+        [InlineData("udp://secondary.example.com/announce/")]
+        public void GIVEN_SecondaryTrackerMembership_WHEN_Filtering_THEN_ShouldIncludeEveryAssociatedTorrent(string tracker)
+        {
+            var torrent = CreateTorrent("Hash", tracker: "https://primary.example.com/announce", trackersCount: 2);
+            var unrelated = CreateTorrent("Unrelated", tracker: "udp://secondary.example.com/announce", trackersCount: 1);
+            var trackers = new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["https://primary.example.com/announce"] = ["Hash"],
+                ["udp://secondary.example.com/announce"] = ["Hash", "Missing"],
+                ["https://secondary.example.com/other"] = ["Hash"]
+            };
+            var state = new FilterState(FilterHelper.CATEGORY_ALL, Status.All, FilterHelper.TAG_ALL,
+                tracker, false, null, TorrentFilterField.Name, false, true);
+
+            new[] { torrent, unrelated }.Filter(state, trackers).Should().ContainSingle().Which.Should().Be(torrent);
+            new[] { torrent }.FilterTracker(tracker, trackers).Should().ContainSingle();
+            new[] { torrent }.FilterTracker(FilterHelper.TRACKER_ALL, trackers).Should().ContainSingle();
+            new[] { torrent }.FilterTracker(tracker, new Dictionary<string, IReadOnlyList<string>>()).Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(FilterHelper.TRACKER_ALL)]
+        [InlineData(FilterHelper.TRACKER_TRACKERLESS)]
+        [InlineData(FilterHelper.TRACKER_ERROR)]
+        [InlineData(FilterHelper.TRACKER_WARNING)]
+        [InlineData(FilterHelper.TRACKER_ANNOUNCE_ERROR)]
+        [InlineData("")]
+        public void GIVEN_SyntheticTrackerSelection_WHEN_MembershipIsAvailable_THEN_ShouldUseTorrentState(string tracker)
+        {
+            var torrent = CreateTorrent("Hash", hasTrackerError: true, hasTrackerWarning: true, hasOtherAnnounceError: true);
+
+            new[] { torrent }.FilterTracker(tracker, new Dictionary<string, IReadOnlyList<string>>())
+                .Should().ContainSingle().Which.Should().Be(torrent);
+        }
+
+        [Fact]
+        public void GIVEN_NullCurrentTracker_WHEN_MembershipIsUnavailable_THEN_ShouldReturnNoMatch()
+        {
+            var torrent = CreateTorrent("Hash", tracker: null!);
+
+            FilterHelper.FilterTracker(torrent, "tracker.example.com").Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GIVEN_ExcessiveBacktracking_WHEN_FilteringRegex_THEN_ShouldHandleTimeout(bool exclude)
+        {
+            var input = new string('a', 10000) + "!";
+            var pattern = (exclude ? "-" : string.Empty) + "(a+)+$";
+
+            var result = FilterHelper.FilterTerms(input, pattern, useRegex: true, isRegexValid: true);
+
+            result.Should().Be(exclude);
+        }
+
         [Fact]
         public void GIVEN_Torrents_WHEN_FilterApplied_THEN_ShouldReturnMatches()
         {

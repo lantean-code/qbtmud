@@ -1393,6 +1393,21 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_SecondaryTrackerMembership_WHEN_TrackerSelected_THEN_ShouldShowAssociatedTorrents()
+        {
+            var torrent = CreateTorrent("Hash", "Name", string.Empty, [], "https://primary.example.com/announce", TorrentState.Downloading);
+            var mainData = CreateMainData(torrents: [torrent], serverState: CreateServerState());
+            mainData.Trackers["udp://secondary.example.com/announce"] = ["Hash"];
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderLayoutWithProbe(mainData);
+
+            await target.InvokeAsync(() => queryState.SetTracker("secondary.example.com"));
+
+            target.WaitForAssertion(() => target.FindComponent<LayoutProbe>().Instance.Torrents.Should()
+                .ContainSingle().Which.Hash.Should().Be("Hash"));
+        }
+
+        [Fact]
         public async Task GIVEN_TorrentQueryStateUpdated_WHEN_FilterAndSortValuesChange_THEN_StateUpdatesAndVersionChanges()
         {
             var torrents = new List<MudTorrent>

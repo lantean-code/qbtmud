@@ -59,23 +59,36 @@ Build and test output used `/tmp/artifacts/qbtmud`. The installed formatter does
 
 ### P1
 
-- [ ] **R02 — Separate synthetic filters from user-defined names.** [TorrentDataManager.cs:78](src/Lantean.QBTMud.Application/Services/TorrentDataManager.cs#L78)
+- [x] **R02 — Separate synthetic filters from user-defined names.** [TorrentDataManager.cs:78](src/Lantean.QBTMud.Application/Services/TorrentDataManager.cs#L78)
 
     Tags named `All` or `Untagged`, and categories named `All` or `Uncategorized`, collide with synthetic dictionary entries and throw during full synchronisation, including startup. Incremental updates can also overwrite synthetic sets. Use distinct identities for synthetic filters and cover valid user-name collisions.
 
 ### P2
 
-- [ ] **R06 — Filter trackers using complete torrent membership.** [FilterHelper.cs:205](src/Lantean.QBTMud.Core/Helpers/FilterHelper.cs#L205)
+- [x] **R06 — Filter trackers using complete torrent membership.** [FilterHelper.cs:205](src/Lantean.QBTMud.Core/Helpers/FilterHelper.cs#L205)
 
     Sidebar counts use all associated trackers, while filtering compares only the torrent's current tracker. A torrent counted under a secondary tracker disappears when that tracker is selected, and bulk actions omit it. Use the complete tracker mapping. Existing tests cover single current trackers.
 
-- [ ] **R07 — Detect completion from verified progress.** [Extensions.cs:60](src/Lantean.QBTMud.Core/Extensions.cs#L60)
+- [x] **R07 — Detect completion from verified progress.** [Extensions.cs:60](src/Lantean.QBTMud.Core/Extensions.cs#L60)
 
     `IsFinished` compares transferred bytes with total torrent size, including unselected files, so successful selective downloads miss completion notifications. Use authoritative completion progress/state. Existing tests encode byte equality and full-download examples; cover selective downloads and resumed content. See the [qBittorrent API field definitions](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29).
 
-- [ ] **R08 — Bound regular-expression matching.** [FilterHelper.cs:160](src/Lantean.QBTMud.Core/Helpers/FilterHelper.cs#L160)
+- [x] **R08 — Bound regular-expression matching.** [FilterHelper.cs:160](src/Lantean.QBTMud.Core/Helpers/FilterHelper.cs#L160)
 
     Expensive valid expressions run synchronously during filtering without a timeout and can freeze the WebAssembly UI. Add bounded matching and handle timeout failures. Tests cover malformed patterns but not excessive backtracking, such as `(a+)+$` against a long near-match. See [Microsoft's regex timeout guidance](https://learn.microsoft.com/dotnet/standard/base-types/best-practices-regex#use-time-out-values).
+
+### Resolution and regression coverage
+
+Completed on 15 November 2026. All four findings in this section have regression tests.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R02 | Built-in category and tag filters use keys distinct from user-defined names. Tests cover full and incremental synchronisation, removal, filtering, UI selection and reload for `All`, `Untagged` and `Uncategorized`. Existing saved selections remain readable; new selections distinguish named filters from built-in filters. Test IDs encode filter keys so control characters do not enter rendered attributes. |
+| R06 | Visible results and tracker bulk actions use the complete tracker-to-hash mapping. Matching hashes are collected once per query. Tests cover secondary URLs and hosts, duplicate membership, missing torrents, empty mappings, synthetic filters, the authenticated layout and sidebar start actions. The existing overloads remain available for callers without a tracker mapping. |
+| R07 | Completion uses reported progress rather than transferred bytes. Tests cover selective downloads, resumed data, incomplete torrents with equal or excessive transferred bytes, metadata with zero sizes, completion transitions and exactly one completion notification. |
+| R08 | Regex matching has a 50 ms timeout and handles timeout failures without escaping the filter. Tests exercise excessive backtracking in both inclusion and exclusion terms, alongside the existing valid and malformed expression cases. |
+
+Validation: the full solution test suite passed with 3,379 tests and no failures or skips. Release publishing succeeded. Changed C# files were formatted, changed files use CRLF, and collected coverage covers the changed executable lines and branches. Build, test and publish output used `/tmp/artifacts/qbtmud`; formatting used the output environment settings described above. No browser automation was run.
 
 ## Themes and appearance
 

@@ -55,9 +55,14 @@ namespace Lantean.QBTMud.Core
             }
         }
 
+        /// <summary>
+        /// Determines whether all selected content has been verified as complete.
+        /// </summary>
+        /// <param name="torrent">The torrent to inspect.</param>
+        /// <returns>Whether the reported progress is complete.</returns>
         public static bool IsFinished(this MudTorrent torrent)
         {
-            return torrent.TotalSize == torrent.Downloaded;
+            return torrent.Progress >= 1;
         }
 
         public static bool MetaDownloaded(this MudTorrent torrent)

@@ -7,22 +7,43 @@ namespace Lantean.QBTMud.Core.Helpers
 {
     public static class FilterHelper
     {
-        public const string TAG_ALL = "All";
-        public const string TAG_UNTAGGED = "Untagged";
-        public const string CATEGORY_ALL = "All";
-        public const string CATEGORY_UNCATEGORIZED = "Uncategorized";
+        // NUL separates built-in filters from valid user-defined names.
+        public const string TAG_ALL = "\0All";
+        public const string TAG_UNTAGGED = "\0Untagged";
+        public const string CATEGORY_ALL = "\0All";
+        public const string CATEGORY_UNCATEGORIZED = "\0Uncategorized";
         public const string TRACKER_ALL = "All";
         public const string TRACKER_TRACKERLESS = "Trackerless";
         public const string TRACKER_ERROR = "Error";
         public const string TRACKER_WARNING = "Warning";
         public const string TRACKER_ANNOUNCE_ERROR = "Announce error";
 
+        private static readonly TimeSpan _regexMatchTimeout = TimeSpan.FromMilliseconds(50);
+
+        /// <summary>
+        /// Filters torrents using their current tracker when no tracker mapping is available.
+        /// </summary>
+        /// <param name="torrents">The torrents to filter.</param>
+        /// <param name="filterState">The selected filters.</param>
+        /// <returns>The matching torrents.</returns>
         public static IEnumerable<MudTorrent> Filter(this IEnumerable<MudTorrent> torrents, FilterState filterState)
+        {
+            return torrents.Filter(filterState, null);
+        }
+
+        /// <summary>
+        /// Filters torrents using the complete tracker membership supplied by synchronisation.
+        /// </summary>
+        /// <param name="torrents">The torrents to filter.</param>
+        /// <param name="filterState">The selected filters.</param>
+        /// <param name="trackers">The tracker-to-hash mapping, or null to use current trackers.</param>
+        /// <returns>The matching torrents.</returns>
+        public static IEnumerable<MudTorrent> Filter(this IEnumerable<MudTorrent> torrents, FilterState filterState, IReadOnlyDictionary<string, IReadOnlyList<string>>? trackers)
         {
             return torrents.Where(t => FilterStatus(t, filterState.Status))
                 .Where(t => FilterTag(t, filterState.Tag))
                 .Where(t => FilterCategory(t, filterState.Category, filterState.UseSubcategories))
-                .Where(t => FilterTracker(t, filterState.Tracker))
+                .FilterTracker(filterState.Tracker, trackers)
                 .Where(t => FilterTerms(t, filterState));
         }
 
@@ -157,14 +178,24 @@ namespace Lantean.QBTMud.Core.Helpers
 
             try
             {
-                return Regex.IsMatch(text, term, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                return Regex.IsMatch(text, term, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, _regexMatchTimeout);
             }
             catch (ArgumentException)
             {
                 return false;
             }
+            catch (RegexMatchTimeoutException)
+            {
+                return false;
+            }
         }
 
+        /// <summary>
+        /// Tests a tracker filter against the torrent's current tracker and synthetic states.
+        /// </summary>
+        /// <param name="torrent">The torrent to test.</param>
+        /// <param name="tracker">The selected tracker URL, host or synthetic filter.</param>
+        /// <returns>Whether the torrent matches.</returns>
         public static bool FilterTracker(MudTorrent torrent, string tracker)
         {
             if (tracker == TRACKER_ALL)
@@ -202,7 +233,31 @@ namespace Lantean.QBTMud.Core.Helpers
                 return string.IsNullOrEmpty(torrent.Tracker);
             }
 
-            var torrentTracker = torrent.Tracker ?? string.Empty;
+            return MatchesTracker(torrent.Tracker ?? string.Empty, tracker);
+        }
+
+        /// <summary>
+        /// Filters by complete tracker membership, building the matching hash set once per query.
+        /// </summary>
+        /// <param name="torrents">The torrents to filter.</param>
+        /// <param name="tracker">The selected tracker URL, host or synthetic filter.</param>
+        /// <param name="trackers">The tracker-to-hash mapping, or null to use current trackers.</param>
+        /// <returns>The matching torrents.</returns>
+        public static IEnumerable<MudTorrent> FilterTracker(this IEnumerable<MudTorrent> torrents, string tracker, IReadOnlyDictionary<string, IReadOnlyList<string>>? trackers)
+        {
+            if (trackers is null || string.IsNullOrEmpty(tracker)
+                || tracker is TRACKER_ALL or TRACKER_TRACKERLESS or TRACKER_ERROR or TRACKER_WARNING or TRACKER_ANNOUNCE_ERROR)
+            {
+                return torrents.Where(torrent => FilterTracker(torrent, tracker));
+            }
+
+            var hashes = trackers.Where(entry => MatchesTracker(entry.Key, tracker))
+                .SelectMany(entry => entry.Value).ToHashSet(StringComparer.Ordinal);
+            return torrents.Where(torrent => hashes.Contains(torrent.Hash));
+        }
+
+        private static bool MatchesTracker(string torrentTracker, string tracker)
+        {
             if (IsTrackerUrl(tracker))
             {
                 return string.Equals(NormalizeTrackerKey(torrentTracker), NormalizeTrackerKey(tracker), StringComparison.OrdinalIgnoreCase);

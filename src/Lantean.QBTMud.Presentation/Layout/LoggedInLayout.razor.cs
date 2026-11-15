@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Layout
                 TorrentQueryState.SearchField,
                 TorrentQueryState.UseRegexSearch,
                 TorrentQueryState.IsRegexValid);
-            _visibleTorrents = MainData.Torrents.Values.Filter(filterState).ToList();
+            _visibleTorrents = MainData.Torrents.Values.Filter(filterState, MainData.Trackers).ToList();
             _torrentsDirty = false;
 
             return _visibleTorrents;

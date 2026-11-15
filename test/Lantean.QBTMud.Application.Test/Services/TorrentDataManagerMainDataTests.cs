@@ -21,6 +21,87 @@ namespace Lantean.QBTMud.Application.Test.Services
             _target = new TorrentDataManager();
         }
 
+        [Theory]
+        [InlineData("All", true)]
+        [InlineData("All", false)]
+        [InlineData("Untagged", true)]
+        [InlineData("Untagged", false)]
+        [InlineData("Uncategorized", true)]
+        [InlineData("Uncategorized", false)]
+        public void GIVEN_ReservedUserNames_WHEN_SynchronisingAndRemoving_THEN_ShouldPreserveIndependentFilterMembership(string name, bool fullUpdate)
+        {
+            var namedTorrents = new Dictionary<string, ClientModels.Torrent>
+            {
+                ["Named"] = ClientTorrentFactory.Create(category: name, tags: [name])
+            };
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                [name] = new ClientModels.Category(name, "/SavePath", downloadPath: null)
+            };
+            var initialTorrents = new Dictionary<string, ClientModels.Torrent>
+            {
+                ["Empty"] = ClientTorrentFactory.Create(category: string.Empty, tags: [])
+            };
+            if (fullUpdate)
+            {
+                initialTorrents.Add("Named", namedTorrents["Named"]);
+            }
+            var main = new ClientModels.MainData(responseId: 1, fullUpdate: true,
+                torrents: initialTorrents, torrentsRemoved: null, categories: fullUpdate ? categories : null,
+                categoriesRemoved: null, tags: fullUpdate ? [name] : null, tagsRemoved: null,
+                trackers: null, trackersRemoved: null, serverState: null);
+            var existing = _target.CreateMainData(main);
+            if (!fullUpdate)
+            {
+                _target.MergeMainData(new ClientModels.MainData(responseId: 2, fullUpdate: false,
+                    torrents: namedTorrents, torrentsRemoved: null, categories: categories,
+                    categoriesRemoved: null, tags: [name], tagsRemoved: null, trackers: null,
+                    trackersRemoved: null, serverState: null), existing, out _);
+            }
+
+            existing.TagState[FilterHelper.TAG_ALL].Should().BeEquivalentTo(["Named", "Empty"]);
+            existing.CategoriesState[FilterHelper.CATEGORY_ALL].Should().BeEquivalentTo(["Named", "Empty"]);
+            existing.TagState[FilterHelper.TAG_UNTAGGED].Should().BeEquivalentTo(["Empty"]);
+            existing.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Should().BeEquivalentTo(["Empty"]);
+            existing.TagState[name].Should().BeEquivalentTo(["Named"]);
+            existing.CategoriesState[name].Should().BeEquivalentTo(["Named"]);
+
+            _target.MergeMainData(new ClientModels.MainData(responseId: 3, fullUpdate: false,
+                torrents: null, torrentsRemoved: ["Named"], categories: null, categoriesRemoved: [name],
+                tags: null, tagsRemoved: [name], trackers: null, trackersRemoved: null,
+                serverState: null), existing, out _);
+
+            existing.TagState[FilterHelper.TAG_ALL].Should().BeEquivalentTo(["Empty"]);
+            existing.CategoriesState[FilterHelper.CATEGORY_ALL].Should().BeEquivalentTo(["Empty"]);
+            existing.TagState.Should().NotContainKey(name);
+            existing.CategoriesState.Should().NotContainKey(name);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(40)]
+        public void GIVEN_ResumedOrSelectiveDownload_WHEN_ProgressCompletes_THEN_ShouldReportCompletionTransition(long downloaded)
+        {
+            var existing = _target.CreateMainData(new ClientModels.MainData(responseId: 1, fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    ["Hash"] = ClientTorrentFactory.Create(progress: 0.5, downloaded: downloaded, totalSize: 100)
+                }, torrentsRemoved: null, categories: null, categoriesRemoved: null, tags: null,
+                tagsRemoved: null, trackers: null, trackersRemoved: null, serverState: null));
+            var delta = new ClientModels.MainData(responseId: 2, fullUpdate: false,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    ["Hash"] = ClientTorrentFactory.Create(progress: 1)
+                }, torrentsRemoved: null, categories: null, categoriesRemoved: null, tags: null,
+                tagsRemoved: null, trackers: null, trackersRemoved: null, serverState: null);
+
+            _target.MergeMainData(delta, existing, out _, out var transitions);
+
+            transitions.Should().ContainSingle().Which.CurrentIsFinished.Should().BeTrue();
+            transitions[0].PreviousIsFinished.Should().BeFalse();
+            existing.Torrents["Hash"].Downloaded.Should().Be(downloaded);
+        }
+
         [Fact]
         public void GIVEN_SavePathSearch_WHEN_PathOnlyDeltaIsMerged_THEN_ShouldInvalidateFilteredMembership()
         {
@@ -1206,7 +1287,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = ClientTorrentFactory.Create(name: "MudTorrent Name", state: TorrentState.Downloading, downloaded: 100, totalSize: 100, uploadSpeed: 0)
+                    [hash] = ClientTorrentFactory.Create(name: "MudTorrent Name", state: TorrentState.Downloading, downloaded: 100, totalSize: 100, progress: 1, uploadSpeed: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
@@ -1299,7 +1380,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = ClientTorrentFactory.Create(name: " ", state: TorrentState.Downloading, downloaded: 100, totalSize: 100, uploadSpeed: 0)
+                    [hash] = ClientTorrentFactory.Create(name: " ", state: TorrentState.Downloading, downloaded: 100, totalSize: 100, progress: 1, uploadSpeed: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
