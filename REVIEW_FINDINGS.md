@@ -178,33 +178,49 @@ Validation: all 3,415 solution tests passed with no failures or skips. Release p
 
 ### P2
 
-- [ ] **R24 — Preserve pending options when changing tabs.** [Options.razor:26](src/Lantean.QBTMud.Presentation/Pages/Options.razor#L26)
+- [x] **R24 — Preserve pending options when changing tabs.** [Options.razor:26](src/Lantean.QBTMud.Presentation/Pages/Options.razor#L26)
 
     Default MudTabs behaviour disposes inactive content. Returning reconstructs displayed fields from saved preferences while hidden pending edits remain in the parent, so Save submits values different from those shown. Preserve panels or initialise from effective pending preferences. Cover ordinary edits across tab changes; behaviour was checked against tagged MudBlazor v9.13.0 source.
 
-- [ ] **R25 — Persist connection-limit switch changes.** [ConnectionOptions.razor.cs:220](src/Lantean.QBTMud.Presentation/Components/Options/ConnectionOptions.razor.cs#L220)
+- [x] **R25 — Persist connection-limit switch changes.** [ConnectionOptions.razor.cs:220](src/Lantean.QBTMud.Presentation/Components/Options/ConnectionOptions.razor.cs#L220)
 
     Four connection/upload-limit switches change local flags without updating pending preferences or notifying the parent. Disabling a limit leaves it active; enabling without editing the numeric default also has no effect. Persist the value/unlimited sentinel and notify the page. Tests currently verify input disabling only.
 
-- [ ] **R26 — Restore schedule fields when edits return to saved values.** [SpeedOptions.razor.cs:163](src/Lantean.QBTMud.Presentation/Components/Options/SpeedOptions.razor.cs#L163)
+- [x] **R26 — Restore schedule fields when edits return to saved values.** [SpeedOptions.razor.cs:163](src/Lantean.QBTMud.Presentation/Components/Options/SpeedOptions.razor.cs#L163)
 
     Starting at 01:00, editing to 02:30 then 01:15 retains pending hour `2` and saves 02:15. Both schedule handlers compare against original preferences without clearing earlier edits. Update or clear each pending component correctly. Cover partial and complete edit-then-revert sequences.
 
-- [ ] **R27 — Populate the correct inactive seeding-time field.** [BitTorrentOptions.razor.cs:186](src/Lantean.QBTMud.Presentation/Components/Options/BitTorrentOptions.razor.cs#L186)
+- [x] **R27 — Populate the correct inactive seeding-time field.** [BitTorrentOptions.razor.cs:186](src/Lantean.QBTMud.Presentation/Components/Options/BitTorrentOptions.razor.cs#L186)
 
     Initialisation assigns `Preferences.MaxInactiveSeedingTime` into `MaxSeedingTime`, overwriting the displayed total limit and leaving the inactive field at zero. Assign the intended property. Existing tests check enabled states without checking these numeric values.
 
-- [ ] **R28 — Clear legacy export paths when disabled.** [DownloadsOptions.razor.cs:267](src/Lantean.QBTMud.Presentation/Components/Options/DownloadsOptions.razor.cs#L267)
+- [x] **R28 — Clear legacy export paths when disabled.** [DownloadsOptions.razor.cs:267](src/Lantean.QBTMud.Presentation/Components/Options/DownloadsOptions.razor.cs#L267)
 
     Legacy `.torrent` export switches change local flags only. Disabling an existing export neither clears its pending path nor notifies the page, so exporting continues. Persist empty paths on disabling and selected paths on enabling. Cover switches without subsequent path edits on older supported servers.
 
-- [ ] **R29 — Reject duplicate monitored folders before mutation.** [DownloadsOptions.razor.cs:315](src/Lantean.QBTMud.Presentation/Components/Options/DownloadsOptions.razor.cs#L315)
+- [x] **R29 — Reject duplicate monitored folders before mutation.** [DownloadsOptions.razor.cs:315](src/Lantean.QBTMud.Presentation/Components/Options/DownloadsOptions.razor.cs#L315)
 
     Adding an existing path throws from `Dictionary.Add`; renaming onto an existing path overwrites its save-location setting. Field validation does not prevent the callbacks. Guard before either mutation. Existing tests use unique destination paths; cover add and rename collisions without losing existing entries.
 
-- [ ] **R39 — Preserve independently inherited share limits.** [ShareRatioDialog.razor.cs:182](src/Lantean.QBTMud.Presentation/Components/Dialogs/ShareRatioDialog.razor.cs#L182)
+- [x] **R39 — Preserve independently inherited share limits.** [ShareRatioDialog.razor.cs:182](src/Lantean.QBTMud.Presentation/Components/Dialogs/ShareRatioDialog.razor.cs#L182)
 
     Mixed inherited/custom limits open in Custom mode, where saving converts untouched inherited `-2` limits to unlimited `-1`. Preserve each inherited sentinel unless explicitly changed. Tests cover uniform presets only. The [API contract](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-4.1%29) supports independent inherited/unlimited values.
+
+### Resolution and regression coverage
+
+Addressed all seven findings in this section on 15 November 2026.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R24 | Tabs retain their components after first use, with lazy loading for unopened panels. A page regression changes tabs and verifies that the displayed and submitted connection setting agree. |
+| R25 | All four connection/upload limit switches persist a limit or the unlimited sentinel and notify the page. Tests disable and re-enable each without numeric edits. |
+| R26 | Schedule handlers compare effective pending values and clear reverted components. Tests cover partial/full reversions, repeated values, unloaded preferences, and the options page's submitted values for both schedule times. |
+| R27 | The inactive seeding-time preference populates its own field. Tests use distinct limits with the total limit enabled and disabled. |
+| R28 | Legacy export switches persist an empty path on disabling and restore the retained path on enabling. Both destinations have regression tests without subsequent path edits. |
+| R29 | Duplicate additions and rename collisions return before mutation. Tests verify preserved save locations, same-key edits and subsequent valid renames. |
+| R39 | Each untouched inherited share limit retains its global sentinel. Tests cover all three inherited fields in mixed configurations, including explicit enabling followed by disabling. |
+
+Validation: all 3,441 solution tests passed with no failures or skips. Release publishing succeeded. Coverage includes all 37 changed executable source lines and their branches. Changed C# files were formatted and changed files use CRLF. Output used `/tmp/artifacts/qbtmud`, with the formatter environment settings described above. No browser automation was run.
 
 ## Torrent content, categories and adding downloads
 

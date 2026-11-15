@@ -11,6 +11,47 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Options
 {
     public sealed class ConnectionOptionsTests : RazorComponentTestBase<ConnectionOptions>
     {
+        [Theory]
+        [InlineData("MaxConnec")]
+        [InlineData("MaxConnecPerTorrent")]
+        [InlineData("MaxUploads")]
+        [InlineData("MaxUploadsPerTorrent")]
+        public async Task GIVEN_ConnectionLimit_WHEN_DisabledAndEnabledWithoutNumericEdits_THEN_ShouldPersistLimitAndNotify(string field)
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var update = new UpdatePreferences();
+            var notifications = 0;
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(component => component.Preferences, CreatePreferences());
+                parameters.Add(component => component.UpdatePreferences, update);
+                parameters.Add(component => component.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => notifications++));
+            });
+            var expected = FindNumericInt(target, field).Instance.GetState(input => input.Value);
+            var enabled = FindSwitch(target, field + "Enabled");
+
+            await target.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(false));
+
+            var disabledLimit = field switch
+            {
+                "MaxConnec" => update.MaxConnec,
+                "MaxConnecPerTorrent" => update.MaxConnecPerTorrent,
+                "MaxUploads" => update.MaxUploads,
+                _ => update.MaxUploadsPerTorrent
+            };
+            disabledLimit.Should().Be(-1);
+            await target.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(true));
+            var enabledLimit = field switch
+            {
+                "MaxConnec" => update.MaxConnec,
+                "MaxConnecPerTorrent" => update.MaxConnecPerTorrent,
+                "MaxUploads" => update.MaxUploads,
+                _ => update.MaxUploadsPerTorrent
+            };
+            enabledLimit.Should().Be(expected);
+            notifications.Should().Be(2);
+        }
+
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {

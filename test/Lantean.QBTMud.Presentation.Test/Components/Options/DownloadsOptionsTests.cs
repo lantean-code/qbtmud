@@ -11,6 +11,74 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Options
 {
     public sealed class DownloadsOptionsTests : RazorComponentTestBase<DownloadsOptions>
     {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_LegacyExportPath_WHEN_DisabledAndEnabledWithoutPathEdits_THEN_ShouldPersistPathAndNotify(bool finished)
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var update = new UpdatePreferences();
+            var notifications = 0;
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(component => component.Preferences, CreatePreferences());
+                parameters.Add(component => component.UpdatePreferences, update);
+                parameters.Add(component => component.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => notifications++));
+            });
+            var enabled = FindSwitch(target, finished ? "ExportDirFinEnabled" : "ExportDirEnabled");
+
+            await target.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(false));
+
+            (finished ? update.ExportDirFin : update.ExportDir).Should().BeEmpty();
+            await target.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(true));
+            (finished ? update.ExportDirFin : update.ExportDir).Should().Be(finished ? "/export_fin" : "/export");
+            notifications.Should().Be(2);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        public async Task GIVEN_MonitoredFolders_WHEN_AddingDuplicateOrRenaming_THEN_ShouldPreserveExistingLocations(int operation)
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var original = new Dictionary<string, SaveLocation>
+            {
+                ["/watchA"] = SaveLocation.Create(1),
+                ["/watchB"] = SaveLocation.Create("/destination")
+            };
+            var preferences = PreferencesFactory.CreatePreferences(spec => spec.ScanDirs = original);
+            var update = new UpdatePreferences();
+            var notifications = 0;
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(component => component.Preferences, preferences);
+                parameters.Add(component => component.UpdatePreferences, update);
+                parameters.Add(component => component.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => notifications++));
+            });
+
+            if (operation == 0)
+            {
+                await target.InvokeAsync(() => FindAddedScanDirKey(target, 0).Instance.ValueChanged.InvokeAsync("/watchA"));
+            }
+            else
+            {
+                await target.InvokeAsync(() => FindExistingScanDirKey(target, 0).Instance.ValueChanged.InvokeAsync(operation == 1 ? "/watchB" : "/watchA"));
+            }
+
+            notifications.Should().Be(operation == 2 ? 1 : 0);
+            if (operation != 2)
+            {
+                update.ScanDirs.Should().BeNull();
+            }
+            await target.InvokeAsync(() => FindExistingScanDirKey(target, 1).Instance.ValueChanged.InvokeAsync("/watchC"));
+            update.ScanDirs.Should().BeEquivalentTo(new Dictionary<string, SaveLocation>
+            {
+                ["/watchA"] = original["/watchA"],
+                ["/watchC"] = original["/watchB"]
+            });
+        }
+
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {

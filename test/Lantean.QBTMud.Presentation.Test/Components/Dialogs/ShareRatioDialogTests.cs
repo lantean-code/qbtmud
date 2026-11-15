@@ -307,6 +307,42 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             ((ShareLimit)result!.Data!).ShareLimitsMode.Should().Be(ShareLimitsMode.MatchAll);
         }
 
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(0, true)]
+        [InlineData(1, false)]
+        [InlineData(1, true)]
+        [InlineData(2, false)]
+        [InlineData(2, true)]
+        public async Task GIVEN_MixedInheritedLimits_WHEN_Saved_THEN_ShouldPreserveInheritanceUntilExplicitlyDisabled(int inheritedField, bool explicitlyDisable)
+        {
+            var baseline = CreateShareRatioMax(inheritedField == 0 ? -2 : 2, inheritedField == 1 ? -2 : 60,
+                inheritedField == 2 ? -2 : 30, ShareLimitAction.Stop);
+            var dialog = await _target.RenderDialogAsync(value: baseline);
+            if (explicitlyDisable)
+            {
+                var field = inheritedField switch
+                {
+                    0 => "RatioEnabled",
+                    1 => "TotalMinutesEnabled",
+                    _ => "InactiveMinutesEnabled"
+                };
+                var enabled = FindComponentByTestId<FieldSwitch>(dialog.Component, field);
+                await dialog.Component.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(true));
+                await dialog.Component.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(false));
+            }
+            var save = FindComponentByTestId<MudButton>(dialog.Component, "ShareRatioSave");
+
+            await dialog.Component.InvokeAsync(() => save.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            var result = await dialog.Reference.Result;
+            var limits = (ShareLimit)result!.Data!;
+            var expected = explicitlyDisable ? -1 : -2;
+            limits.RatioLimit.Should().Be(inheritedField == 0 ? expected : 2);
+            limits.SeedingTimeLimit.Should().Be(inheritedField == 1 ? expected : 60);
+            limits.InactiveSeedingTimeLimit.Should().Be(inheritedField == 2 ? expected : 30);
+        }
+
         private static ShareLimitMax CreateShareRatioMax(float ratio, int seedingTimeLimit, int inactiveSeedingTimeLimit, ShareLimitAction action, bool maxValuesNoLimit = false)
         {
             return new ShareLimitMax

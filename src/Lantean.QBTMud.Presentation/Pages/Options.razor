@@ -23,7 +23,7 @@
     </ToolbarContent>
 
     <ChildContent>
-        <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
+        <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true" KeepPanelsAlive="true" LazyLoadPanels="true">
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Behavior")">
                 <div class="options-tab-contents">
                     <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
