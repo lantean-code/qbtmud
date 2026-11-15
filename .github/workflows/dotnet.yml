@@ -109,13 +109,40 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
 
-      - name: Test Release Provenance and Screenshot Cleanup
+      - name: Install Chromium for JavaScript Regressions
+        shell: pwsh
+        run: '& /tmp/artifacts/qbtmud/bin/Lantean.QBTMud.Test/release/playwright.ps1 install --with-deps --only-shell chromium'
+
+      - name: Test Python Regression Suites
         run: |
           python3 -m unittest discover -s docker/tests -p 'test_*.py'
           python3 -m unittest discover -s tools/ReadmeScreenshots/tests -p 'test_*.py'
+          python3 -m unittest discover -s tools/JavaScriptCoverage/tests -p 'test_*.py'
 
       - name: Run Tests with Coverage
+        env:
+          QBTMUD_JS_COVERAGE_DIR: ${{ github.workspace }}/TestResults/javascript-coverage
         run: dotnet test --no-build --configuration Release --coverlet --coverlet-output-format cobertura --results-directory TestResults --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
+
+      - name: Report and Check JavaScript Coverage
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${GITHUB_BASE_REF:-}" ]; then
+            coverage_base=$(git merge-base HEAD "origin/$GITHUB_BASE_REF")
+          else
+            coverage_base=$(git rev-parse HEAD^)
+          fi
+          python3 tools/JavaScriptCoverage/report.py --input TestResults/javascript-coverage --output javascript-coverage-report --base "$coverage_base" --repo-root .
+
+      - name: Upload JavaScript Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: javascript-coverage-report
+          path: |
+            javascript-coverage-report
+            TestResults/javascript-coverage
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool

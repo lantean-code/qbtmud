@@ -756,7 +756,7 @@ window.qbt.scrollElementToEnd = (selector) => {
 }
 
 let supportedEvents = new Map();
-let focusInstance = null;
+let focusInstances = [];
 
 document.addEventListener('keydown', event => {
     if (shouldIgnoreKeyPress(event)) {
@@ -769,6 +769,7 @@ document.addEventListener('keydown', event => {
         return;
     }
 
+    const focusInstance = focusInstances[focusInstances.length - 1];
     if (focusInstance && !references.has(focusInstance._id)) {
         return;
     }
@@ -790,6 +791,7 @@ document.addEventListener('keyup', event => {
     }
 
     references.forEach(dotNetObjectReference => {
+        const focusInstance = focusInstances[focusInstances.length - 1];
         if (focusInstance && dotNetObjectReference._id != focusInstance._id) {
             return;
         }
@@ -832,11 +834,12 @@ window.qbt.unregisterKeypressEvent = (keyboardEventArgs, dotNetObjectReference) 
 }
 
 window.qbt.keyPressFocusInstance = dotNetObjectReference => {
-    focusInstance = dotNetObjectReference;
+    focusInstances = focusInstances.filter(instance => instance._id !== dotNetObjectReference._id);
+    focusInstances.push(dotNetObjectReference);
 }
 
 window.qbt.keyPressUnFocusInstance = dotNetObjectReference => {
-    focusInstance = null;
+    focusInstances = focusInstances.filter(instance => instance._id !== dotNetObjectReference._id);
 }
 
 function shouldIgnoreKeyPress(event) {

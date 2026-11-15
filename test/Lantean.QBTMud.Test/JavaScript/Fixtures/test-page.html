@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>JavaScript regression tests</title></head>
+<body>
+    <button id="keyboard-target" type="button">Keyboard target</button>
+    <label for="editor">Editor</label><input id="editor">
+    <script>
+        window.Blazor = {
+            start(options) {
+                window.bootResource = options.loadBootResource;
+                return Promise.resolve();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -5,10 +5,10 @@ Static review dated 15 November 2026. This checklist records all 55 findings fro
 ## Progress and scope
 
 - Total: **55 findings** — **2 P1**, **46 P2**, **7 P3**.
-- Completed: **52 findings**. Deferred by user decision: **R11**, **R22** and **R50**.
+- Completed: **55 findings**. No deferred findings remain.
 - Mark a finding complete after addressing its cause and validating the affected scenario. Record any decision to defer or dismiss it alongside the item.
 - P1: urgent defect to address next. P2: ordinary defect to fix. P3: lower-impact defect worth fixing.
-- Deferred by user decision: **R11**, **R22** and **R50**, pending a decision about JavaScript regression testing.
+- The previously deferred JavaScript findings R11, R22 and R50 are covered by C# Playwright browser regressions and JavaScript coverage in CI.
 - The review inspected current first-party code rather than a branch diff. The API client is an external NuGet package and was not audited as first-party source.
 - No repository code, builds, tests, scripts or browser automation ran during the review. The existing passing tests were supplied context, and relevant test bodies were inspected selectively.
 - Remote release state, live browser behaviour and an exhaustive audit of every test body remain unverified. There is currently no general Playwright page-testing runner; one is a possible follow-up, not an existing validation capability.
@@ -114,15 +114,15 @@ Validation: the full solution test suite passed with 3,379 tests and no failures
 
 ### P3
 
-- [ ] **R50 — Accept whitespace in bootstrap font names.** [boot.resources.js:233](src/Lantean.QBTMud/wwwroot/js/boot.resources.js#L233)
+- [x] **R50 — Accept whitespace in bootstrap font names.** [boot.resources.js:233](src/Lantean.QBTMud/wwwroot/js/boot.resources.js#L233)
 
     The regex literal uses `\\s` instead of `\s`, rejecting valid names such as Open Sans. Bootstrap skips their stylesheet and changes fonts after application startup. Correct the escape and cover persisted multi-word font names; layout tests currently mock this JavaScript.
 
-    Deferred at the user's request on 15 November 2026, pending a decision on JavaScript regression testing. The implementation remains unchanged.
+    Completed on 15 November 2026 using the JavaScript browser regressions described below.
 
 ### Resolution and regression coverage
 
-Addressed R09, R10, R14 and R18 on 15 November 2026. R50 is deferred at the user's request.
+Addressed R09, R10, R14 and R18 on 15 November 2026. R50 was completed subsequently in the JavaScript browser section below.
 
 | Finding | Change and coverage |
 | --- | --- |
@@ -131,7 +131,7 @@ Addressed R09, R10, R14 and R18 on 15 November 2026. R50 is deferred at the user
 | R14 | Unrelated parameter updates retain the editor state for the same theme. Tests change drawer and dark-mode cascading values through Blazor notifications, verify that name, description and font edits survive and can be saved, and check that selecting a different theme resets the editor. |
 | R18 | Import normalisation assigns the fallback theme before applying its font. The null-theme regression now verifies a saved, non-null theme with the expected typography. |
 
-Validation: the full solution test suite passed with 3,388 tests and no failures or skips. Release publishing succeeded. Changed C# files were formatted and changed files use CRLF. Coverage was collected for the full suite. Output used `/tmp/artifacts/qbtmud`, with the formatter environment settings described above. R50's JavaScript was not changed or exercised.
+Validation: the full solution test suite passed with 3,388 tests and no failures or skips. Release publishing succeeded. Changed C# files were formatted and changed files use CRLF. Coverage was collected for the full suite. Output used `/tmp/artifacts/qbtmud`, with the formatter environment settings described above. R50's JavaScript was not changed or exercised at that stage; it is now covered in the JavaScript browser section below.
 
 ## Search, RSS and management pages
 
@@ -321,7 +321,7 @@ Validation: the full solution suite passed with 3,493 tests and no failures or s
 
 ### P2
 
-- [ ] **R11 — Fetch the local resource in the CDN fallback.** [boot.resources.js:354](src/Lantean.QBTMud/wwwroot/js/boot.resources.js#L354)
+- [x] **R11 — Fetch the local resource in the CDN fallback.** [boot.resources.js:354](src/Lantean.QBTMud/wwwroot/js/boot.resources.js#L354)
 
     The asynchronous failure handler returns a URL, producing `Promise<string>` where Blazor requires a synchronous URL or `Promise<Response>`. Startup can fail despite available local assets. Return a local fetch response and cover CDN failure. See the [boot-resource contract](https://learn.microsoft.com/aspnet/core/blazor/fundamentals/startup?view=aspnetcore-10.0#load-client-side-boot-resources).
 
@@ -333,7 +333,7 @@ Validation: the full solution suite passed with 3,493 tests and no failures or s
 
     Production rate-limit dialogs supply `long.Parse` to unrestricted text input. Clearing it or entering invalid/overflowing values throws through the event handler. Use non-throwing parsing with validation. Invalid-input tests omit the production custom converter.
 
-- [ ] **R22 — Restore keyboard ownership after nested dialogs.** [interop.js:838](src/Lantean.QBTMud/wwwroot/js/interop.js#L838)
+- [x] **R22 — Restore keyboard ownership after nested dialogs.** [interop.js:838](src/Lantean.QBTMud/wwwroot/js/interop.js#L838)
 
     Closing the wizard's theme preview clears global focus instead of restoring the wizard. Shortcuts then broadcast to background tables/torrent actions while the wizard remains open. Preserve an ownership-aware focus stack. Component tests mock individual calls and miss the shared JavaScript lifecycle.
 
@@ -357,7 +357,7 @@ Validation: the full solution suite passed with 3,493 tests and no failures or s
 
 ### Resolution and regression coverage
 
-Completed on 15 November 2026 for R20, R21, R30, R47, R51 and R54. R11 and R22 remain deferred by user decision, alongside R50, pending a decision about JavaScript regression testing.
+Completed on 15 November 2026 for R20, R21, R30, R47, R51 and R54. R11 and R22 were completed subsequently, alongside R50, in the JavaScript browser section below.
 
 | Finding | Change and coverage |
 | --- | --- |
@@ -438,3 +438,21 @@ Completed on 15 November 2026. All five findings in this section have regression
 Validation: the full solution suite passed with 3,542 tests and no failures or skips. All 32 release-policy tests and three screenshot-cleanup tests passed; the normal build workflow now runs both Python suites. Release publishing succeeded. All 33 changed executable C# lines and their branches are covered. Changed C# files were formatted; CRLF-governed files were normalised and checked, and Python/shell files retain LF.
 
 The real translation target was exercised in a disposable copy, with original inputs remaining unchanged. Full Linux/qBittorrent screenshot capture and live historical GitHub asset availability were not checked. The login regression validates the real component and production selectors with test IDs disabled; browser interactions are mocked.
+
+## JavaScript browser regressions and CI coverage
+
+Completed R11, R22 and R50 on 15 November 2026 using C# xUnit tests and Microsoft.Playwright. The small test page loads the actual repository scripts into isolated Chromium browsers. External Blazor startup, .NET callback references and network responses are controlled by the tests; production JavaScript functions are not mocked.
+
+| Finding | Change and regression coverage |
+| --- | --- |
+| R11 | CDN failure fetches the versioned local resource and returns its Response, preserving integrity options. Tests cover network and HTTP failures, successful CDN responses, later resources bypassing a failed CDN, local network failure and rejected corrupt local content. |
+| R22 | Keyboard focus tracks unique owners in activation order. Closing a nested owner restores its predecessor; disposal removes only the supplied owner. Real keyboard tests cover nested dialogs, unmatched keys, disposal order, unknown/repeated release, duplicate focus, reactivation, replacement references, editable inputs and default prevention. |
+| R50 | Font validation uses the intended whitespace escape. Browser tests cover raw and JSON-encoded multiword fonts, trimming, hyphenated names, rejected injection characters and backslashes, and existing stylesheet deduplication. |
+
+Validation: all 3,564 solution tests passed with no failures or skips, including 22 real Chromium regressions. The browser regressions also passed in Release configuration. Release publishing succeeded. The Python suites passed all 54 tests: 32 release-policy tests, three screenshot-cleanup tests and 19 JavaScript coverage-reporting tests.
+
+Native V8 coverage was collected against the exact source returned by Chromium. All eight changed executable JavaScript lines are covered: two in boot.resources.js and six in interop.js. The report also exposes overall file line coverage and V8 range counts, including existing untested code. V8 ranges are not presented as Istanbul branch coverage.
+
+CI installs the matching Chromium runtime, runs the browser tests within the normal solution suite, checks changed executable lines against the PR merge base or preceding commit, and uploads raw V8 data plus LCOV, JSON and text reports. Empty, missing or stale coverage fails the check. Reporter regressions cover nested ranges, complementary tests, UTF-16/CRLF offsets, invalid data and changed-line parsing, including increment statements that resemble diff headers.
+
+Run instructions and scope are documented in [the browser regression README](test/Lantean.QBTMud.Test/JavaScript/README.md). These tests use a small page rather than the complete Blazor application or qBittorrent. Changed C# files were formatted; CRLF-governed files were normalised, and Python files retain LF.
