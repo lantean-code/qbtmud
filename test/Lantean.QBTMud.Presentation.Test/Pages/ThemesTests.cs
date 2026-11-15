@@ -746,7 +746,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_ImportWithNullTheme_WHEN_Imported_THEN_ThrowsNullReferenceException()
+        public async Task GIVEN_ImportWithNullTheme_WHEN_Imported_THEN_ShouldSaveFallbackThemeWithFont()
         {
             var definition = new ThemeDefinition
             {
@@ -766,12 +766,13 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var target = RenderPage(new List<ThemeCatalogItem>());
 
             var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
-            Func<Task> action = async () =>
-            {
-                await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
-            };
+            await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
-            await action.Should().ThrowAsync<NullReferenceException>();
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                It.Is<ThemeDefinition>(value => value.Theme != null
+                    && value.FontFamily == "Nunito Sans"
+                    && value.Theme.Typography.Default.FontFamily != null
+                    && value.Theme.Typography.Default.FontFamily[0] == "Nunito Sans")), Times.Once);
         }
 
         [Fact]

@@ -94,19 +94,19 @@ Validation: the full solution test suite passed with 3,379 tests and no failures
 
 ### P2
 
-- [ ] **R09 — Clear persisted selection before deleting the active theme.** [ThemeManagerService.cs:339](src/Lantean.QBTMud.Infrastructure/Services/ThemeManagerService.cs#L339)
+- [x] **R09 — Clear persisted selection before deleting the active theme.** [ThemeManagerService.cs:339](src/Lantean.QBTMud.Infrastructure/Services/ThemeManagerService.cs#L339)
 
     Deleting the active local theme reloads its saved ID and snapshot. With the default repository configuration, the deleted theme is reapplied as an apparent repository theme. Clear the saved selection before choosing a replacement. Existing deletion tests use an empty repository URL and miss the default path.
 
-- [ ] **R10 — Preserve theme selection after repository failures.** [ThemeManagerService.cs:684](src/Lantean.QBTMud.Infrastructure/Services/ThemeManagerService.cs#L684)
+- [x] **R10 — Preserve theme selection after repository failures.** [ThemeManagerService.cs:684](src/Lantean.QBTMud.Infrastructure/Services/ThemeManagerService.cs#L684)
 
     A temporary repository fetch failure removes the selected theme from the rebuilt catalogue and deletes its persisted ID/snapshot. A later successful load cannot restore the selection. Preserve it until an authoritative successful load establishes removal. Cover a saved repository theme followed by failed preload/reload and recovery.
 
-- [ ] **R14 — Preserve theme edits across cascading updates.** [ThemeDetail.razor.cs:184](src/Lantean.QBTMud.Presentation/Pages/ThemeDetail.razor.cs#L184)
+- [x] **R14 — Preserve theme edits across cascading updates.** [ThemeDetail.razor.cs:184](src/Lantean.QBTMud.Presentation/Pages/ThemeDetail.razor.cs#L184)
 
     Parameter updates unconditionally reload the saved definition and clear edits even when `ThemeId` is unchanged. Opening the drawer or changing dark mode can silently discard work. Initialise the editor when the selected theme changes, preserving edits for unrelated cascades. Add edit-then-cascade coverage.
 
-- [ ] **R18 — Assign the fallback theme before applying its font.** [Themes.razor.cs:363](src/Lantean.QBTMud.Presentation/Pages/Themes.razor.cs#L363)
+- [x] **R18 — Assign the fallback theme before applying its font.** [Themes.razor.cs:363](src/Lantean.QBTMud.Presentation/Pages/Themes.razor.cs#L363)
 
     Importing JSON with `"theme": null` constructs a local fallback but passes the original null theme to the font helper, causing an uncaught exception. Assign the fallback or reject the content cleanly. The existing test explicitly expects the exception; replace that expectation with handled behaviour.
 
@@ -115,6 +115,21 @@ Validation: the full solution test suite passed with 3,379 tests and no failures
 - [ ] **R50 — Accept whitespace in bootstrap font names.** [boot.resources.js:233](src/Lantean.QBTMud/wwwroot/js/boot.resources.js#L233)
 
     The regex literal uses `\\s` instead of `\s`, rejecting valid names such as Open Sans. Bootstrap skips their stylesheet and changes fonts after application startup. Correct the escape and cover persisted multi-word font names; layout tests currently mock this JavaScript.
+
+    Deferred at the user's request on 15 November 2026, pending a decision on JavaScript regression testing. The implementation remains unchanged.
+
+### Resolution and regression coverage
+
+Addressed R09, R10, R14 and R18 on 15 November 2026. R50 is deferred at the user's request.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R09 | Deleting the active local theme clears its saved ID and snapshot before choosing a fallback. Tests use a configured repository, exercise bundled and default fallbacks, and reload the service to verify that the deleted theme stays deleted. |
+| R10 | Failed or partial repository loads retain the selected ID and snapshot. Tests cover preload and explicit reload, failure followed by recovery, and a later successful load that confirms removal. |
+| R14 | Unrelated parameter updates retain the editor state for the same theme. Tests change drawer and dark-mode cascading values through Blazor notifications, verify that name, description and font edits survive and can be saved, and check that selecting a different theme resets the editor. |
+| R18 | Import normalisation assigns the fallback theme before applying its font. The null-theme regression now verifies a saved, non-null theme with the expected typography. |
+
+Validation: the full solution test suite passed with 3,388 tests and no failures or skips. Release publishing succeeded. Changed C# files were formatted and changed files use CRLF. Coverage was collected for the full suite. Output used `/tmp/artifacts/qbtmud`, with the formatter environment settings described above. R50's JavaScript was not changed or exercised.
 
 ## Search, RSS and management pages
 

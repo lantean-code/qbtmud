@@ -338,7 +338,7 @@ namespace Lantean.QBTMud.Infrastructure.Services
 
             if (_currentThemeId == themeId)
             {
-                _currentThemeId = null;
+                await ClearSelectedThemeSelectionAsync();
                 await ApplyInitialTheme();
             }
         }
@@ -683,6 +683,11 @@ namespace Lantean.QBTMud.Infrastructure.Services
 
             if (_currentThemeId is not null && !_themes.Any(theme => theme.Id == _currentThemeId))
             {
+                if ((!loaded || hadIssues) && await HasRepositoryThemesConfigured())
+                {
+                    return;
+                }
+
                 await ClearSelectedThemeSelectionAsync();
             }
 

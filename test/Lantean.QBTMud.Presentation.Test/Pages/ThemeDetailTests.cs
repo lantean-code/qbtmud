@@ -54,6 +54,57 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             SetupFontCatalog(new[] { "Nunito Sans", "Open Sans" });
         }
 
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        public async Task GIVEN_UnsavedEdits_WHEN_CascadingValuesChange_THEN_ShouldPreserveEdits(bool drawerOpen, bool darkMode)
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var drawerSource = new CascadingValueSource<bool>("DrawerOpen", false, isFixed: false);
+            var darkModeSource = new CascadingValueSource<bool>("IsDarkMode", false, isFixed: false);
+            TestContext.Services.AddCascadingValue(_ => drawerSource);
+            TestContext.Services.AddCascadingValue(_ => darkModeSource);
+            Mock.Get(_themeManagerService).SetupGet(service => service.Themes).Returns(new List<ThemeCatalogItem> { theme });
+            var target = TestContext.Render<ThemeDetail>(parameters => parameters.Add(component => component.ThemeId, "ThemeId"));
+            var name = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
+            var description = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailDescription");
+            var font = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
+            await target.InvokeAsync(() => name.Instance.ValueChanged.InvokeAsync("UpdatedName"));
+            await target.InvokeAsync(() => description.Instance.ValueChanged.InvokeAsync("UpdatedDescription"));
+            await target.InvokeAsync(() => font.Instance.ValueChanged.InvokeAsync("Open Sans"));
+
+            await target.InvokeAsync(() => drawerSource.NotifyChangedAsync(drawerOpen));
+            await target.InvokeAsync(() => darkModeSource.NotifyChangedAsync(darkMode));
+
+            target.Instance.DrawerOpen.Should().Be(drawerOpen);
+            target.Instance.IsDarkMode.Should().Be(darkMode);
+            FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName").Instance.GetState(field => field.Value).Should().Be("UpdatedName");
+            FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailDescription").Instance.GetState(field => field.Value).Should().Be("UpdatedDescription");
+            FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont").Instance.GetState(field => field.Value).Should().Be("Open Sans");
+            var save = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            save.Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.Is<ThemeDefinition>(definition =>
+                definition.Name == "UpdatedName" && definition.Description == "UpdatedDescription" && definition.FontFamily == "Open Sans")), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_UnsavedEdits_WHEN_SelectedThemeChanges_THEN_ShouldLoadNewTheme()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var otherTheme = CreateTheme("OtherId", "OtherName", ThemeSource.Local);
+            var target = RenderPage("ThemeId", [theme, otherTheme]);
+            var name = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
+            await target.InvokeAsync(() => name.Instance.ValueChanged.InvokeAsync("UpdatedName"));
+
+            target.Render(parameters => parameters.Add(component => component.ThemeId, "OtherId"));
+
+            FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName").Instance.GetState(field => field.Value).Should().Be("OtherName");
+            FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave").Instance.Disabled.Should().BeTrue();
+        }
+
         [Fact]
         public void GIVEN_MissingThemeId_WHEN_Rendered_THEN_ShowsMissingState()
         {
