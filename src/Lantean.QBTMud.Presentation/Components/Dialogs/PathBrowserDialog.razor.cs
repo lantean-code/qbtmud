@@ -14,6 +14,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private bool _isLoading;
         private string? _loadError;
         private int _pathChangeVersion;
+        private int _loadVersion;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -75,6 +76,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task PathChanged(string value)
         {
             _currentPath = value;
+            _loadVersion++;
             await DebounceLoadEntriesAsync();
         }
 
@@ -122,10 +124,14 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task LoadEntriesAsync()
         {
-            if (string.IsNullOrWhiteSpace(_currentPath))
+            var version = ++_loadVersion;
+            var path = _currentPath;
+            var mode = Mode;
+            if (string.IsNullOrWhiteSpace(path))
             {
                 _entries.Clear();
                 _loadError = Translate("Enter a valid path.");
+                _isLoading = false;
                 return;
             }
 
@@ -135,7 +141,12 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             try
             {
-                var directoriesResult = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Directories);
+                var directoriesResult = await ApiClient.GetDirectoryContentAsync(path, DirectoryContentMode.Directories);
+                if (!IsCurrentLoad(version))
+                {
+                    return;
+                }
+
                 if (directoriesResult.IsFailure)
                 {
                     _entries.Clear();
@@ -150,9 +161,14 @@ namespace Lantean.QBTMud.Components.Dialogs
                     .ToList();
 
                 var fileEntries = new List<PathBrowseEntry>();
-                if (Mode != DirectoryContentMode.Directories)
+                if (mode != DirectoryContentMode.Directories)
                 {
-                    var filesResult = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Files);
+                    var filesResult = await ApiClient.GetDirectoryContentAsync(path, DirectoryContentMode.Files);
+                    if (!IsCurrentLoad(version))
+                    {
+                        return;
+                    }
+
                     if (filesResult.IsFailure)
                     {
                         _entries.Clear();
@@ -173,13 +189,24 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (Exception exception)
             {
-                _entries.Clear();
-                _loadError = Translate("Unable to load directory content: %1", exception.Message);
+                if (IsCurrentLoad(version))
+                {
+                    _entries.Clear();
+                    _loadError = Translate("Unable to load directory content: %1", exception.Message);
+                }
             }
             finally
             {
-                _isLoading = false;
+                if (IsCurrentLoad(version))
+                {
+                    _isLoading = false;
+                }
             }
+        }
+
+        private bool IsCurrentLoad(int version)
+        {
+            return version == _loadVersion;
         }
 
         private async Task DebounceLoadEntriesAsync()

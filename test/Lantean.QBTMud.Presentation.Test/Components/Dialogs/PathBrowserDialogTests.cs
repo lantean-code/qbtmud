@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
@@ -19,6 +20,122 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _apiClient = Mock.Of<IApiClient>();
             TestContext.AddSingleton(_apiClient);
             _target = new PathBrowserDialogTestDriver(TestContext);
+        }
+
+        [Theory]
+        [InlineData(false, "success")]
+        [InlineData(false, "failure")]
+        [InlineData(false, "exception")]
+        [InlineData(true, "success")]
+        [InlineData(true, "failure")]
+        [InlineData(true, "exception")]
+        public async Task GIVEN_ObsoleteDirectoryRequest_WHEN_CompletingAfterNewPath_THEN_ShouldPreserveLatestEntriesAndErrorState(bool filesPending, string outcome)
+        {
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), It.IsAny<DirectoryContentMode>())).ReturnsSuccessAsync(Array.Empty<string>());
+            api.Setup(client => client.GetDirectoryContentAsync("/old/", DirectoryContentMode.Directories)).ReturnsSuccessAsync(new[] { "/old/OldFolder" });
+            var gate = new TaskCompletionSource<ApiResult<IReadOnlyList<string>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingMode = filesPending ? DirectoryContentMode.Files : DirectoryContentMode.Directories;
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            api.Setup(client => client.GetDirectoryContentAsync("/old/", pendingMode)).Returns(() =>
+            {
+                started.TrySetResult();
+                return gate.Task;
+            });
+            api.Setup(client => client.GetDirectoryContentAsync("/new/", DirectoryContentMode.Directories)).ReturnsSuccessAsync(new[] { "/new/NewFolder" });
+            api.Setup(client => client.GetDirectoryContentAsync("/new/", DirectoryContentMode.Files)).ReturnsSuccessAsync(new[] { "/new/new.txt" });
+            var dialog = await _target.RenderDialogAsync(initialPath: "/start/");
+            var target = dialog.Component;
+            var field = FindComponentByTestId<MudTextField<string>>(target, "CurrentPath");
+            var oldRequest = target.InvokeAsync(() => field.Find("input").InputAsync(new ChangeEventArgs { Value = "/old/" }));
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+            api.Verify(client => client.GetDirectoryContentAsync("/old/", pendingMode), Times.Once);
+
+            await target.InvokeAsync(() => field.Find("input").InputAsync(new ChangeEventArgs { Value = "/new/" }));
+            if (outcome == "exception")
+            {
+                gate.SetException(new InvalidOperationException("StaleFailure"));
+            }
+            else if (outcome == "failure")
+            {
+                gate.SetResult(ApiResult.CreateFailure<IReadOnlyList<string>>(new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = "directory/content", UserMessage = "StaleFailure" }));
+            }
+            else
+            {
+                gate.SetResult(ApiResult.CreateSuccess<IReadOnlyList<string>>(new[] { "/old/Stale" }));
+            }
+            await oldRequest;
+
+            target.FindComponents<MudListItem<string>>().Should().HaveCount(2);
+            FindComponentByTestId<MudListItem<string>>(target, "PathBrowserEntry-NewFolder").Should().NotBeNull();
+            FindComponentByTestId<MudListItem<string>>(target, "PathBrowserEntry-new.txt").Should().NotBeNull();
+            target.FindComponents<MudAlert>().Should().BeEmpty();
+            target.FindComponents<MudProgressLinear>().Should().BeEmpty();
+            api.Verify(client => client.GetDirectoryContentAsync("/old/", DirectoryContentMode.Files), filesPending ? Times.Once() : Times.Never());
+            api.Verify(client => client.GetDirectoryContentAsync("/new/", DirectoryContentMode.Files), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_TwoPendingPaths_WHEN_OlderRequestCompletes_THEN_ShouldKeepLatestLoadingIndicator()
+        {
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories)).ReturnsSuccessAsync(Array.Empty<string>());
+            var oldGate = new TaskCompletionSource<IReadOnlyList<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var newGate = new TaskCompletionSource<IReadOnlyList<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var oldStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var newStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            api.Setup(client => client.GetDirectoryContentAsync("/old/", DirectoryContentMode.Directories)).ReturnsSuccess(() =>
+            {
+                oldStarted.TrySetResult();
+                return oldGate.Task;
+            });
+            api.Setup(client => client.GetDirectoryContentAsync("/new/", DirectoryContentMode.Directories)).ReturnsSuccess(() =>
+            {
+                newStarted.TrySetResult();
+                return newGate.Task;
+            });
+            var dialog = await _target.RenderDialogAsync(initialPath: "/start/", mode: DirectoryContentMode.Directories);
+            var target = dialog.Component;
+            var field = FindComponentByTestId<MudTextField<string>>(target, "CurrentPath");
+            var oldRequest = target.InvokeAsync(() => field.Find("input").InputAsync(new ChangeEventArgs { Value = "/old/" }));
+            await oldStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+            var newRequest = target.InvokeAsync(() => field.Find("input").InputAsync(new ChangeEventArgs { Value = "/new/" }));
+            await newStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+            oldGate.SetResult(new[] { "/old/Stale" });
+            await oldRequest;
+
+            FindComponentByTestId<MudProgressLinear>(target, "PathBrowserLoading").Should().NotBeNull();
+            newGate.SetResult(new[] { "/new/Current" });
+            await newRequest;
+            FindComponentByTestId<MudListItem<string>>(target, "PathBrowserEntry-Current").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingRequest_WHEN_PathBecomesEmpty_THEN_ShouldShowValidationInsteadOfStaleEntriesOrLoading()
+        {
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories)).ReturnsSuccessAsync(Array.Empty<string>());
+            var gate = new TaskCompletionSource<IReadOnlyList<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var oldStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            api.Setup(client => client.GetDirectoryContentAsync("/old/", DirectoryContentMode.Directories)).ReturnsSuccess(() =>
+            {
+                oldStarted.TrySetResult();
+                return gate.Task;
+            });
+            var dialog = await _target.RenderDialogAsync(initialPath: "/start/", mode: DirectoryContentMode.Directories);
+            var target = dialog.Component;
+            var field = FindComponentByTestId<MudTextField<string>>(target, "CurrentPath");
+            var oldRequest = target.InvokeAsync(() => field.Find("input").InputAsync(new ChangeEventArgs { Value = "/old/" }));
+            await oldStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+            await target.InvokeAsync(() => field.Find("input").InputAsync(new ChangeEventArgs { Value = string.Empty }));
+            gate.SetResult(new[] { "/old/Stale" });
+            await oldRequest;
+
+            GetAlertText(FindComponentByTestId<MudAlert>(target, "PathBrowserLoadError")).Should().Be("Enter a valid path.");
+            target.FindComponents<MudProgressLinear>().Should().BeEmpty();
+            target.FindComponents<MudListItem<string>>().Should().BeEmpty();
         }
 
         [Theory]

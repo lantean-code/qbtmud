@@ -15,6 +15,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class RssRulesDialog
     {
         private readonly List<string> _unsavedRuleNames = [];
+        private int _ruleSelectionVersion;
 
         [Inject]
         protected IWebApiCapabilityService WebApiCapabilityService { get; set; } = default!;
@@ -334,57 +335,46 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            if (_unsavedRuleNames.Contains(SelectedRuleName))
+            var ruleName = SelectedRuleName;
+            if (_unsavedRuleNames.Contains(ruleName))
             {
-                _unsavedRuleNames.Remove(SelectedRuleName);
+                _unsavedRuleNames.Remove(ruleName);
             }
             else
             {
-                var removeResult = await ApiClient.RemoveRssAutoDownloadingRuleAsync(SelectedRuleName);
+                var removeResult = await ApiClient.RemoveRssAutoDownloadingRuleAsync(ruleName);
                 if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
                 {
                     return;
                 }
             }
 
-            Rules.Remove(SelectedRuleName);
-            SelectedRuleName = null;
+            Rules.Remove(ruleName);
+            if (SelectedRuleName == ruleName)
+            {
+                SelectedRuleName = null;
+                MatchingArticles = null;
+            }
 
             await InvokeAsync(StateHasChanged);
         }
 
         protected async Task SelectedRuleChanged(string value)
         {
-            SelectedRuleName = value;
-
-            if (!Rules.TryGetValue(SelectedRuleName, out var rule))
+            if (!Rules.TryGetValue(value, out var rule))
             {
                 return;
             }
 
-            if (!_unsavedRuleNames.Contains(SelectedRuleName))
-            {
-                var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
-                if (matchingArticlesResult.IsFailure)
-                {
-                    MatchingArticles = null;
-                    await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
-                }
-                else
-                {
-                    MatchingArticles = matchingArticlesResult.Value;
-                }
-            }
-            else
-            {
-                MatchingArticles = null;
-            }
+            var selectionVersion = ++_ruleSelectionVersion;
+            SelectedRuleName = value;
+            MatchingArticles = null;
 
             if (rule is null)
             {
                 rule = new AutoDownloadingRule();
 
-                Rules[SelectedRuleName] = rule;
+                Rules[value] = rule;
             }
             SelectedRule = rule;
 
@@ -394,7 +384,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             EpisodeFilter = SelectedRule.EpisodeFilter;
             SmartFilter = SelectedRule.SmartFilter ?? false;
             Category = SelectedRule.TorrentParams.Category;
-            Tags = string.Join(' ', SelectedRule.TorrentParams.Tags);
+            Tags = string.Join(", ", SelectedRule.TorrentParams.Tags);
             SaveToDifferentDirectory = !string.IsNullOrEmpty(SelectedRule.TorrentParams.SavePath);
             SaveTo = SelectedRule.TorrentParams.SavePath;
             IgnoreDays = SelectedRule.IgnoreDays ?? 0;
@@ -427,16 +417,45 @@ namespace Lantean.QBTMud.Components.Dialogs
                 }
             }
             SelectedFeeds = feeds;
+
+            if (_unsavedRuleNames.Contains(value))
+            {
+                return;
+            }
+
+            var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(value);
+            if (selectionVersion != _ruleSelectionVersion || SelectedRuleName != value)
+            {
+                return;
+            }
+
+            if (matchingArticlesResult.IsFailure)
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
+                return;
+            }
+
+            MatchingArticles = matchingArticlesResult.Value;
         }
 
         protected async Task RuleEnabledChanged(string ruleName, bool value)
         {
+            if (!Rules.TryGetValue(ruleName, out var rule))
+            {
+                return;
+            }
+
+            if (rule is null)
+            {
+                rule = new AutoDownloadingRule();
+                Rules[ruleName] = rule;
+            }
+
+            rule.Enabled = value;
             if (SelectedRuleName != ruleName)
             {
                 await SelectedRuleChanged(ruleName);
             }
-
-            SelectedRule.Enabled = value;
         }
 
         protected void Cancel()
@@ -451,13 +470,31 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var setRuleResult = await ApiClient.SetRssAutoDownloadingRuleAsync(SelectedRuleName, SelectedRule);
+            var ruleName = SelectedRuleName;
+            var selectionVersion = _ruleSelectionVersion;
+            var rule = SelectedRule;
+            var setRuleResult = await ApiClient.SetRssAutoDownloadingRuleAsync(ruleName, rule);
             if (!await ApiFeedbackWorkflow.ProcessResultAsync(setRuleResult))
             {
                 return;
             }
 
-            var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
+            if (Rules.TryGetValue(ruleName, out var currentRule) && ReferenceEquals(currentRule, rule))
+            {
+                _unsavedRuleNames.Remove(ruleName);
+            }
+
+            if (selectionVersion != _ruleSelectionVersion || SelectedRuleName != ruleName)
+            {
+                return;
+            }
+
+            var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(ruleName);
+            if (selectionVersion != _ruleSelectionVersion || SelectedRuleName != ruleName)
+            {
+                return;
+            }
+
             if (matchingArticlesResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
@@ -465,8 +502,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             MatchingArticles = matchingArticlesResult.Value;
-
-            _unsavedRuleNames.Remove(SelectedRuleName);
         }
     }
 }

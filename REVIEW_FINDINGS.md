@@ -7,6 +7,7 @@ Static review dated 15 November 2026. This checklist records all 55 findings fro
 - Total: **55 findings** — **2 P1**, **46 P2**, **7 P3**.
 - Mark a finding complete after addressing its cause and validating the affected scenario. Record any decision to defer or dismiss it alongside the item.
 - P1: urgent defect to address next. P2: ordinary defect to fix. P3: lower-impact defect worth fixing.
+- Deferred by user decision: **R11**, **R22** and **R50**, pending a decision about JavaScript regression testing.
 - The review inspected current first-party code rather than a branch diff. The API client is an external NuGet package and was not audited as first-party source.
 - No repository code, builds, tests, scripts or browser automation ran during the review. The existing passing tests were supplied context, and relevant test bodies were inspected selectively.
 - Remote release state, live browser behaviour and an exhaustive audit of every test body remain unverified. There is currently no general Playwright page-testing runner; one is a possible follow-up, not an existing validation capability.
@@ -291,17 +292,29 @@ Validation: all 3,471 solution tests passed with no failures or skips. Release p
 
 ### P2
 
-- [ ] **R35 — Reject stale RSS rule-selection responses.** [RssRulesDialog.razor.cs:358](src/Lantean.QBTMud.Presentation/Components/Dialogs/RssRulesDialog.razor.cs#L358)
+- [x] **R35 — Reject stale RSS rule-selection responses.** [RssRulesDialog.razor.cs:358](src/Lantean.QBTMud.Presentation/Components/Dialogs/RssRulesDialog.razor.cs#L358)
 
     Selecting A then B can leave B's name paired with A's configuration when requests finish in reverse order. Save then overwrites B using A's settings. Bind before awaiting or guard continuation identity. Cover concurrent selections with reversed response completion.
 
-- [ ] **R36 — Display RSS tags with the editor's separator.** [RssRulesDialog.razor.cs:397](src/Lantean.QBTMud.Presentation/Components/Dialogs/RssRulesDialog.razor.cs#L397)
+- [x] **R36 — Display RSS tags with the editor's separator.** [RssRulesDialog.razor.cs:397](src/Lantean.QBTMud.Presentation/Components/Dialogs/RssRulesDialog.razor.cs#L397)
 
     Existing tags are joined with spaces while edits split on commas. Loading `alpha`, `beta` then appending `gamma` combines the original tags into `alpha beta`. Display comma-separated tags. Cover loading and editing an existing multi-tag rule.
 
-- [ ] **R37 — Ignore path-browser responses for obsolete paths.** [PathBrowserDialog.razor.cs:138](src/Lantean.QBTMud.Presentation/Components/Dialogs/PathBrowserDialog.razor.cs#L138)
+- [x] **R37 — Ignore path-browser responses for obsolete paths.** [PathBrowserDialog.razor.cs:138](src/Lantean.QBTMud.Presentation/Components/Dialogs/PathBrowserDialog.razor.cs#L138)
 
     Earlier requests can overwrite newer entries; All mode can mix directories from the old path with files from the new path because `_currentPath` changes across awaits. Capture request identity and discard stale responses. Existing debounce tests do not cover requests already in flight.
+
+### Resolution and regression coverage
+
+Completed on 15 November 2026. All three findings in this section have regression tests.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R35 | Rule fields bind before matching articles are requested. Selection generations and captured rule identities prevent stale selections, saves, enable changes and removals from changing the current editor or a replacement rule. Tests cover reversed responses, reselection, current and obsolete failures, switching during save/removal, and removing and recreating a rule with the same name. |
+| R36 | Existing tags use the comma separator expected by the editor. A regression loads two tags, appends a third and verifies that saving preserves three individual tags. |
+| R37 | Directory requests capture their path and mode and discard obsolete results, failures and exceptions. Tests cover both stages of All mode, overlapping loading indicators and clearing the path while a request is pending. |
+
+Validation: the full solution suite passed with 3,493 tests and no failures or skips. Release publishing succeeded. All 79 changed executable lines and their branches are covered. Changed C# files were formatted and all changed files were normalised to CRLF using the previously documented formatter settings.
 
 ## Shared UI, keyboard behaviour and startup workflows
 
