@@ -375,15 +375,26 @@ Compatibility: the existing `Task InvokeAddTorrentLinkDialog(string? url = null)
 
 ### P2
 
-- [ ] **R31 — Apply one translation validation retry budget.** [TranslationSyncService.cs:43](tools/QbtMudTranslations/TranslationSyncService.cs#L43)
+- [x] **R31 — Apply one translation validation retry budget.** [TranslationSyncService.cs:43](tools/QbtMudTranslations/TranslationSyncService.cs#L43)
 
     Nested loops each apply the retry setting: one retry yields four translation attempts, and three yield sixteen. Outer retries can retransmit previously successful keys. Share one budget and retain successful translations. Add positive-budget exhaustion coverage.
 
 ### P3
 
-- [ ] **R52 — Restore protected tokens as complete identifiers.** [TranslationTextProtector.cs:39](tools/QbtMudTranslations/TranslationTextProtector.cs#L39)
+- [x] **R52 — Restore protected tokens as complete identifiers.** [TranslationTextProtector.cs:39](tools/QbtMudTranslations/TranslationTextProtector.cs#L39)
 
     Replacing `QBTMUDTOKEN1` also replaces the prefix of `QBTMUDTOKEN10`. Eleven protected fragments corrupt correctly preserved provider output and trigger validation failures. Use delimited/complete token matching. Tests contain fewer tokens; no current English asset was found reaching this threshold, so this is a supported-input tool defect.
+
+### Resolution and regression coverage
+
+Completed on 15 November 2026. Both findings in this section have regression tests.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R31 | One outer attempt loop owns the initial attempt and configured retries per locale. A per-run cache retains validated keys across validation, provider and write failures. Tests cover exhausted budgets of one and three retries, recovery with and without an intervening provider exception, write failure without retransmitting valid keys, and cancellation without retries. Existing tests retain coverage of locale ordering, existing files and derived locales. |
+| R52 | A single regex evaluator restores complete numeric token identities using exact lookup. Tests exercise both provider wrappers with thirteen fragments, adjacent and overlapping identifiers, reversed map order, unknown tokens and literal inserted values containing token text, replacement metacharacters and entities. |
+
+Validation: the full solution suite passed with 3,535 tests and no failures or skips. Release publishing of the translation tool succeeded. All 19 changed executable lines and their branches are covered. Changed C# files were formatted and all changed files were normalised to CRLF using the previously documented formatter settings.
 
 ## Build, delivery, screenshots and repository documentation
 
