@@ -340,7 +340,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var article = RssList.Articles.Find(a => a.Id == value);
+            var article = RssList.Articles.Find(a => GetArticleKey(a) == value);
             if (article is null)
             {
                 return;
@@ -356,7 +356,7 @@ namespace Lantean.QBTMud.Pages
         private async Task HandleArticleSelection(RssArticle article)
         {
             Article = article;
-            SelectedArticle = article.Id;
+            SelectedArticle = GetArticleKey(article);
 
             if (article.IsRead)
             {
@@ -371,7 +371,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             article.IsRead = true;
-            var localArticle = Articles.FirstOrDefault(a => a.Id == article.Id);
+            var localArticle = Articles.FirstOrDefault(a => a.Feed == article.Feed && a.Id == article.Id);
             if (localArticle is not null)
             {
                 localArticle.IsRead = true;
@@ -753,8 +753,8 @@ namespace Lantean.QBTMud.Pages
 
             Articles.AddRange(source);
 
-            Article = Articles.FirstOrDefault(a => a.Id == previousSelectedArticle) ?? Articles.FirstOrDefault();
-            SelectedArticle = Article?.Id;
+            Article = Articles.FirstOrDefault(a => GetArticleKey(a) == previousSelectedArticle) ?? Articles.FirstOrDefault();
+            SelectedArticle = Article is null ? null : GetArticleKey(Article);
 
             if (_showDetailsPane && Article is null)
             {
@@ -766,11 +766,16 @@ namespace Lantean.QBTMud.Pages
 
         protected string GetArticleCssClass(RssArticle article)
         {
-            var selected = string.Equals(SelectedArticle, article.Id, StringComparison.Ordinal);
+            var selected = string.Equals(SelectedArticle, GetArticleKey(article), StringComparison.Ordinal);
             return new CssBuilder("rss-article-item")
                 .AddClass("mud-selected-item", selected)
                 .AddClass("rss-article-item--selected", selected)
                 .Build();
+        }
+
+        private static string GetArticleKey(RssArticle article)
+        {
+            return Uri.EscapeDataString(article.Feed) + "/" + Uri.EscapeDataString(article.Id);
         }
 
         private async Task GetRssList()

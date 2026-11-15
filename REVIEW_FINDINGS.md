@@ -135,29 +135,44 @@ Validation: the full solution test suite passed with 3,388 tests and no failures
 
 ### P2
 
-- [ ] **R12 — Fetch outstanding results after a search stops.** [Search.razor.cs:597](src/Lantean.QBTMud.Presentation/Pages/Search.razor.cs#L597)
+- [x] **R12 — Fetch outstanding results after a search stops.** [Search.razor.cs:597](src/Lantean.QBTMud.Presentation/Pages/Search.razor.cs#L597)
 
     Polling stops when no search is running, even if results remain unfetched. A completed search with 600 results retrieves only 250; refresh starts again with the same batch. Continue until the reported total is collected. Cover completed/hydrated searches and a search finishing with multiple outstanding batches.
 
-- [ ] **R13 — Identify RSS articles by feed and article ID.** [Rss.razor:114](src/Lantean.QBTMud.Presentation/Pages/Rss.razor#L114)
+- [x] **R13 — Identify RSS articles by feed and article ID.** [Rss.razor:114](src/Lantean.QBTMud.Presentation/Pages/Rss.razor#L114)
 
     Aggregated folder/Unread views key and select articles by ID alone. Two feeds containing the same syndicated GUID can produce duplicate rendering keys or select the wrong feed's article. Use a composite identity for rendering and selection. Tests currently use distinct IDs across feeds.
 
-- [ ] **R15 — Apply log text filters to displayed results.** [Log.razor:52](src/Lantean.QBTMud.Presentation/Pages/Log.razor#L52)
+- [x] **R15 — Apply log text filters to displayed results.** [Log.razor:52](src/Lantean.QBTMud.Presentation/Pages/Log.razor#L52)
 
     Log and Blocks expose `Model.Criteria`, but neither implementation reads it. Submit only requests newer records, leaving displayed rows unfiltered. Apply criteria to retained history. Existing tests verify requests rather than the resulting filtered rows; cover message fragments and blocked IP criteria.
 
-- [ ] **R16 — Reload history when log severity changes.** [Log.razor.cs:89](src/Lantean.QBTMud.Presentation/Pages/Log.razor.cs#L89)
+- [x] **R16 — Reload history when log severity changes.** [Log.razor.cs:89](src/Lantean.QBTMud.Presentation/Pages/Log.razor.cs#L89)
 
     Severity changes retain old rows and the previous request cursor. Switching Normal to Critical leaves Normal rows visible and skips older Critical messages. Reset the collection/cursor before fetching the new selection. Existing selection tests check persistence only.
 
-- [ ] **R17 — Invalidate category and tag snapshots after mutations.** [Categories.razor.cs:87](src/Lantean.QBTMud.Presentation/Pages/Categories.razor.cs#L87)
+- [x] **R17 — Invalidate category and tag snapshots after mutations.** [Categories.razor.cs:87](src/Lantean.QBTMud.Presentation/Pages/Categories.razor.cs#L87)
 
     Manual refresh creates snapshots that permanently override shared live data. Later additions, edits and deletions leave Categories and Tags displaying stale rows. Refresh or invalidate snapshots after successful mutations. Cover refresh followed by each mutation and shared-state updates.
 
-- [ ] **R19 — Keep torrent-task polling eligible after failures.** [TorrentCreator.razor.cs:191](src/Lantean.QBTMud.Presentation/Pages/TorrentCreator.razor.cs#L191)
+- [x] **R19 — Keep torrent-task polling eligible after failures.** [TorrentCreator.razor.cs:191](src/Lantean.QBTMud.Presentation/Pages/TorrentCreator.razor.cs#L191)
 
     A failed polling request clears `_tasks`; subsequent ticks require a non-empty collection and never retry. Retain the previous state or track polling independently. Existing tests omit an unsuccessful API result followed by recovery while creation is running.
+
+### Resolution and regression coverage
+
+Addressed all six findings in this section on 15 November 2026.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R12 | Polling continues while a completed search has unfetched results. Tests collect 600 results across three batches for hydrated completed searches and searches that finish during polling, then verify that fetching stops. Failed jobs retain their existing manual-retry behaviour. |
+| R13 | Article rendering, selection, read-state updates and refresh selection use feed plus article ID. Tests cover duplicate IDs in folder and Unread views on desktop and mobile, checking distinct list values and the correct feed's mark-read request. |
+| R15 | Log and blocked-IP tables filter retained history using case-insensitive message/address fragments. Tests cover existing rows, empty history and clearing the criteria to restore retained results. |
+| R16 | Severity changes clear previous rows, context selection and cursor before fetching the new selection. Tests verify fetching older Critical messages after Normal history, and discard late responses from both submitted requests and polling without corrupting the new cursor. |
+| R17 | Successful mutations release manual-refresh snapshots; parent updates also return the tables to live shared data. Tests cover category add, edit and delete, tag add and delete, cancelled/failed mutations, and subsequent shared-data updates. |
+| R19 | Failed task refreshes retain the previous task list so an active creation remains eligible for polling. A regression test covers failure, recovery to Finished, and stopping further requests once the task is terminal. |
+
+Validation: all 3,415 solution tests passed with no failures or skips. Release publishing succeeded. Collected coverage includes all 65 changed executable source lines and their branches. Changed C# files were formatted and changed files use CRLF. Output used `/tmp/artifacts/qbtmud`, with the formatter environment settings described above. No browser automation was run.
 
 ## Options and settings
 

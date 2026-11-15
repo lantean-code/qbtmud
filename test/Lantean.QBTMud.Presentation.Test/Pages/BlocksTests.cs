@@ -287,6 +287,34 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             await target.Instance.DisposeAsync();
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_RetainedPeerHistory_WHEN_AddressFilterChanges_THEN_ShouldFilterExistingRowsAndRestoreThemWhenCleared(bool hasResults)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsSuccessAsync(hasResults ? new List<PeerLog>
+                {
+                    CreatePeerLog(1, "2001:db8:abcd::1", true), CreatePeerLog(2, "192.0.2.1", true)
+                } : new List<PeerLog>());
+            var target = RenderTarget();
+            var criteria = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+
+            await target.InvokeAsync(() => criteria.Instance.ValueChanged.InvokeAsync("DB8:ABCD"));
+
+            var items = target.FindComponent<DynamicTable<PeerLog>>().Instance.Items;
+            if (hasResults)
+            {
+                items.Should().ContainSingle().Which.Id.Should().Be(1);
+            }
+            else
+            {
+                items.Should().BeNullOrEmpty();
+            }
+            await target.InvokeAsync(() => criteria.Instance.ValueChanged.InvokeAsync(string.Empty));
+            (target.FindComponent<DynamicTable<PeerLog>>().Instance.Items?.Count() ?? 0).Should().Be(hasResults ? 2 : 0);
+        }
+
         private IRenderedComponent<Blocks> RenderTarget()
         {
             return TestContext.Render<Blocks>(parameters =>

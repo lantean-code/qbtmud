@@ -190,7 +190,6 @@ namespace Lantean.QBTMud.Pages
                 var tasksResult = await ApiClient.GetTorrentCreationTasksAsync();
                 if (tasksResult.IsFailure)
                 {
-                    _tasks = [];
                     await ApiFeedbackWorkflow.HandleFailureAsync(
                         tasksResult,
                         message => string.IsNullOrWhiteSpace(message)

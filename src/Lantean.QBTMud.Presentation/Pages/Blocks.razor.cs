@@ -52,6 +52,16 @@ namespace Lantean.QBTMud.Pages
 
         protected List<PeerLog>? Results { get; private set; }
 
+        protected IEnumerable<PeerLog>? FilteredResults
+        {
+            get
+            {
+                var criteria = Model.Criteria;
+                return string.IsNullOrWhiteSpace(criteria) ? Results
+                    : Results?.Where(log => log.IPAddress.Contains(criteria, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
         protected DynamicTable<PeerLog>? Table { get; set; }
 
         protected PeerLog? ContextMenuItem { get; set; }

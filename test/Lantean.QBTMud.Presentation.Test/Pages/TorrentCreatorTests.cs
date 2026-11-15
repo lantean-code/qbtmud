@@ -599,6 +599,32 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RunningTask_WHEN_PollingFailsThenRecovers_THEN_ShouldRetainTaskAndContinuePolling()
+        {
+            var handler = CapturePollHandler();
+            Mock.Get(_apiClient).Setup(client => client.GetTorrentCreationTasksAsync())
+                .ReturnsSuccessAsync(new[] { CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10) });
+            var target = RenderPage();
+            Mock.Get(_apiClient).Setup(client => client.GetTorrentCreationTasksAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var failedTick = await handler.Invoke(CancellationToken.None);
+
+            failedTick.Action.Should().Be(ManagedTimerTickAction.Continue);
+            target.FindComponent<DynamicTable<ClientModels.TorrentCreationTaskStatus>>().Instance.Items.Should()
+                .ContainSingle().Which.Status.Should().Be(ClientModels.TorrentCreationTaskStatusKind.Running);
+            Mock.Get(_apiClient).Setup(client => client.GetTorrentCreationTasksAsync())
+                .ReturnsSuccessAsync(new[] { CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Finished, 100) });
+
+            await handler.Invoke(CancellationToken.None);
+            await handler.Invoke(CancellationToken.None);
+
+            target.FindComponent<DynamicTable<ClientModels.TorrentCreationTaskStatus>>().Instance.Items.Should()
+                .ContainSingle().Which.Status.Should().Be(ClientModels.TorrentCreationTaskStatusKind.Finished);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentCreationTasksAsync(), Times.Exactly(3));
+        }
+
+        [Fact]
         public async Task GIVEN_NoTasks_WHEN_PollingTicked_THEN_ContinuesWithoutRefreshing()
         {
             var handler = CapturePollHandler();

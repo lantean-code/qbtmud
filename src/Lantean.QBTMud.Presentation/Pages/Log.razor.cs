@@ -21,6 +21,7 @@ namespace Lantean.QBTMud.Pages
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
+        private int _selectionVersion;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -56,6 +57,16 @@ namespace Lantean.QBTMud.Pages
 
         protected List<ClientLog>? Results { get; private set; }
 
+        protected IEnumerable<ClientLog>? FilteredResults
+        {
+            get
+            {
+                var criteria = Model.Criteria;
+                return string.IsNullOrWhiteSpace(criteria) ? Results
+                    : Results?.Where(log => log.Message.Contains(criteria, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
         protected MudSelect<string>? CategoryMudSelect { get; set; }
 
         protected DynamicTable<ClientLog>? Table { get; set; }
@@ -89,8 +100,13 @@ namespace Lantean.QBTMud.Pages
         protected async Task SelectedValuesChanged(IReadOnlyCollection<string> values)
         {
             Model.SelectedTypes = values;
+            _selectionVersion++;
+            Results = null;
+            Model.LastKnownId = null;
+            ContextMenuItem = null;
 
             await SettingsStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
+            await DoSearch();
         }
 
         protected string GenerateSelectedText(IReadOnlyList<string> values)
@@ -115,10 +131,16 @@ namespace Lantean.QBTMud.Pages
 
         private async Task DoSearch()
         {
+            var selectionVersion = _selectionVersion;
             var results = await ApiClient.GetLogAsync(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
             if (results.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(results);
+                return;
+            }
+
+            if (selectionVersion != _selectionVersion)
+            {
                 return;
             }
 
@@ -221,6 +243,7 @@ namespace Lantean.QBTMud.Pages
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
+            var selectionVersion = _selectionVersion;
             var results = await ApiClient.GetLogAsync(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
             if (results.IsFailure)
             {
@@ -240,6 +263,11 @@ namespace Lantean.QBTMud.Pages
                 return results.Failure?.Kind == ApiFailureKind.AuthenticationRequired
                     ? ManagedTimerTickResult.Stop
                     : ManagedTimerTickResult.Continue;
+            }
+
+            if (selectionVersion != _selectionVersion)
+            {
+                return ManagedTimerTickResult.Continue;
             }
 
             var logEntries = results.Value;
