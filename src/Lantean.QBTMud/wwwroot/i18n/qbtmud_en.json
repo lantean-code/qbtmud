@@ -557,5 +557,6 @@
   "AppWelcomeWizard|qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.": "qBittorrent client data was selected because qbtmud settings were found in this qBittorrent instance. Change this if you prefer browser local storage.",
   "AppWelcomeWizard|Storage: %1": "Storage: %1",
   "AppWelcomeWizard|Select a storage type to continue.": "Select a storage type to continue.",
-  "AppManageTagsDialog|Remove all tags from selected torrents?": "Remove all tags from selected torrents?"
+  "AppManageTagsDialog|Remove all tags from selected torrents?": "Remove all tags from selected torrents?",
+  "App|Enter a valid rate limit.": "Enter a valid rate limit."
 }

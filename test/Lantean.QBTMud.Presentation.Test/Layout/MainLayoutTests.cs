@@ -5,6 +5,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Core.Theming;
 using Lantean.QBTMud.Layout;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using MudBlazor.Services;
 
 namespace Lantean.QBTMud.Presentation.Test.Layout
 {
@@ -46,6 +48,48 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
                 .Returns(() => _currentThemeModePreference);
 
             TestContext.JSInterop.SetupVoid("qbt.removeBootstrapTheme", _ => true).SetVoidResult();
+            TestContext.JSInterop.Setup<BrowserWindowSize>("mudResizeListener.getBrowserWindowSize", _ => true)
+                .SetResult(new BrowserWindowSize { Width = 800, Height = 1200 });
+        }
+
+        [Fact]
+        public async Task GIVEN_MainLayoutContainingLoggedInLayout_WHEN_ViewportChanges_THEN_CascadesBreakpointAndOrientation()
+        {
+            var sessionWorkflow = new Mock<IShellSessionWorkflow>();
+            sessionWorkflow.Setup(workflow => workflow.LoadAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ShellSessionLoadResult(ShellSessionLoadOutcome.LostConnection));
+            var pendingWorkflow = new Mock<IPendingDownloadWorkflow>();
+            pendingWorkflow.Setup(workflow => workflow.RestoreAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>();
+            lostConnectionWorkflow.Setup(workflow => workflow.MarkLostConnectionAsync()).Returns(Task.CompletedTask);
+            var startupExperienceWorkflow = new Mock<IStartupExperienceWorkflow>(MockBehavior.Strict);
+            TestContext.Services.RemoveAll<IShellSessionWorkflow>();
+            TestContext.Services.RemoveAll<IPendingDownloadWorkflow>();
+            TestContext.Services.RemoveAll<ILostConnectionWorkflow>();
+            TestContext.Services.RemoveAll<IStartupExperienceWorkflow>();
+            TestContext.Services.AddSingleton(sessionWorkflow.Object);
+            TestContext.Services.AddSingleton(pendingWorkflow.Object);
+            TestContext.Services.AddSingleton(lostConnectionWorkflow.Object);
+            TestContext.Services.AddSingleton(startupExperienceWorkflow.Object);
+            var target = RenderLayout(builder =>
+            {
+                builder.OpenComponent<LoggedInLayout>(0);
+                builder.CloseComponent();
+            });
+            var provider = target.FindComponent<BreakpointOrientationProvider>();
+            var loggedInLayout = target.FindComponent<LoggedInLayout>();
+
+            await target.InvokeAsync(() => provider.Instance.NotifyBrowserViewportChangeAsync(new BrowserViewportEventArgs(
+                Guid.Empty, new BrowserWindowSize { Width = 1200, Height = 800 }, Breakpoint.Md, false)));
+
+            loggedInLayout.Instance.CurrentBreakpoint.Should().Be(Breakpoint.Md);
+            loggedInLayout.Instance.CurrentOrientation.Should().Be(Orientation.Landscape);
+
+            await target.InvokeAsync(() => provider.Instance.NotifyBrowserViewportChangeAsync(new BrowserViewportEventArgs(
+                Guid.Empty, new BrowserWindowSize { Width = 800, Height = 1200 }, Breakpoint.Sm, false)));
+
+            loggedInLayout.Instance.CurrentBreakpoint.Should().Be(Breakpoint.Sm);
+            loggedInLayout.Instance.CurrentOrientation.Should().Be(Orientation.Portrait);
         }
 
         [Fact]

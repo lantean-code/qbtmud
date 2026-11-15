@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var magnetLinkService = new Mock<IMagnetLinkService>(MockBehavior.Strict);
             magnetLinkService.Setup(service => service.IsSupportedDownloadLink("magnet:?xt=urn:btih:ABC")).Returns(true);
             var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
-            dialogWorkflow.Setup(workflow => workflow.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
+            dialogWorkflow.Setup(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC")).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
             var navigationManager = new TestNavigationManager();
             var target = CreateTarget(sessionStorage, magnetLinkService.Object, dialogWorkflow.Object, navigationManager);
 
@@ -142,7 +142,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             await target.ProcessAsync(cancellationToken);
 
             navigationManager.LastNavigationUri.Should().BeNull();
-            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialog(It.IsAny<string?>()), Times.Never);
+            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -165,7 +165,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             pending.Should().BeNull();
             navigationManager.LastNavigationUri.Should().Be("./");
             navigationManager.ForceLoad.Should().BeTrue();
-            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialog(It.IsAny<string?>()), Times.Never);
+            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -177,7 +177,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             magnetLinkService.Setup(service => service.ExtractDownloadLink("http://localhost/?download=magnet")).Returns("magnet:?xt=urn:btih:ABC");
             var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflow
-                .Setup(workflow => workflow.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"))
+                .Setup(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC"))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
             var target = CreateTarget(sessionStorage, magnetLinkService.Object, dialogWorkflow.Object, new TestNavigationManager());
 

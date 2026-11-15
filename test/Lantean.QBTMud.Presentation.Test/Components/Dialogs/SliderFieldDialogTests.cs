@@ -2,11 +2,13 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 {
@@ -120,6 +122,65 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
             result.Data.Should().Be(15);
+        }
+
+        [Theory]
+        [InlineData(null, false, "8", 8192L)]
+        [InlineData("", false, "8", 8192L)]
+        [InlineData("Invalid", false, "∞", 0L)]
+        [InlineData("9223372036854775808", false, "8", 8192L)]
+        [InlineData("9223372036854775807", false, "8", 8192L)]
+        [InlineData("-1", false, "8", 8192L)]
+        [InlineData("Invalid", true, "8", 6144L)]
+        public async Task GIVEN_ProductionRateConverter_WHEN_InvalidTextEntered_THEN_ShouldValidateAndAllowCorrection(string? invalidValue, bool correctWithSlider, string correction, long expectedRate)
+        {
+            var apiClient = new Mock<IApiClient>();
+            apiClient.Setup(client => client.SetGlobalDownloadLimitAsync(expectedRate)).ReturnsSuccess(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiClient>();
+            TestContext.Services.AddSingleton(apiClient.Object);
+            Func<KeyboardEvent, Task>? submitHandler = null;
+            Mock.Get(_keyboardService)
+                .Setup(service => service.RegisterKeypressEvent(It.Is<KeyboardEvent>(key => key.Key == "Enter" && !key.CtrlKey), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    submitHandler = handler;
+                })
+                .Returns(Task.CompletedTask);
+            var provider = TestContext.Render<MudDialogProvider>();
+            var workflow = TestContext.Services.GetRequiredService<IDialogWorkflow>();
+            var rateChange = workflow.InvokeGlobalDownloadRateDialog(1024);
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<long>>().Should().NotBeNull());
+            var target = provider.FindComponent<SliderFieldDialog<long>>();
+            var input = FindComponentByTestId<MudTextField<string>>(target, "SliderFieldInput");
+
+            await target.InvokeAsync(() => input.Instance.ValueChanged.InvokeAsync(invalidValue));
+
+            input.Instance.GetState(component => component.Error).Should().BeTrue();
+            input.Instance.GetState(component => component.ErrorText).Should().Be("Enter a valid rate limit.");
+            input.Instance.GetState(component => component.Value).Should().Be(invalidValue ?? string.Empty);
+            var save = FindComponentByTestId<MudButton>(target, "SliderFieldSave");
+            save.Instance.Disabled.Should().BeTrue();
+            await target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() => submitHandler.Should().NotBeNull());
+            await target.InvokeAsync(() => submitHandler!(new KeyboardEvent("Enter")));
+            rateChange.IsCompleted.Should().BeFalse();
+            apiClient.Verify(client => client.SetGlobalDownloadLimitAsync(It.IsAny<long>()), Times.Never);
+
+            if (correctWithSlider)
+            {
+                var slider = FindComponentByTestId<MudSlider<long>>(target, "SliderFieldSlider");
+                await target.InvokeAsync(() => slider.Instance.ValueChanged.InvokeAsync(6L));
+            }
+            else
+            {
+                await target.InvokeAsync(() => input.Instance.ValueChanged.InvokeAsync(correction));
+            }
+
+            input.Instance.GetState(component => component.Error).Should().BeFalse();
+            save.Instance.Disabled.Should().BeFalse();
+            await target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+            (await rateChange).Should().Be(expectedRate);
+            apiClient.Verify(client => client.SetGlobalDownloadLimitAsync(expectedRate), Times.Once);
         }
 
         [Fact]

@@ -11,6 +11,12 @@
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    background-color: transparent;
     border-radius: 12px;
     border: 1px solid var(--mud-palette-lines-default);
     overflow: hidden;

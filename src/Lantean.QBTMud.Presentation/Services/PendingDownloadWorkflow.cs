@@ -97,7 +97,12 @@ namespace Lantean.QBTMud.Services
 
             try
             {
-                await _dialogWorkflow.InvokeAddTorrentLinkDialog(magnet);
+                var outcome = await _dialogWorkflow.InvokeAddTorrentLinkDialogWithOutcome(magnet);
+                if (outcome == AddTorrentLinkDialogOutcome.Failed)
+                {
+                    return;
+                }
+
                 await SaveLastProcessedDownloadAsync(magnet, cancellationToken);
                 await ClearAsync(cancellationToken);
                 _navigationManager.NavigateToHome(forceLoad: true);

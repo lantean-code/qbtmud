@@ -2156,11 +2156,11 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             var magnet = "magnet:?xt=urn:btih:ABC";
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
 
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(magnet)).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome(magnet)).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(magnet), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(magnet), Times.Once);
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
@@ -2175,11 +2175,11 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             var link = "http://example.com/file.torrent";
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, link, Xunit.TestContext.Current.CancellationToken);
 
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(link)).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome(link)).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(link), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(link), Times.Once);
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
@@ -2209,11 +2209,11 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             _navigationManager.SetUri("http://localhost/#download=magnet:?xt=urn:btih:ABC");
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC")).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC"), Times.Once);
         }
 
         [Fact]
@@ -2222,11 +2222,11 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             _navigationManager.SetUri("http://localhost/#/?download=magnet:?xt=urn:btih:ABC");
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC")).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC"), Times.Once);
         }
 
         [Fact]
@@ -2235,11 +2235,11 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             _navigationManager.SetUri("http://localhost/?download=http://example.com/file.torrent");
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome("http://example.com/file.torrent")).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome("http://example.com/file.torrent"), Times.Once);
         }
 
         [Fact]
@@ -2251,7 +2251,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -2263,7 +2263,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -2277,7 +2277,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -2289,7 +2289,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -2301,7 +2301,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -2313,7 +2313,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -2323,7 +2323,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
             _navigationManager.SetUri($"http://localhost/#download={magnet}");
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(magnet))
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome(magnet))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
 
             Action action = () => RenderLayout(new List<IManagedTimer>());
@@ -2336,7 +2336,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
         {
             DisposeDefaultTarget();
             ResetDialogInvocations();
-            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialogWithOutcome("http://example.com/file.torrent")).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -2346,7 +2346,7 @@ namespace Lantean.QBTMud.Presentation.Test.Layout
 
             target.WaitForAssertion(() =>
             {
-                Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.AtLeastOnce);
+                Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialogWithOutcome("http://example.com/file.torrent"), Times.AtLeastOnce);
             });
         }
 

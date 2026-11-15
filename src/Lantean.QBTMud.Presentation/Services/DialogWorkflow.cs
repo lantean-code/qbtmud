@@ -244,6 +244,12 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task InvokeAddTorrentLinkDialog(string? url = null)
         {
+            await InvokeAddTorrentLinkDialogWithOutcome(url);
+        }
+
+        /// <inheritdoc />
+        public async Task<AddTorrentLinkDialogOutcome> InvokeAddTorrentLinkDialogWithOutcome(string? url = null)
+        {
             var parameters = new DialogParameters
             {
                 { nameof(AddTorrentLinkDialog.Url), url },
@@ -257,7 +263,7 @@ namespace Lantean.QBTMud.Services
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
-                return;
+                return AddTorrentLinkDialogOutcome.Cancelled;
             }
 
             var options = (AddTorrentLinkOptions)dialogResult.Data;
@@ -272,7 +278,7 @@ namespace Lantean.QBTMud.Services
                 await _apiFeedbackWorkflow.HandleFailureAsync(
                     addTorrentResultResult,
                     _ => TranslateApp("Unable to add torrent. Please try again."));
-                return;
+                return AddTorrentLinkDialogOutcome.Failed;
             }
             if (addTorrentResultResult.IsPending)
             {
@@ -285,6 +291,12 @@ namespace Lantean.QBTMud.Services
             }
 
             await ShowAddTorrentSnackbarMessage(addTorrentResult!, isPending);
+            if (addTorrentResult!.SuccessCount == 0 && addTorrentResult.FailureCount > 0 && addTorrentResult.PendingCount == 0)
+            {
+                return AddTorrentLinkDialogOutcome.Failed;
+            }
+
+            return isPending ? AddTorrentLinkDialogOutcome.Pending : AddTorrentLinkDialogOutcome.Added;
         }
 
         /// <inheritdoc />
@@ -1048,7 +1060,20 @@ namespace Lantean.QBTMud.Services
         private async Task<long?> ShowRateLimitDialog(long rate, string title, string label, long max, long noLimitValue)
         {
             Func<long, string> valueDisplayFunc = v => v == noLimitValue ? "∞" : v.ToString();
-            Func<string, long> valueGetFunc = v => v == "∞" ? noLimitValue : long.Parse(v);
+            Func<string, long?> valueTryGetFunc = value =>
+            {
+                if (value == "∞")
+                {
+                    return noLimitValue;
+                }
+
+                if (long.TryParse(value, out var parsedValue) && parsedValue >= noLimitValue && parsedValue <= long.MaxValue / 1024)
+                {
+                    return parsedValue;
+                }
+
+                return null;
+            };
 
             var parameters = new DialogParameters
             {
@@ -1056,7 +1081,8 @@ namespace Lantean.QBTMud.Services
                 { nameof(SliderFieldDialog<>.Max), max },
                 { nameof(SliderFieldDialog<>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<>.ValueDisplayFunc), valueDisplayFunc },
-                { nameof(SliderFieldDialog<>.ValueGetFunc), valueGetFunc },
+                { nameof(SliderFieldDialog<>.ValueTryGetFunc), valueTryGetFunc },
+                { nameof(SliderFieldDialog<>.InputErrorText), TranslateApp("Enter a valid rate limit.") },
                 { nameof(SliderFieldDialog<>.Label), label },
                 { nameof(SliderFieldDialog<>.Adornment), Adornment.End },
                 { nameof(SliderFieldDialog<>.AdornmentText), _languageLocalizer.Translate(_speedLimitContext, "KiB/s") },

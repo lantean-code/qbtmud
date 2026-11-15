@@ -1,7 +1,7 @@
 @inherits LayoutComponentBase
 
 <div class="main-layout">
-    <BreakpointOrientationProvider OnBreakpointChanged="BreakpointChanged">
+    <BreakpointOrientationProvider Cascades="BreakpointOrientationProviderCascades.Both" OnBreakpointChanged="BreakpointChanged">
         <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
         <CascadingValue Value="DrawerOpenChangedCallback" Name="DrawerOpenChanged">
         <CascadingValue Value="TimerDrawerOpen" Name="TimerDrawerOpen">

@@ -1,7 +1,7 @@
 @typeparam T
 @inherits MudComponentBase
 
-<div class="dynamic-table-host">
+<div class="dynamic-table-host" tabindex="0" @onfocusin="this.AsNonRenderingEventHandler(TableFocused)" @onfocusout="this.AsNonRenderingEventHandler(TableBlurred)">
 <MudTable
     Items="OrderedItems" 
     T="T" 

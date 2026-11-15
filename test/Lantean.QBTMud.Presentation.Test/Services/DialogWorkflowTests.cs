@@ -413,6 +413,105 @@ namespace Lantean.QBTMud.Presentation.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_AddFailuresWithPendingRequests_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldReportPendingOutcome()
+        {
+            var linkOptions = new AddTorrentLinkOptions("http://one", CreateTorrentOptions(true, true));
+            Mock.Get(_dialogService)
+                .Setup(service => service.ShowAsync<AddTorrentLinkDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(CreateReference(DialogResult.Ok(linkOptions)));
+            Mock.Get(_apiClient).Setup(client => client.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
+                .ReturnsPending(new AddTorrentResult(0, 1, 1, null));
+
+            var outcome = await _target.InvokeAddTorrentLinkDialogWithOutcome();
+
+            outcome.Should().Be(AddTorrentLinkDialogOutcome.Pending);
+            VerifySnackbar("Failed to add 1 torrent and Pending 1 torrent.", Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingLinkAndStructuredAddFailure_WHEN_Retried_THEN_ShouldRetainLinkUntilSuccessful()
+        {
+            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            const string pendingKey = "LoggedInLayout.PendingDownload";
+            const string processedKey = "LoggedInLayout.LastProcessedDownload";
+            const string link = "magnet:?xt=urn:btih:ABC";
+            var sessionStorage = new TestSessionStorageService();
+            var magnetLinks = new Mock<IMagnetLinkService>();
+            magnetLinks.Setup(service => service.ExtractDownloadLink("DownloadUri")).Returns(link);
+            var pendingWorkflow = new PendingDownloadWorkflow(sessionStorage, magnetLinks.Object, _target, _navigationManager);
+            var options = new AddTorrentLinkOptions(link, CreateTorrentOptions(true, true));
+            Mock.Get(_dialogService)
+                .Setup(service => service.ShowAsync<AddTorrentLinkDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(CreateReference(DialogResult.Ok(options)));
+            Mock.Get(_apiClient).SetupSequence(client => client.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(ApiResult.CreateFailure<AddTorrentResult, AddTorrentResult>(new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = "AddTorrent", UserMessage = "Failure" }))
+                .ReturnsAsync(ApiResult.CreateSuccess<AddTorrentResult, AddTorrentResult>(new AddTorrentResult(1, 0)));
+
+            await pendingWorkflow.CaptureFromUriAsync("DownloadUri", cancellationToken);
+            await pendingWorkflow.ProcessAsync(cancellationToken);
+
+            (await sessionStorage.GetItemAsync<string>(pendingKey, cancellationToken)).Should().Be(link);
+            (await sessionStorage.GetItemAsync<string>(processedKey, cancellationToken)).Should().BeNull();
+            VerifySnackbar("Unable to add torrent. Please try again.", Severity.Error);
+
+            await pendingWorkflow.ProcessAsync(cancellationToken);
+
+            (await sessionStorage.GetItemAsync<string>(pendingKey, cancellationToken)).Should().BeNull();
+            (await sessionStorage.GetItemAsync<string>(processedKey, cancellationToken)).Should().Be(link);
+            Mock.Get(_apiClient).Verify(client => client.AddTorrentAsync(It.Is<AddTorrentParams>(parameters => parameters.Urls != null && parameters.Urls.SequenceEqual(new[] { link }))), Times.Exactly(2));
+            await pendingWorkflow.CaptureFromUriAsync("DownloadUri", cancellationToken);
+            await pendingWorkflow.ProcessAsync(cancellationToken);
+            Mock.Get(_dialogService).Verify(service => service.ShowAsync<AddTorrentLinkDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions), Times.Exactly(2));
+        }
+
+        [Theory]
+        [InlineData(AddTorrentLinkDialogOutcome.Added)]
+        [InlineData(AddTorrentLinkDialogOutcome.Pending)]
+        [InlineData(AddTorrentLinkDialogOutcome.Cancelled)]
+        [InlineData(AddTorrentLinkDialogOutcome.Failed)]
+        public async Task GIVEN_PendingLink_WHEN_DialogCompletes_THEN_ShouldConsumeOnlyHandledRequests(AddTorrentLinkDialogOutcome outcome)
+        {
+            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            const string pendingKey = "LoggedInLayout.PendingDownload";
+            const string processedKey = "LoggedInLayout.LastProcessedDownload";
+            const string link = "magnet:?xt=urn:btih:ABC";
+            var sessionStorage = new TestSessionStorageService();
+            var magnetLinks = new Mock<IMagnetLinkService>();
+            magnetLinks.Setup(service => service.ExtractDownloadLink("DownloadUri")).Returns(link);
+            var pendingWorkflow = new PendingDownloadWorkflow(sessionStorage, magnetLinks.Object, _target, _navigationManager);
+            var options = new AddTorrentLinkOptions(link, CreateTorrentOptions(true, true));
+            var dialogResult = outcome == AddTorrentLinkDialogOutcome.Cancelled ? DialogResult.Cancel() : DialogResult.Ok(options);
+            Mock.Get(_dialogService)
+                .Setup(service => service.ShowAsync<AddTorrentLinkDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(CreateReference(dialogResult));
+            var add = Mock.Get(_apiClient).Setup(client => client.AddTorrentAsync(It.IsAny<AddTorrentParams>()));
+            if (outcome == AddTorrentLinkDialogOutcome.Pending)
+            {
+                add.ReturnsPending(new AddTorrentResult(0, 0, 1, null));
+            }
+            else
+            {
+                add.ReturnsSuccessAsync(outcome == AddTorrentLinkDialogOutcome.Failed ? new AddTorrentResult(0, 1) : new AddTorrentResult(1, 0));
+            }
+
+            await pendingWorkflow.CaptureFromUriAsync("DownloadUri", cancellationToken);
+            await pendingWorkflow.ProcessAsync(cancellationToken);
+
+            if (outcome == AddTorrentLinkDialogOutcome.Failed)
+            {
+                (await sessionStorage.GetItemAsync<string>(pendingKey, cancellationToken)).Should().Be(link);
+                (await sessionStorage.GetItemAsync<string>(processedKey, cancellationToken)).Should().BeNull();
+            }
+            else
+            {
+                (await sessionStorage.GetItemAsync<string>(pendingKey, cancellationToken)).Should().BeNull();
+                (await sessionStorage.GetItemAsync<string>(processedKey, cancellationToken)).Should().Be(link);
+            }
+
+            Mock.Get(_apiClient).Verify(client => client.AddTorrentAsync(It.IsAny<AddTorrentParams>()), outcome == AddTorrentLinkDialogOutcome.Cancelled ? Times.Never() : Times.Once());
+        }
+
+        [Fact]
         public async Task GIVEN_LinkOptions_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldAddTorrent()
         {
             var options = CreateTorrentOptions(true, true);
@@ -437,7 +536,9 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsSuccessAsync(new AddTorrentResult(1, 0, 0, new[] { "Hash" }));
 
-            await _target.InvokeAddTorrentLinkDialog();
+            var outcome = await _target.InvokeAddTorrentLinkDialogWithOutcome();
+
+            outcome.Should().Be(AddTorrentLinkDialogOutcome.Added);
 
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<AddTorrentLinkDialog>(
                     "Download from URLs",
@@ -458,8 +559,9 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
-            await _target.InvokeAddTorrentLinkDialog();
+            var outcome = await _target.InvokeAddTorrentLinkDialogWithOutcome();
 
+            outcome.Should().Be(AddTorrentLinkDialogOutcome.Cancelled);
             Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()), Times.Never);
             VerifyNoSnackbar();
         }
@@ -477,8 +579,9 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsSuccessAsync(new AddTorrentResult(0, 1, 0, new[] { "Hash" }));
 
-            await _target.InvokeAddTorrentLinkDialog();
+            var outcome = await _target.InvokeAddTorrentLinkDialogWithOutcome();
 
+            outcome.Should().Be(AddTorrentLinkDialogOutcome.Failed);
             VerifySnackbar("Failed to add torrent(s).", Severity.Error);
         }
 
@@ -495,8 +598,9 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
-            await _target.InvokeAddTorrentLinkDialog();
+            var outcome = await _target.InvokeAddTorrentLinkDialogWithOutcome();
 
+            outcome.Should().Be(AddTorrentLinkDialogOutcome.Failed);
             VerifySnackbar("Unable to add torrent. Please try again.", Severity.Error);
         }
 
@@ -531,8 +635,9 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsPending(new AddTorrentResult(0, 0, 2, null));
 
-            await _target.InvokeAddTorrentLinkDialog();
+            var outcome = await _target.InvokeAddTorrentLinkDialogWithOutcome();
 
+            outcome.Should().Be(AddTorrentLinkDialogOutcome.Pending);
             VerifySnackbar("Pending 2 torrents.", Severity.Info);
         }
 
@@ -2295,12 +2400,12 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 return false;
             }
 
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueGetFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueTryGetFunc)))
             {
                 return false;
             }
 
-            var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
+            var getter = parameters[nameof(SliderFieldDialog<>.ValueTryGetFunc)] as Func<string, long?>;
             return getter != null
                    && getter("∞") == Limits.NoTransferRateLimit
                    && getter("5") == 5;
@@ -2325,12 +2430,12 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 return false;
             }
 
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueGetFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueTryGetFunc)))
             {
                 return false;
             }
 
-            var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
+            var getter = parameters[nameof(SliderFieldDialog<>.ValueTryGetFunc)] as Func<string, long?>;
             return getter != null
                    && getter("∞") == Limits.NoTransferRateLimit
                    && getter("7") == 7;
@@ -2365,12 +2470,12 @@ namespace Lantean.QBTMud.Presentation.Test.Services
                 return false;
             }
 
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueGetFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueTryGetFunc)))
             {
                 return false;
             }
 
-            var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
+            var getter = parameters[nameof(SliderFieldDialog<>.ValueTryGetFunc)] as Func<string, long?>;
             return getter != null
                    && getter("∞") == 0
                    && getter("5") == 5;

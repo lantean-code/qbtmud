@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text;
 using Lantean.QBTMud.Application.Services.Localization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
 using QBittorrent.ApiClient.Models;
@@ -35,7 +34,7 @@ namespace Lantean.QBTMud.Components
         private bool _buildInProgress;
         private string _lastSmoothingHash = string.Empty;
         private int _lastSmoothingPieceCount;
-        private int _lastPiecesSignature;
+        private int _lastRenderSignature;
         private int _lastPiecesCount;
 
         [Parameter]
@@ -121,16 +120,16 @@ namespace Lantean.QBTMud.Components
             base.OnParametersSet();
 
             UpdateHeldDownloadingIndexes();
-            var piecesChanged = UpdatePiecesSignature();
+            var presentationChanged = UpdateRenderSignature();
 
-            if (piecesChanged || string.IsNullOrWhiteSpace(_linearBarStyle) || PiecesLoading || PiecesFailed)
+            if (presentationChanged || string.IsNullOrWhiteSpace(_linearBarStyle))
             {
                 BuildProgressSummary();
             }
 
             if (ShouldBuildSvgCells())
             {
-                if (piecesChanged || _cells.Count == 0 || _viewBox == "0 0 0 0" || PiecesLoading || PiecesFailed)
+                if (presentationChanged || _cells.Count == 0)
                 {
                     QueueBuildSvgCells();
                 }
@@ -161,16 +160,6 @@ namespace Lantean.QBTMud.Components
             }
 
             await InvokeAsync(StateHasChanged);
-        }
-
-        protected Task HandleLinearKeyDown(KeyboardEventArgs args)
-        {
-            if (args.Key is "Enter" or " " or "Space" or "Spacebar")
-            {
-                return ToggleSvg();
-            }
-
-            return Task.CompletedTask;
         }
 
         private string DimColor(MudColor color)
@@ -571,10 +560,18 @@ namespace Lantean.QBTMud.Components
             return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
 
-        private bool UpdatePiecesSignature()
+        private bool UpdateRenderSignature()
         {
             var signatureBuilder = new HashCode();
             signatureBuilder.Add(Pieces.Count);
+            signatureBuilder.Add(Hash);
+            signatureBuilder.Add(IsDarkMode);
+            signatureBuilder.Add(CurrentBreakpoint);
+            signatureBuilder.Add(PiecesLoading);
+            signatureBuilder.Add(PiecesFailed);
+            signatureBuilder.Add(DownloadedColor);
+            signatureBuilder.Add(DownloadingColor);
+            signatureBuilder.Add(PendingColor);
 
             for (var index = 0; index < Pieces.Count; index++)
             {
@@ -582,9 +579,9 @@ namespace Lantean.QBTMud.Components
             }
 
             var signature = signatureBuilder.ToHashCode();
-            var unchanged = _lastPiecesCount == Pieces.Count && _lastPiecesSignature == signature;
+            var unchanged = _lastPiecesCount == Pieces.Count && _lastRenderSignature == signature;
 
-            _lastPiecesSignature = signature;
+            _lastRenderSignature = signature;
             _lastPiecesCount = Pieces.Count;
 
             return !unchanged;

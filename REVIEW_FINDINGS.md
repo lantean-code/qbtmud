@@ -324,11 +324,11 @@ Validation: the full solution suite passed with 3,493 tests and no failures or s
 
     The asynchronous failure handler returns a URL, producing `Promise<string>` where Blazor requires a synchronous URL or `Promise<Response>`. Startup can fail despite available local assets. Return a local fetch response and cover CDN failure. See the [boot-resource contract](https://learn.microsoft.com/aspnet/core/blazor/fundamentals/startup?view=aspnetcore-10.0#load-client-side-boot-resources).
 
-- [ ] **R20 — Preserve pending downloads when adding fails.** [PendingDownloadWorkflow.cs:100](src/Lantean.QBTMud.Presentation/Services/PendingDownloadWorkflow.cs#L100)
+- [x] **R20 — Preserve pending downloads when adding fails.** [PendingDownloadWorkflow.cs:100](src/Lantean.QBTMud.Presentation/Services/PendingDownloadWorkflow.cs#L100)
 
     Any normal dialog-workflow return marks the link processed and clears it, including structured API failures. The same link is then suppressed for the session. Return an explicit outcome and retain failed requests. Cover structured add failure through the combined workflow; existing tests cover thrown failures.
 
-- [ ] **R21 — Validate rate-limit text before parsing.** [DialogWorkflow.cs:1051](src/Lantean.QBTMud.Presentation/Services/DialogWorkflow.cs#L1051)
+- [x] **R21 — Validate rate-limit text before parsing.** [DialogWorkflow.cs:1051](src/Lantean.QBTMud.Presentation/Services/DialogWorkflow.cs#L1051)
 
     Production rate-limit dialogs supply `long.Parse` to unrestricted text input. Clearing it or entering invalid/overflowing values throws through the event handler. Use non-throwing parsing with validation. Invalid-input tests omit the production custom converter.
 
@@ -336,23 +336,40 @@ Validation: the full solution suite passed with 3,493 tests and no failures or s
 
     Closing the wizard's theme preview clears global focus instead of restoring the wizard. Shortcuts then broadcast to background tables/torrent actions while the wizard remains open. Preserve an ownership-aware focus stack. Component tests mock individual calls and miss the shared JavaScript lifecycle.
 
-- [ ] **R30 — Route navigation shortcuts to the active table.** [DynamicTable.razor.cs:754](src/Lantean.QBTMud.Presentation/Components/UI/DynamicTable.razor.cs#L754)
+- [x] **R30 — Route navigation shortcuts to the active table.** [DynamicTable.razor.cs:754](src/Lantean.QBTMud.Presentation/Components/UI/DynamicTable.razor.cs#L754)
 
     Simultaneous tables register the same global navigation keys without establishing ownership. In split view, Down in Files also advances the main torrent selection and replaces the details torrent. Restrict callbacks to the active table. Existing keyboard tests isolate one table.
 
-- [ ] **R47 — Allow Tab navigation out of pieces progress.** [PiecesProgressSvg.razor:9](src/Lantean.QBTMud.Presentation/Components/PiecesProgressSvg.razor#L9)
+- [x] **R47 — Allow Tab navigation out of pieces progress.** [PiecesProgressSvg.razor:9](src/Lantean.QBTMud.Presentation/Components/PiecesProgressSvg.razor#L9)
 
     The focusable toggle prevents every keydown's default action but handles only Enter/Space. Tab and Shift+Tab cannot move focus away. Use a native button or prevent defaults only for activation keys, and cover traversal. See [Blazor event default prevention](https://learn.microsoft.com/aspnet/core/blazor/components/event-handling?view=aspnetcore-10.0#prevent-default-actions).
 
 ### P3
 
-- [ ] **R51 — Cascade viewport orientation from the main layout.** [MainLayout.razor:4](src/Lantean.QBTMud.Presentation/Layout/MainLayout.razor#L4)
+- [x] **R51 — Cascade viewport orientation from the main layout.** [MainLayout.razor:4](src/Lantean.QBTMud.Presentation/Layout/MainLayout.razor#L4)
 
     The provider cascades only breakpoint by default. LoggedInLayout retains Portrait orientation and suppresses status-bar labels on landscape Md viewports. Cascade both values. Existing layout tests inject orientation directly, masking the missing connection.
 
-- [ ] **R54 — Invalidate pieces rendering when presentation inputs change.** [PiecesProgressSvg.razor.cs:126](src/Lantean.QBTMud.Presentation/Components/PiecesProgressSvg.razor.cs#L126)
+- [x] **R54 — Invalidate pieces rendering when presentation inputs change.** [PiecesProgressSvg.razor.cs:126](src/Lantean.QBTMud.Presentation/Components/PiecesProgressSvg.razor.cs#L126)
 
     Colours and geometry rebuild only when piece state changes. Completed/stopped torrents retain old theme colours and breakpoint layouts; resizing to Xs can also omit the hidden-message text. Include presentation inputs in cache invalidation. Cover changes with stable piece data.
+
+### Resolution and regression coverage
+
+Completed on 15 November 2026 for R20, R21, R30, R47, R51 and R54. R11 and R22 remain deferred by user decision, alongside R50, pending a decision about JavaScript regression testing.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R20 | The URL dialog reports an explicit outcome. Pending downloads retain failed requests and consume added, accepted pending or cancelled requests. Integration tests combine the actual dialog and pending-download workflows, cover structured and per-torrent failures, retry successfully and verify session suppression only after handling. |
+| R21 | Production rate dialogs use non-throwing parsing and show validation for invalid, empty, negative or overflowing values. Button and keyboard submission remain blocked until corrected. Tests exercise the actual converter and rendered dialog, including correction by text, infinity and slider. |
+| R30 | Global navigation callbacks act only while focus is inside their table. Focus changes avoid unnecessary rendering. Two-table tests broadcast arrows, Shift+arrows and Enter through both registrations and verify initial inactivity, focus transfer and blur. Existing keyboard tests now establish table focus explicitly. |
+| R47 | A native button replaces the toggle that intercepted every key. Tests cover activation, native button semantics and the absence of keyboard default prevention. Actual browser Tab traversal and browser-generated activation clicks were not exercised. |
+| R51 | MainLayout cascades both breakpoint and orientation. A regression renders the real layout/provider/LoggedInLayout connection and verifies landscape and portrait viewport changes. |
+| R54 | Render invalidation includes palette colours, dark mode, breakpoint, torrent identity and loading/failure state. Tests change those inputs while retaining piece data and component identity, including in-place palette changes, responsive geometry and the small-screen message. |
+
+Validation: the full solution suite passed with 3,519 tests and no failures or skips. Release publishing succeeded. All 68 changed executable lines and their branches are covered. Changed C# files were formatted and all changed files were normalised to CRLF using the previously documented formatter settings.
+
+Compatibility: the existing `Task InvokeAddTorrentLinkDialog(string? url = null)` entry point and `ValueGetFunc` parameter remain available. The pending-download flow uses the new outcome method, and rate dialogs use the new optional non-throwing converter.
 
 ## Translation tools
 
