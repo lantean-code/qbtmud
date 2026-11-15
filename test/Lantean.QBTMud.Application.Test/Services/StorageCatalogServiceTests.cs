@@ -71,9 +71,11 @@ namespace Lantean.QBTMud.Application.Test.Services
         {
             var storageRoutingResult = _target.IsLocalStorageOnlyKey(StorageRoutingSettings.StorageKey);
             var bootstrapResult = _target.IsLocalStorageOnlyKey("ThemeManager.BootstrapCss.Light");
+            var pendingChangesResult = _target.IsLocalStorageOnlyKey("SettingsStorage.PendingClientData.v1");
 
             storageRoutingResult.Should().BeTrue();
             bootstrapResult.Should().BeTrue();
+            pendingChangesResult.Should().BeTrue();
         }
 
         [Fact]

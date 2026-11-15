@@ -10,6 +10,10 @@ namespace Lantean.QBTMud.Application.Services
     /// </summary>
     public sealed class SettingsStorageService : ISettingsStorageService
     {
+        /// <summary>
+        /// The local-only journal shared with routing migration and diagnostics.
+        /// </summary>
+        internal const string _pendingChangesStorageKey = "SettingsStorage.PendingClientData.v1";
         private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
         private readonly ClientDataCacheState _clientDataCacheState;
@@ -138,6 +142,7 @@ namespace Lantean.QBTMud.Application.Services
                 await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
                 await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.SetItemAsync(key, data, cancellationToken);
+                await RetainPendingChangeAsync(prefixedKey, valueElement, cancellationToken);
                 return;
             }
 
@@ -170,6 +175,7 @@ namespace Lantean.QBTMud.Application.Services
                 await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
                 await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
+                await RetainPendingChangeAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), cancellationToken);
                 return;
             }
 
@@ -194,6 +200,7 @@ namespace Lantean.QBTMud.Application.Services
                 await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
                 await InvalidateCachedClientDataEntriesAsync(cancellationToken);
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
+                await RetainPendingChangeAsync(ToPrefixedKey(key), null, cancellationToken);
                 return;
             }
 
@@ -240,8 +247,10 @@ namespace Lantean.QBTMud.Application.Services
                     return null;
                 }
 
-                _clientDataCacheState.CachedEntries = new Dictionary<string, JsonElement>(loadedResult.Entries, StringComparer.Ordinal);
-                return _clientDataCacheState.CachedEntries;
+                var entries = new Dictionary<string, JsonElement>(loadedResult.Entries, StringComparer.Ordinal);
+                var reconciled = await ReconcilePendingChangesAsync(entries, cancellationToken);
+                _clientDataCacheState.CachedEntries = reconciled ? entries : null;
+                return entries;
             }
             finally
             {
@@ -254,6 +263,7 @@ namespace Lantean.QBTMud.Application.Services
             await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
             try
             {
+                await RemovePendingChangeAsync(prefixedKey, cancellationToken);
                 if (_clientDataCacheState.CachedEntries is null)
                 {
                     return;
@@ -289,6 +299,7 @@ namespace Lantean.QBTMud.Application.Services
             await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
             try
             {
+                await RemovePendingChangeAsync(prefixedKey, cancellationToken);
                 if (_clientDataCacheState.CachedEntries is null)
                 {
                     return;
@@ -301,6 +312,104 @@ namespace Lantean.QBTMud.Application.Services
             finally
             {
                 _clientDataCacheState.CacheSemaphore.Release();
+            }
+        }
+
+        private async Task RetainPendingChangeAsync(string key, JsonElement? value, CancellationToken cancellationToken)
+        {
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(_pendingChangesStorageKey, cancellationToken)
+                    ?? new Dictionary<string, JsonElement?>(StringComparer.Ordinal);
+                pending[key] = value;
+                await _localStorageService.SetItemAsync(_pendingChangesStorageKey, pending, cancellationToken);
+                _clientDataCacheState.CachedEntries = null;
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
+        }
+
+        private async Task RemovePendingChangeAsync(string key, CancellationToken cancellationToken)
+        {
+            var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(_pendingChangesStorageKey, cancellationToken);
+            if (pending is not null && pending.Remove(key))
+            {
+                await PersistPendingChangesAsync(pending, cancellationToken);
+            }
+        }
+
+        private async Task<bool> ReconcilePendingChangesAsync(Dictionary<string, JsonElement> entries, CancellationToken cancellationToken)
+        {
+            var pending = await _localStorageService.GetItemAsync<Dictionary<string, JsonElement?>>(_pendingChangesStorageKey, cancellationToken);
+            if (pending is null || pending.Count == 0)
+            {
+                return true;
+            }
+
+            var writes = new Dictionary<string, object?>(StringComparer.Ordinal);
+            var removals = new List<string>();
+            foreach (var (key, value) in pending)
+            {
+                if (value.HasValue)
+                {
+                    entries[key] = value.Value;
+                    writes[key] = value.Value;
+                }
+                else
+                {
+                    entries.Remove(key);
+                    removals.Add(key);
+                }
+            }
+
+            if (writes.Count > 0)
+            {
+                var result = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(writes, cancellationToken);
+                if (result.Succeeded)
+                {
+                    foreach (var key in writes.Keys)
+                    {
+                        pending.Remove(key);
+                    }
+                }
+                else
+                {
+                    await HandleClientDataFailureAsync(result.FailureResult, cancellationToken);
+                }
+            }
+
+            if (removals.Count > 0)
+            {
+                var result = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync(removals, cancellationToken);
+                if (result.Succeeded)
+                {
+                    foreach (var key in removals)
+                    {
+                        pending.Remove(key);
+                    }
+                }
+                else
+                {
+                    await HandleClientDataFailureAsync(result.FailureResult, cancellationToken);
+                }
+            }
+
+            await PersistPendingChangesAsync(pending, cancellationToken);
+            return pending.Count == 0;
+        }
+
+        private async Task PersistPendingChangesAsync(Dictionary<string, JsonElement?> pending, CancellationToken cancellationToken)
+        {
+            if (pending.Count == 0)
+            {
+                await _localStorageService.RemoveItemAsync(_pendingChangesStorageKey, cancellationToken);
+            }
+            else
+            {
+                await _localStorageService.SetItemAsync(_pendingChangesStorageKey, pending, cancellationToken);
             }
         }
 

@@ -686,7 +686,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             var changed = _target.MergeMainData(delta, existing, out var filterChanged);
 
             changed.Should().BeTrue();
-            filterChanged.Should().BeFalse();
+            filterChanged.Should().BeTrue();
             existing.ServerState.ConnectionStatus.Should().Be(ConnectionStatus.Connected);
             existing.ServerState.AllTimeUploaded.Should().Be(20);
             existing.ServerState.LastExternalAddressV4.Should().Be("LastExternalAddressV4");

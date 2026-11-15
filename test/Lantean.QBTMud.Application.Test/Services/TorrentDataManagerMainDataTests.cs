@@ -22,6 +22,64 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public void GIVEN_SavePathSearch_WHEN_PathOnlyDeltaIsMerged_THEN_ShouldInvalidateFilteredMembership()
+        {
+            var main = new ClientModels.MainData(responseId: 1, fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    ["Hash"] = ClientTorrentFactory.Create(name: "Name", savePath: "/Original")
+                }, torrentsRemoved: null, categories: null, categoriesRemoved: null, tags: null,
+                tagsRemoved: null, trackers: null, trackersRemoved: null, serverState: null);
+            var existing = _target.CreateMainData(main);
+            var filter = new FilterState(FilterHelper.CATEGORY_ALL, Status.All, FilterHelper.TAG_ALL,
+                FilterHelper.TRACKER_ALL, false, "/Original", TorrentFilterField.SavePath, false, true);
+            existing.Torrents.Values.Filter(filter).Should().ContainSingle();
+            var delta = new ClientModels.MainData(responseId: 2, fullUpdate: false,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    ["Hash"] = ClientTorrentFactory.Create(savePath: "/Updated")
+                }, torrentsRemoved: null, categories: null, categoriesRemoved: null, tags: null,
+                tagsRemoved: null, trackers: null, trackersRemoved: null, serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            existing.Torrents.Values.Filter(filter).Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GIVEN_ParentAndChildCategory_WHEN_SubcategoryModeChanges_THEN_ShouldRebuildMembership(bool initiallyEnabled)
+        {
+            var main = new ClientModels.MainData(responseId: 1, fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    ["Hash"] = ClientTorrentFactory.Create(category: "Parent/Child")
+                }, torrentsRemoved: null,
+                categories: new Dictionary<string, ClientModels.Category>
+                {
+                    ["Parent"] = new ClientModels.Category("Parent", "/Parent", downloadPath: null),
+                    ["Parent/Child"] = new ClientModels.Category("Parent/Child", "/Child", downloadPath: null)
+                }, categoriesRemoved: null, tags: null, tagsRemoved: null, trackers: null,
+                trackersRemoved: null, serverState: CreateSubcategoryServerState(initiallyEnabled));
+            var existing = _target.CreateMainData(main);
+            var delta = new ClientModels.MainData(responseId: 2, fullUpdate: false,
+                torrents: null, torrentsRemoved: null, categories: null, categoriesRemoved: null,
+                tags: null, tagsRemoved: null, trackers: null, trackersRemoved: null,
+                serverState: CreateSubcategoryServerState(!initiallyEnabled));
+
+            _target.MergeMainData(delta, existing, out var filterChanged);
+
+            filterChanged.Should().BeTrue();
+            existing.CategoriesState["Parent"].Contains("Hash").Should().Be(!initiallyEnabled);
+            existing.CategoriesState["Parent/Child"].Should().ContainSingle().Which.Should().Be("Hash");
+            existing.CategoriesState[FilterHelper.CATEGORY_ALL].Should().ContainSingle().Which.Should().Be("Hash");
+            existing.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Should().BeEmpty();
+        }
+
+        [Fact]
         public void GIVEN_MainData_WHEN_SelectedTorrentHashSet_THEN_ShouldStoreValue()
         {
             var created = _target.CreateMainData(new ClientModels.MainData(
@@ -962,7 +1020,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             var changed = _target.MergeMainData(delta, existing, out var filterChanged);
 
             changed.Should().BeTrue();
-            filterChanged.Should().BeFalse();
+            filterChanged.Should().BeTrue();
 
             var s = existing.ServerState;
             s.ConnectionStatus.Should().Be(ConnectionStatus.Disconnected);
@@ -1263,5 +1321,16 @@ namespace Lantean.QBTMud.Application.Test.Services
             transitions[0].PreviousIsFinished.Should().BeFalse();
             transitions[0].CurrentIsFinished.Should().BeTrue();
         }
+        private static ClientModels.ServerState CreateSubcategoryServerState(bool enabled)
+        {
+            return new ClientModels.ServerState(allTimeDownloaded: null, allTimeUploaded: null, averageTimeQueue: null,
+                connectionStatus: null, dHTNodes: null, downloadInfoData: null, downloadInfoSpeed: null,
+                downloadRateLimit: null, freeSpaceOnDisk: null, globalRatio: null, queuedIOJobs: null,
+                queuing: null, readCacheHits: null, readCacheOverload: null, refreshInterval: null,
+                totalBuffersSize: null, totalPeerConnections: null, totalQueuedSize: null, totalWastedSession: null,
+                uploadInfoData: null, uploadInfoSpeed: null, uploadRateLimit: null, useAltSpeedLimits: null,
+                useSubcategories: enabled, writeCacheOverload: null, lastExternalAddressV4: null, lastExternalAddressV6: null);
+        }
+
     }
 }

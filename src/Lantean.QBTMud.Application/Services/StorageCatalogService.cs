@@ -178,6 +178,7 @@ namespace Lantean.QBTMud.Application.Services
             return
             [
                 new StorageCatalogItemDefinition("internal.storage-routing-settings", "internal", "Storage routing settings", StorageCatalogItemMatchMode.ExactKey, StorageRoutingSettings.StorageKey, StorageItemSerializationMode.Json),
+                new StorageCatalogItemDefinition("internal.pending-client-data", "internal", "Pending ClientData changes", StorageCatalogItemMatchMode.ExactKey, SettingsStorageService._pendingChangesStorageKey, StorageItemSerializationMode.Json),
                 new StorageCatalogItemDefinition("internal.bootstrap-css-light", "internal", "Bootstrap theme light CSS", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Light", StorageItemSerializationMode.RawString),
                 new StorageCatalogItemDefinition("internal.bootstrap-css-dark", "internal", "Bootstrap theme dark CSS", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Dark", StorageItemSerializationMode.RawString),
                 new StorageCatalogItemDefinition("internal.bootstrap-is-dark", "internal", "Bootstrap theme dark mode", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapIsDark", StorageItemSerializationMode.Json),

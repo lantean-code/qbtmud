@@ -198,6 +198,13 @@ namespace Lantean.QBTMud.Application.Services
 
             private BucketBuilder? Builder { get; set; }
 
+            /// <summary>
+            /// Adds a sample, resuming a persisted bucket when its time window matches.
+            /// </summary>
+            /// <param name="timestampUtc">The sample timestamp.</param>
+            /// <param name="downloadBytesPerSecond">The download speed.</param>
+            /// <param name="uploadBytesPerSecond">The upload speed.</param>
+            /// <returns>Whether adding the sample rolled the current bucket.</returns>
             public BucketPushResult PushSample(DateTime timestampUtc, long downloadBytesPerSecond, long uploadBytesPerSecond)
             {
                 var bucketStart = AlignTimestamp(timestampUtc);
@@ -205,7 +212,15 @@ namespace Lantean.QBTMud.Application.Services
                 if (Builder is null || bucketRolled)
                 {
                     CompleteCurrentBucket();
-                    Builder = new BucketBuilder(bucketStart, BucketSize);
+                    if (Buckets.Count > 0 && Buckets[^1].StartUtc == bucketStart)
+                    {
+                        Builder = new BucketBuilder(Buckets[^1], BucketSize);
+                        Buckets.RemoveAt(Buckets.Count - 1);
+                    }
+                    else
+                    {
+                        Builder = new BucketBuilder(bucketStart, BucketSize);
+                    }
                 }
 
                 Builder.AddSample(downloadBytesPerSecond, uploadBytesPerSecond);
@@ -279,6 +294,19 @@ namespace Lantean.QBTMud.Application.Services
                 Duration = duration;
             }
 
+            /// <summary>
+            /// Resumes a persisted bucket with its accumulated sample weight.
+            /// </summary>
+            /// <param name="bucket">The persisted bucket.</param>
+            /// <param name="duration">The bucket duration.</param>
+            public BucketBuilder(SpeedBucket bucket, TimeSpan duration)
+                : this(bucket.StartUtc, duration)
+            {
+                SampleCount = Math.Max(1, bucket.SampleCount);
+                DownloadAccumulator = bucket.AverageDownloadBytesPerSecond * SampleCount;
+                UploadAccumulator = bucket.AverageUploadBytesPerSecond * SampleCount;
+            }
+
             public DateTime StartUtc { get; }
 
             public TimeSpan Duration { get; }
@@ -296,11 +324,15 @@ namespace Lantean.QBTMud.Application.Services
                 UploadAccumulator += uploadBytesPerSecond;
             }
 
+            /// <summary>
+            /// Captures the current averages and their sample weight.
+            /// </summary>
+            /// <returns>The bucket snapshot.</returns>
             public SpeedBucket ToBucket()
             {
                 var downloadAverage = DownloadAccumulator / SampleCount;
                 var uploadAverage = UploadAccumulator / SampleCount;
-                return new SpeedBucket(StartUtc, (int)Duration.TotalMilliseconds, downloadAverage, uploadAverage);
+                return new SpeedBucket(StartUtc, (int)Duration.TotalMilliseconds, downloadAverage, uploadAverage, SampleCount);
             }
         }
 
@@ -311,13 +343,22 @@ namespace Lantean.QBTMud.Application.Services
 
         private sealed class SpeedBucket
         {
+            /// <summary>
+            /// Initializes a persisted bucket, treating legacy snapshots as one sample.
+            /// </summary>
+            /// <param name="startUtc">The start of the bucket.</param>
+            /// <param name="durationMilliseconds">The bucket duration in milliseconds.</param>
+            /// <param name="averageDownloadBytesPerSecond">The average download speed.</param>
+            /// <param name="averageUploadBytesPerSecond">The average upload speed.</param>
+            /// <param name="sampleCount">The number of samples represented by the averages.</param>
             [JsonConstructor]
-            public SpeedBucket(DateTime startUtc, int durationMilliseconds, double averageDownloadBytesPerSecond, double averageUploadBytesPerSecond)
+            public SpeedBucket(DateTime startUtc, int durationMilliseconds, double averageDownloadBytesPerSecond, double averageUploadBytesPerSecond, int sampleCount = 1)
             {
                 StartUtc = startUtc;
                 DurationMilliseconds = durationMilliseconds;
                 AverageDownloadBytesPerSecond = averageDownloadBytesPerSecond;
                 AverageUploadBytesPerSecond = averageUploadBytesPerSecond;
+                SampleCount = sampleCount;
             }
 
             public DateTime StartUtc { get; }
@@ -327,6 +368,8 @@ namespace Lantean.QBTMud.Application.Services
             public double AverageDownloadBytesPerSecond { get; }
 
             public double AverageUploadBytesPerSecond { get; }
+
+            public int SampleCount { get; }
         }
 
         private sealed class PersistedState
