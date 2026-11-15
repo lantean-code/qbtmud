@@ -109,6 +109,11 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
 
+      - name: Test Release Provenance and Screenshot Cleanup
+        run: |
+          python3 -m unittest discover -s docker/tests -p 'test_*.py'
+          python3 -m unittest discover -s tools/ReadmeScreenshots/tests -p 'test_*.py'
+
       - name: Run Tests with Coverage
         run: dotnet test --no-build --configuration Release --coverlet --coverlet-output-format cobertura --results-directory TestResults --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
 

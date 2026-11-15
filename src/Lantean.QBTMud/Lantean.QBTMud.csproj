@@ -151,7 +151,7 @@
   <Target Name="GenerateWebUiTranslations" BeforeTargets="Publish;ResolveStaticWebAssets" DependsOnTargets="ResolveQbtMudTranslationFiles" Condition="'$(WebUiTranslationsMode)' != ''">
     <Message Text="Generating WebUI translations ($(WebUiTranslationsMode)) from $(WebUiTranslationsSource)" Importance="high" />
     <Warning Condition="!Exists('$(WebUiTranslationsSource)')" Text="WebUI translations source path not found: $(WebUiTranslationsSource). Run 'git submodule update --init --recursive'." />
-    <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project $(MSBuildThisFileDirectory)../../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
+    <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)../../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj&quot; -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
     <ItemGroup>
       <Content Include="@(_SelectedQbtMudTranslationFiles)">
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

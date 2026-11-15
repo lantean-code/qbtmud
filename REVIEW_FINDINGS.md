@@ -5,6 +5,7 @@ Static review dated 15 November 2026. This checklist records all 55 findings fro
 ## Progress and scope
 
 - Total: **55 findings** — **2 P1**, **46 P2**, **7 P3**.
+- Completed: **52 findings**. Deferred by user decision: **R11**, **R22** and **R50**.
 - Mark a finding complete after addressing its cause and validating the affected scenario. Record any decision to defer or dismiss it alongside the item.
 - P1: urgent defect to address next. P2: ordinary defect to fix. P3: lower-impact defect worth fixing.
 - Deferred by user decision: **R11**, **R22** and **R50**, pending a decision about JavaScript regression testing.
@@ -400,24 +401,40 @@ Validation: the full solution suite passed with 3,535 tests and no failures or s
 
 ### P2
 
-- [ ] **R40 — Quote the converter project path.** [Lantean.QBTMud.csproj:154](src/Lantean.QBTMud/Lantean.QBTMud.csproj#L154)
+- [x] **R40 — Quote the converter project path.** [Lantean.QBTMud.csproj:154](src/Lantean.QBTMud/Lantean.QBTMud.csproj#L154)
 
     Translation generation expands the converter project path without quotation marks. Checkout paths containing spaces split the argument and prevent building/publishing when translation sources exist. Quote the full project argument. This scenario lacks coverage; no build was run during review.
 
-- [ ] **R41 — Retain historical bootstrap release provenance.** [release.py:91](docker/release.py#L91)
+- [x] **R41 — Retain historical bootstrap release provenance.** [release.py:91](docker/release.py#L91)
 
     The supported pre-manifest 3.0.0 fallback reads a mutable local-build pin now containing 3.1.0 and necessarily rejects the historical scenario. Publication still defaults to 3.0.0. Separate historical evidence from the advancing pin or update the contract consistently. Tests always provide a manifest. This finding uses checked-in evidence; live GitHub assets were not inspected.
 
-- [ ] **R42 — Preserve the wordmark when regenerating screenshots.** [run-readme-screenshots.sh:27](tools/ReadmeScreenshots/run-readme-screenshots.sh#L27)
+- [x] **R42 — Preserve the wordmark when regenerating screenshots.** [run-readme-screenshots.sh:27](tools/ReadmeScreenshots/run-readme-screenshots.sh#L27)
 
     Cleanup deletes the entire output directory, including tracked `qbtmud-wordmark.svg`, referenced by the README. Capture regenerates five PNGs and never restores the SVG. Remove only generated screenshots or replace them individually. Cover preservation of non-generated assets.
 
-- [ ] **R43 — Use screenshot login selectors present in published builds.** [Program.cs:408](tools/ReadmeScreenshots/Program.cs#L408)
+- [x] **R43 — Use screenshot login selectors present in published builds.** [Program.cs:408](tools/ReadmeScreenshots/Program.cs#L408)
 
     Capture locates login controls through test IDs disabled in production; authentication-required deployments time out filling Username. The default orchestration masks this by bypassing localhost authentication, so its documentation also overstates login coverage. Use production selectors or supported capture attributes and validate the authenticated path.
 
 ### P3
 
-- [ ] **R55 — Update the repository project inventory.** [AGENTS.md:14](AGENTS.md#L14)
+- [x] **R55 — Update the repository project inventory.** [AGENTS.md:14](AGENTS.md#L14)
 
     The inventory lists nonexistent client/client-test projects and omits the current layered projects. The API client is the external `QBittorrent.ApiClient` NuGet package. Update the inventory to match the solution. This stale guidance already misdirected initial review scoping. The separate `ref/qBittorrent` reference-checkout guidance is not established as a defect merely because build resources use `external/qBittorrent`.
+
+### Resolution and regression coverage
+
+Completed on 15 November 2026. All five findings in this section have regression tests.
+
+| Finding | Change and coverage |
+| --- | --- |
+| R40 | The converter project argument is quoted. A regression copies the actual translation properties and targets, real converter and SDK pin into an isolated temporary checkout whose path contains spaces, runs the real target, verifies generated translations and the locale manifest, checks original input hashes and removes the temporary copy. |
+| R41 | Historical 3.0.0 provenance is retained in an immutable document recovered from commit 99092cd3, independently of the advancing local-build pin. Tests cover advancing pins, mismatched metadata and build evidence, checksum rejection, and later releases using their own manifests without bootstrap evidence. |
+| R42 | Cleanup removes only the six known generated PNGs. An isolated Bash regression exercises the actual setup/cleanup prefix with the tracked wordmark, unrelated images, text and nested assets, including repeated cleanup and a missing output directory. |
+| R43 | Screenshot login uses the production credential input IDs and submit-button semantics. Five tests cover the actual Login component with test IDs disabled, both login detection paths, an already authenticated page and unsuccessful login. Playwright locators drive real component callbacks through mocks. The disposable runner profile now requires localhost authentication, with a regression guarding that setting and documentation describing it. |
+| R55 | The inventory lists the fifteen solution projects and identifies QBittorrent.ApiClient as an external NuGet package. A regression compares documented project paths with the solution and verifies that each path exists. |
+
+Validation: the full solution suite passed with 3,542 tests and no failures or skips. All 32 release-policy tests and three screenshot-cleanup tests passed; the normal build workflow now runs both Python suites. Release publishing succeeded. All 33 changed executable C# lines and their branches are covered. Changed C# files were formatted; CRLF-governed files were normalised and checked, and Python/shell files retain LF.
+
+The real translation target was exercised in a disposable copy, with original inputs remaining unchanged. Full Linux/qBittorrent screenshot capture and live historical GitHub asset availability were not checked. The login regression validates the real component and production selectors with test IDs disabled; browser interactions are mocked.

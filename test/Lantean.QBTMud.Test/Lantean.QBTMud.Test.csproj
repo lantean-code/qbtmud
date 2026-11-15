@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lantean.QBTMud\Lantean.QBTMud.csproj" />
     <ProjectReference Include="..\Lantean.QBTMud.TestSupport\Lantean.QBTMud.TestSupport.csproj" />
+    <ProjectReference Include="..\..\tools\ReadmeScreenshots\ReadmeScreenshots.csproj" />
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
+using static ReadmeScreenshots.ScreenshotLogin;
 
 namespace ReadmeScreenshots
 {
@@ -401,33 +402,6 @@ namespace ReadmeScreenshots
                 }");
             await page.CloseAsync();
             return context;
-        }
-
-        private static async Task EnsureLoggedInAsync(IPage page, string appBaseUrl, string username, string password)
-        {
-            var usernameField = page.Locator("[data-test-id='Username']");
-            if (!IsLoginRoute(page.Url) && !await IsVisibleAsync(usernameField))
-            {
-                return;
-            }
-
-            await usernameField.FillAsync(username);
-            await page.Locator("[data-test-id='Password']").FillAsync(password);
-            await page.Locator("[data-test-id='Login']").ClickAsync();
-            await page.WaitForFunctionAsync("() => !window.location.hash.includes('/login')");
-            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-            if (IsLoginRoute(page.Url))
-            {
-                throw new InvalidOperationException("Playwright login did not complete.");
-            }
-
-            await page.GotoAsync($"{appBaseUrl}/#/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        }
-
-        private static bool IsLoginRoute(string url)
-        {
-            return url.Contains("#/login", StringComparison.Ordinal);
         }
 
         private static async Task<bool> IsVisibleAsync(ILocator locator)
