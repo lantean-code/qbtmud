@@ -68,9 +68,85 @@ namespace Lantean.QBTMud.Test.JavaScript
                 .Should().Equal(100, 100, 95, 0, 0, 5);
         }
 
-        private static async Task<JavaScriptTestPage> CreateTargetAsync()
+        [Fact]
+        public async Task GIVEN_SavedScrollPosition_WHEN_ListAppearsAndPanelDisconnects_THEN_RestoresAndRemembersScroll()
         {
-            var target = await JavaScriptTestPage.CreateAsync("torrent-split-panel.module.js");
+            await using var target = await CreateTargetAsync("sessionStorage.setItem('TorrentList.ScrollOffset', '140');");
+            await target.Page.EvaluateAsync("""
+                () => {
+                    window.panel.querySelector('.torrent-split__list').innerHTML =
+                        '<div class="mud-table-container" style="height:100px;overflow:auto"><div style="height:1000px">Torrent list</div></div>';
+                    window.panel.layout();
+                }
+                """);
+            var list = target.Page.Locator(".mud-table-container");
+            (await list.EvaluateAsync<int>("element => element.scrollTop")).Should().Be(140);
+
+            await list.EvaluateAsync("element => element.scrollTop = 260");
+            await target.Page.WaitForFunctionAsync("() => window.panel.scrollOffset === 260");
+            await target.Page.EvaluateAsync("() => window.panel.remove()");
+
+            (await target.Page.EvaluateAsync<string>("() => sessionStorage.getItem('TorrentList.ScrollOffset')")).Should().Be("260");
+        }
+
+        [Fact]
+        public async Task GIVEN_UnavailableSessionStorage_WHEN_PanelConnectsAndDisconnects_THEN_LayoutStillWorks()
+        {
+            await using var target = await CreateTargetAsync("""
+                Storage.prototype.getItem = function() { throw new DOMException('Unavailable', 'SecurityError'); };
+                Storage.prototype.setItem = function() { throw new DOMException('Unavailable', 'SecurityError'); };
+                """);
+
+            (await target.Page.GetByRole(AriaRole.Separator).GetAttributeAsync("aria-valuenow")).Should().Be("40");
+            await target.Page.EvaluateAsync("() => window.panel.remove()");
+
+            (await target.Page.EvaluateAsync<int>("() => window.panel.scrollOffset")).Should().Be(0);
+            (await target.Page.EvaluateAsync<bool>("() => window.panel.isConnected")).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_DragInProgress_WHEN_Cancelled_THEN_RestoresRatioWithoutSaving()
+        {
+            await using var target = await CreateTargetAsync();
+            var grip = target.Page.GetByRole(AriaRole.Separator);
+            var bounds = (await grip.BoundingBoxAsync())!;
+            await target.Page.Mouse.MoveAsync(bounds.X + 50, bounds.Y + 2);
+            await target.Page.Mouse.DownAsync();
+            await target.Page.Mouse.MoveAsync(bounds.X + 50, bounds.Y - 150);
+
+            await grip.DispatchEventAsync("pointercancel", new { pointerId = 1 });
+            await target.Page.Mouse.UpAsync();
+            await target.Page.EvaluateAsync("() => window.panel.pending");
+
+            (await grip.GetAttributeAsync("aria-valuenow")).Should().Be("40");
+            (await target.Page.EvaluateAsync<int>("() => window.calls.filter(call => call.method === 'ChangeRatio').length")).Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_UnrelatedInputAndSmallViewport_WHEN_Used_THEN_DoesNotResizeAndReportsAvailability()
+        {
+            await using var target = await CreateTargetAsync();
+            var grip = target.Page.GetByRole(AriaRole.Separator);
+            await grip.ClickAsync(new LocatorClickOptions { Button = MouseButton.Right });
+            await grip.PressAsync("Escape");
+            await grip.PressAsync("a");
+            var details = target.Page.Locator(".torrent-split__details");
+            await details.EvaluateAsync("element => element.tabIndex = 0");
+            await details.FocusAsync();
+            await target.Page.Keyboard.PressAsync("ArrowDown");
+            await target.Page.SetViewportSizeAsync(800, 600);
+            await target.Page.WaitForFunctionAsync("() => window.panel.dataset.available === 'false'");
+            await target.Page.EvaluateAsync("() => window.panel.pending");
+
+            (await grip.GetAttributeAsync("aria-valuenow")).Should().Be("40");
+            (await target.Page.EvaluateAsync<bool[]>("() => window.calls.filter(call => call.method === 'SetAvailability').map(call => call.value)"))
+                .Should().Equal(true, false);
+            (await target.Page.EvaluateAsync<int>("() => window.calls.filter(call => call.method === 'ChangeRatio').length")).Should().Be(0);
+        }
+
+        private static async Task<JavaScriptTestPage> CreateTargetAsync(string? initializationScript = null)
+        {
+            var target = await JavaScriptTestPage.CreateAsync("torrent-split-panel.module.js", initializationScript);
             try
             {
                 await target.Page.SetViewportSizeAsync(1440, 1000);
