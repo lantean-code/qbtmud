@@ -12,12 +12,14 @@ jobs:
     if: github.repository == 'lantean-code/qbtmud' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    env:
-      GH_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
+      packages: read
     steps:
       - uses: actions/checkout@v4
         with:
           path: packaging
+          persist-credentials: false
       - name: Test container verification policy
         run: python3 -B -m unittest discover -s packaging/docker/tests -p 'test_*.py'
       - uses: actions/checkout@v4
@@ -25,6 +27,7 @@ jobs:
           ref: c0bcb42dd2c1272b7903b50a3d761a7394f7848b
           fetch-depth: 0
           path: source
+          persist-credentials: false
       - name: Stage only the pinned supplementary tests
         run: python3 packaging/docker/release_verification.py stage --source source
       - uses: actions/setup-dotnet@v4
@@ -50,6 +53,8 @@ jobs:
         working-directory: source
         run: python3 tools/JavaScriptCoverage/report.py --input TestResults/javascript-coverage --output javascript-coverage-report --base '3.2.0^' --repo-root .
       - name: Verify existing archive checksums and record separate evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python3 packaging/docker/release_verification.py record --source source
       - uses: actions/upload-artifact@v4
         with:

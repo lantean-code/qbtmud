@@ -12,12 +12,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class WorkflowTriggerTests(unittest.TestCase):
-    def test_supplemental_verification_is_manual_read_only_and_cannot_publish(self):
+    def test_supplemental_verification_is_manual_and_has_no_publication_steps(self):
         workflow = (ROOT / ".github/workflows/verify-release-3.2.0.yml").read_text(encoding="utf-8")
         trigger = workflow.split("on:\n", 1)[1].split("permissions:", 1)[0]
         self.assertEqual(trigger.strip(), "workflow_dispatch:")
         self.assertIn("github.ref_name == github.event.repository.default_branch", workflow)
-        self.assertNotIn(": write", workflow)
+        self.assertEqual(workflow.count("GH_TOKEN:"), 1)
+        record = workflow.split("      - name: Verify existing archive checksums and record separate evidence\n", 1)[1].split("      - ", 1)[0]
+        self.assertIn("GH_TOKEN: ${{ github.token }}", record)
+        self.assertEqual(workflow.count("persist-credentials: false"), 2)
         self.assertNotIn("release create", workflow)
         self.assertNotIn("release upload", workflow)
         self.assertNotIn("release edit", workflow)

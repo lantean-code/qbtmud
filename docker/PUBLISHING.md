@@ -30,6 +30,8 @@ The original 3.2.0 UI build passed its functional tests but failed the full-rele
 
 Run **Verify unchanged 3.2.0 release** from the repository's default branch. It builds and tests the exact tagged source with only the supplementary split-panel test file from commit `a5cd97aad3d124b845d9bd6338b7020964dc15a6`, checks coverage against the previous master release and verifies both existing archive checksums. It can verify the draft and does not publish or modify the release, tag or assets.
 
+GitHub requires `contents: write` access to read draft release assets. The workflow passes that token only to the archive-checking step, whose release operations are reads and downloads, and disables persisted checkout credentials. No release-writing or container-publication commands run during verification.
+
 The successful run retains a separate Actions evidence artifact for 90 days. Container publication checks the workflow identity, repository, default branch, successful run attempt, release and asset identities, pinned source, test commit and archive checksums. It records supplemental verification separately from UI build provenance. Missing or expired evidence blocks publication; rerun verification to renew it.
 
 The release must still be published before **Publish Public Container** can build, test and publish its amd64 and arm64 images. Verification alone never publishes containers. Changes to the release archives, tag or supplementary tests require a fresh reviewed packaging policy.
