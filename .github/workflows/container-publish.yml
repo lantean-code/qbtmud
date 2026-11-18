@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 # All future upstream/rollback publishers must share this group.
 concurrency:
@@ -44,6 +45,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: read
       packages: write
     outputs:
       reuse: ${{ steps.prepare.outputs.reuse }}
@@ -147,6 +149,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: read
       packages: write
     env:
       REUSE: ${{ needs.prepare.outputs.reuse }}

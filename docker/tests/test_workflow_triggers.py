@@ -12,6 +12,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class WorkflowTriggerTests(unittest.TestCase):
+    def test_supplemental_verification_is_manual_read_only_and_cannot_publish(self):
+        workflow = (ROOT / ".github/workflows/verify-release-3.2.0.yml").read_text(encoding="utf-8")
+        trigger = workflow.split("on:\n", 1)[1].split("permissions:", 1)[0]
+        self.assertEqual(trigger.strip(), "workflow_dispatch:")
+        self.assertIn("github.ref_name == github.event.repository.default_branch", workflow)
+        self.assertNotIn(": write", workflow)
+        self.assertNotIn("release create", workflow)
+        self.assertNotIn("release upload", workflow)
+        self.assertNotIn("release edit", workflow)
+        self.assertNotIn("docker push", workflow)
+        self.assertLess(workflow.index("dotnet test "), workflow.index("--base '3.2.0^'"))
+        self.assertLess(workflow.index("--base '3.2.0^'"), workflow.index("release_verification.py record"))
+        self.assertLess(workflow.index("release_verification.py record"), workflow.index("name: release-3.2.0-verification\n"))
+
     def test_container_publication_subscribes_only_to_stable_release_activity(self):
         workflow = (ROOT / ".github/workflows/container-publish.yml").read_text(encoding="utf-8")
         trigger = re.search(r"^  release:\s*\n    types: \[([^\]]+)\]", workflow, re.MULTILINE)

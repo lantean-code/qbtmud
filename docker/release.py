@@ -9,6 +9,7 @@ import re
 import subprocess
 import tempfile
 from oci_index import assemble
+from release_verification import resolve as resolve_verification
 
 ROOT = Path(__file__).resolve().parent
 ANNOTATION = "io.github.lantean-code.qbtmud.inputs"
@@ -79,6 +80,7 @@ def resolve_release(repo, tag, directory):
     asset = assets[0]
     provenance_name = f"qbt-mud-v{version}-provenance.json"
     manifests = [a for a in release["assets"] if a["name"] == provenance_name]
+    verification = None
     if len(manifests) == 1:
         provenance = read(download(repo, tag, provenance_name, directory))
         if (provenance.get("channel") != "stable" or provenance.get("tag") != tag
@@ -87,6 +89,8 @@ def resolve_release(repo, tag, directory):
                 or "sha256:" + provenance.get("sha256", "") != asset["digest"]):
             raise ValueError("Release provenance does not match the stable asset and tag")
         run_id = provenance["runId"]
+    elif tag == "3.2.0":
+        verification = resolve_verification(repo, tag, commit, release)
     else:
         # Preserve the pre-manifest evidence from commit 99092cd3 independently of local-build pins.
         legacy = read(ROOT / "bootstrap-ui-release-3.0.0.json")
@@ -95,17 +99,18 @@ def resolve_release(repo, tag, directory):
                 or asset["digest"] != "sha256:" + legacy["sha256"]):
             raise ValueError("Release has no verified build provenance")
         run_id = legacy["buildRun"].rsplit("/", 1)[1]
-    run = gh(f"repos/{repo}/actions/runs/{run_id}")
-    if (run["conclusion"] != "success" or run["head_sha"] != commit
-            or run["head_branch"] != "master" or run["event"] != "push"
-            or run["path"] != ".github/workflows/dotnet.yml"):
-        raise ValueError("Provenance must identify a successful stable master UI build")
+    if verification is None:
+        run = gh(f"repos/{repo}/actions/runs/{run_id}")
+        if (run["conclusion"] != "success" or run["head_sha"] != commit
+                or run["head_branch"] != "master" or run["event"] != "push"
+                or run["path"] != ".github/workflows/dotnet.yml"):
+            raise ValueError("Provenance must identify a successful stable master UI build")
     archive = download(repo, tag, asset["name"], directory)
     if hashlib.sha256(archive.read_bytes()).hexdigest() != asset["digest"][7:]:
         raise ValueError("Downloaded release ZIP checksum mismatch")
     return {"version": version, "releaseTag": tag, "releaseId": release["id"],
             "assetId": asset["id"], "archive": asset["name"], "uiSha256": asset["digest"][7:],
-            "uiCommit": commit, "uiBuildRun": str(run_id)}
+            "uiCommit": commit, **(verification if verification is not None else {"uiBuildRun": str(run_id)})}
 
 
 def inspect(reference, missing=False, anonymous=False):

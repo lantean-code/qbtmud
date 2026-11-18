@@ -1,0 +1,10 @@
+{
+  "tag": "3.2.0",
+  "commit": "c0bcb42dd2c1272b7903b50a3d761a7394f7848b",
+  "testsCommit": "a5cd97aad3d124b845d9bd6338b7020964dc15a6",
+  "testFile": "test/Lantean.QBTMud.Test/JavaScript/TorrentSplitPanelInteropTests.cs",
+  "archives": {
+    "qbt-mud-v3.2.0-en.zip": "b47fce124af1f1913055bef12bc08650be960606748301ee5440a48aa1178251",
+    "qbt-mud-v3.2.0-intl.zip": "4ee247ca78255689b7785f8c2e659e750acc14e59bb44e3bd13244e4e2d45ef6"
+  }
+}

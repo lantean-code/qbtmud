@@ -1,0 +1,68 @@
+name: Verify unchanged 3.2.0 release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  verify:
+    if: github.repository == 'lantean-code/qbtmud' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: packaging
+      - name: Test container verification policy
+        run: python3 -B -m unittest discover -s packaging/docker/tests -p 'test_*.py'
+      - uses: actions/checkout@v4
+        with:
+          ref: c0bcb42dd2c1272b7903b50a3d761a7394f7848b
+          fetch-depth: 0
+          path: source
+      - name: Stage only the pinned supplementary tests
+        run: python3 packaging/docker/release_verification.py stage --source source
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.404'
+      - name: Install WASM workload
+        run: dotnet workload install wasm-tools --skip-manifest-update
+      - name: Build the unchanged release with supplementary tests
+        working-directory: source
+        run: |
+          dotnet restore --configfile nuget.config --artifacts-path=/tmp/artifacts/qbtmud
+          dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=3.2.0
+      - name: Install Chromium
+        shell: pwsh
+        run: '& /tmp/artifacts/qbtmud/bin/Lantean.QBTMud.Test/release/playwright.ps1 install --with-deps --only-shell chromium'
+      - name: Test the tagged source
+        working-directory: source
+        env:
+          QBTMUD_JS_COVERAGE_DIR: ${{ github.workspace }}/source/TestResults/javascript-coverage
+        run: dotnet test --configuration Release --no-build --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=3.2.0
+      - name: Check coverage across the complete release
+        working-directory: source
+        run: python3 tools/JavaScriptCoverage/report.py --input TestResults/javascript-coverage --output javascript-coverage-report --base '3.2.0^' --repo-root .
+      - name: Verify existing archive checksums and record separate evidence
+        run: python3 packaging/docker/release_verification.py record --source source
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-3.2.0-verification
+          overwrite: true
+          path: verification-evidence/verification.json
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-3.2.0-verification-coverage
+          overwrite: true
+          path: |
+            source/javascript-coverage-report/
+            source/TestResults/javascript-coverage/
+          retention-days: 90

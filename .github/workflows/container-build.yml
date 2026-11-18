@@ -9,6 +9,7 @@ on:
       - '.github/workflows/container-build.yml'
       - '.github/workflows/container-publish.yml'
       - '.github/workflows/dotnet.yml'
+      - '.github/workflows/verify-release-3.2.0.yml'
   workflow_dispatch:
     inputs:
       release:
