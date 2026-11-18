@@ -32,16 +32,20 @@ namespace QbtMudTranslations
             return ProtectAsHtml(sourceText, useAzureDynamicDictionary: false);
         }
 
+        /// <summary>
+        /// Removes protection markup and restores complete protected tokens in translated text.
+        /// </summary>
+        /// <param name="translatedText">The translated HTML text.</param>
+        /// <param name="tokenMap">The original fragments indexed by protected token.</param>
+        /// <returns>The translation with the original protected fragments restored.</returns>
         public static string RestoreFromHtml(string translatedText, IReadOnlyDictionary<string, string> tokenMap)
         {
-            var restoredText = StripProtectionTagsRegex().Replace(translatedText, string.Empty);
-            restoredText = WebUtility.HtmlDecode(restoredText);
-            foreach (var entry in tokenMap)
+            var restoredText = ProtectedTokenRegex().Replace(translatedText, match =>
             {
-                restoredText = restoredText.Replace(entry.Key, entry.Value, StringComparison.Ordinal);
-            }
-
-            return restoredText;
+                return tokenMap.TryGetValue(match.Value, out var fragment) ? WebUtility.HtmlEncode(fragment) : match.Value;
+            });
+            restoredText = StripProtectionTagsRegex().Replace(restoredText, string.Empty);
+            return WebUtility.HtmlDecode(restoredText);
         }
 
         private static ProtectedTranslationText ProtectAsHtml(string sourceText, bool useAzureDynamicDictionary)
@@ -95,6 +99,9 @@ namespace QbtMudTranslations
 
         [GeneratedRegex("""qBittorrent|qbtmud|%([1-9][0-9]?)(?![0-9])|&[A-Za-z0-9#]+;""", RegexOptions.CultureInvariant)]
         private static partial Regex ProtectedFragmentRegex();
+
+        [GeneratedRegex("QBTMUDTOKEN[0-9]+", RegexOptions.CultureInvariant)]
+        private static partial Regex ProtectedTokenRegex();
 
         [GeneratedRegex("""</?(?:div|span)\b[^>]*>""", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
         private static partial Regex StripProtectionTagsRegex();

@@ -17,6 +17,81 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
 {
     public sealed class DynamicTableTests : RazorComponentTestBase
     {
+        [Theory]
+        [InlineData("ArrowUp", false)]
+        [InlineData("ArrowDown", false)]
+        [InlineData("ArrowUp", true)]
+        [InlineData("ArrowDown", true)]
+        [InlineData("Enter", false)]
+        public async Task GIVEN_TwoTables_WHEN_NavigationKeysBroadcast_THEN_ShouldOnlyChangeFocusedTable(string key, bool shiftKey)
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock.Setup(service => service.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock.Setup(service => service.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>())).Returns(Task.CompletedTask);
+            var items = new[] { new SampleItem(1, "Item1", 3), new SampleItem(2, "Item2", 5), new SampleItem(3, "Item3", 7) };
+            var mainEvents = new List<SampleItem>();
+            var filesEvents = new List<SampleItem>();
+            var target = RenderDynamicTable(parameters =>
+            {
+                parameters.Add(component => component.ColumnDefinitions, CreateColumnDefinitions());
+                parameters.Add(component => component.TableId, "Main");
+                parameters.Add(component => component.Items, items);
+                parameters.Add(component => component.SelectedItem, items[1]);
+                parameters.Add(component => component.SelectOnRowClick, true);
+                parameters.Add(component => component.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, mainEvents.Add));
+                parameters.Add(component => component.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, mainEvents.Add));
+            });
+            var files = RenderDynamicTable(parameters =>
+            {
+                parameters.Add(component => component.ColumnDefinitions, CreateColumnDefinitions());
+                parameters.Add(component => component.TableId, "Files");
+                parameters.Add(component => component.Items, items);
+                parameters.Add(component => component.SelectedItem, items[1]);
+                parameters.Add(component => component.SelectOnRowClick, true);
+                parameters.Add(component => component.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, filesEvents.Add));
+                parameters.Add(component => component.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, filesEvents.Add));
+            });
+            var keyboardEvent = new KeyboardEvent(key) { ShiftKey = shiftKey };
+            target.Instance.Should().NotBeSameAs(files.Instance);
+            var matchingHandlers = handlers.Where(registration => registration.Criteria.Key == key && registration.Criteria.ShiftKey == shiftKey).ToList();
+            matchingHandlers.Should().HaveCount(2);
+            foreach (var registration in matchingHandlers)
+            {
+                await target.InvokeAsync(() => registration.Handler(keyboardEvent));
+            }
+            mainEvents.Should().BeEmpty();
+            filesEvents.Should().BeEmpty();
+
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
+            foreach (var registration in matchingHandlers)
+            {
+                await target.InvokeAsync(() => registration.Handler(keyboardEvent));
+            }
+            var expectedItem = key == "ArrowUp" ? items[0] : key == "ArrowDown" ? items[2] : items[1];
+            mainEvents.Should().Equal(expectedItem);
+            filesEvents.Should().BeEmpty();
+
+            await target.Find(".dynamic-table-host").FocusOutAsync(new FocusEventArgs());
+            await files.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
+            foreach (var registration in matchingHandlers)
+            {
+                await target.InvokeAsync(() => registration.Handler(keyboardEvent));
+            }
+            mainEvents.Should().Equal(expectedItem);
+            filesEvents.Should().Equal(expectedItem);
+
+            await files.Find(".dynamic-table-host").FocusOutAsync(new FocusEventArgs());
+            foreach (var registration in matchingHandlers)
+            {
+                await target.InvokeAsync(() => registration.Handler(keyboardEvent));
+            }
+            mainEvents.Should().Equal(expectedItem);
+            filesEvents.Should().Equal(expectedItem);
+        }
+
         [Fact]
         public void GIVEN_DefaultDefinitions_WHEN_Rendered_THEN_ShouldRenderColumnsAndRows()
         {
@@ -121,6 +196,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
@@ -164,6 +240,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             await target.InvokeAsync(() => rows[0].Click());
             await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
@@ -200,6 +277,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
@@ -236,6 +314,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
 
@@ -286,6 +365,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             await target.InvokeAsync(() => rows[3].Click(new MouseEventArgs { CtrlKey = true }));
             await target.InvokeAsync(() => rows[4].Click(new MouseEventArgs { CtrlKey = true }));
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
 
@@ -336,6 +416,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             selectedItemsEvents.Should().NotBeEmpty();
             var originalSelection = new HashSet<SampleItem>(selectedItemsEvents.Last());
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowUp", true);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowUp") { ShiftKey = true }));
 
@@ -373,6 +454,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2152,6 +2234,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
@@ -2186,6 +2269,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
@@ -2222,6 +2306,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2261,6 +2346,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2299,6 +2385,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowUp", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowUp")));
 
@@ -2358,6 +2445,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2399,6 +2487,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2436,6 +2525,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var arrowHandler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => arrowHandler(new KeyboardEvent("Escape")));
 
@@ -2472,6 +2562,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2663,6 +2754,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
@@ -2713,6 +2805,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             selectedItemsReference!.Clear();
             selectedItemsReference.Add(new SampleItem(999, "Missing", 999));
 
+            await target.Find(".dynamic-table-host").FocusInAsync(new FocusEventArgs());
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 

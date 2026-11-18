@@ -159,17 +159,10 @@ namespace Lantean.QBTMud.Components.Options
             }
 
             ScheduleFrom = value.Value;
-            bool hasChanged = false;
-            if (value.Value.Hours != Preferences?.ScheduleFromHour)
-            {
-                UpdatePreferences.ScheduleFromHour = value.Value.Hours;
-                hasChanged = true;
-            }
-            if (value.Value.Minutes != Preferences?.ScheduleFromMin)
-            {
-                UpdatePreferences.ScheduleFromMin = value.Value.Minutes;
-                hasChanged = true;
-            }
+            var hasChanged = value.Value.Hours != (UpdatePreferences.ScheduleFromHour ?? Preferences?.ScheduleFromHour)
+                || value.Value.Minutes != (UpdatePreferences.ScheduleFromMin ?? Preferences?.ScheduleFromMin);
+            UpdatePreferences.ScheduleFromHour = value.Value.Hours == Preferences?.ScheduleFromHour ? null : value.Value.Hours;
+            UpdatePreferences.ScheduleFromMin = value.Value.Minutes == Preferences?.ScheduleFromMin ? null : value.Value.Minutes;
             if (hasChanged)
             {
                 await PreferencesChanged.InvokeAsync(UpdatePreferences);
@@ -184,17 +177,10 @@ namespace Lantean.QBTMud.Components.Options
             }
 
             ScheduleTo = value.Value;
-            bool hasChanged = false;
-            if (value.Value.Hours != Preferences?.ScheduleToHour)
-            {
-                UpdatePreferences.ScheduleToHour = value.Value.Hours;
-                hasChanged = true;
-            }
-            if (value.Value.Minutes != Preferences?.ScheduleToMin)
-            {
-                UpdatePreferences.ScheduleToMin = value.Value.Minutes;
-                hasChanged = true;
-            }
+            var hasChanged = value.Value.Hours != (UpdatePreferences.ScheduleToHour ?? Preferences?.ScheduleToHour)
+                || value.Value.Minutes != (UpdatePreferences.ScheduleToMin ?? Preferences?.ScheduleToMin);
+            UpdatePreferences.ScheduleToHour = value.Value.Hours == Preferences?.ScheduleToHour ? null : value.Value.Hours;
+            UpdatePreferences.ScheduleToMin = value.Value.Minutes == Preferences?.ScheduleToMin ? null : value.Value.Minutes;
             if (hasChanged)
             {
                 await PreferencesChanged.InvokeAsync(UpdatePreferences);

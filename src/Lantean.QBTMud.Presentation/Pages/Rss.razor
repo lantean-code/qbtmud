@@ -112,8 +112,8 @@
                                 @foreach (var article in Articles)
                                 {
                                     <MudListItem Text="@article.Title"
-                                                 Value="article.Id"
-                                                 @key="article.Id"
+                                                 Value="@GetArticleKey(article)"
+                                                 @key="GetArticleKey(article)"
                                                  data-test-id="@TestIdHelper.For($"RssArticle-{article.Id}")"
                                                  Class="@GetArticleCssClass(article)"
                                                  Icon="@Icons.Material.Filled.Check"
@@ -214,8 +214,8 @@
                                                 @foreach (var article in Articles)
                                                 {
                                                     <MudListItem Text="@article.Title"
-                                                                 Value="article.Id"
-                                                                 @key="article.Id"
+                                                                 Value="@GetArticleKey(article)"
+                                                                 @key="GetArticleKey(article)"
                                                                  data-test-id="@TestIdHelper.For($"RssArticle-{article.Id}")"
                                                                  Class="@GetArticleCssClass(article)"
                                                                  Icon="@Icons.Material.Filled.Check"

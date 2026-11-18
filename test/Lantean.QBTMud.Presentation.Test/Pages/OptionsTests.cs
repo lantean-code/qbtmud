@@ -49,6 +49,89 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_UnsavedOptions_WHEN_ChangingTabsAndSaving_THEN_ShouldDisplayAndSubmitTheSameValues()
+        {
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.CreateSuccess());
+            var target = RenderPage();
+            await ActivateTab(target, 2);
+            var port = FindComponentByTestId<MudNumericField<int>>(target, "ListenPort");
+            await target.InvokeAsync(() => port.Instance.ValueChanged.InvokeAsync(7000));
+
+            await ActivateTab(target, 3);
+            await ActivateTab(target, 2);
+
+            FindComponentByTestId<MudNumericField<int>>(target, "ListenPort").Instance.GetState(field => field.Value).Should().Be(7000);
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.ListenPort == 7000)), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task GIVEN_SaveInProgress_WHEN_OptionsEdited_THEN_ShouldRetainLaterEditsForNextSave(bool differentField, bool failFirstSave)
+        {
+            var response = new TaskCompletionSource<ApiResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .Returns(() =>
+                {
+                    started.TrySetResult();
+                    return response.Task;
+                });
+            var target = RenderPage();
+            await ActivateTab(target, 2);
+            var port = FindComponentByTestId<MudNumericField<int>>(target, "ListenPort");
+            await target.InvokeAsync(() => port.Instance.ValueChanged.InvokeAsync(7000));
+            var save = target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
+            FindIconButton(target, Icons.Material.Outlined.Undo).Instance.Disabled.Should().BeTrue();
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Undo).Instance.OnClick.InvokeAsync());
+            var editedField = FindComponentByTestId<MudNumericField<int>>(target, differentField ? "MaxConnec" : "ListenPort");
+            await target.InvokeAsync(() => editedField.Instance.ValueChanged.InvokeAsync(differentField ? 1000 : 8000));
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.ListenPort == 7000 && preferences.MaxConnec == null)), Times.Once);
+            response.SetResult(failFirstSave
+                ? ApiResult.CreateFailure(new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = "Operation", Detail = "Detail", UserMessage = "Failure" })
+                : ApiResult.CreateSuccess());
+            await save.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeFalse();
+            target.FindComponents<NavigationLock>().Should().ContainSingle();
+            FindComponentByTestId<MudNumericField<int>>(target, differentField ? "MaxConnec" : "ListenPort").Instance.GetState(field => field.Value).Should().Be(differentField ? 1000 : 8000);
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.CreateSuccess());
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences =>
+                differentField ? preferences.ListenPort == 7000 && preferences.MaxConnec == 1000 : preferences.ListenPort == 8000)), Times.Once);
+            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingScheduleHours_WHEN_RevertedBeforeSaving_THEN_ShouldSubmitCurrentDisplayedTime(bool endTime)
+        {
+            Mock.Get(_apiClient).Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.CreateSuccess());
+            var target = RenderPage();
+            await ActivateTab(target, 3);
+            var field = FindComponentByTestId<MudTimePicker>(target, endTime ? "ScheduleTo" : "ScheduleFrom");
+            var original = field.Instance.Time!.Value;
+
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(original.Add(TimeSpan.FromMinutes(90))));
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(original.Add(TimeSpan.FromMinutes(15))));
+            await target.InvokeAsync(() => FindIconButton(target, Icons.Material.Outlined.Save).Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences =>
+                endTime ? preferences.ScheduleToHour == null && preferences.ScheduleToMin == original.Add(TimeSpan.FromMinutes(15)).Minutes
+                    : preferences.ScheduleFromHour == null && preferences.ScheduleFromMin == original.Add(TimeSpan.FromMinutes(15)).Minutes)), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_Version53NonSpeedChange_WHEN_Saving_THEN_DoesNotReadOrWriteBatchLimits()
         {
             Mock.Get(_apiClient).Setup(client => client.GetAPIVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync("2.16.2");

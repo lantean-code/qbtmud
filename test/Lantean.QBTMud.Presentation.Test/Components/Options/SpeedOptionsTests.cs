@@ -10,6 +10,69 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Options
 {
     public sealed class SpeedOptionsTests : RazorComponentTestBase<SpeedOptions>
     {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingScheduleChange_WHEN_ComponentsAreReverted_THEN_ShouldClearStaleChangesAndNotify(bool endTime)
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var preferences = CreatePreferences();
+            var update = new UpdatePreferences();
+            var notifications = 0;
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(component => component.Preferences, preferences);
+                parameters.Add(component => component.UpdatePreferences, update);
+                parameters.Add(component => component.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => notifications++));
+            });
+            var hour = endTime ? 5 : 1;
+            var field = FindTimePicker(target, endTime ? "ScheduleTo" : "ScheduleFrom");
+
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(new TimeSpan(hour + 1, 30, 0)));
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(new TimeSpan(hour, 15, 0)));
+
+            (endTime ? update.ScheduleToHour : update.ScheduleFromHour).Should().BeNull();
+            (endTime ? update.ScheduleToMin : update.ScheduleFromMin).Should().Be(15);
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(new TimeSpan(hour + 1, 0, 0)));
+            (endTime ? update.ScheduleToHour : update.ScheduleFromHour).Should().Be(hour + 1);
+            (endTime ? update.ScheduleToMin : update.ScheduleFromMin).Should().BeNull();
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(hour)));
+
+            (endTime ? update.ScheduleToHour : update.ScheduleFromHour).Should().BeNull();
+            (endTime ? update.ScheduleToMin : update.ScheduleFromMin).Should().BeNull();
+            notifications.Should().Be(4);
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task GIVEN_PreferencesNotLoaded_WHEN_ChangingSchedule_THEN_ShouldRetainExplicitValuesAndIgnoreRepeatedChanges(bool endTime, bool pendingHour)
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var update = new UpdatePreferences
+            {
+                ScheduleFromHour = pendingHour ? 0 : null,
+                ScheduleToHour = pendingHour ? 0 : null
+            };
+            var notifications = 0;
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(component => component.Preferences, null);
+                parameters.Add(component => component.UpdatePreferences, update);
+                parameters.Add(component => component.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => notifications++));
+            });
+            var field = FindTimePicker(target, endTime ? "ScheduleTo" : "ScheduleFrom");
+
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(TimeSpan.FromMinutes(15)));
+            await target.InvokeAsync(() => field.Instance.TimeChanged.InvokeAsync(TimeSpan.FromMinutes(15)));
+
+            (endTime ? update.ScheduleToHour : update.ScheduleFromHour).Should().Be(0);
+            (endTime ? update.ScheduleToMin : update.ScheduleFromMin).Should().Be(15);
+            notifications.Should().Be(1);
+        }
+
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldDisplayRatesAndScheduler()
         {

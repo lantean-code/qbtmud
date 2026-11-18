@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 new StorageCatalogService(),
                 new LocalStorageEntryAdapter(jsRuntime.Object),
                 Mock.Of<IClientDataCacheInvalidationService>(),
-                apiFeedbackWorkflow.Object);
+                apiFeedbackWorkflow.Object, new ClientDataCacheState(), localStorageService);
 
             await localStorageService.SetItemAsStringAsync(
                 "AppSettings.State.v1",

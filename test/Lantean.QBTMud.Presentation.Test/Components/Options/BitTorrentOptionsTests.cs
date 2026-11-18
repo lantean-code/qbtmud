@@ -10,6 +10,26 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Options
 {
     public sealed class BitTorrentOptionsTests : RazorComponentTestBase<BitTorrentOptions>
     {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GIVEN_DistinctSeedingLimits_WHEN_Rendered_THEN_ShouldPopulateIndependentFields(bool totalEnabled)
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.MaxSeedingTimeEnabled = totalEnabled;
+                spec.MaxSeedingTime = 180;
+                spec.MaxInactiveSeedingTimeEnabled = true;
+                spec.MaxInactiveSeedingTime = 45;
+            });
+
+            var target = TestContext.Render<BitTorrentOptions>(parameters => parameters.Add(component => component.Preferences, preferences));
+
+            FindNumericInt(target, "MaxSeedingTime").Instance.GetState(field => field.Value).Should().Be(totalEnabled ? 180 : 1440);
+            FindNumericInt(target, "MaxInactiveSeedingTime").Instance.GetState(field => field.Value).Should().Be(45);
+        }
+
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectInitialState()
         {

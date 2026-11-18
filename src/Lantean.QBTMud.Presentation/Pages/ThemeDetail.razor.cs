@@ -185,6 +185,11 @@ namespace Lantean.QBTMud.Pages
         {
             await ThemeManagerService.EnsureInitialized();
             _localThemeStorageType = await ThemeManagerService.GetLocalThemeStorageTypeAsync();
+            if (_theme is not null && string.Equals(_theme.Id, ThemeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             await LoadTheme();
 
             if (_theme is null)

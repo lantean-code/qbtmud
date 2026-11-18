@@ -83,6 +83,12 @@ Choose an installation method or explore advanced hosting setups:
 
 ![qbtmud app settings](docs/content/readme-assets/app-settings.png)
 
+## Support qbtmud
+
+qbtmud is maintained by [@ahjephson](https://github.com/ahjephson), the independent developer behind Lantean Code. If you find it useful, you can [sponsor the maintainer on GitHub](https://github.com/sponsors/ahjephson) with a one-off or monthly contribution to support continued development and maintenance.
+
+Sponsorship is entirely optional. qbtmud remains free and open source, and contributions do not come with priority support or guaranteed feature requests.
+
 ## Contributing
 
 If you want to help build qbtmud:

@@ -1965,6 +1965,66 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             openInvocation.Invocations.Should().BeEmpty();
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_MultipleOutstandingBatches_WHEN_SearchCompletes_THEN_ShouldCollectAllResultsWithoutRestarting(bool initiallyRunning)
+        {
+            var initialStatus = initiallyRunning ? SearchJobStatus.Running : SearchJobStatus.Stopped;
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin>
+            {
+                new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0")
+            });
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(901, initialStatus, 600) });
+            foreach (var offset in new[] { 0, 250, 500 })
+            {
+                var batch = Enumerable.Range(offset, Math.Min(250, 600 - offset)).Select(index =>
+                    new SearchResult($"http://description/{index}", $"Result{index}", 1000, $"http://file/{index}", 1, 2, "http://site", "movies", null)).ToList();
+                apiMock.Setup(client => client.GetSearchResultsAsync(901, 250, offset))
+                    .ReturnsSuccessAsync(new SearchResults(batch, offset == 0 ? initialStatus : SearchJobStatus.Stopped, 600));
+            }
+            var handler = CapturePollHandler();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            var target = TestContext.Render<Search>();
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(901, SearchJobStatus.Stopped, 600) });
+
+            await handler(CancellationToken.None);
+            await handler(CancellationToken.None);
+            await handler(CancellationToken.None);
+
+            target.FindComponent<DynamicTable<SearchResult>>().Instance.Items.Should().HaveCount(600);
+            apiMock.Verify(client => client.GetSearchResultsAsync(901, 250, 0), Times.Once);
+            apiMock.Verify(client => client.GetSearchResultsAsync(901, 250, 250), Times.Once);
+            apiMock.Verify(client => client.GetSearchResultsAsync(901, 250, 500), Times.Once);
+            apiMock.Verify(client => client.GetSearchesStatusAsync(), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task GIVEN_ErroredJobWithOutstandingResults_WHEN_TimerTicks_THEN_ShouldNotRetryUntilRefreshed()
+        {
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin>
+            {
+                new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0")
+            });
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(901, SearchJobStatus.Stopped, 600) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(901, 250, 0)).ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            var handler = CapturePollHandler();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            var target = TestContext.Render<Search>();
+
+            await handler(CancellationToken.None);
+
+            apiMock.Verify(client => client.GetSearchResultsAsync(901, 250, 0), Times.Once);
+            apiMock.Verify(client => client.GetSearchesStatusAsync(), Times.Once);
+        }
+
         [Fact]
         public async Task GIVEN_PollingWithNoRunningJobs_WHEN_TimerTickRuns_THEN_ContinueWithoutAdditionalFetch()
         {

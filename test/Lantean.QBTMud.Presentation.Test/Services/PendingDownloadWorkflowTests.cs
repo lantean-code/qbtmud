@@ -1,6 +1,8 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Infrastructure.Services;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using Moq;
 
 namespace Lantean.QBTMud.Presentation.Test.Services
@@ -9,6 +11,34 @@ namespace Lantean.QBTMud.Presentation.Test.Services
     {
         private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_V2OnlyMagnet_WHEN_CapturedOrRestored_THEN_ShouldReachTheAddDialogUnchanged(bool restore)
+        {
+            const string magnet = "magnet:?xt=urn:btmh:12200123456789012345678901234567890123456789012345678901234567890123&dn=Name";
+            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            var sessionStorage = new TestSessionStorageService();
+            var magnetService = new MagnetLinkService(Mock.Of<IJSRuntime>(), Mock.Of<IInternalUrlProvider>());
+            var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflow.Setup(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(magnet)).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
+            var target = CreateTarget(sessionStorage, magnetService, dialogWorkflow.Object, new TestNavigationManager());
+            if (restore)
+            {
+                await sessionStorage.SetItemAsync(_pendingDownloadStorageKey, magnet, cancellationToken);
+                await target.RestoreAsync(cancellationToken);
+            }
+            else
+            {
+                await target.CaptureFromUriAsync("https://localhost/#/?download=" + Uri.EscapeDataString(magnet), cancellationToken);
+            }
+
+            await target.ProcessAsync(cancellationToken);
+
+            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(magnet), Times.Once);
+            (await sessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey, cancellationToken)).Should().Be(magnet);
+        }
 
         [Fact]
         public async Task GIVEN_RestoredPendingDownload_WHEN_Processed_THEN_ShouldShowDialogPersistLastProcessedAndNavigateHome()
@@ -20,7 +50,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             var magnetLinkService = new Mock<IMagnetLinkService>(MockBehavior.Strict);
             magnetLinkService.Setup(service => service.IsSupportedDownloadLink("magnet:?xt=urn:btih:ABC")).Returns(true);
             var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
-            dialogWorkflow.Setup(workflow => workflow.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
+            dialogWorkflow.Setup(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC")).ReturnsAsync(AddTorrentLinkDialogOutcome.Added);
             var navigationManager = new TestNavigationManager();
             var target = CreateTarget(sessionStorage, magnetLinkService.Object, dialogWorkflow.Object, navigationManager);
 
@@ -142,7 +172,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             await target.ProcessAsync(cancellationToken);
 
             navigationManager.LastNavigationUri.Should().BeNull();
-            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialog(It.IsAny<string?>()), Times.Never);
+            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -165,7 +195,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             pending.Should().BeNull();
             navigationManager.LastNavigationUri.Should().Be("./");
             navigationManager.ForceLoad.Should().BeTrue();
-            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialog(It.IsAny<string?>()), Times.Never);
+            dialogWorkflow.Verify(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome(It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -177,7 +207,7 @@ namespace Lantean.QBTMud.Presentation.Test.Services
             magnetLinkService.Setup(service => service.ExtractDownloadLink("http://localhost/?download=magnet")).Returns("magnet:?xt=urn:btih:ABC");
             var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflow
-                .Setup(workflow => workflow.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"))
+                .Setup(workflow => workflow.InvokeAddTorrentLinkDialogWithOutcome("magnet:?xt=urn:btih:ABC"))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
             var target = CreateTarget(sessionStorage, magnetLinkService.Object, dialogWorkflow.Object, new TestNavigationManager());
 

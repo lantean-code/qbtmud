@@ -35,6 +35,64 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             TestContext.Services.AddSingleton(_dialogWorkflow);
         }
 
+        [Theory]
+        [InlineData("add", true)]
+        [InlineData("add", false)]
+        [InlineData("edit", true)]
+        [InlineData("edit", false)]
+        [InlineData("delete", true)]
+        [InlineData("delete", false)]
+        public async Task GIVEN_RefreshedSnapshot_WHEN_CategoryMutationCompletes_THEN_ShouldInvalidateOnlyAfterSuccess(string operation, bool succeeds)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAllCategoriesAsync()).ReturnsSuccessAsync(new Dictionary<string, ClientCategory>
+            {
+                ["Snapshot"] = new ClientCategory("Snapshot", "SavePath", null)
+            });
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.InvokeAddCategoryDialog(null, null)).ReturnsAsync(succeeds ? "Live" : null);
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.InvokeEditCategoryDialog("Snapshot")).ReturnsAsync(succeeds ? "Snapshot" : null);
+            if (succeeds)
+            {
+                Mock.Get(_apiClient).Setup(client => client.RemoveCategoriesAsync(It.IsAny<IEnumerable<string>>())).ReturnsSuccess(Task.CompletedTask);
+            }
+            else
+            {
+                Mock.Get(_apiClient).Setup(client => client.RemoveCategoriesAsync(It.IsAny<IEnumerable<string>>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            }
+            var target = RenderPage();
+            var refresh = FindIconButton(target, Icons.Material.Filled.Refresh);
+            await target.InvokeAsync(() => refresh.Instance.OnClick.InvokeAsync());
+            target.Instance.MainData!.Categories["Live"] = new MudCategory("Live", "LivePath");
+            var icon = operation switch
+            {
+                "add" => Icons.Material.Filled.PlaylistAdd,
+                "edit" => Icons.Material.Filled.Edit,
+                _ => Icons.Material.Filled.Delete
+            };
+            var action = FindIconButton(target, icon);
+
+            await target.InvokeAsync(() => action.Instance.OnClick.InvokeAsync());
+
+            target.FindComponent<DynamicTable<MudCategory>>().Instance.Items.Should().ContainSingle()
+                .Which.Name.Should().Be(succeeds ? "Live" : "Snapshot");
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshedSnapshot_WHEN_SharedCategoriesUpdate_THEN_ShouldShowSharedData()
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAllCategoriesAsync()).ReturnsSuccessAsync(new Dictionary<string, ClientCategory>
+            {
+                ["Snapshot"] = new ClientCategory("Snapshot", "SavePath", null)
+            });
+            var target = RenderPage();
+            var refresh = FindIconButton(target, Icons.Material.Filled.Refresh);
+            await target.InvokeAsync(() => refresh.Instance.OnClick.InvokeAsync());
+            target.Instance.MainData!.Categories["Live"] = new MudCategory("Live", "LivePath");
+
+            target.Render();
+
+            target.FindComponent<DynamicTable<MudCategory>>().Instance.Items.Should().ContainSingle().Which.Name.Should().Be("Live");
+        }
+
         [Fact]
         public async Task GIVEN_AddClicked_WHEN_Invoked_THEN_ShowsAddCategoryDialog()
         {

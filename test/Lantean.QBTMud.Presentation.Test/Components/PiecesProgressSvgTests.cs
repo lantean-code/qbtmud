@@ -1,8 +1,9 @@
+using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using QBittorrent.ApiClient.Models;
 
@@ -44,6 +45,67 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 HasGridSvg(target).Should().BeTrue();
                 target.FindAll("[data-test-id=\"PiecesSpinner\"]").Count.Should().Be(0);
             });
+        }
+
+        [Theory]
+        [InlineData(1058, Breakpoint.Lg, "aspect-ratio: 96 / 12;")]
+        [InlineData(1096, Breakpoint.Md, "aspect-ratio: 64 / 18;")]
+        [InlineData(1058, Breakpoint.Xs, null)]
+        [InlineData(0, Breakpoint.Lg, null)]
+        public void GIVEN_PreviousMapLayout_WHEN_PiecesAreLoading_THEN_ReservesResponsiveMapSpace(int pieceCount, Breakpoint breakpoint, string? style)
+        {
+            var target = RenderComponent([], loading: true, breakpoint: breakpoint,
+                layoutState: new PiecesProgressLayoutState { PieceCount = pieceCount }, expanded: true);
+
+            target.FindComponents<MudStack>().Single(component => component.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PiecesLoadingPlaceholder")).Instance.Style.Should().Be(style);
+            target.Instance.Pieces.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_LoadedMap_WHEN_ComponentIsReplaced_THEN_RetainsLayoutWithoutRetainingOldPieces()
+        {
+            var layout = new PiecesProgressLayoutState();
+            var target = RenderComponent(Enumerable.Repeat(PieceState.Downloaded, 1058).ToArray(), layoutState: layout, expanded: true);
+            target.WaitForAssertion(() => layout.PieceCount.Should().Be(1058));
+            target.Dispose();
+
+            target = RenderComponent([], loading: true, layoutState: layout, expanded: true);
+
+            target.FindComponents<MudStack>().Single(component => component.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PiecesLoadingPlaceholder")).Instance.Style.Should().Be("aspect-ratio: 96 / 12;");
+            target.Instance.Pieces.Should().BeEmpty();
+            target.Dispose();
+            target = RenderComponent([PieceState.NotDownloaded], layoutState: layout, expanded: true);
+            target.WaitForAssertion(() => layout.PieceCount.Should().Be(1));
+        }
+
+        [Theory]
+        [InlineData(0, "0% complete")]
+        [InlineData(0.683, "68.3% complete")]
+        [InlineData(1, "100% complete")]
+        [InlineData(-1, "0% complete")]
+        [InlineData(2, "100% complete")]
+        public void GIVEN_KnownTorrentProgress_WHEN_PiecesAreLoading_THEN_ShowsProgressImmediately(double progress, string summary)
+        {
+            var target = RenderComponent([], loading: true);
+
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, progress));
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be(summary);
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, 0.25));
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("25% complete");
+        }
+
+        [Theory]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(double.NegativeInfinity)]
+        public void GIVEN_InvalidTorrentProgress_WHEN_PiecesAreLoading_THEN_ShowsLoadingSummary(double progress)
+        {
+            var target = RenderComponent([], loading: true);
+
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, progress));
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Loading pieces...");
         }
 
         [Fact]
@@ -108,45 +170,61 @@ namespace Lantean.QBTMud.Presentation.Test.Components
         }
 
         [Fact]
-        public void GIVEN_KeyboardToggle_WHEN_SpacePressed_THEN_Expands()
+        public async Task GIVEN_ControlledExpansion_WHEN_Toggled_THEN_ReportsChoiceAndAcceptsParameterChanges()
+        {
+            bool? selectedExpansion = null;
+            var target = RenderComponent([PieceState.Downloaded]);
+            target.Render(parameters => parameters
+                .Add(component => component.Expanded, true)
+                .Add(component => component.ExpandedChanged, value => selectedExpansion = value));
+
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeTrue();
+            await FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+
+            selectedExpansion.Should().BeFalse();
+            target.Render(parameters => parameters.Add(component => component.Expanded, false));
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeFalse();
+            target.Render(parameters => parameters.Add(component => component.Expanded, true));
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_NativeToggle_WHEN_Activated_THEN_ExpandsAndCollapses()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloading, 4).ToList();
 
             var target = RenderComponent(pieces);
 
             var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
-            toggleElement.KeyDown(new KeyboardEventArgs { Key = " " });
+            toggleElement.Click();
 
             target.WaitForAssertion(() =>
             {
                 HasGridSvg(target).Should().BeTrue();
             });
+
+            toggleElement.Click();
+
+            GetToggleButton(target).GetAttribute("aria-expanded").Should().Be("false");
         }
 
         [Fact]
-        public void GIVEN_KeyboardToggle_WHEN_EnterPressed_THEN_Expands()
+        public void GIVEN_ProgressToggle_WHEN_Rendered_THEN_UsesNativeKeyboardActivationAndTraversal()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloaded, 2).ToList();
 
             var target = RenderComponent(pieces);
 
-            var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
-            toggleElement.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+            var button = GetToggleButton(target);
 
-            toggleElement.GetAttribute("aria-expanded").Should().Be("true");
-        }
-
-        [Fact]
-        public void GIVEN_NonToggleKey_WHEN_Pressed_THEN_RemainsCollapsed()
-        {
-            var pieces = Enumerable.Repeat(PieceState.Downloading, 4).ToList();
-
-            var target = RenderComponent(pieces);
-
-            var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
-            toggleElement.KeyDown(new KeyboardEventArgs { Key = "Escape" });
-
-            toggleElement.GetAttribute("aria-expanded").Should().Be("false");
+            button.TagName.Should().Be("BUTTON");
+            button.GetAttribute("type").Should().Be("button");
+            button.HasAttribute("disabled").Should().BeFalse();
+            button.HasAttribute("tabindex").Should().BeFalse();
+            button.HasAttribute("blazor:onkeydown:preventDefault").Should().BeFalse();
+            button.HasAttribute("blazor:onkeyup:preventDefault").Should().BeFalse();
+            button.GetAttribute("aria-expanded").Should().Be("false");
+            button.GetAttribute("aria-label").Should().NotBeNullOrWhiteSpace();
         }
 
         [Fact]
@@ -355,6 +433,151 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             });
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GIVEN_StablePieces_WHEN_ThemeColoursChange_THEN_RefreshesProgressColours(bool replaceTheme)
+        {
+            var pieces = new[] { PieceState.Downloaded, PieceState.Downloading, PieceState.NotDownloaded };
+            var theme = new MudTheme();
+            TestContext.RenderTree.Add<CascadingValue<Breakpoint>>(parameters => parameters.Add(component => component.Value, Breakpoint.Lg));
+            Action<ComponentParameterCollectionBuilder<CascadingValue<MudTheme>>> configure = parameters =>
+            {
+                parameters.Add(component => component.Value, theme);
+                parameters.AddChildContent<PiecesProgressSvg>(child => child.Add(component => component.Hash, "Hash").Add(component => component.Pieces, pieces));
+            };
+            var provider = TestContext.Render<CascadingValue<MudTheme>>(configure);
+            var target = provider.FindComponent<PiecesProgressSvg>();
+            var originalStyle = GetToggleButton(target).Children[0].GetAttribute("style");
+            var updatedTheme = replaceTheme ? new MudTheme() : theme;
+            updatedTheme.PaletteLight.Success = "#010203";
+            updatedTheme.PaletteLight.Info = "#040506";
+            updatedTheme.PaletteLight.Surface = "#070809";
+
+            theme = updatedTheme;
+            provider.Render(configure);
+
+            provider.FindComponent<PiecesProgressSvg>().Instance.Should().BeSameAs(target.Instance);
+            var style = GetToggleButton(target).Children[0].GetAttribute("style");
+            style.Should().NotBe(originalStyle);
+            style.Should().Contain("rgba(1,2,3,1)").And.Contain("rgba(4,5,6,1)").And.Contain("rgba(7,8,9,1)");
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GIVEN_StablePieces_WHEN_DarkModeChanges_THEN_UsesCurrentPalette(bool initiallyDark)
+        {
+            var theme = new MudTheme();
+            theme.PaletteLight.Success = "#010203";
+            theme.PaletteDark.Success = "#040506";
+            var pieces = new[] { PieceState.Downloaded };
+            var isDark = initiallyDark;
+            TestContext.RenderTree.Add<CascadingValue<MudTheme>>(parameters => parameters.Add(component => component.Value, theme));
+            TestContext.RenderTree.Add<CascadingValue<Breakpoint>>(parameters => parameters.Add(component => component.Value, Breakpoint.Lg));
+            Action<ComponentParameterCollectionBuilder<CascadingValue<bool>>> configure = parameters =>
+            {
+                parameters.Add(component => component.Name, "IsDarkMode");
+                parameters.Add(component => component.Value, isDark);
+                parameters.AddChildContent<PiecesProgressSvg>(child => child.Add(component => component.Hash, "Hash").Add(component => component.Pieces, pieces));
+            };
+            var provider = TestContext.Render<CascadingValue<bool>>(configure);
+            var target = provider.FindComponent<PiecesProgressSvg>();
+
+            isDark = !isDark;
+            provider.Render(configure);
+
+            provider.FindComponent<PiecesProgressSvg>().Instance.Should().BeSameAs(target.Instance);
+            GetToggleButton(target).Children[0].GetAttribute("style").Should().Contain(initiallyDark ? "rgba(1,2,3,1)" : "rgba(4,5,6,1)");
+        }
+
+        [Fact]
+        public void GIVEN_StableExpandedPieces_WHEN_BreakpointChanges_THEN_RebuildsGeometryAndHiddenMessage()
+        {
+            var breakpoint = Breakpoint.Lg;
+            var theme = new MudTheme();
+            var pieces = Enumerable.Repeat(PieceState.Downloaded, 64).ToArray();
+            TestContext.RenderTree.Add<CascadingValue<MudTheme>>(parameters => parameters.Add(component => component.Value, theme));
+            Action<ComponentParameterCollectionBuilder<CascadingValue<Breakpoint>>> configure = parameters =>
+            {
+                parameters.Add(component => component.Value, breakpoint);
+                parameters.AddChildContent<PiecesProgressSvg>(child => child.Add(component => component.Hash, "Hash").Add(component => component.Pieces, pieces));
+            };
+            var provider = TestContext.Render<CascadingValue<Breakpoint>>(configure);
+            var target = provider.FindComponent<PiecesProgressSvg>();
+            GetToggleButton(target).Click();
+            target.WaitForAssertion(() => GetGridViewBox(target).Should().Be("0 0 96 1"));
+
+            breakpoint = Breakpoint.Sm;
+            provider.Render(configure);
+
+            provider.FindComponent<PiecesProgressSvg>().Instance.Should().BeSameAs(target.Instance);
+            target.WaitForAssertion(() => GetGridViewBox(target).Should().Be("0 0 32 2"));
+
+            breakpoint = Breakpoint.Xs;
+            provider.Render(configure);
+
+            target.WaitForAssertion(() => GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesHiddenText").Instance.ChildContent).Should().Be("Pieces SVG hidden on small screens."));
+
+            breakpoint = Breakpoint.Lg;
+            provider.Render(configure);
+
+            target.WaitForAssertion(() => GetGridViewBox(target).Should().Be("0 0 96 1"));
+
+            provider.Render(configure);
+
+            provider.FindComponent<PiecesProgressSvg>().Instance.Should().BeSameAs(target.Instance);
+            GetGridViewBox(target).Should().Be("0 0 96 1");
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GIVEN_StablePieces_WHEN_LoadingOrFailureClears_THEN_RestoresProgress(bool failed)
+        {
+            var pieces = new[] { PieceState.Downloaded };
+            var target = RenderComponent(pieces);
+            GetToggleButton(target).Click();
+            target.WaitForAssertion(() => HasGridSvg(target).Should().BeTrue());
+            target.Render(parameters => parameters.Add(component => component.PiecesLoading, !failed).Add(component => component.PiecesFailed, failed));
+
+            target.Render(parameters => parameters.Add(component => component.PiecesLoading, false).Add(component => component.PiecesFailed, false));
+
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 1 downloaded, 0 in progress");
+                HasGridSvg(target).Should().BeTrue();
+            });
+        }
+
+        [Fact]
+        public void GIVEN_StablePieces_WHEN_TorrentChanges_THEN_RefreshesAccessibleIdentity()
+        {
+            var target = RenderComponent(new[] { PieceState.Downloaded });
+            GetToggleButton(target).Click();
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            target.WaitForAssertion(() =>
+            {
+                GetToggleButton(target).GetAttribute("aria-label").Should().Contain("OtherHash");
+                GetGridElement(target).GetAttribute("aria-label").Should().Contain("OtherHash");
+            });
+        }
+
+        private static IElement GetToggleButton(IRenderedComponent<PiecesProgressSvg> target)
+        {
+            return FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Nodes.OfType<IElement>()
+                .SelectMany(element => element.GetElementsByTagName("button")).Single();
+        }
+
+        private static IElement GetGridElement(IRenderedComponent<PiecesProgressSvg> target)
+        {
+            return target.FindComponents<MudPaper>().First().Nodes.OfType<IElement>()
+                .SelectMany(element => element.GetElementsByTagName("svg"))
+                .Single(element => element.ClassList.Contains("pieces-progress-svg__grid"));
+        }
+
         private static bool HasGridSvg(IRenderedComponent<PiecesProgressSvg> target)
         {
             return target.FindAll("svg").Any(svg => svg.ClassList.Contains("pieces-progress-svg__grid"));
@@ -366,7 +589,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             return grid.GetAttribute("viewBox");
         }
 
-        private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg, bool isDarkMode = false, MudTheme? theme = null)
+        private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg, bool isDarkMode = false, MudTheme? theme = null, PiecesProgressLayoutState? layoutState = null, bool? expanded = null)
         {
             return TestContext.Render<PiecesProgressSvg>(parameters =>
             {
@@ -374,6 +597,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 parameters.Add(p => p.Pieces, pieces);
                 parameters.Add(p => p.PiecesLoading, loading);
                 parameters.Add(p => p.PiecesFailed, failed);
+                parameters.Add(p => p.LayoutState, layoutState);
+                parameters.Add(p => p.Expanded, expanded);
                 parameters.AddCascadingValue(theme ?? new MudTheme());
                 parameters.AddCascadingValue("IsDarkMode", isDarkMode);
                 parameters.AddCascadingValue(breakpoint);

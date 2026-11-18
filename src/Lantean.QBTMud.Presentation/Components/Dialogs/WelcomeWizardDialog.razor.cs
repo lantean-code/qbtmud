@@ -176,6 +176,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
+        protected bool IsCurrentTorrentDetailsStep
+        {
+            get
+            {
+                return IsCurrentStep(WelcomeWizardStepCatalog.TorrentDetailsStepId);
+            }
+        }
+
         protected bool IsCurrentDoneStep
         {
             get
@@ -278,6 +286,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.Equals(stepToken, WelcomeWizardStepCatalog.StorageStepId, StringComparison.Ordinal))
             {
                 return TranslateWizard("Storage");
+            }
+
+            if (string.Equals(stepToken, WelcomeWizardStepCatalog.TorrentDetailsStepId, StringComparison.Ordinal))
+            {
+                return LanguageLocalizer.Translate("AppSettings", "Torrent details");
             }
 
             return TranslateWizard("Done");
@@ -389,12 +402,28 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return Color.Info;
             }
 
+            if (string.Equals(stepToken, WelcomeWizardStepCatalog.TorrentDetailsStepId, StringComparison.Ordinal))
+            {
+                return Color.Primary;
+            }
+
             if (string.Equals(stepToken, _doneStepToken, StringComparison.Ordinal))
             {
                 return Color.Success;
             }
 
             return Color.Primary;
+        }
+
+        private async Task OnTorrentSplitViewEnabledChanged(bool value)
+        {
+            if (_settings.TorrentSplitViewEnabled == value)
+            {
+                return;
+            }
+
+            _settings.TorrentSplitViewEnabled = value;
+            await PersistAppSettingsAsync();
         }
 
         protected async Task OnNotificationsEnabledChanged(bool value)

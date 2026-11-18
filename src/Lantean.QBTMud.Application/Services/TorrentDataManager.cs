@@ -160,6 +160,14 @@ namespace Lantean.QBTMud.Application.Services
             return MergeMainData(mainData, torrentList, out filterChanged, out _);
         }
 
+        /// <summary>
+        /// Merges incremental server data and updates cached filter membership.
+        /// </summary>
+        /// <param name="mainData">The incremental server data.</param>
+        /// <param name="torrentList">The current torrent data to update.</param>
+        /// <param name="filterChanged">Whether filtered results must be rebuilt.</param>
+        /// <param name="torrentTransitions">The added or completed torrent transitions.</param>
+        /// <returns>Whether any server data changed.</returns>
         public bool MergeMainData(
             ClientMainData mainData,
             MudMainData torrentList,
@@ -376,9 +384,22 @@ namespace Lantean.QBTMud.Application.Services
 
             if (mainData.ServerState is not null)
             {
+                var previousUseSubcategories = torrentList.ServerState.UseSubcategories;
                 if (UpdateServerState(torrentList.ServerState, mainData.ServerState))
                 {
                     dataChanged = true;
+                }
+
+                if (previousUseSubcategories != torrentList.ServerState.UseSubcategories)
+                {
+                    foreach (var category in torrentList.CategoriesState.Keys.ToArray())
+                    {
+                        torrentList.CategoriesState[category] = torrentList.Torrents.Values
+                            .Where(torrent => FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories))
+                            .ToHashesHashSet();
+                    }
+
+                    filterChanged = true;
                 }
             }
 
@@ -1300,6 +1321,7 @@ namespace Lantean.QBTMud.Application.Services
             {
                 existingTorrent.SavePath = torrent.SavePath;
                 dataChanged = true;
+                filterChanged = true;
             }
 
             if (torrent.SeedingTime.HasValue && existingTorrent.SeedingTime != torrent.SeedingTime.Value)

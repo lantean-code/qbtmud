@@ -65,14 +65,14 @@ namespace Lantean.QBTMud.Core.Test.Filter
         }
 
         [Fact]
-        public void GIVEN_NonNullableExpressionAndNullValue_WHEN_GenerateBinary_THEN_ShouldReturnAlwaysTrue()
+        public void GIVEN_NonNullableExpressionAndNullValue_WHEN_GenerateBinary_THEN_ShouldNeverMatchEmpty()
         {
             Expression<Func<FilterEntity, int>> expression = entity => entity.IntValue;
 
             var result = expression.GenerateBinary<FilterEntity>(ExpressionType.Equal, null).Compile();
 
-            result(new FilterEntity { IntValue = 0 }).Should().BeTrue();
-            result(new FilterEntity { IntValue = 10 }).Should().BeTrue();
+            result(new FilterEntity { IntValue = 0 }).Should().BeFalse();
+            result(new FilterEntity { IntValue = 10 }).Should().BeFalse();
         }
 
         [Fact]

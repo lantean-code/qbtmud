@@ -1,7 +1,7 @@
 <div class="general-tab">
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents">
     <MudText Typo="Typo.subtitle2" Class="pt-6">@TranslateProperties("Progress:")</MudText>
-    <PiecesProgressSvg Pieces="Pieces" Hash="@Hash" PiecesLoading="PiecesLoading" PiecesFailed="PiecesFailed" />
+    <PiecesProgressSvg Pieces="Pieces" Hash="@DisplayedHash" TorrentProgress="@DisplayedProgress" PiecesLoading="PiecesLoading" PiecesFailed="PiecesFailed" Expanded="PiecesExpanded" ExpandedChanged="PiecesExpandedChanged" LayoutState="PiecesLayoutState" />
     <MudText Typo="Typo.subtitle2" Class="pt-6">@TranslateProperties("Transfer")</MudText>
     <MudGrid>
         <MudItem xs="4">
@@ -96,7 +96,7 @@
         </MudItem>
 
         <MudItem xs="12">
-            <MudField Label="@TranslateProperties("Comment:")">@Properties?.Comment</MudField>
+            <MudField Label="@TranslateProperties("Comment:")" data-test-id="@TestIdHelper.For("GeneralComment")">@Properties?.Comment</MudField>
         </MudItem>
     </MudGrid>
 </MudContainer>

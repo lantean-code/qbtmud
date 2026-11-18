@@ -32,6 +32,34 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _target = new ManageCategoriesDialogTestDriver(TestContext);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task GIVEN_CategorisedAndUncategorisedTorrents_WHEN_CategoryClicked_THEN_ShouldAssignCategoryToBoth(string? uncategorised)
+        {
+            var hashes = new[] { "CategorisedHash", "UncategorisedHash" };
+            var apiMock = Mock.Get(_apiClient);
+            apiMock.Setup(client => client.GetAllCategoriesAsync()).ReturnsSuccessAsync(new Dictionary<string, Category>
+            {
+                ["Movies"] = new Category("Movies", null, null)
+            });
+            apiMock.Setup(client => client.GetTorrentListAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<bool?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<TorrentSelector?>(), It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent(uncategorised) });
+            apiMock.Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), "Movies", It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            var dialog = await _target.RenderDialogAsync(hashes);
+            var category = FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies");
+            category.Instance.Icon.Should().Be(CustomIcons.RadioIndeterminate);
+
+            await dialog.Component.InvokeAsync(() => category.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            apiMock.Verify(client => client.SetTorrentCategoryAsync(
+                It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)), "Movies", It.IsAny<CancellationToken>()), Times.Once);
+            apiMock.Verify(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), string.Empty, It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [Fact]
         public async Task GIVEN_NoHashes_WHEN_Rendered_THEN_RendersUncheckedIcon()
         {

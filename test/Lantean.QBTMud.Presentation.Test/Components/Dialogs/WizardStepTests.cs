@@ -106,7 +106,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 logger => logger.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString() != null && state.ToString()!.Contains("invalid", StringComparison.OrdinalIgnoreCase)),
+                    It.Is<It.IsAnyType>((state, _) => state != null && (state.ToString() ?? string.Empty).Contains("invalid", StringComparison.OrdinalIgnoreCase)),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -145,7 +145,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 logger => logger.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString() != null && state.ToString()!.Contains("missing", StringComparison.OrdinalIgnoreCase)),
+                    It.Is<It.IsAnyType>((state, _) => state != null && (state.ToString() ?? string.Empty).Contains("missing", StringComparison.OrdinalIgnoreCase)),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -164,7 +164,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 logger => logger.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString() != null && state.ToString()!.Contains("requires a palette color", StringComparison.OrdinalIgnoreCase)),
+                    It.Is<It.IsAnyType>((state, _) => state != null && (state.ToString() ?? string.Empty).Contains("requires a palette color", StringComparison.OrdinalIgnoreCase)),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -183,7 +183,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 logger => logger.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString() != null && state.ToString()!.Contains("not supported", StringComparison.OrdinalIgnoreCase)),
+                    It.Is<It.IsAnyType>((state, _) => state != null && (state.ToString() ?? string.Empty).Contains("not supported", StringComparison.OrdinalIgnoreCase)),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);

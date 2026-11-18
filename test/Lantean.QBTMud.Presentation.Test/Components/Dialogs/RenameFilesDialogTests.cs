@@ -99,6 +99,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             });
 
             FindTextField(component, "RenameFilesSearch").Instance.GetState(x => x.Value).Should().Be("Search");
+            FindSwitch(component, "RenameFilesRemember").Instance.Value.Should().BeTrue();
             FindSwitch(component, "RenameFilesUseRegex").Instance.Value.Should().BeTrue();
             FindSwitch(component, "RenameFilesMatchAll").Instance.Value.Should().BeTrue();
             FindSwitch(component, "RenameFilesCaseSensitive").Instance.Value.Should().BeTrue();
@@ -175,6 +176,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             using var document = JsonDocument.Parse(json!);
             document.RootElement.GetProperty("rememberPreferences").GetBoolean().Should().BeTrue();
+            document.RootElement.GetProperty("search").GetString().Should().Be("Search");
             document.RootElement.GetProperty("useRegex").GetBoolean().Should().BeTrue();
             document.RootElement.GetProperty("matchAllOccurrences").GetBoolean().Should().BeTrue();
             document.RootElement.GetProperty("caseSensitive").GetBoolean().Should().BeTrue();
@@ -458,6 +460,111 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             failedRow.Renamed.Should().BeFalse();
             failedRow.ErrorMessage.Should().Be("qBittorrent returned an error. Please try again.");
             apiClientMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_RememberedSearch_WHEN_SearchChanges_THEN_ShouldPersistTheLatestSearch()
+        {
+            TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_preferencesKey,
+                "{\"rememberPreferences\":true,\"search\":\"Original\"}", Xunit.TestContext.Current.CancellationToken);
+            var dialog = await _target.RenderDialogAsync(null);
+            var target = dialog.Component;
+
+            await SetTextFieldValue(target, "RenameFilesSearch", "UpdatedSearch");
+
+            var stored = await TestContext.LocalStorage.GetItemAsStringAsync(_preferencesKey, Xunit.TestContext.Current.CancellationToken);
+            using var document = JsonDocument.Parse(stored!);
+            document.RootElement.GetProperty("search").GetString().Should().Be("UpdatedSearch");
+            FindSwitch(target, "RenameFilesRemember").Instance.Value.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_NestedRenamedFolders_WHEN_ReplacingAll_THEN_ShouldRenameChildrenBeforeParents()
+        {
+            var apiClient = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            apiClient.Setup(client => client.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(Array.Empty<FileData>());
+            var dataManager = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
+            dataManager.Setup(manager => manager.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>())).Returns(CreateContentMap(new[]
+            {
+                CreateContentItem("NameRoot", "NameRoot", -1, true, 0),
+                CreateContentItem("NameRoot/NameChild", "NameChild", -1, true, 1),
+                CreateContentItem("NameRoot/NameChild/Leaf.txt", "Leaf.txt", 1, false, 2)
+            }));
+            var dialog = await _target.RenderDialogAsync("Hash");
+            var target = dialog.Component;
+            var table = FindTable(target);
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(table.Instance.Items!.ToHashSet()));
+            await SetTextFieldValue(target, "RenameFilesSearch", "Name");
+            await SetTextFieldValue(target, "RenameFilesReplacement", "Replacement");
+            await SetSwitchValue(target, "RenameFilesIncludeFiles", false);
+            await SetSwitchValue(target, "RenameFilesIncludeFolders", true);
+            await SetSelectValue(target, "RenameFilesReplaceType", true);
+            var sequence = new MockSequence();
+            apiClient.InSequence(sequence).Setup(client => client.RenameFolderAsync("Hash", "NameRoot/NameChild", "NameRoot/ReplacementChild"))
+                .ReturnsSuccess(Task.CompletedTask);
+            apiClient.InSequence(sequence).Setup(client => client.RenameFolderAsync("Hash", "NameRoot", "ReplacementRoot"))
+                .ReturnsSuccess(Task.CompletedTask);
+            var submit = FindComponentByTestId<MudButton>(target, "RenameFilesSubmit");
+
+            await target.InvokeAsync(() => submit.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            (await dialog.Reference.Result)!.Canceled.Should().BeFalse();
+            apiClient.VerifyAll();
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task GIVEN_PartialRenameFailure_WHEN_Retried_THEN_ShouldSkipSuccessfulRowsAndKeepFolderPathsValid(bool refreshPreview, bool nestedFiles)
+        {
+            var parentPath = nestedFiles ? "NameRoot/" : string.Empty;
+            var apiClient = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            apiClient.Setup(client => client.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(Array.Empty<FileData>());
+            var dataManager = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
+            dataManager.Setup(manager => manager.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>())).Returns(CreateContentMap(new[]
+            {
+                CreateContentItem("NameRoot", "NameRoot", -1, true, 0),
+                CreateContentItem(parentPath + "NameA.txt", "NameA.txt", 1, false, nestedFiles ? 1 : 0),
+                CreateContentItem(parentPath + "NameB.txt", "NameB.txt", 2, false, nestedFiles ? 1 : 0),
+                CreateContentItem("NameRoot/Leaf.txt", "Leaf.txt", 3, false, 1)
+            }));
+            var dialog = await _target.RenderDialogAsync("Hash");
+            var target = dialog.Component;
+            var table = FindTable(target);
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(table.Instance.Items!.ToHashSet()));
+            await SetTextFieldValue(target, "RenameFilesSearch", "Name");
+            await SetTextFieldValue(target, "RenameFilesReplacement", "Replacement");
+            await SetSwitchValue(target, "RenameFilesIncludeFolders", true);
+            await SetSelectValue(target, "RenameFilesReplaceType", true);
+            apiClient.Setup(client => client.RenameFileAsync("Hash", parentPath + "NameA.txt", parentPath + "ReplacementA.txt"))
+                .ReturnsSuccess(Task.CompletedTask);
+            apiClient.SetupSequence(client => client.RenameFileAsync("Hash", parentPath + "NameB.txt", parentPath + "ReplacementB.txt"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure")
+                .ReturnsSuccess(Task.CompletedTask);
+            apiClient.Setup(client => client.RenameFolderAsync("Hash", "NameRoot", "ReplacementRoot")).ReturnsSuccess(Task.CompletedTask);
+            var submit = FindComponentByTestId<MudButton>(target, "RenameFilesSubmit");
+
+            await target.InvokeAsync(() => submit.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            apiClient.Verify(client => client.RenameFolderAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), nestedFiles ? Times.Never() : Times.Once());
+            GetPreviewRow(target, parentPath + "NameA.txt").Renamed.Should().BeTrue();
+            if (refreshPreview)
+            {
+                await SetTextFieldValue(target, "RenameFilesReplacement", "Replacement");
+                GetPreviewRow(target, parentPath + "NameA.txt").Renamed.Should().BeTrue();
+            }
+
+            await target.InvokeAsync(() => submit.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            (await dialog.Reference.Result)!.Canceled.Should().BeFalse();
+            apiClient.Verify(client => client.RenameFileAsync("Hash", parentPath + "NameA.txt", parentPath + "ReplacementA.txt"), Times.Once);
+            apiClient.Verify(client => client.RenameFileAsync("Hash", parentPath + "NameB.txt", parentPath + "ReplacementB.txt"), Times.Exactly(2));
+            apiClient.Verify(client => client.RenameFolderAsync("Hash", "NameRoot", "ReplacementRoot"), Times.Once);
         }
 
         private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<RenameFilesDialog> component, string testId)

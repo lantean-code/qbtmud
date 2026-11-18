@@ -1,0 +1,383 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Application.Services;
+using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core.Models;
+using Lantean.QBTMud.Pages;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.JSInterop;
+using Microsoft.JSInterop.Infrastructure;
+using Moq;
+using MudBlazor;
+
+namespace Lantean.QBTMud.Presentation.Test.Components.UI
+{
+    public sealed class TorrentSplitPanelTests : RazorComponentTestBase<TorrentSplitPanel>
+    {
+        private readonly ILocalStorageService _storage = Mock.Of<ILocalStorageService>();
+        private readonly IAppBuildInfoService _buildInfo = Mock.Of<IAppBuildInfoService>();
+        private readonly BunitJSModuleInterop _module;
+
+        public TorrentSplitPanelTests()
+        {
+            TestContext.Services.AddSingleton(_storage);
+            Mock.Get(_buildInfo).Setup(service => service.GetCurrentBuildInfo()).Returns(new AppBuildInfo("Version", "Source"));
+            TestContext.Services.AddSingleton(_buildInfo);
+            _module = TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v=Version");
+            _module.SetupVoid("initialize", _ => true).SetVoidResult();
+            _module.SetupVoid("setRatio", _ => true).SetVoidResult();
+        }
+
+        [Theory]
+        [InlineData("3.2.0-rc.2+3", "3.2.0-rc.2%2B3")]
+        [InlineData("3.2.0-rc.3+1", "3.2.0-rc.3%2B1")]
+        public void GIVEN_CurrentBuild_WHEN_Initialised_THEN_ImportsModuleWithEncodedBuildVersion(string version, string encodedVersion)
+        {
+            Mock.Get(_buildInfo).Setup(service => service.GetCurrentBuildInfo()).Returns(new AppBuildInfo(version, "Source"));
+            var import = TestContext.JSInterop.SetupModule($"./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v={encodedVersion}");
+            import.SetupVoid("initialize", _ => true).SetVoidResult();
+
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            target.WaitForAssertion(() => import.Invocations["initialize"].Should().ContainSingle());
+        }
+
+        [Theory]
+        [InlineData(false, true, "Hash", false)]
+        [InlineData(true, false, "Hash", false)]
+        [InlineData(true, true, null, false)]
+        [InlineData(true, true, "Hash", true)]
+        public async Task GIVEN_ConfigurationAndSelection_WHEN_AvailabilityChanges_THEN_ShowsOnlyEligibleDetails(bool enabled, bool available, string? hash, bool expected)
+        {
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, enabled)
+                .Add(component => component.Hash, hash));
+
+            await target.InvokeAsync(() => target.Instance.SetAvailability(available));
+
+            target.Instance.IsOpen.Should().Be(expected);
+            target.FindComponents<Details>().Count.Should().Be(expected ? 1 : 0);
+        }
+
+        [Fact]
+        public async Task GIVEN_OpenPanel_WHEN_Rendered_THEN_SizeControlIsInDetailsHeader()
+        {
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+
+            var details = target.FindComponent<Details>();
+            details.Instance.HeaderContent.Should().NotBeNull();
+            FindComponentByTestId<MudSelect<int>>(details, "TorrentSplitSize").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_OpenPanel_WHEN_SelectionCleared_THEN_DetailsAreRemovedAndRestoreOnReselection()
+        {
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+
+            target.Render(parameters => parameters.Add(component => component.Hash, (string?)null));
+
+            target.Instance.IsOpen.Should().BeFalse();
+            target.FindComponents<Details>().Should().BeEmpty();
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            var details = target.FindComponent<Details>();
+            details.Instance.Hash.Should().Be("OtherHash");
+            details.Instance.Embedded.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_OpenPanel_WHEN_HiddenAndRestored_THEN_SelectionAndSizeArePreserved()
+        {
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var size = FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize");
+            await target.InvokeAsync(() => size.Instance.ValueChanged.InvokeAsync(55));
+
+            var details = target.FindComponent<Details>();
+            await target.InvokeAsync(() => details.Instance.OnHide.InvokeAsync());
+
+            target.Instance.IsOpen.Should().BeFalse();
+
+            await target.InvokeAsync(target.Instance.ToggleDetails);
+
+            target.Instance.IsOpen.Should().BeTrue();
+            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(55);
+            target.FindComponent<Details>().Instance.Hash.Should().Be("Hash");
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", 55, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(-10, 0)]
+        [InlineData(0, 0)]
+        [InlineData(10, 10)]
+        [InlineData(45, 45)]
+        [InlineData(90, 90)]
+        [InlineData(100, 100)]
+        [InlineData(110, 100)]
+        public async Task GIVEN_ResizeRequest_WHEN_RatioSaved_THEN_ClampsAndPersistsRatio(int ratio, int expected)
+        {
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+
+            await target.InvokeAsync(() => target.Instance.ChangeRatio(ratio));
+
+            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(expected);
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", expected, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(10)]
+        [InlineData(55)]
+        [InlineData(90)]
+        [InlineData(100)]
+        public async Task GIVEN_SavedRatio_WHEN_ViewportShrinksAndGrows_THEN_RestoresPanelSize(int ratio)
+        {
+            Mock.Get(_storage).Setup(service => service.GetItemAsync<int?>("TorrentList.DetailsRatio", It.IsAny<CancellationToken>())).ReturnsAsync(ratio);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(false));
+
+            target.FindComponents<Details>().Should().BeEmpty();
+
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+
+            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(ratio);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(17)]
+        [InlineData(83)]
+        [InlineData(100)]
+        public async Task GIVEN_CustomSizeDialog_WHEN_SliderSaved_THEN_PersistsPercentage(int ratio)
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var size = FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize");
+            var selection = target.InvokeAsync(() => size.Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+            var slider = FindComponentByTestId<MudSlider<int>>(dialog, "SliderFieldSlider");
+
+            slider.Instance.Min.Should().Be(0);
+            slider.Instance.Max.Should().Be(100);
+            slider.Instance.UserAttributes["aria-label"].Should().Be("Details size");
+            slider.Instance.GetState(component => component.Value).Should().Be(40);
+            await dialog.InvokeAsync(() => slider.Instance.ValueChanged.InvokeAsync(ratio));
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldSave").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(ratio);
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", ratio, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_CustomSizeDialog_WHEN_Cancelled_THEN_RestoresSelectionWithoutSaving()
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var size = FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize");
+            var selection = target.InvokeAsync(() => size.Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+            await dialog.InvokeAsync(() => FindComponentByTestId<MudSlider<int>>(dialog, "SliderFieldSlider").Instance.ValueChanged.InvokeAsync(90));
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldCancel").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            size.Instance.GetState(component => component.Value).Should().Be(40);
+            Mock.Get(_storage).Verify(service => service.SetItemAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_CustomSizeDialog_WHEN_PanelDisposedBeforeSave_THEN_DoesNotPersistLateResult()
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var selection = target.InvokeAsync(() => FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+
+            await target.Instance.DisposeAsync();
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldSave").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            Mock.Get(_storage).Verify(service => service.SetItemAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("101")]
+        [InlineData("InvalidPercentage")]
+        public async Task GIVEN_CustomPercentageInput_WHEN_InvalidThenCorrected_THEN_SavesOnlyValidPercentage(string input)
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var selection = target.InvokeAsync(() => FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+            var field = FindComponentByTestId<MudTextField<string>>(dialog, "SliderFieldInput");
+
+            field.Instance.Immediate.Should().BeTrue();
+
+            await dialog.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(input));
+
+            FindButton(dialog, "SliderFieldSave").Instance.Disabled.Should().BeTrue();
+            field.Instance.GetState(component => component.Error).Should().BeTrue();
+            await dialog.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync("73"));
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldSave").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", 73, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposedPanel_WHEN_LateAvailabilityNotificationArrives_THEN_DoesNotRender()
+        {
+            var target = TestContext.Render<TorrentSplitPanel>();
+
+            await target.Instance.DisposeAsync();
+            await target.Instance.SetAvailability(true);
+
+            target.Instance.IsOpen.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_DisabledPanel_WHEN_SizeChangedBeforeInitialization_THEN_PersistsWithoutCallingJavaScript()
+        {
+            var target = TestContext.Render<TorrentSplitPanel>();
+
+            await target.InvokeAsync(() => target.Instance.ChangeRatio(55));
+
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", 55, It.IsAny<CancellationToken>()), Times.Once);
+            _module.Invocations.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingStorageRead_WHEN_DisposedOrDisabled_THEN_ShouldNotImportModule(bool disable)
+        {
+            var response = new TaskCompletionSource<int?>();
+            Mock.Get(_storage).Setup(service => service.GetItemAsync<int?>("TorrentList.DetailsRatio", It.IsAny<CancellationToken>()))
+                .Returns(new ValueTask<int?>(response.Task));
+            var runtime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            TestContext.Services.RemoveAll<IJSRuntime>();
+            TestContext.Services.AddSingleton(runtime.Object);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            if (disable)
+            {
+                target.Render(parameters => parameters.Add(component => component.Enabled, false));
+            }
+            else
+            {
+                await target.Instance.DisposeAsync();
+            }
+            await target.InvokeAsync(() => response.SetResult(55));
+
+            runtime.Verify(service => service.InvokeAsync<IJSObjectReference>(It.IsAny<string>(), It.IsAny<object?[]?>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingModuleImport_WHEN_DisposedOrDisabled_THEN_ShouldReleaseLateModule(bool disable)
+        {
+            var response = new TaskCompletionSource<IJSObjectReference>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var released = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var module = new Mock<IJSObjectReference>(MockBehavior.Strict);
+            module.Setup(reference => reference.DisposeAsync()).Returns(() =>
+            {
+                released.SetResult();
+                return ValueTask.CompletedTask;
+            });
+            var runtime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            runtime.Setup(service => service.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<IJSObjectReference>(response.Task));
+            TestContext.Services.RemoveAll<IJSRuntime>();
+            TestContext.Services.AddSingleton(runtime.Object);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            if (disable)
+            {
+                target.Render(parameters => parameters.Add(component => component.Enabled, false));
+            }
+            else
+            {
+                await target.Instance.DisposeAsync();
+            }
+            response.SetResult(module.Object);
+            await released.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+            module.Verify(reference => reference.DisposeAsync(), Times.Once);
+            module.Verify(reference => reference.InvokeAsync<IJSVoidResult>("initialize", It.IsAny<object?[]?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingModuleImport_WHEN_RenderedAgain_THEN_ShouldInitialiseOnceAndReleaseOwnedResources()
+        {
+            var response = new TaskCompletionSource<IJSObjectReference>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var initialized = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            DotNetObjectReference<TorrentSplitPanel>? callbackReference = null;
+            var module = new Mock<IJSObjectReference>(MockBehavior.Strict);
+            module.Setup(reference => reference.InvokeAsync<IJSVoidResult>("initialize", It.IsAny<object?[]?>()))
+                .Callback<string, object?[]?>((_, arguments) =>
+                {
+                    callbackReference = (DotNetObjectReference<TorrentSplitPanel>)arguments![1]!;
+                    initialized.SetResult();
+                })
+                .Returns(new ValueTask<IJSVoidResult>(default(IJSVoidResult)!));
+            module.Setup(reference => reference.DisposeAsync()).Returns(ValueTask.CompletedTask);
+            var runtime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            runtime.Setup(service => service.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<IJSObjectReference>(response.Task));
+            TestContext.Services.RemoveAll<IJSRuntime>();
+            TestContext.Services.AddSingleton(runtime.Object);
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "Hash"));
+            response.SetResult(module.Object);
+            await initialized.Task.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+            await target.Instance.DisposeAsync();
+            await target.Instance.DisposeAsync();
+            await target.Instance.ChangeRatio(55);
+
+            runtime.Verify(service => service.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()), Times.Once);
+            module.Verify(reference => reference.InvokeAsync<IJSVoidResult>("initialize", It.IsAny<object?[]?>()), Times.Once);
+            module.Verify(reference => reference.DisposeAsync(), Times.Once);
+            var getDisposedValue = () => callbackReference!.Value;
+            getDisposedValue.Should().Throw<ObjectDisposedException>();
+            Mock.Get(_storage).Verify(service => service.SetItemAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+    }
+}

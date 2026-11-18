@@ -534,6 +534,104 @@ namespace QbtMudTranslations.Test
                 Times.Once);
         }
 
+        [Theory]
+        [InlineData(1)]
+        [InlineData(3)]
+        public async Task GIVEN_PartiallyValidTranslations_WHEN_RetryBudgetExhausted_THEN_ShouldRetryOnlyInvalidKeysWithinOneBudget(int retryBudget)
+        {
+            var options = CreateRetryOptions();
+            var translationClient = new Mock<ITranslationClient>(MockBehavior.Strict);
+            translationClient.Setup(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "A %1", "B %2" })), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(["A-DE %1", "B-DE"]);
+            translationClient.Setup(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "B %2" })), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(["B-DE"]);
+            var target = CreateRetryTarget(translationClient.Object, retryBudget);
+
+            var result = await target.RunAsync(options, TestContext.Current.CancellationToken);
+
+            result.Should().Be(1);
+            File.Exists(Path.Combine(_outputDirectoryPath, "qbtmud_de.json")).Should().BeFalse();
+            translationClient.Verify(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "A %1", "B %2" })), It.IsAny<CancellationToken>()), Times.Once);
+            translationClient.Verify(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "B %2" })), It.IsAny<CancellationToken>()), Times.Exactly(retryBudget));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PartiallyValidTranslations_WHEN_RetryRecovers_THEN_ShouldKeepSuccessfulKeysAcrossFailures(bool providerThrows)
+        {
+            var options = CreateRetryOptions();
+            var translationClient = new Mock<ITranslationClient>(MockBehavior.Strict);
+            translationClient.Setup(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "A %1", "B %2" })), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(["A-DE %1", "B-DE"]);
+            var retry = translationClient.SetupSequence(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "B %2" })), It.IsAny<CancellationToken>()));
+            if (providerThrows)
+            {
+                retry.ThrowsAsync(new InvalidOperationException("Provider failure"));
+            }
+            retry.ReturnsAsync(["B-DE %2"]);
+            var target = CreateRetryTarget(translationClient.Object, providerThrows ? 2 : 1);
+
+            var result = await target.RunAsync(options, TestContext.Current.CancellationToken);
+
+            result.Should().Be(0);
+            JsonTranslationDocument.LoadOrdered(Path.Combine(_outputDirectoryPath, "qbtmud_de.json"))
+                .Select(entry => entry.Value).Should().Equal("A-DE %1", "B-DE %2");
+            translationClient.Verify(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "A %1", "B %2" })), It.IsAny<CancellationToken>()), Times.Once);
+            translationClient.Verify(client => client.TranslateAsync("de", It.Is<IReadOnlyList<string>>(texts => texts.SequenceEqual(new[] { "B %2" })), It.IsAny<CancellationToken>()), Times.Exactly(providerThrows ? 2 : 1));
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(3)]
+        public async Task GIVEN_ProviderFailure_WHEN_RetryBudgetExhausted_THEN_ShouldStopAfterInitialAttemptAndConfiguredRetries(int retryBudget)
+        {
+            var options = CreateRetryOptions();
+            var translationClient = new Mock<ITranslationClient>(MockBehavior.Strict);
+            translationClient.Setup(client => client.TranslateAsync("de", It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Provider failure"));
+            var target = CreateRetryTarget(translationClient.Object, retryBudget);
+
+            var result = await target.RunAsync(options, TestContext.Current.CancellationToken);
+
+            result.Should().Be(1);
+            File.Exists(Path.Combine(_outputDirectoryPath, "qbtmud_de.json")).Should().BeFalse();
+            translationClient.Verify(client => client.TranslateAsync("de", It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()), Times.Exactly(retryBudget + 1));
+        }
+
+        [Fact]
+        public async Task GIVEN_OutputWriteFailure_WHEN_Retried_THEN_ShouldRetainValidatedTranslationsWithoutResending()
+        {
+            var options = CreateRetryOptions();
+            Directory.CreateDirectory(Path.Combine(_outputDirectoryPath, "qbtmud_de.json"));
+            var translationClient = new Mock<ITranslationClient>(MockBehavior.Strict);
+            translationClient.Setup(client => client.TranslateAsync("de", It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(["A-DE %1", "B-DE %2"]);
+            var target = CreateRetryTarget(translationClient.Object, 1);
+
+            var result = await target.RunAsync(options, TestContext.Current.CancellationToken);
+
+            result.Should().Be(1);
+            File.Exists(Path.Combine(_outputDirectoryPath, "qbtmud_de.json")).Should().BeFalse();
+            translationClient.Verify(client => client.TranslateAsync("de", It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_TranslationCancelled_WHEN_RunAsync_THEN_ShouldPropagateWithoutRetrying()
+        {
+            var options = CreateRetryOptions();
+            var cancellationToken = TestContext.Current.CancellationToken;
+            var translationClient = new Mock<ITranslationClient>(MockBehavior.Strict);
+            translationClient.Setup(client => client.TranslateAsync("de", It.IsAny<IReadOnlyList<string>>(), cancellationToken))
+                .ThrowsAsync(new OperationCanceledException(cancellationToken));
+            var target = CreateRetryTarget(translationClient.Object, 3);
+
+            var action = async () => await target.RunAsync(options, cancellationToken);
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+            translationClient.Verify(client => client.TranslateAsync("de", It.IsAny<IReadOnlyList<string>>(), cancellationToken), Times.Once);
+        }
+
         [Fact]
         public async Task GIVEN_SyncModeAndLocaleStillFailsAfterRetries_WHEN_RunAsync_THEN_ShouldKeepSuccessfulLocaleFilesAndReturnFailure()
         {
@@ -600,6 +698,29 @@ namespace QbtMudTranslations.Test
                     It.Is<IReadOnlyList<string>>(texts => texts.Count == 1 && texts[0] == "Applied to all items in %1; cleared %2 item overrides."),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        private ToolOptions CreateRetryOptions()
+        {
+            File.WriteAllText(Path.Combine(_upstreamDirectoryPath, "webui_de.ts"), string.Empty);
+            File.WriteAllText(_englishFilePath, "{\"Ctx|A\":\"A %1\",\"Ctx|B\":\"B %2\"}");
+            return new ToolOptions
+            {
+                EnglishFilePath = _englishFilePath,
+                OutputDirectoryPath = _outputDirectoryPath,
+                UpstreamTranslationsPath = _upstreamDirectoryPath,
+                Mode = TranslationToolMode.Sync
+            };
+        }
+
+        private static TranslationSyncService CreateRetryTarget(ITranslationClient translationClient, int retryBudget)
+        {
+            return new TranslationSyncService(
+                new LocaleDiscoveryService(),
+                translationClient,
+                new TranslationValidator(),
+                new TranslationProviderAvailabilityValidator(hasAzureProvider: true, hasGoogleProvider: true),
+                retryBudget);
         }
     }
 }

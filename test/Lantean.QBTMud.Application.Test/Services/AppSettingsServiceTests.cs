@@ -33,6 +33,23 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_SplitViewEnabled_WHEN_SettingsSavedAndReloaded_THEN_PreservesPreferenceAndDetectsChanges()
+        {
+            var settings = AppSettings.Default;
+            settings.TorrentSplitViewEnabled.Should().BeFalse();
+            var changed = settings.Clone();
+            changed.TorrentSplitViewEnabled = true;
+
+            AppSettings.AreEquivalent(settings, changed).Should().BeFalse();
+            var saved = await _target.SaveSettingsAsync(changed, TestContext.Current.CancellationToken);
+            var loaded = await _target.RefreshSettingsAsync(TestContext.Current.CancellationToken);
+
+            saved.TorrentSplitViewEnabled.Should().BeTrue();
+            loaded.TorrentSplitViewEnabled.Should().BeTrue();
+            AppSettings.AreEquivalent(saved, loaded).Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_CustomSettings_WHEN_SaveSettingsInvoked_THEN_PersistsAndReturnsNormalizedCopy()
         {
             var settings = new AppSettings

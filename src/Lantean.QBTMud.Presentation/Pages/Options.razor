@@ -17,13 +17,13 @@
             }
             <ToolbarTitle Class="px-5">@LanguageLocalizer.Translate("OptionsDialog", "Options")</ToolbarTitle>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(UpdatePreferences is null)" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(UpdatePreferences is null)" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(IsSaving || UpdatePreferences is null)" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(IsSaving || UpdatePreferences is null)" />
         </MudToolBar>
     </ToolbarContent>
 
     <ChildContent>
-        <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
+        <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true" KeepPanelsAlive="true" LazyLoadPanels="true">
             <MudTabPanel Text="@LanguageLocalizer.Translate("OptionsDialog", "Behavior")">
                 <div class="options-tab-contents">
                     <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" Compatibility="Compatibility" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />

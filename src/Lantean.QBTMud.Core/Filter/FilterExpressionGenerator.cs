@@ -5,6 +5,12 @@ namespace Lantean.QBTMud.Core.Filter
 {
     public static class FilterExpressionGenerator
     {
+        /// <summary>
+        /// Builds a predicate for a property filter.
+        /// </summary>
+        /// <param name="filter">The property, operator and comparison value.</param>
+        /// <param name="caseSensitive">Whether string comparisons are case-sensitive.</param>
+        /// <returns>The filter predicate.</returns>
         public static Expression<Func<T, bool>> GenerateExpression<T>(PropertyFilterDefinition<T> filter, bool caseSensitive)
         {
             var propertyExpression = filter.Expression;
@@ -37,9 +43,9 @@ namespace Lantean.QBTMud.Core.Filter
                     FilterOperator.String.EndsWith =>
                         propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && ((string)x).EndsWith(value, stringComparer))),
                     FilterOperator.String.Empty =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => string.IsNullOrWhiteSpace(x))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => string.IsNullOrWhiteSpace((string?)x))),
                     FilterOperator.String.NotEmpty =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => !string.IsNullOrWhiteSpace(x))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => !string.IsNullOrWhiteSpace((string?)x))),
                     _ => x => true
                 };
             }

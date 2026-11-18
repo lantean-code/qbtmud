@@ -12,7 +12,7 @@
                         CurrentStepColor="@GetCurrentStepAccentColor()"
                         NonLinear="true"
                         CenterLabels="true"
-                        data-test-id="@TestIdHelper.For($"WelcomeWizardStepper-{IsCurrentIntroStep}-{IsCurrentLanguageStep}-{IsCurrentThemeStep}-{IsCurrentNotificationsStep}-{IsCurrentStorageStep}-{IsCurrentDoneStep}")">
+                        data-test-id="@TestIdHelper.For($"WelcomeWizardStepper-{IsCurrentIntroStep}-{IsCurrentLanguageStep}-{IsCurrentThemeStep}-{IsCurrentNotificationsStep}-{IsCurrentStorageStep}-{IsCurrentTorrentDetailsStep}-{IsCurrentDoneStep}")">
                 <ChildContent>
                     @foreach (var stepToken in FlowSteps)
                     {
@@ -302,6 +302,34 @@
                                     </MudRadioGroup>
                                 </WizardStep>
                             }
+                            else if (string.Equals(stepToken, WelcomeWizardStepCatalog.TorrentDetailsStepId, StringComparison.Ordinal))
+                            {
+                                <WizardStep Accent="@WizardAccentColor.FromPalette(Color.Primary)"
+                                            Icon="@Icons.Material.Outlined.VerticalSplit"
+                                            Title="@LanguageLocalizer.Translate("AppSettings", "Torrent details")"
+                                            Subtitle="@LanguageLocalizer.Translate("AppWelcomeWizard", "Choose how to view torrent details.")"
+                                            AlertText="@LanguageLocalizer.Translate("AppSettings", "Split view is used when there is enough screen space.")">
+                                    <MudStack Spacing="2">
+                                        <MudSelect T="bool"
+                                                   Value="_settings.TorrentSplitViewEnabled"
+                                                   ValueChanged="OnTorrentSplitViewEnabledChanged"
+                                                   Label="@LanguageLocalizer.Translate("AppSettings", "Torrent details")"
+                                                   Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
+                                                   FullWidth="true"
+                                                   data-test-id="@TestIdHelper.For("WelcomeWizardTorrentDetailsSelection")">
+                                            <MudSelectItem Value="false">@LanguageLocalizer.Translate("AppSettings", "Separate page")</MudSelectItem>
+                                            <MudSelectItem Value="true">@LanguageLocalizer.Translate("AppSettings", "Below torrent list")</MudSelectItem>
+                                        </MudSelect>
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("WelcomeWizardTorrentDetailsSeparatePageDescription")">
+                                            @LanguageLocalizer.Translate("AppWelcomeWizard", "Separate page is qbtmud's original design. Open a torrent's details on their own page.")
+                                        </MudText>
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("WelcomeWizardTorrentDetailsSplitViewDescription")">
+                                            @LanguageLocalizer.Translate("AppWelcomeWizard", "Below torrent list is the classic qBittorrent-style view. Select a torrent to show its details beneath the list.")
+                                        </MudText>
+                                    </MudStack>
+                                </WizardStep>
+                            }
                             else
                             {
                                 <WizardStep Accent="@WizardAccentColor.FromPalette(Color.Success)"
@@ -342,6 +370,15 @@
                                                          Color="@GetStepAccentColor(WelcomeWizardStepCatalog.StorageStepId)"
                                                          data-test-id="@TestIdHelper.For("WelcomeWizardDoneStorageChip")">
                                                     @LanguageLocalizer.Translate("AppWelcomeWizard", "Storage: %1", SelectedStorageTypeName)
+                                                </MudChip>
+                                            }
+                                            @if (FlowSteps.Contains(WelcomeWizardStepCatalog.TorrentDetailsStepId, StringComparer.Ordinal))
+                                            {
+                                                <MudChip T="string"
+                                                         Variant="Variant.Outlined"
+                                                         Color="@GetStepAccentColor(WelcomeWizardStepCatalog.TorrentDetailsStepId)"
+                                                         data-test-id="@TestIdHelper.For("WelcomeWizardDoneTorrentDetailsChip")">
+                                                    @LanguageLocalizer.Translate("AppWelcomeWizard", "Torrent details: %1", LanguageLocalizer.Translate("AppSettings", _settings.TorrentSplitViewEnabled ? "Below torrent list" : "Separate page"))
                                                 </MudChip>
                                             }
                                         </MudStack>

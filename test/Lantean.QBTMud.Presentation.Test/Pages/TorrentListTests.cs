@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Bunit.TestDoubles;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Core.Models;
@@ -30,6 +31,9 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
         public TorrentListTests()
         {
+            var buildInfo = Mock.Of<IAppBuildInfoService>();
+            Mock.Get(buildInfo).Setup(service => service.GetCurrentBuildInfo()).Returns(new AppBuildInfo("Version", "Source"));
+            TestContext.Services.AddSingleton(buildInfo);
             var keyboardServiceMock = Mock.Get(_keyboardService);
             keyboardServiceMock.Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>())).Returns(Task.CompletedTask);
             keyboardServiceMock.Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>())).Returns(Task.CompletedTask);
@@ -79,6 +83,60 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_SplitViewEnabled_WHEN_SelectionChanges_THEN_OnlyOneVisibleTorrentOpensDetails()
+        {
+            var settings = Core.Models.AppSettings.Default;
+            settings.TorrentSplitViewEnabled = true;
+            TestContext.Services.GetRequiredService<IAppSettingsStateService>().SetSettings(settings);
+            TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v=Version");
+            TestContext.ComponentFactories.AddStub<Details>();
+            var first = CreateTorrent("FirstHash", "FirstName");
+            var second = CreateTorrent("SecondHash", "SecondName");
+            var target = RenderWithDefaults([first, second]);
+            var panel = target.FindComponent<TorrentSplitPanel>();
+            await target.InvokeAsync(() => panel.Instance.SetAvailability(true));
+
+            panel.Instance.IsOpen.Should().BeFalse();
+
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([first]));
+
+            panel.Instance.IsOpen.Should().BeTrue();
+            target.FindComponent<Stub<Details>>().Instance.Parameters.Get(component => component.Hash).Should().Be("FirstHash");
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([second]));
+
+            target.FindComponent<Stub<Details>>().Instance.Parameters.Get(component => component.Hash).Should().Be("SecondHash");
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([first, second]));
+
+            panel.Instance.IsOpen.Should().BeFalse();
+            FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails").Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([]));
+
+            panel.Instance.IsOpen.Should().BeFalse();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([first]));
+            var toggle = FindComponentByTestId<MudIconButton>(target, "TorrentListToggleDetailsPanel");
+            await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            panel.Instance.IsOpen.Should().BeFalse();
+            await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            panel.Instance.IsOpen.Should().BeTrue();
+
+            target.Instance.Torrents = [second];
+            target.Instance.TorrentsVersion++;
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([first]));
+
+            panel.Instance.IsOpen.Should().BeFalse();
+
+            target.Instance.MainData.Torrents.Remove(second.Hash);
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync([second]));
+
+            panel.Instance.IsOpen.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_SearchText_WHEN_Changed_THEN_PublishesFilterStateAndValidatesRegex()
         {
             var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
@@ -90,6 +148,32 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             queryState.SearchText.Should().Be("test");
             queryState.UseRegexSearch.Should().BeFalse();
             queryState.IsRegexValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_PreviouslySelectedTorrent_WHEN_ReturningToList_THEN_RestoresSelectionAndPrunesFilteredItems()
+        {
+            var settings = Core.Models.AppSettings.Default;
+            settings.TorrentSplitViewEnabled = true;
+            TestContext.Services.GetRequiredService<IAppSettingsStateService>().SetSettings(settings);
+            TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v=Version");
+            TestContext.ComponentFactories.AddStub<Details>();
+            var torrent = CreateTorrent("Hash", "Name");
+            await TestContext.Services.GetRequiredService<ISessionStorageService>().SetItemAsync("TorrentList.SelectedHash", torrent.Hash, Xunit.TestContext.Current.CancellationToken);
+
+            var torrents = new List<MudTorrent> { torrent };
+            var target = RenderWithDefaults(torrents);
+            var panel = target.FindComponent<TorrentSplitPanel>();
+            await target.InvokeAsync(() => panel.Instance.SetAvailability(true));
+
+            panel.Instance.IsOpen.Should().BeTrue();
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.SelectedItems.Should().ContainSingle(item => item.Hash == torrent.Hash);
+
+            torrents.Clear();
+            target.Render();
+
+            panel.Instance.IsOpen.Should().BeFalse();
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.SelectedItems.Should().BeEmpty();
         }
 
         [Fact]

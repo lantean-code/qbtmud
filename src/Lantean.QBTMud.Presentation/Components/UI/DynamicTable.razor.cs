@@ -113,7 +113,8 @@ namespace Lantean.QBTMud.Components.UI
 
         protected IEnumerable<T>? OrderedItems => GetOrderedItems();
 
-        protected HashSet<T> SelectedItems { get; set; } = [];
+        [Parameter]
+        public HashSet<T> SelectedItems { get; set; } = [];
 
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
@@ -160,6 +161,7 @@ namespace Lantean.QBTMud.Components.UI
         private bool _initialized;
 
         private bool _keyboardHandlersRegistered;
+        private bool _hasKeyboardFocus;
 
         private bool _disposedValue;
 
@@ -584,8 +586,23 @@ namespace Lantean.QBTMud.Components.UI
             }
         }
 
+        private void TableFocused()
+        {
+            _hasKeyboardFocus = true;
+        }
+
+        private void TableBlurred()
+        {
+            _hasKeyboardFocus = false;
+        }
+
         private async Task HandleKeyboardNavigation(KeyboardEvent keyboardEvent)
         {
+            if (!_hasKeyboardFocus)
+            {
+                return;
+            }
+
             if (keyboardEvent.Key == "Enter")
             {
                 await HandleEnterKeyAsync();

@@ -8,6 +8,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class ShareRatioDialog
     {
+        private float _disabledRatioLimit = Limits.NoShareRatioLimit;
+        private int _disabledSeedingTimeLimit = Limits.NoSeedingTimeLimit;
+        private int _disabledInactiveSeedingTimeLimit = Limits.NoInactiveSeedingTimeLimit;
+
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -54,6 +58,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void RatioEnabledChanged(bool value)
         {
             RatioEnabled = value;
+            _disabledRatioLimit = Limits.NoShareRatioLimit;
         }
 
         protected void RatioChanged(float value)
@@ -64,6 +69,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void TotalMinutesEnabledChanged(bool value)
         {
             TotalMinutesEnabled = value;
+            _disabledSeedingTimeLimit = Limits.NoSeedingTimeLimit;
         }
 
         protected void TotalMinutesChanged(int value)
@@ -74,6 +80,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void InactiveMinutesEnabledChanged(bool value)
         {
             InactiveMinutesEnabled = value;
+            _disabledInactiveSeedingTimeLimit = Limits.NoInactiveSeedingTimeLimit;
         }
 
         protected void InactiveMinutesChanged(int value)
@@ -93,6 +100,9 @@ namespace Lantean.QBTMud.Components.Dialogs
             InactiveMinutesEnabled = false;
 
             var baseline = Value ?? CurrentValue;
+            _disabledRatioLimit = baseline?.RatioLimit == Limits.UseGlobalShareRatioLimit ? Limits.UseGlobalShareRatioLimit : Limits.NoShareRatioLimit;
+            _disabledSeedingTimeLimit = baseline?.SeedingTimeLimit == Limits.UseGlobalSeedingTimeLimit ? Limits.UseGlobalSeedingTimeLimit : Limits.NoSeedingTimeLimit;
+            _disabledInactiveSeedingTimeLimit = baseline?.InactiveSeedingTimeLimit == Limits.UseGlobalInactiveSeedingTimeLimit ? Limits.UseGlobalInactiveSeedingTimeLimit : Limits.NoInactiveSeedingTimeLimit;
             SelectedShareLimitsMode = baseline?.ShareLimitsMode ?? ShareLimitsMode.Default;
             SelectedShareLimitAction = baseline?.ShareLimitAction ?? ShareLimitAction.Default;
 
@@ -183,9 +193,9 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             else
             {
-                result.RatioLimit = RatioEnabled ? Ratio : Limits.NoShareRatioLimit;
-                result.SeedingTimeLimit = TotalMinutesEnabled ? TotalMinutes : Limits.NoSeedingTimeLimit;
-                result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : Limits.NoInactiveSeedingTimeLimit;
+                result.RatioLimit = RatioEnabled ? Ratio : _disabledRatioLimit;
+                result.SeedingTimeLimit = TotalMinutesEnabled ? TotalMinutes : _disabledSeedingTimeLimit;
+                result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : _disabledInactiveSeedingTimeLimit;
                 result.ShareLimitAction = SelectedShareLimitAction;
             }
             result.ShareLimitsMode = CustomEnabled ? SelectedShareLimitsMode : ShareLimitsMode.Default;

@@ -217,9 +217,11 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected void MaxConnecEnabledChanged(bool value)
+        protected async Task MaxConnecEnabledChanged(bool value)
         {
             MaxConnecEnabled = value;
+            UpdatePreferences.MaxConnec = value ? MaxConnec : -1;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task MaxConnecChanged(int value)
@@ -229,9 +231,11 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected void MaxConnecPerTorrentEnabledChanged(bool value)
+        protected async Task MaxConnecPerTorrentEnabledChanged(bool value)
         {
             MaxConnecPerTorrentEnabled = value;
+            UpdatePreferences.MaxConnecPerTorrent = value ? MaxConnecPerTorrent : -1;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task MaxConnecPerTorrentChanged(int value)
@@ -241,9 +245,11 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected void MaxUploadsEnabledChanged(bool value)
+        protected async Task MaxUploadsEnabledChanged(bool value)
         {
             MaxUploadsEnabled = value;
+            UpdatePreferences.MaxUploads = value ? MaxUploads : -1;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task MaxUploadsChanged(int value)
@@ -253,9 +259,11 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected void MaxUploadsPerTorrentEnabledChanged(bool value)
+        protected async Task MaxUploadsPerTorrentEnabledChanged(bool value)
         {
             MaxUploadsPerTorrentEnabled = value;
+            UpdatePreferences.MaxUploadsPerTorrent = value ? MaxUploadsPerTorrent : -1;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task MaxUploadsPerTorrentChanged(int value)

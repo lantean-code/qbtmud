@@ -10,6 +10,10 @@ namespace Lantean.QBTMud.Application.Services
     /// </summary>
     public sealed class SettingsStorageService : ISettingsStorageService
     {
+        /// <summary>
+        /// The local-only journal shared with routing migration and diagnostics.
+        /// </summary>
+        internal const string _pendingChangesStorageKey = "SettingsStorage.PendingClientData.v1";
         private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
         private readonly ClientDataCacheState _clientDataCacheState;
@@ -18,6 +22,7 @@ namespace Lantean.QBTMud.Application.Services
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
+        private readonly IPendingClientDataJournal _journal;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsStorageService"/> class.
@@ -28,13 +33,15 @@ namespace Lantean.QBTMud.Application.Services
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="clientDataStorageAdapter">The client data storage adapter.</param>
         /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
+        /// <param name="journal">The journal shared across browser tabs.</param>
         public SettingsStorageService(
             ClientDataCacheState clientDataCacheState,
             ILocalStorageService localStorageService,
             IStorageRoutingService storageRoutingService,
             IWebApiCapabilityService webApiCapabilityService,
             IClientDataStorageAdapter clientDataStorageAdapter,
-            IApiFeedbackWorkflow apiFeedbackWorkflow)
+            IApiFeedbackWorkflow apiFeedbackWorkflow,
+            IPendingClientDataJournal journal)
         {
             _clientDataCacheState = clientDataCacheState;
             _localStorageService = localStorageService;
@@ -42,6 +49,7 @@ namespace Lantean.QBTMud.Application.Services
             _webApiCapabilityService = webApiCapabilityService;
             _clientDataStorageAdapter = clientDataStorageAdapter;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
+            _journal = journal;
         }
 
         /// <inheritdoc />
@@ -124,24 +132,34 @@ namespace Lantean.QBTMud.Application.Services
                 return;
             }
 
-            var prefixedKey = ToPrefixedKey(key);
-            var valueElement = JsonSerializer.SerializeToElement(data, _serializerOptions);
-            var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
-                new Dictionary<string, object?>(StringComparer.Ordinal)
-                {
-                    [prefixedKey] = valueElement
-                },
-                cancellationToken);
-
-            if (!storeResult.Succeeded)
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
             {
-                await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
-                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
-                await _localStorageService.SetItemAsync(key, data, cancellationToken);
-                return;
-            }
+                var prefixedKey = ToPrefixedKey(key);
+                var valueElement = JsonSerializer.SerializeToElement(data, _serializerOptions);
+                var pendingBefore = await _journal.ReadAsync(cancellationToken);
+                var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        [prefixedKey] = valueElement
+                    },
+                    cancellationToken);
 
-            await StoreCachedClientDataEntryAsync(prefixedKey, valueElement, cancellationToken);
+                if (!storeResult.Succeeded)
+                {
+                    await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
+                    _clientDataCacheState.CachedEntries = null;
+                    await _localStorageService.SetItemAsync(key, data, cancellationToken);
+                    await RetainPendingChangeAsync(prefixedKey, valueElement, cancellationToken);
+                    return;
+                }
+
+                await StoreCachedClientDataEntryAsync(prefixedKey, valueElement, pendingBefore, cancellationToken);
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
         }
 
         /// <inheritdoc />
@@ -157,23 +175,33 @@ namespace Lantean.QBTMud.Application.Services
                 return;
             }
 
-            var prefixedKey = ToPrefixedKey(key);
-            var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
-                new Dictionary<string, object?>(StringComparer.Ordinal)
-                {
-                    [prefixedKey] = data
-                },
-                cancellationToken);
-
-            if (!storeResult.Succeeded)
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
             {
-                await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
-                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
-                await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
-                return;
-            }
+                var prefixedKey = ToPrefixedKey(key);
+                var pendingBefore = await _journal.ReadAsync(cancellationToken);
+                var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        [prefixedKey] = data
+                    },
+                    cancellationToken);
 
-            await StoreCachedClientDataEntryAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), cancellationToken);
+                if (!storeResult.Succeeded)
+                {
+                    await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
+                    _clientDataCacheState.CachedEntries = null;
+                    await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
+                    await RetainPendingChangeAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), cancellationToken);
+                    return;
+                }
+
+                await StoreCachedClientDataEntryAsync(prefixedKey, JsonSerializer.SerializeToElement(data, _serializerOptions), pendingBefore, cancellationToken);
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
         }
 
         /// <inheritdoc />
@@ -188,16 +216,26 @@ namespace Lantean.QBTMud.Application.Services
                 return;
             }
 
-            var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);
-            if (!removeResult.Succeeded)
+            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
+            try
             {
-                await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
-                await InvalidateCachedClientDataEntriesAsync(cancellationToken);
-                await _localStorageService.RemoveItemAsync(key, cancellationToken);
-                return;
-            }
+                var pendingBefore = await _journal.ReadAsync(cancellationToken);
+                var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);
+                if (!removeResult.Succeeded)
+                {
+                    await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
+                    _clientDataCacheState.CachedEntries = null;
+                    await _localStorageService.RemoveItemAsync(key, cancellationToken);
+                    await RetainPendingChangeAsync(ToPrefixedKey(key), null, cancellationToken);
+                    return;
+                }
 
-            await RemoveCachedClientDataEntryAsync(ToPrefixedKey(key), cancellationToken);
+                await RemoveCachedClientDataEntryAsync(ToPrefixedKey(key), pendingBefore, cancellationToken);
+            }
+            finally
+            {
+                _clientDataCacheState.CacheSemaphore.Release();
+            }
         }
 
         private async Task HandleClientDataFailureAsync(ApiResultBase? failureResult, CancellationToken cancellationToken)
@@ -240,8 +278,10 @@ namespace Lantean.QBTMud.Application.Services
                     return null;
                 }
 
-                _clientDataCacheState.CachedEntries = new Dictionary<string, JsonElement>(loadedResult.Entries, StringComparer.Ordinal);
-                return _clientDataCacheState.CachedEntries;
+                var entries = new Dictionary<string, JsonElement>(loadedResult.Entries, StringComparer.Ordinal);
+                var reconciled = await ReconcilePendingChangesAsync(entries, cancellationToken);
+                _clientDataCacheState.CachedEntries = reconciled ? entries : null;
+                return entries;
             }
             finally
             {
@@ -249,59 +289,125 @@ namespace Lantean.QBTMud.Application.Services
             }
         }
 
-        private async Task StoreCachedClientDataEntryAsync(string prefixedKey, JsonElement value, CancellationToken cancellationToken)
+        private async Task StoreCachedClientDataEntryAsync(string prefixedKey, JsonElement value, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
         {
-            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
-            try
+            await RemovePendingChangeAsync(prefixedKey, pendingBefore, cancellationToken);
+            if (_clientDataCacheState.CachedEntries is null)
             {
-                if (_clientDataCacheState.CachedEntries is null)
-                {
-                    return;
-                }
+                return;
+            }
 
-                var updatedEntries = new Dictionary<string, JsonElement>(_clientDataCacheState.CachedEntries, StringComparer.Ordinal)
-                {
-                    [prefixedKey] = value
-                };
-                _clientDataCacheState.CachedEntries = updatedEntries;
-            }
-            finally
+            var updatedEntries = new Dictionary<string, JsonElement>(_clientDataCacheState.CachedEntries, StringComparer.Ordinal)
             {
-                _clientDataCacheState.CacheSemaphore.Release();
-            }
+                [prefixedKey] = value
+            };
+            _clientDataCacheState.CachedEntries = updatedEntries;
         }
 
-        private async Task InvalidateCachedClientDataEntriesAsync(CancellationToken cancellationToken)
+        private async Task RemoveCachedClientDataEntryAsync(string prefixedKey, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
         {
-            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
-            try
+            await RemovePendingChangeAsync(prefixedKey, pendingBefore, cancellationToken);
+            if (_clientDataCacheState.CachedEntries is null)
+            {
+                return;
+            }
+
+            var updatedEntries = new Dictionary<string, JsonElement>(_clientDataCacheState.CachedEntries, StringComparer.Ordinal);
+            updatedEntries.Remove(prefixedKey);
+            _clientDataCacheState.CachedEntries = updatedEntries;
+        }
+
+        private async Task RetainPendingChangeAsync(string key, JsonElement? value, CancellationToken cancellationToken)
+        {
+            await _journal.SetAsync(key, value, cancellationToken);
+            _clientDataCacheState.CachedEntries = null;
+        }
+
+        private async Task RemovePendingChangeAsync(string key, IReadOnlyDictionary<string, JsonElement?> pendingBefore, CancellationToken cancellationToken)
+        {
+            var completed = new Dictionary<string, JsonElement?>();
+            if (pendingBefore.TryGetValue(key, out var value))
+            {
+                completed[key] = value;
+            }
+
+            var remaining = await _journal.CompleteAsync(completed, cancellationToken);
+            if (remaining.Count > 0)
             {
                 _clientDataCacheState.CachedEntries = null;
             }
-            finally
-            {
-                _clientDataCacheState.CacheSemaphore.Release();
-            }
         }
 
-        private async Task RemoveCachedClientDataEntryAsync(string prefixedKey, CancellationToken cancellationToken)
+        private async Task<bool> ReconcilePendingChangesAsync(Dictionary<string, JsonElement> entries, CancellationToken cancellationToken)
         {
-            await _clientDataCacheState.CacheSemaphore.WaitAsync(cancellationToken);
-            try
+            var pending = await _journal.ReadAsync(cancellationToken);
+            if (pending.Count == 0)
             {
-                if (_clientDataCacheState.CachedEntries is null)
-                {
-                    return;
-                }
+                return true;
+            }
 
-                var updatedEntries = new Dictionary<string, JsonElement>(_clientDataCacheState.CachedEntries, StringComparer.Ordinal);
-                updatedEntries.Remove(prefixedKey);
-                _clientDataCacheState.CachedEntries = updatedEntries;
-            }
-            finally
+            var writes = new Dictionary<string, object?>(StringComparer.Ordinal);
+            var removals = new List<string>();
+            var completed = new Dictionary<string, JsonElement?>();
+            foreach (var (key, value) in pending)
             {
-                _clientDataCacheState.CacheSemaphore.Release();
+                if (value.HasValue)
+                {
+                    entries[key] = value.Value;
+                    writes[key] = value.Value;
+                }
+                else
+                {
+                    entries.Remove(key);
+                    removals.Add(key);
+                }
             }
+
+            if (writes.Count > 0)
+            {
+                var result = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(writes, cancellationToken);
+                if (result.Succeeded)
+                {
+                    foreach (var key in writes.Keys)
+                    {
+                        completed[key] = pending[key];
+                    }
+                }
+                else
+                {
+                    await HandleClientDataFailureAsync(result.FailureResult, cancellationToken);
+                }
+            }
+
+            if (removals.Count > 0)
+            {
+                var result = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync(removals, cancellationToken);
+                if (result.Succeeded)
+                {
+                    foreach (var key in removals)
+                    {
+                        completed[key] = pending[key];
+                    }
+                }
+                else
+                {
+                    await HandleClientDataFailureAsync(result.FailureResult, cancellationToken);
+                }
+            }
+
+            var remaining = await _journal.CompleteAsync(completed, cancellationToken);
+            foreach (var (key, value) in remaining)
+            {
+                if (value.HasValue)
+                {
+                    entries[key] = value.Value;
+                }
+                else
+                {
+                    entries.Remove(key);
+                }
+            }
+            return remaining.Count == 0;
         }
 
         private static string ToPrefixedKey(string key)

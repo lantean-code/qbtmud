@@ -280,7 +280,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var files = CreateFiles("root/file1.txt");
             ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(files);
             ApiClientMock
-                .Setup(c => c.RenameFileAsync("Hash", "root/file1.txt", "rootrenamed.txt", It.IsAny<CancellationToken>()))
+                .Setup(c => c.RenameFileAsync("Hash", "root/file1.txt", "root/renamed.txt", It.IsAny<CancellationToken>()))
                 .ReturnsSuccess(Task.CompletedTask);
             DialogWorkflowMock
                 .Setup(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()))
@@ -300,7 +300,43 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var toolbarRename = FindComponentByTestId<MudIconButton>(target, "RenameToolbar");
             await target.InvokeAsync(() => toolbarRename.Find("button").Click());
 
-            ApiClientMock.Verify(c => c.RenameFileAsync("Hash", "root/file1.txt", "rootrenamed.txt", It.IsAny<CancellationToken>()), Times.Once);
+            ApiClientMock.Verify(c => c.RenameFileAsync("Hash", "root/file1.txt", "root/renamed.txt", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("file.txt", false, "renamed.txt", "renamed.txt")]
+        [InlineData("root/sub/file.txt", false, "renamed.txt", "root/sub/renamed.txt")]
+        [InlineData("root", true, "renamed", "renamed")]
+        [InlineData("root/sub", true, "renamed", "root/renamed")]
+        public async Task GIVEN_SelectedFileOrFolder_WHEN_Renaming_THEN_ShouldPreserveParentAndUseMatchingEndpoint(string sourcePath, bool isFolder, string replacement, string destination)
+        {
+            ApiClientMock.Setup(client => client.GetTorrentContentsAsync("Hash"))
+                .ReturnsSuccessAsync(CreateFiles(isFolder ? sourcePath + "/file.txt" : sourcePath));
+            ApiClientMock.Setup(client => client.RenameFileAsync("Hash", sourcePath, destination, It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            ApiClientMock.Setup(client => client.RenameFolderAsync("Hash", sourcePath, destination, It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            DialogWorkflowMock.Setup(workflow => workflow.InvokeStringFieldDialog("Renaming", "New name:", It.IsAny<string>(), It.IsAny<Func<string, Task>>()))
+                .Returns<string, string, string?, Func<string, Task>>(async (_, _, _, onSuccess) => await onSuccess(replacement));
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+            var segments = sourcePath.Split('/');
+            var parentPath = string.Empty;
+            foreach (var segment in segments.SkipLast(1))
+            {
+                parentPath = string.IsNullOrEmpty(parentPath) ? segment : parentPath + "/" + segment;
+                var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-" + parentPath.Replace('/', '_'));
+                await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            }
+            var table = target.FindComponent<DynamicTable<ContentItem>>();
+            var selected = table.Instance.Items!.Single(item => item.Name == sourcePath);
+            await target.InvokeAsync(() => table.Instance.SelectedItemChanged.InvokeAsync(selected));
+            var rename = FindComponentByTestId<MudIconButton>(target, "RenameToolbar");
+
+            await target.InvokeAsync(() => rename.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            ApiClientMock.Verify(client => client.RenameFileAsync("Hash", sourcePath, destination, It.IsAny<CancellationToken>()), isFolder ? Times.Never() : Times.Once());
+            ApiClientMock.Verify(client => client.RenameFolderAsync("Hash", sourcePath, destination, It.IsAny<CancellationToken>()), isFolder ? Times.Once() : Times.Never());
         }
 
         [Fact]
@@ -506,7 +542,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_FilterDialogCancelled_WHEN_ShowFilterInvoked_THEN_FiltersCleared()
+        public async Task GIVEN_NoAppliedFilter_WHEN_FilterDialogCancelled_THEN_ShouldRemainUnfiltered()
         {
             ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(CreateFiles("folder/file1.txt"));
             DialogWorkflowMock.Setup(d => d.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>())).ReturnsAsync((List<PropertyFilterDefinition<ContentItem>>?)null);
@@ -518,6 +554,84 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             await target.InvokeAsync(() => filterButton.Find("button").Click());
 
             target.WaitForAssertion(() => target.Instance.Filters.Should().BeNull());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_NumericOrEmptyStringDefinition_WHEN_FilterApplied_THEN_ShouldRenderMatchingFiles(bool emptyString)
+        {
+            ApiClientMock.Setup(client => client.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(new List<FileData>
+            {
+                new(1, "file1.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f),
+                new(2, "file2.txt", 200, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f)
+            });
+            var definitions = new List<PropertyFilterDefinition<ContentItem>>
+            {
+                emptyString ? new("Name", FilterOperator.String.Empty, null) : new("Size", FilterOperator.Number.GreaterThan, "100")
+            };
+            DialogWorkflowMock.Setup(workflow => workflow.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>())).ReturnsAsync(definitions);
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+
+            await target.InvokeAsync(() => FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog").Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            var items = target.FindComponent<DynamicTable<ContentItem>>().Instance.Items!;
+            if (emptyString)
+            {
+                items.Should().BeEmpty();
+            }
+            else
+            {
+                items.Should().ContainSingle().Which.Name.Should().Be("file2.txt");
+            }
+        }
+
+        [Fact]
+        public async Task GIVEN_AppliedFilter_WHEN_FilterDialogCancelled_THEN_ShouldPreserveRowsDefinitionsAndPriorityTargets()
+        {
+            ApiClientMock.Setup(client => client.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
+            ApiClientMock.Setup(client => client.SetFilePriorityAsync("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.DoNotDownload))
+                .ReturnsSuccess(Task.CompletedTask);
+            var definitions = new List<PropertyFilterDefinition<ContentItem>>
+            {
+                new PropertyFilterDefinition<ContentItem>("Name", FilterOperator.String.Contains, "file2")
+            };
+            DialogWorkflowMock.SetupSequence(workflow => workflow.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>()))
+                .ReturnsAsync(definitions)
+                .ReturnsAsync((List<PropertyFilterDefinition<ContentItem>>?)null)
+                .ReturnsAsync((List<PropertyFilterDefinition<ContentItem>>?)null);
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+            var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
+            await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            var filter = FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog");
+            await target.InvokeAsync(() => filter.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            var appliedFilters = target.Instance.Filters;
+
+            await target.InvokeAsync(() => filter.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => filter.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            target.Instance.Filters.Should().BeSameAs(appliedFilters);
+            target.FindComponent<DynamicTable<ContentItem>>().Instance.Items!.Where(item => !item.IsFolder)
+                .Should().ContainSingle().Which.Name.Should().Be("folder/file2.txt");
+            DialogWorkflowMock.Verify(workflow => workflow.ShowFilterOptionsDialog(definitions), Times.Exactly(2));
+            var priorityMenu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
+            await target.InvokeAsync(() => priorityMenu.FindComponent<MudIconButton>().Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            var popoverProvider = _popoverProvider!;
+            IRenderedComponent<MudMenuItem>? priority = null;
+            popoverProvider.WaitForAssertion(() =>
+            {
+                priority = popoverProvider.FindComponents<MudMenuItem>().Single(component =>
+                    component.Instance.UserAttributes.TryGetValue("data-test-id", out var value) && Equals(value, TestIdHelper.For("DoNotDownloadFiltered")));
+            });
+
+            await popoverProvider.InvokeAsync(() => priority!.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            ApiClientMock.Verify(client => client.SetFilePriorityAsync("Hash", It.Is<IEnumerable<int>>(indexes => indexes.SequenceEqual(new[] { 2 })), ClientPriority.DoNotDownload), Times.Once);
+            var remove = FindComponentByTestId<MudIconButton>(target, "RemoveFilter");
+            await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            target.FindComponent<DynamicTable<ContentItem>>().Instance.Items!.Count(item => !item.IsFolder).Should().Be(2);
         }
 
         [Fact]

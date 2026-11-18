@@ -25,29 +25,38 @@ namespace Lantean.QBTMud.Core.Filter
             return binaryReplacer.Visit(exp);
         }
 
+        /// <summary>
+        /// Builds a comparison using the selected property's type.
+        /// </summary>
+        /// <param name="expression">The property selector.</param>
+        /// <param name="binaryOperation">The comparison operation.</param>
+        /// <param name="value">The typed value or text to compare.</param>
+        /// <returns>The comparison predicate.</returns>
         public static Expression<Func<T, bool>> GenerateBinary<T>(this Expression expression, ExpressionType binaryOperation, object? value)
         {
             var bodyIdentifier = new ExpressionBodyIdentifier();
             var body = bodyIdentifier.Identify(expression);
+            if (body is UnaryExpression { NodeType: ExpressionType.Convert, Type: var convertedType } conversion && convertedType == typeof(object))
+            {
+                body = conversion.Operand;
+            }
             var parameterIdentifier = new ExpressionParameterIdentifier();
             var parameter = (ParameterExpression)parameterIdentifier.Identify(expression);
             BinaryExpression? binaryExpression;
 
-            if (Nullable.GetUnderlyingType(body.Type) is not null)
+            if (value is null && body.Type.IsValueType && Nullable.GetUnderlyingType(body.Type) is null)
             {
-                // property type is nullable...
-                binaryExpression = Expression.MakeBinary(binaryOperation, body, Expression.Convert(Expression.Constant(value), body.Type));
+                return Expression.Lambda<Func<T, bool>>(Expression.Constant(binaryOperation == ExpressionType.NotEqual), parameter);
             }
-            else
-            {
-                if (value is null)
-                {
-                    // We can short circuit here because the value to be compared is null and the property type is not nullable.
-                    return x => true;
-                }
 
-                binaryExpression = Expression.MakeBinary(binaryOperation, body, Expression.Convert(Expression.Constant(value), body.Type));
+            if (!FilterValueParser.TryParse(body.Type, value, out var parsedValue))
+            {
+                throw new ArgumentException("The filter value is not valid for the selected property.", nameof(value));
             }
+
+            Expression constant = parsedValue is null ? Expression.Constant(null, body.Type)
+                : Expression.Convert(Expression.Constant(parsedValue), body.Type);
+            binaryExpression = Expression.MakeBinary(binaryOperation, body, constant);
 
             return Expression.Lambda<Func<T, bool>>(binaryExpression, parameter);
         }

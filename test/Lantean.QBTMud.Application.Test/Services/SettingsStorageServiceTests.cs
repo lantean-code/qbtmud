@@ -52,7 +52,204 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _storageRoutingService,
                 _webApiCapabilityService,
                 _clientDataStorageAdapter,
-                _apiFeedbackWorkflow);
+                _apiFeedbackWorkflow, _localStorageService);
+        }
+
+        [Theory]
+        [InlineData("typed", false)]
+        [InlineData("typed", true)]
+        [InlineData("string", false)]
+        [InlineData("string", true)]
+        [InlineData("remove", false)]
+        [InlineData("remove", true)]
+        public async Task GIVEN_PendingChangeAndLoadingRead_WHEN_NewerMutationStarts_THEN_ShouldPersistNewerState(string operation, bool pendingRemoval)
+        {
+            ConfigureClientDataRouting();
+            var cancellationToken = TestContext.Current.CancellationToken;
+            await _localStorageService.SetItemAsync("SettingsStorage.PendingClientData.v1",
+                new Dictionary<string, JsonElement?> { ["QbtMud.Key"] = pendingRemoval ? null : JsonSerializer.SerializeToElement("Pending") }, cancellationToken);
+            var response = new TaskCompletionSource<ClientDataLoadResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            string? remoteValue = "Original";
+            Mock.Get(_clientDataStorageAdapter).Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    started.SetResult();
+                    return response.Task;
+                });
+            Mock.Get(_clientDataStorageAdapter).Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .Returns((IReadOnlyDictionary<string, object?> entries, CancellationToken _) =>
+                {
+                    remoteValue = entries["QbtMud.Key"] is JsonElement element ? element.GetString() : (string?)entries["QbtMud.Key"];
+                    return Task.FromResult(ClientDataStorageResult.Success);
+                });
+            Mock.Get(_clientDataStorageAdapter).Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    remoteValue = null;
+                    return Task.FromResult(ClientDataStorageResult.Success);
+                });
+            var read = _target.GetItemAsStringAsync("Key", cancellationToken).AsTask();
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+            var mutation = operation switch
+            {
+                "typed" => _target.SetItemAsync("Key", "Updated", cancellationToken).AsTask(),
+                "string" => _target.SetItemAsStringAsync("Key", "Updated", cancellationToken).AsTask(),
+                _ => _target.RemoveItemAsync("Key", cancellationToken).AsTask()
+            };
+            response.SetResult(ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>
+            {
+                ["QbtMud.Key"] = JsonSerializer.SerializeToElement("Original")
+            }));
+            await Task.WhenAll(read, mutation).WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+            remoteValue.Should().Be(operation == "remove" ? null : "Updated");
+            (await _target.GetItemAsStringAsync("Key", cancellationToken)).Should().Be(remoteValue);
+            (await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", cancellationToken)).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_FailedTypedWrite_WHEN_RemoteReadsRecoverAfterReload_THEN_ShouldReplayThePendingValue()
+        {
+            ConfigureClientDataRouting();
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>
+                {
+                    ["QbtMud.Key"] = JsonSerializer.SerializeToElement(new Dictionary<string, bool> { ["Enabled"] = false })
+                }));
+            await _target.SetItemAsync("Key", new Dictionary<string, bool> { ["Enabled"] = true }, TestContext.Current.CancellationToken);
+            var journal = await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("SettingsStorage.PendingClientData.v1", journal!, TestContext.Current.CancellationToken);
+            var target = new SettingsStorageService(new ClientDataCacheState(), _localStorageService,
+                _storageRoutingService, _webApiCapabilityService, _clientDataStorageAdapter, _apiFeedbackWorkflow, _localStorageService);
+
+            var result = await target.GetItemAsync<Dictionary<string, bool>>("Key", TestContext.Current.CancellationToken);
+
+            result.Should().NotBeNull();
+            result!["Enabled"].Should().BeTrue();
+            Mock.Get(_clientDataStorageAdapter).Verify(adapter => adapter.StorePrefixedEntriesAsync(
+                It.Is<IReadOnlyDictionary<string, object?>>(entries => entries.ContainsKey("QbtMud.Key")
+                    && ((JsonElement)entries["QbtMud.Key"]!).GetProperty("Enabled").GetBoolean()),
+                It.IsAny<CancellationToken>()), Times.Exactly(2));
+            (await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken)).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_FailedStringWriteOrRemoval_WHEN_ReadsRecoverBeforeWrites_THEN_ShouldKeepPendingChangesUntilReplaySucceeds(bool remove)
+        {
+            ConfigureClientDataRouting();
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>
+                {
+                    ["QbtMud.Key"] = JsonSerializer.SerializeToElement("Original")
+                }));
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            if (remove)
+            {
+                await _target.RemoveItemAsync("Key", TestContext.Current.CancellationToken);
+            }
+            else
+            {
+                await _target.SetItemAsStringAsync("Key", "Updated", TestContext.Current.CancellationToken);
+            }
+
+            var journal = await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsStringAsync("SettingsStorage.PendingClientData.v1", journal!, TestContext.Current.CancellationToken);
+            var first = await _target.GetItemAsStringAsync("Key", TestContext.Current.CancellationToken);
+            var pending = await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken);
+            var second = await _target.GetItemAsStringAsync("Key", TestContext.Current.CancellationToken);
+
+            first.Should().Be(remove ? null : "Updated");
+            second.Should().Be(first);
+            pending.Should().NotBeNull();
+            (await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken)).Should().BeNull();
+            Mock.Get(_clientDataStorageAdapter).Verify(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingChange_WHEN_AReplacementWriteSucceeds_THEN_ShouldDiscardTheObsoletePendingValue(bool remove)
+        {
+            ConfigureClientDataRouting();
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            await _target.SetItemAsStringAsync("Key", "Pending", TestContext.Current.CancellationToken);
+
+            if (remove)
+            {
+                await _target.RemoveItemAsync("Key", TestContext.Current.CancellationToken);
+            }
+            else
+            {
+                await _target.SetItemAsStringAsync("Key", "Updated", TestContext.Current.CancellationToken);
+            }
+
+            (await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken)).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingWriteAndRemoval_WHEN_OnlyWritesRecover_THEN_ShouldRetainAndRetryOnlyTheRemoval()
+        {
+            ConfigureClientDataRouting();
+            var updated = JsonSerializer.SerializeToElement("Updated");
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>
+                {
+                    ["QbtMud.Write"] = JsonSerializer.SerializeToElement("Original"),
+                    ["QbtMud.Remove"] = JsonSerializer.SerializeToElement("Original")
+                }))
+                .ReturnsAsync(ClientDataLoadResult.FromEntries(new Dictionary<string, JsonElement>
+                {
+                    ["QbtMud.Write"] = updated,
+                    ["QbtMud.Remove"] = JsonSerializer.SerializeToElement("Original")
+                }));
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            Mock.Get(_clientDataStorageAdapter)
+                .SetupSequence(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Failure)
+                .ReturnsAsync(ClientDataStorageResult.Success);
+            await _target.SetItemAsStringAsync("Write", "Updated", TestContext.Current.CancellationToken);
+            await _target.RemoveItemAsync("Remove", TestContext.Current.CancellationToken);
+
+            var result = await _target.GetItemAsStringAsync("Write", TestContext.Current.CancellationToken);
+            var pending = await _localStorageService.GetItemAsStringAsync("SettingsStorage.PendingClientData.v1", TestContext.Current.CancellationToken);
+            var removed = await _target.GetItemAsStringAsync("Remove", TestContext.Current.CancellationToken);
+
+            result.Should().Be("Updated");
+            using var pendingDocument = JsonDocument.Parse(pending!);
+            pendingDocument.RootElement.EnumerateObject().Select(property => property.Name).Should().Equal("QbtMud.Remove");
+            removed.Should().BeNull();
+            Mock.Get(_clientDataStorageAdapter).Verify(adapter => adapter.StorePrefixedEntriesAsync(
+                It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -863,6 +1060,14 @@ namespace Lantean.QBTMud.Application.Test.Services
 
             var result = await _localStorageService.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
             result.Should().Be("en");
+        }
+
+        private void ConfigureClientDataRouting()
+        {
+            Mock.Get(_storageRoutingService).Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings { MasterStorageType = StorageType.ClientData });
+            Mock.Get(_webApiCapabilityService).Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), true));
         }
 
         private void VerifyFailureHandled(ApiResultBase apiResult)

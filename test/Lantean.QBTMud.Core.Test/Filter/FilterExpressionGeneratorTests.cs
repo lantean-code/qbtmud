@@ -23,16 +23,20 @@ namespace Lantean.QBTMud.Core.Test.Filter
             expression(new FilterEntity { Name = "xxABCyy" }).Should().BeFalse();
         }
 
-        [Fact]
-        public void GIVEN_StringOperators_WHEN_EmptyAndNotEmpty_THEN_ShouldEvaluateWhitespaceCorrectly()
+        [Theory]
+        [InlineData(null, true)]
+        [InlineData("", true)]
+        [InlineData(" ", true)]
+        [InlineData("Name", false)]
+        public void GIVEN_StringOperators_WHEN_EmptyAndNotEmpty_THEN_ShouldEvaluateWhitespaceCorrectly(string? value, bool empty)
         {
             var emptyFilter = new PropertyFilterDefinition<FilterEntity>("Name", FilterOperator.String.Empty, null);
             var notEmptyFilter = new PropertyFilterDefinition<FilterEntity>("Name", FilterOperator.String.NotEmpty, null);
-            Action emptyAction = () => FilterExpressionGenerator.GenerateExpression(emptyFilter, false);
-            Action notEmptyAction = () => FilterExpressionGenerator.GenerateExpression(notEmptyFilter, false);
+            var emptyExpression = FilterExpressionGenerator.GenerateExpression(emptyFilter, false).Compile();
+            var notEmptyExpression = FilterExpressionGenerator.GenerateExpression(notEmptyFilter, false).Compile();
 
-            emptyAction.Should().Throw<ArgumentException>();
-            notEmptyAction.Should().Throw<ArgumentException>();
+            emptyExpression(new FilterEntity { Name = value }).Should().Be(empty);
+            notEmptyExpression(new FilterEntity { Name = value }).Should().Be(!empty);
         }
 
         [Fact]
@@ -76,12 +80,12 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var greaterThanFilter = new PropertyFilterDefinition<FilterEntity>("Size", FilterOperator.Number.GreaterThan, 10);
             var emptyFilter = new PropertyFilterDefinition<FilterEntity>("Size", FilterOperator.Number.Empty, null);
             var unsupportedFilter = new PropertyFilterDefinition<FilterEntity>("Size", "unsupported", 10);
-            Action greaterThanAction = () => FilterExpressionGenerator.GenerateExpression(greaterThanFilter, false);
+            var greaterThanExpression = FilterExpressionGenerator.GenerateExpression(greaterThanFilter, false).Compile();
 
             var emptyExpression = FilterExpressionGenerator.GenerateExpression(emptyFilter, false).Compile();
             var unsupportedExpression = FilterExpressionGenerator.GenerateExpression(unsupportedFilter, false).Compile();
 
-            greaterThanAction.Should().Throw<InvalidOperationException>();
+            greaterThanExpression(new FilterEntity { Size = 11 }).Should().BeTrue();
             emptyExpression(new FilterEntity { Size = null }).Should().BeTrue();
             unsupportedExpression(new FilterEntity { Size = 1 }).Should().BeTrue();
         }
@@ -100,16 +104,16 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var notEqualExpression = FilterExpressionGenerator.GenerateExpression(notEqualFilter, false).Compile();
             var notEmptyExpression = FilterExpressionGenerator.GenerateExpression(notEmptyFilter, false).Compile();
 
-            Action greaterThanOrEqualAction = () => FilterExpressionGenerator.GenerateExpression(greaterThanOrEqualFilter, false);
-            Action lessThanAction = () => FilterExpressionGenerator.GenerateExpression(lessThanFilter, false);
-            Action lessThanOrEqualAction = () => FilterExpressionGenerator.GenerateExpression(lessThanOrEqualFilter, false);
+            var greaterThanOrEqualExpression = FilterExpressionGenerator.GenerateExpression(greaterThanOrEqualFilter, false).Compile();
+            var lessThanExpression = FilterExpressionGenerator.GenerateExpression(lessThanFilter, false).Compile();
+            var lessThanOrEqualExpression = FilterExpressionGenerator.GenerateExpression(lessThanOrEqualFilter, false).Compile();
 
-            equalExpression(new FilterEntity { Size = 10 }).Should().BeFalse();
+            equalExpression(new FilterEntity { Size = 10 }).Should().BeTrue();
             notEqualExpression(new FilterEntity { Size = 11 }).Should().BeTrue();
             notEmptyExpression(new FilterEntity { Size = 11 }).Should().BeTrue();
-            greaterThanOrEqualAction.Should().Throw<InvalidOperationException>();
-            lessThanAction.Should().Throw<InvalidOperationException>();
-            lessThanOrEqualAction.Should().Throw<InvalidOperationException>();
+            greaterThanOrEqualExpression(new FilterEntity { Size = 10 }).Should().BeTrue();
+            lessThanExpression(new FilterEntity { Size = 9 }).Should().BeTrue();
+            lessThanOrEqualExpression(new FilterEntity { Size = 10 }).Should().BeTrue();
         }
 
         [Fact]
@@ -128,12 +132,12 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var afterFilter = new PropertyFilterDefinition<FilterEntity>("AddedOn", FilterOperator.DateTime.After, value);
             var emptyFilter = new PropertyFilterDefinition<FilterEntity>("AddedOn", FilterOperator.DateTime.Empty, null);
             var unsupportedFilter = new PropertyFilterDefinition<FilterEntity>("AddedOn", "unsupported", value);
-            Action afterAction = () => FilterExpressionGenerator.GenerateExpression(afterFilter, false);
+            var afterExpression = FilterExpressionGenerator.GenerateExpression(afterFilter, false).Compile();
 
             var emptyExpression = FilterExpressionGenerator.GenerateExpression(emptyFilter, false).Compile();
             var unsupportedExpression = FilterExpressionGenerator.GenerateExpression(unsupportedFilter, false).Compile();
 
-            afterAction.Should().Throw<InvalidOperationException>();
+            afterExpression(new FilterEntity { AddedOn = value.AddDays(1) }).Should().BeTrue();
             emptyExpression(new FilterEntity { AddedOn = null }).Should().BeTrue();
             unsupportedExpression(new FilterEntity { AddedOn = value }).Should().BeTrue();
         }
@@ -153,16 +157,16 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var isNotExpression = FilterExpressionGenerator.GenerateExpression(isNotFilter, false).Compile();
             var notEmptyExpression = FilterExpressionGenerator.GenerateExpression(notEmptyFilter, false).Compile();
 
-            Action onOrAfterAction = () => FilterExpressionGenerator.GenerateExpression(onOrAfterFilter, false);
-            Action beforeAction = () => FilterExpressionGenerator.GenerateExpression(beforeFilter, false);
-            Action onOrBeforeAction = () => FilterExpressionGenerator.GenerateExpression(onOrBeforeFilter, false);
+            var onOrAfterExpression = FilterExpressionGenerator.GenerateExpression(onOrAfterFilter, false).Compile();
+            var beforeExpression = FilterExpressionGenerator.GenerateExpression(beforeFilter, false).Compile();
+            var onOrBeforeExpression = FilterExpressionGenerator.GenerateExpression(onOrBeforeFilter, false).Compile();
 
-            isExpression(new FilterEntity { AddedOn = value }).Should().BeFalse();
+            isExpression(new FilterEntity { AddedOn = value }).Should().BeTrue();
             isNotExpression(new FilterEntity { AddedOn = value.AddDays(1) }).Should().BeTrue();
             notEmptyExpression(new FilterEntity { AddedOn = value }).Should().BeTrue();
-            onOrAfterAction.Should().Throw<InvalidOperationException>();
-            beforeAction.Should().Throw<InvalidOperationException>();
-            onOrBeforeAction.Should().Throw<InvalidOperationException>();
+            onOrAfterExpression(new FilterEntity { AddedOn = value }).Should().BeTrue();
+            beforeExpression(new FilterEntity { AddedOn = value.AddDays(-1) }).Should().BeTrue();
+            onOrBeforeExpression(new FilterEntity { AddedOn = value }).Should().BeTrue();
         }
 
         [Fact]
@@ -185,7 +189,7 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var unsupportedExpression = FilterExpressionGenerator.GenerateExpression(unsupportedFilter, false).Compile();
             var nullValueExpression = FilterExpressionGenerator.GenerateExpression(nullValueFilter, false).Compile();
 
-            isExpression(new FilterEntity { Enabled = true }).Should().BeFalse();
+            isExpression(new FilterEntity { Enabled = true }).Should().BeTrue();
             isExpression(new FilterEntity { Enabled = false }).Should().BeFalse();
             unsupportedExpression(new FilterEntity { Enabled = true }).Should().BeTrue();
             nullValueExpression(new FilterEntity { Enabled = false }).Should().BeTrue();
@@ -202,7 +206,7 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var isNotExpression = FilterExpressionGenerator.GenerateExpression(isNotFilter, false).Compile();
             var unsupportedExpression = FilterExpressionGenerator.GenerateExpression(unsupportedFilter, false).Compile();
 
-            isExpression(new FilterEntity { Mode = FilterMode.Fast }).Should().BeFalse();
+            isExpression(new FilterEntity { Mode = FilterMode.Fast }).Should().BeTrue();
             isNotExpression(new FilterEntity { Mode = FilterMode.Fast }).Should().BeTrue();
             unsupportedExpression(new FilterEntity { Mode = FilterMode.Slow }).Should().BeTrue();
         }
@@ -230,10 +234,10 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var unsupportedExpression = FilterExpressionGenerator.GenerateExpression(unsupportedFilter, false).Compile();
             var nullValueExpression = FilterExpressionGenerator.GenerateExpression(nullValueFilter, false).Compile();
 
-            equalExpression(new FilterEntity { Id = id }).Should().BeFalse();
+            equalExpression(new FilterEntity { Id = id }).Should().BeTrue();
             notEqualExpression(new FilterEntity { Id = Guid.NewGuid() }).Should().BeTrue();
             unsupportedExpression(new FilterEntity { Id = id }).Should().BeTrue();
-            nullValueExpression(new FilterEntity { Id = id }).Should().BeTrue();
+            nullValueExpression(new FilterEntity { Id = id }).Should().BeFalse();
         }
 
         [Fact]
@@ -243,6 +247,81 @@ namespace Lantean.QBTMud.Core.Test.Filter
             var expression = FilterExpressionGenerator.GenerateExpression(filter, false).Compile();
 
             expression(new FilterEntity { Payload = new FilterPayload() }).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("Size", "=", "10", true)]
+        [InlineData("Size", "=", "9", false)]
+        [InlineData("Size", "!=", "10", false)]
+        [InlineData("Size", "!=", "9", true)]
+        [InlineData("Size", ">", "9", true)]
+        [InlineData("Size", ">", "10", false)]
+        [InlineData("Size", ">=", "10", true)]
+        [InlineData("Size", ">=", "11", false)]
+        [InlineData("Size", "<", "11", true)]
+        [InlineData("Size", "<", "10", false)]
+        [InlineData("Size", "<=", "10", true)]
+        [InlineData("Size", "<=", "9", false)]
+        [InlineData("Enabled", "is", "true", true)]
+        [InlineData("Enabled", "is", "false", false)]
+        [InlineData("Mode", "is", "Fast", true)]
+        [InlineData("Mode", "is", "Slow", false)]
+        [InlineData("Mode", "is not", "Fast", false)]
+        [InlineData("Mode", "is not", "Slow", true)]
+        [InlineData("Id", "equals", "00000000-0000-0000-0000-000000000001", true)]
+        [InlineData("Id", "equals", "00000000-0000-0000-0000-000000000002", false)]
+        [InlineData("Id", "not equals", "00000000-0000-0000-0000-000000000001", false)]
+        [InlineData("AddedOn", "is", "2000-01-01", true)]
+        [InlineData("AddedOn", "is", "2000-01-02", false)]
+        [InlineData("AddedOn", "is not", "2000-01-01", false)]
+        [InlineData("AddedOn", "is after", "1999-12-31", true)]
+        [InlineData("AddedOn", "is after", "2000-01-01", false)]
+        [InlineData("AddedOn", "is on or after", "2000-01-01", true)]
+        [InlineData("AddedOn", "is on or after", "2000-01-02", false)]
+        [InlineData("AddedOn", "is before", "2000-01-02", true)]
+        [InlineData("AddedOn", "is before", "2000-01-01", false)]
+        [InlineData("AddedOn", "is on or before", "2000-01-01", true)]
+        [InlineData("AddedOn", "is on or before", "1999-12-31", false)]
+        public void GIVEN_TextComparisonValue_WHEN_FilterCompiled_THEN_ShouldMatchTypedProperty(string column, string operation, string value, bool expected)
+        {
+            var filter = new PropertyFilterDefinition<FilterEntity>(column, operation, value);
+            var target = FilterExpressionGenerator.GenerateExpression(filter, false).Compile();
+            var item = new FilterEntity
+            {
+                Size = 10,
+                Enabled = true,
+                Mode = FilterMode.Fast,
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                AddedOn = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            };
+
+            target(item).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("Size", "is empty", true)]
+        [InlineData("Size", "is not empty", false)]
+        [InlineData("Size", ">", false)]
+        [InlineData("AddedOn", "is empty", true)]
+        [InlineData("AddedOn", "is not empty", false)]
+        [InlineData("AddedOn", "is after", false)]
+        public void GIVEN_NullProperty_WHEN_FilterApplied_THEN_ShouldRespectNullSemantics(string column, string operation, bool expected)
+        {
+            var value = operation == "is after" ? (object)new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                : operation == ">" ? 10 : null;
+            var filter = new PropertyFilterDefinition<FilterEntity>(column, operation, value);
+            var target = FilterExpressionGenerator.GenerateExpression(filter, false).Compile();
+
+            target(new FilterEntity()).Should().Be(expected);
+        }
+
+        [Fact]
+        public void GIVEN_InvalidNumericText_WHEN_FilterGenerated_THEN_ShouldRejectTheValue()
+        {
+            var filter = new PropertyFilterDefinition<FilterEntity>("Size", FilterOperator.Number.Equal, "Invalid");
+            var action = () => FilterExpressionGenerator.GenerateExpression(filter, false);
+
+            action.Should().Throw<ArgumentException>();
         }
 
         private enum FilterMode

@@ -594,7 +594,7 @@ namespace Lantean.QBTMud.Pages
 
         private async Task<ManagedTimerTickResult> PollSearchJobsAsync(CancellationToken cancellationToken)
         {
-            if (!_jobs.Any(job => job.IsRunning))
+            if (!_jobs.Any(job => job.IsRunning || (!job.IsErrored && job.CurrentOffset < job.Total)))
             {
                 return ManagedTimerTickResult.Continue;
             }

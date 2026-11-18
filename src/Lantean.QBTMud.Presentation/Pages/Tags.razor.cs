@@ -67,6 +67,14 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
+        protected override void OnParametersSet()
+        {
+            if (MainData is not null)
+            {
+                _tags = null;
+            }
+        }
+
         protected async Task Reload()
         {
             if (_isBusy)
@@ -101,7 +109,10 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
             var deleteResult = await ApiClient.DeleteTagsAsync(tags: [tag]);
-            await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult);
+            if (await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult))
+            {
+                _tags = null;
+            }
         }
 
         protected async Task AddTag()
@@ -130,7 +141,10 @@ namespace Lantean.QBTMud.Pages
             }
 
             var createResult = await ApiClient.CreateTagsAsync([tag]);
-            await ApiFeedbackWorkflow.ProcessResultAsync(createResult);
+            if (await ApiFeedbackWorkflow.ProcessResultAsync(createResult))
+            {
+                _tags = null;
+            }
         }
 
         protected IEnumerable<ColumnDefinition<string>> Columns => GetColumnDefinitions();

@@ -29,6 +29,13 @@ namespace Lantean.QBTMud.Services
         Task InvokeAddTorrentLinkDialog(string? url = null);
 
         /// <summary>
+        /// Shows the URL dialog and reports whether the request was added, pending, cancelled or failed.
+        /// </summary>
+        /// <param name="url">The initial URL to prefill.</param>
+        /// <returns>The outcome of the dialog and add request.</returns>
+        Task<AddTorrentLinkDialogOutcome> InvokeAddTorrentLinkDialogWithOutcome(string? url = null);
+
+        /// <summary>
         /// Prompts for torrent deletion and performs the deletion when confirmed.
         /// </summary>
         /// <param name="confirmTorrentDeletion">Whether confirmation is required before deletion.</param>

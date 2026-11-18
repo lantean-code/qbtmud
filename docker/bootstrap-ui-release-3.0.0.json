@@ -1,0 +1,8 @@
+{
+  "version": "3.0.0",
+  "commit": "ec93ae97ed294d4730b414511a36ebc26aeb3037",
+  "archive": "qbt-mud-v3.0.0-intl.zip",
+  "sha256": "b3228420b8f66c9d5aa59ab0acdb6a6ff14321f4167a9a7e5b0f969c1973be58",
+  "url": "https://github.com/lantean-code/qbtmud/releases/download/3.0.0/qbt-mud-v3.0.0-intl.zip",
+  "buildRun": "https://github.com/lantean-code/qbtmud/actions/runs/34381649201"
+}

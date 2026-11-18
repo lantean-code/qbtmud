@@ -14,6 +14,56 @@ namespace Lantean.QBTMud.Application.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_PersistedActiveBucket_WHEN_ResumingSamples_THEN_ShouldPreserveWeightedAveragesAndUniqueTimestamps()
+        {
+            var sampleTime = new DateTime(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var initial = new SpeedHistoryService(_localStorage);
+            await initial.PushSampleAsync(sampleTime, 10, 20, TestContext.Current.CancellationToken);
+            await initial.PushSampleAsync(sampleTime.AddSeconds(1), 20, 40, TestContext.Current.CancellationToken);
+            await initial.PersistAsync(TestContext.Current.CancellationToken);
+            var target = new SpeedHistoryService(_localStorage);
+
+            await target.PushSampleAsync(sampleTime.AddSeconds(2), 60, 120, TestContext.Current.CancellationToken);
+            await target.PersistAsync(TestContext.Current.CancellationToken);
+            var reloaded = new SpeedHistoryService(_localStorage);
+            await reloaded.PushSampleAsync(sampleTime.AddSeconds(3), 30, 60, TestContext.Current.CancellationToken);
+
+            var download = reloaded.GetSeries(SpeedPeriod.Hour24, SpeedDirection.Download);
+            download.Should().ContainSingle();
+            download[0].TimestampUtc.Should().Be(sampleTime);
+            download[0].BytesPerSecond.Should().Be(30);
+            reloaded.GetSeries(SpeedPeriod.Hour24, SpeedDirection.Upload).Should().ContainSingle()
+                .Which.BytesPerSecond.Should().Be(60);
+            await reloaded.PushSampleAsync(sampleTime.AddMinutes(8), 100, 200, TestContext.Current.CancellationToken);
+            reloaded.GetSeries(SpeedPeriod.Hour24, SpeedDirection.Download).Select(point => point.TimestampUtc)
+                .Should().OnlyHaveUniqueItems().And.HaveCount(2);
+        }
+
+        [Fact]
+        public async Task GIVEN_LegacyBucketWithoutSampleCount_WHEN_Resuming_THEN_ShouldUseExistingAverageAsOneSample()
+        {
+            var sampleTime = new DateTime(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var initial = new SpeedHistoryService(_localStorage);
+            await initial.PushSampleAsync(sampleTime, 10, 20, TestContext.Current.CancellationToken);
+            var persisted = await _localStorage.GetItemAsStringAsync("SpeedHistory.State", TestContext.Current.CancellationToken);
+            var root = JsonNode.Parse(persisted!)!;
+            foreach (var period in root["buckets"]!.AsObject())
+            {
+                foreach (var bucket in period.Value!.AsArray())
+                {
+                    bucket!.AsObject().Remove("sampleCount");
+                }
+            }
+            await _localStorage.SetItemAsStringAsync("SpeedHistory.State", root.ToJsonString(), TestContext.Current.CancellationToken);
+            var target = new SpeedHistoryService(_localStorage);
+
+            await target.PushSampleAsync(sampleTime.AddSeconds(1), 30, 60, TestContext.Current.CancellationToken);
+
+            target.GetSeries(SpeedPeriod.Hour24, SpeedDirection.Download).Should().ContainSingle()
+                .Which.BytesPerSecond.Should().Be(20);
+        }
+
+        [Fact]
         public async Task GIVEN_NoPersistedState_WHEN_Initialize_THEN_HistoryIsEmpty()
         {
             var target = new SpeedHistoryService(_localStorage);

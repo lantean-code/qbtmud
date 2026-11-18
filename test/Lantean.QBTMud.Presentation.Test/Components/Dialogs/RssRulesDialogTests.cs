@@ -538,6 +538,312 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
                 Times.Once);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_ConcurrentRuleSelections_WHEN_RequestsFinishInReverseOrder_THEN_ShouldKeepLatestRuleAndArticles(bool earlierRequestFails)
+        {
+            var snackbar = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            var ruleA = CreateRule(true);
+            ruleA.MustContain = "MustContainA";
+            var ruleB = CreateRule(false);
+            ruleB.MustContain = "MustContainB";
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = ruleA, ["RuleB"] = ruleB });
+            var firstResponse = new TaskCompletionSource<ApiResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var secondResponse = new TaskCompletionSource<IReadOnlyDictionary<string, IReadOnlyList<string>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleA")).Returns(firstResponse.Task);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleB")).ReturnsSuccess(secondResponse.Task);
+            apiClient.Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleB", It.IsAny<AutoDownloadingRule>())).ReturnsSuccess(Task.CompletedTask);
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+
+            var firstSelection = target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            target.WaitForAssertion(() => apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Once));
+            var secondSelection = target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleB"));
+            target.WaitForAssertion(() => apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleB"), Times.Once));
+            secondResponse.SetResult(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "ArticleB" } });
+            await secondSelection;
+            firstResponse.SetResult(earlierRequestFails
+                ? ApiResult.CreateFailure<IReadOnlyDictionary<string, IReadOnlyList<string>>>(new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = "MatchingArticles", UserMessage = "EarlierFailure" })
+                : ApiResult.CreateSuccess<IReadOnlyDictionary<string, IReadOnlyList<string>>>(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "ArticleA" } }));
+            await firstSelection;
+
+            list.Instance.GetState(component => component.SelectedValue).Should().Be("RuleB");
+            FindComponentByTestId<MudTextField<string>>(target, "RssRulesMustContain").Instance.GetState(component => component.Value).Should().Be("MustContainB");
+            FindComponentByTestId<MudListItem<string>>(target, "RssRulesArticle-ArticleB").Should().NotBeNull();
+            snackbar.Verify(service => service.Add("EarlierFailure", Severity.Error, null, null), Times.Never);
+            var save = FindComponentByTestId<MudButton>(target, "RssRulesSave");
+            await target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+            apiClient.Verify(client => client.SetRssAutoDownloadingRuleAsync("RuleB", It.Is<AutoDownloadingRule>(rule => rule == ruleB && rule.MustContain == "MustContainB")), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_CurrentRuleArticlesFail_WHEN_Selected_THEN_ShouldKeepEditorBoundAndShowFailure()
+        {
+            var snackbar = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            var rule = CreateRule(true);
+            rule.MustContain = "MustContain";
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = rule, ["RuleB"] = CreateRule(false) });
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleB"))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "PreviousArticle" } });
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, IReadOnlyList<string>>>(ApiFailureKind.ServerError, "MatchingFailure");
+            apiClient.Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>())).ReturnsSuccess(Task.CompletedTask);
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleB"));
+            FindComponentByTestId<MudListItem<string>>(target, "RssRulesArticle-PreviousArticle").Should().NotBeNull();
+
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+
+            list.Instance.GetState(component => component.SelectedValue).Should().Be("RuleA");
+            FindComponentByTestId<MudTextField<string>>(target, "RssRulesMustContain").Instance.GetState(component => component.Value).Should().Be("MustContain");
+            target.FindComponents<MudListItem<string>>().Should().NotContain(component => HasTestId(component, "RssRulesArticle-PreviousArticle"));
+            snackbar.Verify(service => service.Add("MatchingFailure", Severity.Error, null, null), Times.Once);
+            var save = FindComponentByTestId<MudButton>(target, "RssRulesSave");
+            await target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+            apiClient.Verify(client => client.SetRssAutoDownloadingRuleAsync("RuleA", rule), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RuleReselected_WHEN_FirstSelectionFinishesLast_THEN_ShouldKeepNewestArticles()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = CreateRule(true), ["RuleB"] = CreateRule(true) });
+            var firstResponse = new TaskCompletionSource<ApiResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.SetupSequence(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .Returns(firstResponse.Task)
+                .ReturnsAsync(ApiResult.CreateSuccess<IReadOnlyDictionary<string, IReadOnlyList<string>>>(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "NewestArticle" } }));
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+
+            var firstSelection = target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            target.WaitForAssertion(() => apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Once));
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleB"));
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            firstResponse.SetResult(ApiResult.CreateSuccess<IReadOnlyDictionary<string, IReadOnlyList<string>>>(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "OldArticle" } }));
+            await firstSelection;
+
+            FindComponentByTestId<MudListItem<string>>(target, "RssRulesArticle-NewestArticle").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_EnableChangeAwaitingArticles_WHEN_AnotherRuleSelected_THEN_ShouldUpdateOriginalRuleOnly()
+        {
+            var ruleA = CreateRule(false);
+            var ruleB = CreateRule(false);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = ruleA, ["RuleB"] = ruleB });
+            var response = new TaskCompletionSource<IReadOnlyDictionary<string, IReadOnlyList<string>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleA")).ReturnsSuccess(response.Task);
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var enabled = FindComponentByTestId<MudCheckBox<bool>>(target, "RssRuleEnabled-RuleA");
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+
+            var enableChange = target.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(true));
+            target.WaitForAssertion(() => apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Once));
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleB"));
+            response.SetResult(new Dictionary<string, IReadOnlyList<string>>());
+            await enableChange;
+
+            FindComponentByTestId<MudCheckBox<bool>>(target, "RssRuleEnabled-RuleA").Instance.GetState(component => component.Value).Should().BeTrue();
+            FindComponentByTestId<MudCheckBox<bool>>(target, "RssRuleEnabled-RuleB").Instance.GetState(component => component.Value).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_EnableChangeAwaitingArticles_WHEN_RuleRemoved_THEN_ShouldDiscardPendingSelection(bool addReplacement)
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = CreateRule(false) });
+            var response = new TaskCompletionSource<IReadOnlyDictionary<string, IReadOnlyList<string>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleA")).ReturnsSuccess(response.Task);
+            apiClient.Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA")).ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), null)).ReturnsAsync("RuleA");
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var enabled = FindComponentByTestId<MudCheckBox<bool>>(target, "RssRuleEnabled-RuleA");
+            var enabledChanged = enabled.Instance.ValueChanged;
+
+            var enableChange = target.InvokeAsync(() => enabled.Instance.ValueChanged.InvokeAsync(true));
+            target.WaitForAssertion(() => apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Once));
+            var remove = FindComponentByTestId<MudIconButton>(target, "RssRulesRemove");
+            await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
+            if (addReplacement)
+            {
+                var add = FindComponentByTestId<MudIconButton>(target, "RssRulesAdd");
+                await target.InvokeAsync(() => add.Instance.OnClick.InvokeAsync());
+                var replacementEnabled = FindComponentByTestId<MudCheckBox<bool>>(target, "RssRuleEnabled-RuleA");
+                await target.InvokeAsync(() => replacementEnabled.Instance.ValueChanged.InvokeAsync(false));
+            }
+            response.SetResult(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "OldArticle" } });
+            await enableChange;
+
+            target.FindComponents<MudListItem<string>>().Should().NotContain(component => HasTestId(component, "RssRulesArticle-OldArticle"));
+            if (addReplacement)
+            {
+                FindComponentByTestId<MudCheckBox<bool>>(target, "RssRuleEnabled-RuleA").Instance.GetState(component => component.Value).Should().BeFalse();
+            }
+            else
+            {
+                FindComponentByTestId<MudList<string>>(target, "RssRulesList").Instance.GetState(component => component.SelectedValue).Should().BeNull();
+                FindComponentByTestId<FieldSwitch>(target, "RssRulesUseRegex").Instance.Disabled.Should().BeTrue();
+                await target.InvokeAsync(() => enabledChanged.InvokeAsync(false));
+            }
+        }
+
+        [Fact]
+        public async Task GIVEN_RemovalInProgress_WHEN_AnotherRuleSelected_THEN_ShouldRemoveOriginalRuleAndKeepCurrentSelection()
+        {
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = CreateRule(true), ["RuleB"] = CreateRule(false) });
+            var response = new TaskCompletionSource<ApiResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA")).Returns(response.Task);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleB"))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "ArticleB" } });
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            var remove = FindComponentByTestId<MudIconButton>(target, "RssRulesRemove");
+
+            var removing = target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() => apiClient.Verify(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"), Times.Once));
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleB"));
+            response.SetResult(ApiResult.CreateSuccess());
+            await removing;
+
+            target.FindComponents<MudListItem<string>>().Should().NotContain(component => HasTestId(component, "RssRule-RuleA"));
+            FindComponentByTestId<MudListItem<string>>(target, "RssRule-RuleB").Should().NotBeNull();
+            FindComponentByTestId<MudListItem<string>>(target, "RssRulesArticle-ArticleB").Should().NotBeNull();
+            list.Instance.GetState(component => component.SelectedValue).Should().Be("RuleB");
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(true, true)]
+        public async Task GIVEN_SaveInProgress_WHEN_SelectionChanges_THEN_ShouldKeepNewSelectionArticles(bool awaitingArticles, bool removeSelection)
+        {
+            var ruleA = CreateRule(true);
+            var ruleB = CreateRule(false);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = ruleA, ["RuleB"] = ruleB });
+            var saveResponse = new TaskCompletionSource<ApiResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var articlesResponse = new TaskCompletionSource<IReadOnlyDictionary<string, IReadOnlyList<string>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>())).Returns(saveResponse.Task);
+            apiClient.Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA")).ReturnsSuccess(Task.CompletedTask);
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleB"))
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "ArticleB" } });
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            apiClient.Setup(client => client.GetRssMatchingArticlesAsync("RuleA")).ReturnsSuccess(articlesResponse.Task);
+            var save = FindComponentByTestId<MudButton>(target, "RssRulesSave");
+
+            var saving = target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() => apiClient.Verify(client => client.SetRssAutoDownloadingRuleAsync("RuleA", ruleA), Times.Once));
+            if (awaitingArticles)
+            {
+                saveResponse.SetResult(ApiResult.CreateSuccess());
+                target.WaitForAssertion(() => apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Exactly(2)));
+            }
+
+            if (removeSelection)
+            {
+                var remove = FindComponentByTestId<MudIconButton>(target, "RssRulesRemove");
+                await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
+            }
+            else
+            {
+                await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleB"));
+            }
+            if (!awaitingArticles)
+            {
+                saveResponse.SetResult(ApiResult.CreateSuccess());
+            }
+            articlesResponse.SetResult(new Dictionary<string, IReadOnlyList<string>> { ["FeedA"] = new[] { "ArticleA" } });
+            await saving;
+
+            if (removeSelection)
+            {
+                apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleB"), Times.Never);
+                target.FindComponents<MudListItem<string>>().Should().NotContain(component => HasTestId(component, "RssRulesArticle-ArticleA"));
+                list.Instance.GetState(component => component.SelectedValue).Should().BeNull();
+            }
+            else
+            {
+                apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleB"), Times.Once);
+                FindComponentByTestId<MudListItem<string>>(target, "RssRulesArticle-ArticleB").Should().NotBeNull();
+                list.Instance.GetState(component => component.SelectedValue).Should().Be("RuleB");
+            }
+        }
+
+        [Fact]
+        public async Task GIVEN_SaveInProgress_WHEN_RuleReplacedWithSameName_THEN_ShouldKeepReplacementUnsaved()
+        {
+            SetupVersion53();
+            var originalRule = CreateRule(true);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = originalRule });
+            var response = new TaskCompletionSource<ApiResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>())).Returns(response.Task);
+            apiClient.Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA")).ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), null)).ReturnsAsync("RuleA");
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            var save = FindComponentByTestId<MudButton>(target, "RssRulesSave");
+
+            var saving = target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() => apiClient.Verify(client => client.SetRssAutoDownloadingRuleAsync("RuleA", originalRule), Times.Once));
+            var remove = FindComponentByTestId<MudIconButton>(target, "RssRulesRemove");
+            await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
+            var add = FindComponentByTestId<MudIconButton>(target, "RssRulesAdd");
+            await target.InvokeAsync(() => add.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            response.SetResult(ApiResult.CreateSuccess());
+            await saving;
+
+            FindComponentByTestId<MudButton>(target, "RssRulesClone").Instance.Disabled.Should().BeTrue();
+            apiClient.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Once);
+            await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
+            apiClient.Verify(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ExistingRuleWithMultipleTags_WHEN_TagAppendedAndSaved_THEN_ShouldPreserveIndividualTags()
+        {
+            var rule = CreateRule(true);
+            rule.TorrentParams.Tags = new[] { "alpha", "beta" };
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule> { ["RuleA"] = rule });
+            var apiClient = Mock.Get(_apiClient);
+            apiClient.Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>())).ReturnsSuccess(Task.CompletedTask);
+            var dialog = await _target.RenderDialogAsync();
+            var target = dialog.Component;
+            var list = FindComponentByTestId<MudList<string>>(target, "RssRulesList");
+            await target.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleA"));
+            var tags = FindComponentByTestId<MudTextField<string>>(target, "RssRulesTags");
+
+            var existingTags = tags.Instance.GetState(component => component.Value);
+            existingTags.Should().Be("alpha, beta");
+            await target.InvokeAsync(() => tags.Instance.ValueChanged.InvokeAsync($"{existingTags}, gamma"));
+            var save = FindComponentByTestId<MudButton>(target, "RssRulesSave");
+            await target.InvokeAsync(() => save.Instance.OnClick.InvokeAsync());
+
+            apiClient.Verify(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.Is<AutoDownloadingRule>(savedRule => savedRule.TorrentParams.Tags.SequenceEqual(new[] { "alpha", "beta", "gamma" }))), Times.Once);
+        }
+
         private void SetupApiClient(Dictionary<string, AutoDownloadingRule> rules)
         {
             var apiClientMock = Mock.Get(_apiClient);

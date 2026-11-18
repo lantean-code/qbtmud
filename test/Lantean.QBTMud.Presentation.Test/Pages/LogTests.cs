@@ -54,6 +54,74 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .ReturnsSuccessAsync(new List<Log>());
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_RetainedLogHistory_WHEN_FilterChanges_THEN_ShouldFilterExistingRowsAndRestoreThemWhenCleared(bool hasResults)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
+                .ReturnsSuccessAsync(hasResults ? new List<Log>
+                {
+                    CreateLog(1, "Matching message", LogType.Normal), CreateLog(2, "Other", LogType.Normal)
+                } : new List<Log>());
+            var target = RenderTarget();
+            var criteria = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+
+            await target.InvokeAsync(() => criteria.Instance.ValueChanged.InvokeAsync("MATCHING"));
+
+            var items = target.FindComponent<DynamicTable<Log>>().Instance.Items;
+            if (hasResults)
+            {
+                items.Should().ContainSingle().Which.Id.Should().Be(1);
+            }
+            else
+            {
+                items.Should().BeNullOrEmpty();
+            }
+            await target.InvokeAsync(() => criteria.Instance.ValueChanged.InvokeAsync(" "));
+            (target.FindComponent<DynamicTable<Log>>().Instance.Items?.Count() ?? 0).Should().Be(hasResults ? 2 : 0);
+        }
+
+        [Fact]
+        public async Task GIVEN_NormalHistoryWithCursor_WHEN_SelectingCritical_THEN_ShouldReplaceRowsAndFetchFromStart()
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetLogAsync(true, false, false, false, null))
+                .ReturnsSuccessAsync(new List<Log> { CreateLog(100, "Normal", LogType.Normal) });
+            var target = RenderTarget();
+            Mock.Get(_apiClient).Setup(client => client.GetLogAsync(false, false, false, true, null))
+                .ReturnsSuccessAsync(new List<Log> { CreateLog(10, "Critical", LogType.Critical) });
+            var levels = FindCategorySelect(target);
+
+            await target.InvokeAsync(() => levels.Instance.SelectedValuesChanged.InvokeAsync(new[] { "Critical" }));
+
+            target.FindComponent<DynamicTable<Log>>().Instance.Items.Should().ContainSingle().Which.Id.Should().Be(10);
+            Mock.Get(_apiClient).Verify(client => client.GetLogAsync(false, false, false, true, null), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingRequestForPreviousSeverity_WHEN_SelectionChanges_THEN_ShouldIgnoreStaleRowsAndCursor(bool timerRequest)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetLogAsync(true, false, false, false, null))
+                .ReturnsSuccessAsync(new List<Log> { CreateLog(100, "Normal", LogType.Normal) });
+            var target = RenderTarget();
+            var gate = new TaskCompletionSource<IReadOnlyList<Log>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_apiClient).Setup(client => client.GetLogAsync(true, false, false, false, 100)).ReturnsSuccess(gate.Task);
+            var pending = timerRequest ? TriggerTimerTickAsync(target) : InvokeSubmitAsync(target);
+            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(client => client.GetLogAsync(true, false, false, false, 100), Times.Once));
+            Mock.Get(_apiClient).Setup(client => client.GetLogAsync(false, false, false, true, null))
+                .ReturnsSuccessAsync(new List<Log> { CreateLog(10, "Critical", LogType.Critical) });
+
+            await target.InvokeAsync(() => FindCategorySelect(target).Instance.SelectedValuesChanged.InvokeAsync(new[] { "Critical" }));
+            gate.SetResult(new List<Log> { CreateLog(101, "Stale", LogType.Normal) });
+            await pending;
+
+            target.FindComponent<DynamicTable<Log>>().Instance.Items.Should().ContainSingle().Which.Id.Should().Be(10);
+            await TriggerTimerTickAsync(target);
+            Mock.Get(_apiClient).Verify(client => client.GetLogAsync(false, false, false, true, 10), Times.Once);
+        }
+
         [Fact]
         public void GIVEN_DefaultLoad_WHEN_Rendered_THEN_LogRequestedWithNormal()
         {

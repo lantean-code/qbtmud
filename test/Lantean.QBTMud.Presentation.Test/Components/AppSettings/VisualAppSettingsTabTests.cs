@@ -30,6 +30,20 @@ namespace Lantean.QBTMud.Presentation.Test.Components.AppSettings
             _settingsChangedCount.Should().Be(1);
         }
 
+        [Theory]
+        [InlineData(true, 1)]
+        [InlineData(false, 0)]
+        public async Task GIVEN_SplitViewSetting_WHEN_Selected_THEN_UpdatesOnlyChangedValues(bool enabled, int callbacks)
+        {
+            var target = RenderTarget();
+            var select = FindComponentByTestId<MudSelect<bool>>(target, "AppSettingsTorrentSplitView");
+
+            await target.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(enabled));
+
+            _settings.TorrentSplitViewEnabled.Should().Be(enabled);
+            _settingsChangedCount.Should().Be(callbacks);
+        }
+
         [Fact]
         public async Task GIVEN_ThemeModeChanged_WHEN_LightSelected_THEN_UpdatesSettingsAndRaisesCallback()
         {

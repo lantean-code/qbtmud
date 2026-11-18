@@ -40,6 +40,82 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 .ReturnsAsync(() => _webApiCapabilityState);
         }
 
+        [Theory]
+        [InlineData("All", "All", "%00All", "%00All")]
+        [InlineData("Uncategorized", "Untagged", "%00Uncategorized", "%00Untagged")]
+        [InlineData("\0\0Uncategorized", "\0\0Untagged", "%00Uncategorized", "%00Untagged")]
+        public async Task GIVEN_LegacySyntheticSelections_WHEN_Initialised_THEN_ShouldRestoreBuiltInFilters(string category, string tag, string categoryId, string tagId)
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_categoryStorageKey, category, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_tagStorageKey, tag, Xunit.TestContext.Current.CancellationToken);
+
+            var target = RenderFiltersNav(CreateMainData());
+
+            FindComponentByTestId<CustomNavLink>(target, "Category-" + categoryId).Instance.Active.Should().BeTrue();
+            FindComponentByTestId<CustomNavLink>(target, "Tag-" + tagId).Instance.Active.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("All")]
+        [InlineData("Untagged")]
+        [InlineData("Uncategorized")]
+        public async Task GIVEN_ReservedUserNames_WHEN_SelectedAndReloaded_THEN_ShouldKeepNamedAndSyntheticFiltersDistinct(string name)
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+            mainData.Categories[name] = new MudCategory(name, "/SavePath");
+            mainData.CategoriesState[name] = ["Hash1"];
+            mainData.Tags.Add(name);
+            mainData.TagState[name] = ["Hash1"];
+            mainData.Torrents["Hash1"].Category = name;
+            mainData.Torrents["Hash1"].Tags.Add(name);
+            var target = RenderFiltersNav(mainData);
+            var category = FindComponentByTestId<CustomNavLink>(target, "Category-" + name);
+            var tag = FindComponentByTestId<CustomNavLink>(target, "Tag-" + name);
+
+            await target.InvokeAsync(() => category.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => tag.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            queryState.Category.Should().Be(name);
+            queryState.Tag.Should().Be(name);
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("\0" + name);
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("\0" + name);
+            await target.InvokeAsync(() => queryState.SetCategory(FilterHelper.CATEGORY_ALL));
+            await target.InvokeAsync(() => queryState.SetTag(FilterHelper.TAG_ALL));
+            target.Dispose();
+
+            var reloaded = TestContext.Render<FiltersNav>(parameters => parameters.AddCascadingValue(mainData));
+
+            FindComponentByTestId<CustomNavLink>(reloaded, "Category-" + name).Instance.Active.Should().BeTrue();
+            FindComponentByTestId<CustomNavLink>(reloaded, "Tag-" + name).Instance.Active.Should().BeTrue();
+            FindComponentByTestId<CustomNavLink>(reloaded, "Category-%00All").Instance.Active.Should().BeFalse();
+            FindComponentByTestId<CustomNavLink>(reloaded, "Tag-%00All").Instance.Active.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_SecondaryTrackerMembership_WHEN_StartingTrackerTorrents_THEN_ShouldIncludeAllAssociatedTorrents()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+            mainData.Trackers["udp://secondary.example.com/announce"] = ["Hash1", "Hash2", "MissingHash"];
+            apiClientMock.Setup(client => client.StartTorrentsAsync(
+                It.Is<TorrentSelector>(selector => selector.Hashes!.SequenceEqual(new[] { "Hash1", "Hash2" })),
+                It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            var target = RenderFiltersNav(mainData);
+            var tracker = FindComponentByTestId<CustomNavLink>(target, "Tracker-secondary.example.com");
+
+            await target.InvokeAsync(() => tracker.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+            var start = WaitForMenuItemByTestId("_trackerType-Start");
+            await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
+
+            apiClientMock.VerifyAll();
+        }
+
         [Fact]
         public async Task GIVEN_LocalStorageSelections_WHEN_Initialized_THEN_CallbacksInvokedAndLinksActive()
         {
@@ -82,8 +158,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
 
             FindComponentByTestId<CustomNavLink>(target, "Status-All").Instance.Active.Should().BeTrue();
-            FindComponentByTestId<CustomNavLink>(target, "Category-All").Instance.Active.Should().BeTrue();
-            FindComponentByTestId<CustomNavLink>(target, "Tag-All").Instance.Active.Should().BeTrue();
+            FindComponentByTestId<CustomNavLink>(target, "Category-%00All").Instance.Active.Should().BeTrue();
+            FindComponentByTestId<CustomNavLink>(target, "Tag-%00All").Instance.Active.Should().BeTrue();
             FindComponentByTestId<CustomNavLink>(target, "Tracker-All").Instance.Active.Should().BeTrue();
         }
 
@@ -124,9 +200,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             await target.InvokeAsync(() => movies.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             queryState.Category.Should().Be("Movies");
-            (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Movies");
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("\0Movies");
 
-            var all = FindComponentByTestId<CustomNavLink>(target, "Category-All");
+            var all = FindComponentByTestId<CustomNavLink>(target, "Category-%00All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             queryState.Category.Should().Be(FilterHelper.CATEGORY_ALL);
@@ -147,9 +223,9 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             await target.InvokeAsync(() => tagLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             queryState.Tag.Should().Be("Tag1");
-            (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Tag1");
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("\0Tag1");
 
-            var all = FindComponentByTestId<CustomNavLink>(target, "Tag-All");
+            var all = FindComponentByTestId<CustomNavLink>(target, "Tag-%00All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             queryState.Tag.Should().Be(FilterHelper.TAG_ALL);
@@ -235,7 +311,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             var target = RenderFiltersNav(mainData);
 
-            var allLink = FindComponentByTestId<CustomNavLink>(target, "Category-All");
+            var allLink = FindComponentByTestId<CustomNavLink>(target, "Category-%00All");
             await target.InvokeAsync(() => allLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
             _popoverProvider!.FindComponents<MudMenuItem>()
@@ -257,7 +333,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             var target = RenderFiltersNav(mainData);
 
-            var allLink = FindComponentByTestId<CustomNavLink>(target, "Tag-All");
+            var allLink = FindComponentByTestId<CustomNavLink>(target, "Tag-%00All");
             await target.InvokeAsync(() => allLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
             _popoverProvider!.FindComponents<MudMenuItem>()
@@ -326,7 +402,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             dialogMock.Setup(d => d.InvokeAddCategoryDialog(null, null)).ReturnsAsync("Category");
             dialogMock.Setup(d => d.InvokeEditCategoryDialog("Movies")).ReturnsAsync("Movies");
-            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Movies\\", "C:\\Movies")).ReturnsAsync("Movies\\Sub");
+            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Movies/", "C:\\Movies")).ReturnsAsync("Movies/Sub");
             apiClientMock.Setup(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" })).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderFiltersNav(mainData);
@@ -348,7 +424,10 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             dialogMock.Verify(d => d.InvokeAddCategoryDialog(null, null), Times.Once);
             dialogMock.Verify(d => d.InvokeEditCategoryDialog("Movies"), Times.Once);
-            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Movies\\", "C:\\Movies"), Times.Once);
+            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Movies/", "C:\\Movies"), Times.Once);
+            dialogMock.Verify(d => d.InvokeAddCategoryDialog(It.Is<string>(prefix =>
+                FilterHelper.FilterCategory(CreateTorrent("ChildHash", prefix + "Sub", Array.Empty<string>(), string.Empty, 0, TorrentState.Downloading), "Movies", true)),
+                "C:\\Movies"), Times.Once);
             apiClientMock.Verify(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" }), Times.Once);
         }
 
@@ -383,18 +462,18 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var mainData = CreateMainData(includeGamesCategory: true, includeGamesDefinition: false);
 
-            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Games\\", null)).ReturnsAsync("Games\\Sub");
+            dialogMock.Setup(d => d.InvokeAddCategoryDialog("Games/", null)).ReturnsAsync("Games/Sub");
 
             var target = RenderFiltersNav(mainData);
 
-            var games = FindComponentByTestId<CustomNavLink>(target, "Category-Games\\");
+            var games = FindComponentByTestId<CustomNavLink>(target, "Category-Games%2F");
             await target.InvokeAsync(() => games.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
             var addSubcategory = WaitForMenuItemByTestId("CategoryAddSubcategory");
             await target.InvokeAsync(() => addSubcategory.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
-            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Games\\", null), Times.Once);
+            dialogMock.Verify(d => d.InvokeAddCategoryDialog("Games/", null), Times.Once);
         }
 
         [Fact]
@@ -970,7 +1049,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             if (includeGamesDefinition)
             {
-                categories["Games\\"] = new MudCategory("Games\\", "C:\\Games");
+                categories["Games/"] = new MudCategory("Games/", "C:\\Games");
             }
 
             var tags = new[] { "Tag1", "Tag2" };
@@ -999,7 +1078,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
 
             if (includeGamesCategory)
             {
-                categoriesState["Games\\"] = new HashSet<string> { "Hash2" };
+                categoriesState["Games/"] = new HashSet<string> { "Hash2" };
             }
 
             var statusState = new Dictionary<string, HashSet<string>>

@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text;
 using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
 using QBittorrent.ApiClient.Models;
@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Components
         private bool _buildInProgress;
         private string _lastSmoothingHash = string.Empty;
         private int _lastSmoothingPieceCount;
-        private int _lastPiecesSignature;
+        private int _lastRenderSignature;
         private int _lastPiecesCount;
 
         [Parameter]
@@ -51,6 +51,18 @@ namespace Lantean.QBTMud.Components
 
         [Parameter]
         public bool PiecesFailed { get; set; }
+
+        [Parameter]
+        public double? TorrentProgress { get; set; }
+
+        [Parameter]
+        public bool? Expanded { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> ExpandedChanged { get; set; }
+
+        [Parameter]
+        public PiecesProgressLayoutState? LayoutState { get; set; }
 
         [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
@@ -98,6 +110,21 @@ namespace Lantean.QBTMud.Components
 
         protected string GridStyle => $"background-color: {GridBackgroundColor};";
 
+        private string? LoadingPlaceholderStyle
+        {
+            get
+            {
+                var columns = DetermineColumnCount();
+                if (columns == 0 || LayoutState is not { PieceCount: > 0 })
+                {
+                    return null;
+                }
+
+                var rows = (int)Math.Ceiling((double)LayoutState.PieceCount / columns);
+                return FormattableString.Invariant($"aspect-ratio: {columns} / {rows};");
+            }
+        }
+
         protected string ToggleIcon => _showSvg ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore;
 
         protected IReadOnlyList<PieceCell> Cells => _cells;
@@ -120,17 +147,18 @@ namespace Lantean.QBTMud.Components
         {
             base.OnParametersSet();
 
+            _showSvg = Expanded ?? _showSvg;
             UpdateHeldDownloadingIndexes();
-            var piecesChanged = UpdatePiecesSignature();
+            var presentationChanged = UpdateRenderSignature();
 
-            if (piecesChanged || string.IsNullOrWhiteSpace(_linearBarStyle) || PiecesLoading || PiecesFailed)
+            if (presentationChanged || string.IsNullOrWhiteSpace(_linearBarStyle))
             {
                 BuildProgressSummary();
             }
 
             if (ShouldBuildSvgCells())
             {
-                if (piecesChanged || _cells.Count == 0 || _viewBox == "0 0 0 0" || PiecesLoading || PiecesFailed)
+                if (presentationChanged || _cells.Count == 0)
                 {
                     QueueBuildSvgCells();
                 }
@@ -160,17 +188,8 @@ namespace Lantean.QBTMud.Components
                 QueueBuildSvgCells();
             }
 
+            await ExpandedChanged.InvokeAsync(_showSvg);
             await InvokeAsync(StateHasChanged);
-        }
-
-        protected Task HandleLinearKeyDown(KeyboardEventArgs args)
-        {
-            if (args.Key is "Enter" or " " or "Space" or "Spacebar")
-            {
-                return ToggleSvg();
-            }
-
-            return Task.CompletedTask;
         }
 
         private string DimColor(MudColor color)
@@ -188,6 +207,13 @@ namespace Lantean.QBTMud.Components
                 _linearSummary = _svgLoadingText;
                 _linearTooltip = TranslateApp("Loading pieces data...");
                 _linearAriaLabel = TranslateApp("Loading pieces progress for torrent %1.", Hash);
+                if (TorrentProgress is double progress && double.IsFinite(progress))
+                {
+                    var percent = (Math.Clamp(progress, 0, 1) * 100).ToString("0.#", CultureInfo.InvariantCulture);
+                    _linearBarStyle = $"background: linear-gradient(to right, {DownloadedColor} {percent}%, {PendingColor} {percent}%);";
+                    _linearSummary = TranslateApp("%1% complete", percent);
+                    _linearAriaLabel = $"{_linearAriaLabel} {_linearSummary}";
+                }
                 return;
             }
 
@@ -347,6 +373,10 @@ namespace Lantean.QBTMud.Components
             }
 
             _cells = cells;
+            if (LayoutState is not null)
+            {
+                LayoutState.PieceCount = Pieces.Count;
+            }
             _viewBox = $"0 0 {columns} {Math.Max(1, rows)}";
             _svgEmptyText = string.Empty;
             _svgAriaLabel = TranslateApp(
@@ -571,10 +601,21 @@ namespace Lantean.QBTMud.Components
             return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
 
-        private bool UpdatePiecesSignature()
+        private bool UpdateRenderSignature()
         {
             var signatureBuilder = new HashCode();
             signatureBuilder.Add(Pieces.Count);
+            signatureBuilder.Add(Hash);
+            signatureBuilder.Add(IsDarkMode);
+            signatureBuilder.Add(CurrentBreakpoint);
+            signatureBuilder.Add(PiecesLoading);
+            signatureBuilder.Add(PiecesFailed);
+            signatureBuilder.Add(_showSvg);
+            signatureBuilder.Add(TorrentProgress.HasValue);
+            signatureBuilder.Add(TorrentProgress);
+            signatureBuilder.Add(DownloadedColor);
+            signatureBuilder.Add(DownloadingColor);
+            signatureBuilder.Add(PendingColor);
 
             for (var index = 0; index < Pieces.Count; index++)
             {
@@ -582,9 +623,9 @@ namespace Lantean.QBTMud.Components
             }
 
             var signature = signatureBuilder.ToHashCode();
-            var unchanged = _lastPiecesCount == Pieces.Count && _lastPiecesSignature == signature;
+            var unchanged = _lastPiecesCount == Pieces.Count && _lastRenderSignature == signature;
 
-            _lastPiecesSignature = signature;
+            _lastRenderSignature = signature;
             _lastPiecesCount = Pieces.Count;
 
             return !unchanged;

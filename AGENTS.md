@@ -11,11 +11,25 @@
 
 ## Repository layout
 - Solution: `Lantean.QBTMud.slnx`
-- Projects:
-  - `Lantean.QBTMud` — Web UI host and published assets.
-  - `Lantean.QBitTorrentClient` — client library for qBittorrent Web API.
-  - `Lantean.QBTMud.Test` — unit tests.
-  - `Lantean.QBitTorrentClient.Test` — unit tests.
+- Source projects:
+  - `src/Lantean.QBTMud/Lantean.QBTMud.csproj` — Web UI host, startup and published assets.
+  - `src/Lantean.QBTMud.Core/Lantean.QBTMud.Core.csproj` — shared domain models and constants.
+  - `src/Lantean.QBTMud.Application/Lantean.QBTMud.Application.csproj` — application services, contracts and state management.
+  - `src/Lantean.QBTMud.Infrastructure/Lantean.QBTMud.Infrastructure.csproj` — API, storage and browser integrations.
+  - `src/Lantean.QBTMud.Presentation/Lantean.QBTMud.Presentation.csproj` — Razor components, pages, layouts and UI workflows.
+- Test projects:
+  - `test/Lantean.QBTMud.Test/Lantean.QBTMud.Test.csproj` — host and repository integration tests.
+  - `test/Lantean.QBTMud.Core.Test/Lantean.QBTMud.Core.Test.csproj` — core tests.
+  - `test/Lantean.QBTMud.Application.Test/Lantean.QBTMud.Application.Test.csproj` — application tests.
+  - `test/Lantean.QBTMud.Infrastructure.Test/Lantean.QBTMud.Infrastructure.Test.csproj` — infrastructure tests.
+  - `test/Lantean.QBTMud.Presentation.Test/Lantean.QBTMud.Presentation.Test.csproj` — component and UI workflow tests.
+  - `test/Lantean.QBTMud.TestSupport/Lantean.QBTMud.TestSupport.csproj` — shared test infrastructure.
+  - `test/QbtMudTranslations.Test/QbtMudTranslations.Test.csproj` — translation tool tests.
+- Tool projects:
+  - `tools/QbtMudTranslations/QbtMudTranslations.csproj` — application translation synchronisation and validation.
+  - `tools/ReadmeScreenshots/ReadmeScreenshots.csproj` — screenshot fixtures and capture.
+  - `tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj` — upstream WebUI translation conversion.
+- The qBittorrent Web API client is the external `QBittorrent.ApiClient` NuGet package. Its source and tests are maintained separately.
 - Config/conventions: `.editorconfig`, `.gitattributes`, `nuget.config`, `global.json` (SDK pin).
 
 ## Build, test, publish

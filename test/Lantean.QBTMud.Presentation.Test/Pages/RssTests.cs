@@ -38,6 +38,45 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .ReturnsSuccess(Task.CompletedTask);
         }
 
+        [Theory]
+        [InlineData(false, Breakpoint.Lg)]
+        [InlineData(true, Breakpoint.Lg)]
+        [InlineData(false, Breakpoint.Xs)]
+        [InlineData(true, Breakpoint.Xs)]
+        public async Task GIVEN_ArticlesWithSharedIds_WHEN_SelectingAcrossFeeds_THEN_ShouldKeepRenderingAndReadStateDistinct(bool folder, Breakpoint breakpoint)
+        {
+            var articles = new List<ClientRssArticle>
+            {
+                new ClientRssArticle("Category", "Comments", "2000-01-01", "Description", "Shared", "http://news", null, "Title", "http://torrent", false)
+            };
+            var items = new Dictionary<string, RssItem>
+            {
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>
+                {
+                    ["Feed1"] = CreateFeed(articles, false, false, "2000-01-01", "Feed 1", "Feed1Uid", "http://feed1"),
+                    ["Feed2"] = CreateFeed(articles, false, false, "2000-01-01", "Feed 2", "Feed2Uid", "http://feed2")
+                })
+            };
+            var target = RenderTarget(breakpoint: breakpoint, rssItems: items);
+            if (folder)
+            {
+                await SelectFeedNode(target, "RssFeedNode-Folder");
+            }
+            var listId = breakpoint == Breakpoint.Lg ? "RssArticleListDesktop" : "RssArticleListMobile";
+            var articleList = FindByTestId<MudList<string>>(target, listId);
+            var listItems = articleList.FindComponents<MudListItem<string>>();
+            listItems.Select(item => item.Instance.Value).Should().OnlyHaveUniqueItems().And.HaveCount(2);
+            var second = listItems.Single(item => item.Instance.Value == "Folder%5CFeed2/Shared");
+
+            await target.InvokeAsync(() => articleList.Instance.SelectedValueChanged.InvokeAsync(second.Instance.Value));
+
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed2", "Shared"), Times.Once);
+            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed1", "Shared"), Times.Never);
+            var updatedItems = FindByTestId<MudList<string>>(target, listId).FindComponents<MudListItem<string>>();
+            updatedItems.Single(item => item.Instance.Value == "Folder%5CFeed1/Shared").Instance.IconColor.Should().Be(Color.Transparent);
+            updatedItems.Single(item => item.Instance.Value == "Folder%5CFeed2/Shared").Instance.IconColor.Should().Be(Color.Success);
+        }
+
         [Fact]
         public void GIVEN_DesktopBreakpoint_WHEN_Rendered_THEN_ShouldShowDesktopPanesAndLoadItems()
         {
@@ -947,7 +986,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             var articleList = FindByTestId<MudList<string>>(target, "RssArticleListDesktop");
 
-            await target.InvokeAsync(() => articleList.Instance.SelectedValueChanged.InvokeAsync("Article3"));
+            await target.InvokeAsync(() => articleList.Instance.SelectedValueChanged.InvokeAsync("Folder%5CFeed2/Article3"));
 
             _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed2", "Article3"), Times.Once);
         }

@@ -11,7 +11,7 @@ labels record the exact LinuxServer tag/index digest and qbtmud UI/packaging com
 - LinuxServer qBittorrent recipe and scripts: https://github.com/linuxserver/docker-qbittorrent
   (use the recorded upstream tag).
 - qBittorrent: https://github.com/qbittorrent/qBittorrent/releases and
-  https://github.com/qbittorrent/qBittorrent/blob/release-5.2.4/COPYING.
+  https://github.com/qbittorrent/qBittorrent/blob/release-5.3.0/COPYING.
   Its binary distribution is GPLv3-or-later, with its documented OpenSSL exception.
 - LinuxServer obtains its static qBittorrent binary from
   https://github.com/userdocs/qbittorrent-nox-static. That project's matching

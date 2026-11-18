@@ -289,6 +289,101 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 && item.Theme.FontFamily == "Nunito Sans");
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_ActiveLocalThemeAndConfiguredRepository_WHEN_Deleted_THEN_ShouldClearSelectionAndUseFallback(bool bundledFallback)
+        {
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
+            SetupHttpClient(bundledFallback ? CreateIndexResponse("themes/theme-one.json") : CreateIndexResponse(),
+                CreateThemeResponse("themes/theme-one.json", CreateThemeJson("ServerId", "Name", "Nunito Sans")));
+            SetupFontCatalogValid("Nunito Sans");
+            await _target.SaveLocalTheme(new ThemeDefinition
+            {
+                Id = "LocalId",
+                Name = "LocalName",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            });
+            await _target.ApplyTheme("LocalId");
+
+            await _target.DeleteLocalTheme("LocalId");
+
+            _target.CurrentThemeId.Should().Be(bundledFallback ? "ServerId" : "default");
+            _target.Themes.Should().NotContain(theme => theme.Id == "LocalId");
+            (await _localStorage.GetItemAsync<string?>(_selectedThemeStorageKey, TestContext.Current.CancellationToken)).Should().BeNull();
+            (await _localStorage.GetItemAsync<ThemeDefinition?>(_selectedThemeDefinitionStorageKey, TestContext.Current.CancellationToken)).Should().BeNull();
+            var reloaded = new ThemeManagerService(_httpClientFactory, _localStorage, _storageRoutingService,
+                _webApiCapabilityService, _fontCatalog, _languageLocalizer, _appSettingsService, _logger);
+
+            await reloaded.EnsureInitialized();
+
+            reloaded.CurrentThemeId.Should().Be(bundledFallback ? "ServerId" : "default");
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task GIVEN_SavedRepositorySelection_WHEN_LoadFailsAndRecovers_THEN_ShouldPreserveSelectionUntilAuthoritativeRemoval(bool preload, bool partialFailure)
+        {
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
+            SetupFontCatalogValid("Nunito Sans");
+            await _localStorage.SetItemAsync(_selectedThemeStorageKey, "RepositoryId", TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(_selectedThemeDefinitionStorageKey, new ThemeDefinition
+            {
+                Id = "RepositoryId",
+                Name = "SavedName",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            }, TestContext.Current.CancellationToken);
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                [_themeIndexPath] = CreateIndexResponse(),
+                [_repositoryIndexPath] = partialFailure ? CreateIndexResponse("themes/selected.json") : new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            });
+            SetupHttpClient(handler);
+            await _target.EnsureInitialized();
+
+            if (preload)
+            {
+                await _target.PreloadRepositoryThemes();
+                await _target.EnsureRepositoryThemesLoaded();
+            }
+            else
+            {
+                await _target.ReloadServerThemes();
+            }
+
+            _target.CurrentThemeId.Should().Be("RepositoryId");
+            _target.CurrentTheme!.Name.Should().Be("SavedName");
+            (await _localStorage.GetItemAsync<string?>(_selectedThemeStorageKey, TestContext.Current.CancellationToken)).Should().Be("RepositoryId");
+            (await _localStorage.GetItemAsync<ThemeDefinition?>(_selectedThemeDefinitionStorageKey, TestContext.Current.CancellationToken))!.Name.Should().Be("SavedName");
+            handler.SetResponses(new Dictionary<string, HttpResponseMessage>
+            {
+                [_themeIndexPath] = CreateIndexResponse(),
+                [_repositoryIndexPath] = CreateIndexResponse("themes/selected.json"),
+                ["/qbtmud-themes/themes/selected.json"] = CreateThemeHttpResponse(CreateThemeJson("RepositoryId", "RecoveredName", "Nunito Sans"))
+            });
+
+            await _target.ReloadServerThemes();
+
+            _target.CurrentThemeId.Should().Be("RepositoryId");
+            _target.CurrentTheme!.Name.Should().Be("RecoveredName");
+            (await _localStorage.GetItemAsync<ThemeDefinition?>(_selectedThemeDefinitionStorageKey, TestContext.Current.CancellationToken))!.Name.Should().Be("RecoveredName");
+            handler.SetResponses(new Dictionary<string, HttpResponseMessage>
+            {
+                [_themeIndexPath] = CreateIndexResponse(),
+                [_repositoryIndexPath] = CreateIndexResponse()
+            });
+
+            await _target.ReloadServerThemes();
+
+            (await _localStorage.GetItemAsync<string?>(_selectedThemeStorageKey, TestContext.Current.CancellationToken)).Should().BeNull();
+            (await _localStorage.GetItemAsync<ThemeDefinition?>(_selectedThemeDefinitionStorageKey, TestContext.Current.CancellationToken)).Should().BeNull();
+        }
+
         [Fact]
         public async Task GIVEN_CurrentThemeDeleted_WHEN_Removed_THEN_AppliesNextTheme()
         {
@@ -787,7 +882,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 logger => logger.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("Background repository theme preload", StringComparison.Ordinal)),
+                    It.Is<It.IsAnyType>((state, _) => state != null && (state.ToString() ?? string.Empty).Contains("Background repository theme preload", StringComparison.Ordinal)),
                     It.IsAny<Exception?>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);

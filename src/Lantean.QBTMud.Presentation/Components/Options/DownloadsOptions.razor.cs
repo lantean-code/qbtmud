@@ -264,9 +264,11 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected void ExportDirEnabledChanged(bool value)
+        protected async Task ExportDirEnabledChanged(bool value)
         {
             ExportDirEnabled = value;
+            UpdatePreferences.ExportDir = value ? ExportDir : string.Empty;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task ExportDirChanged(string value)
@@ -276,9 +278,11 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected void ExportDirFinEnabledChanged(bool value)
+        protected async Task ExportDirFinEnabledChanged(bool value)
         {
             ExportDirFinEnabled = value;
+            UpdatePreferences.ExportDirFin = value ? ExportDirFin : string.Empty;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task ExportDirFinChanged(string value)
@@ -290,6 +294,11 @@ namespace Lantean.QBTMud.Components.Options
 
         protected async Task ScanDirsKeyChanged(string key, string value)
         {
+            if (ScanDirs.ContainsKey(value) && value != key)
+            {
+                return;
+            }
+
             if (ScanDirs.Remove(key, out var location))
             {
                 ScanDirs[value] = location;
@@ -307,7 +316,7 @@ namespace Lantean.QBTMud.Components.Options
 
         protected async Task AddedScanDirsKeyChanged(int index, string key)
         {
-            if (key == "")
+            if (key == "" || ScanDirs.ContainsKey(key))
             {
                 return;
             }

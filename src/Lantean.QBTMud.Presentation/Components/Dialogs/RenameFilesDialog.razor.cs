@@ -91,7 +91,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             var selectedNames = SelectedItems.Select(item => item.Name).ToHashSet(StringComparer.Ordinal);
             var renamedFiles = FileNameMatcher.GetRenamedFiles(
                 _sourceFileList
-                    .Where(item => selectedNames.Contains(item.Name))
+                    .Where(item => !item.Renamed && selectedNames.Contains(item.Name))
                     .Select(CloneFileRow)
                     .ToList(),
                 Search,
@@ -175,6 +175,9 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return (false, GetFailureMessage(renameResult.Failure));
             }
 
+            var sourceRow = _sourceFileList.First(row => row.Name == match.Name);
+            sourceRow.Renamed = true;
+            sourceRow.NewName = newName;
             return (true, null);
         }
 
@@ -232,10 +235,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string Search { get; set; } = "";
 
-        protected void SearchChanged(string value)
+        protected async Task SearchChanged(string value)
         {
             Search = value;
             RefreshPreview();
+            await UpdatePreferences(preferences => preferences.Search = value);
         }
 
         protected bool UseRegex { get; set; }
@@ -334,7 +338,23 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             RememberMultiRenameSettings = value;
 
-            await UpdatePreferences(p => p.RememberPreferences = value);
+            await UpdatePreferences(preferences =>
+            {
+                preferences.RememberPreferences = value;
+                if (value)
+                {
+                    preferences.Search = Search;
+                    preferences.UseRegex = UseRegex;
+                    preferences.MatchAllOccurrences = MatchAllOccurrences;
+                    preferences.CaseSensitive = CaseSensitive;
+                    preferences.Replace = Replacement;
+                    preferences.AppliesTo = AppliesToValue;
+                    preferences.IncludeFiles = IncludeFiles;
+                    preferences.IncludeFolders = IncludeFolders;
+                    preferences.FileEnumerationStart = FileEnumerationStart;
+                    preferences.ReplaceAll = ReplaceAll;
+                }
+            });
         }
 
         private async Task UpdatePreferences(Action<MultiRenamePreferences> updateAction)
@@ -355,6 +375,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             var preferences = await SettingsStorage.GetItemAsync<MultiRenamePreferences>(_preferencesStorageKey) ?? new();
 
+            RememberMultiRenameSettings = preferences.RememberPreferences;
             if (preferences.RememberPreferences)
             {
                 Search = preferences.Search;
@@ -403,7 +424,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var previewRows = Files.ToList();
             var renamedFiles = previewRows
-                .Where(file => !string.Equals(file.NewName, file.OriginalName, StringComparison.Ordinal))
+                .Where(file => !file.Renamed && !string.Equals(file.NewName, file.OriginalName, StringComparison.Ordinal))
                 .ToList();
 
             var hasFailure = false;
@@ -418,8 +439,14 @@ namespace Lantean.QBTMud.Components.Dialogs
                     hasFailure |= !success && !string.IsNullOrWhiteSpace(errorMessage);
                 }
 
-                foreach (var renamedFile in renamedFiles.Where(f => f.IsFolder).OrderBy(f => f.Path.Split(Extensions.DirectorySeparator)))
+                foreach (var renamedFile in renamedFiles.Where(file => file.IsFolder).OrderByDescending(file => file.Level))
                 {
+                    if (renamedFiles.Any(file => !string.IsNullOrWhiteSpace(file.ErrorMessage)
+                        && file.Name.StartsWith(renamedFile.Name + Extensions.DirectorySeparator, StringComparison.Ordinal)))
+                    {
+                        continue;
+                    }
+
                     var (success, errorMessage) = await RenameItem(Hash, renamedFile);
                     renamedFile.Renamed = success;
                     renamedFile.ErrorMessage = errorMessage;

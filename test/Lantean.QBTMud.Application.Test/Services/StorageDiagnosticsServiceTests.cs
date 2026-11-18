@@ -18,6 +18,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         private readonly IClientDataCacheInvalidationService _clientDataCacheInvalidationService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly StorageDiagnosticsService _target;
+        private readonly ClientDataCacheState _clientDataCacheState = new();
 
         public StorageDiagnosticsServiceTests()
         {
@@ -42,7 +43,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _clientDataStorageAdapter,
                 _webApiCapabilityService,
                 _clientDataCacheInvalidationService,
-                _apiFeedbackWorkflow);
+                _apiFeedbackWorkflow, new TestLocalStorageService(), _clientDataCacheState);
         }
 
         [Fact]
@@ -111,7 +112,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 _clientDataStorageAdapter,
                 _webApiCapabilityService,
                 _clientDataCacheInvalidationService,
-                _apiFeedbackWorkflow);
+                _apiFeedbackWorkflow, new TestLocalStorageService(), new ClientDataCacheState());
 
             await target.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.Key", TestContext.Current.CancellationToken);
 
@@ -143,6 +144,7 @@ namespace Lantean.QBTMud.Application.Test.Services
         [Fact]
         public async Task GIVEN_ClearRequested_WHEN_ClearEntriesInvoked_THEN_ShouldClearBothStorageTypes()
         {
+            _clientDataCacheState.CachedEntries = new Dictionary<string, JsonElement> { ["QbtMud.A"] = JsonSerializer.SerializeToElement(1) };
             _jsRuntime
                 .Setup(runtime => runtime.InvokeAsync<int>(
                     "qbt.clearLocalStorageEntriesByPrefix",
@@ -167,8 +169,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             var removed = await _target.ClearEntriesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             removed.Should().Be(5);
-            Mock.Get(_clientDataCacheInvalidationService)
-                .Verify(service => service.InvalidateClientDataCacheAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _clientDataCacheState.CachedEntries.Should().BeNull();
         }
 
         [Fact]

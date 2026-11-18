@@ -22,6 +22,12 @@ namespace QbtMudTranslations
             _translationProviderAvailabilityValidator = translationProviderAvailabilityValidator;
         }
 
+        /// <summary>
+        /// Synchronises or validates locale files using one retry budget per locale.
+        /// </summary>
+        /// <param name="options">The translation tool options.</param>
+        /// <param name="cancellationToken">The token used to cancel translation requests.</param>
+        /// <returns>Zero if all locales are valid; otherwise, one.</returns>
         public async Task<int> RunAsync(ToolOptions options, CancellationToken cancellationToken)
         {
             var englishEntries = JsonTranslationDocument.LoadOrdered(options.EnglishFilePath);
@@ -39,6 +45,7 @@ namespace QbtMudTranslations
 
                 var failedLocales = locales.ToList();
                 var localeErrors = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+                var localeTranslationCache = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
 
                 for (var attempt = 0; attempt <= _maxValidationRetries && failedLocales.Count > 0; attempt++)
                 {
@@ -52,6 +59,7 @@ namespace QbtMudTranslations
                             locale,
                             englishEntries,
                             englishTranslations,
+                            localeTranslationCache,
                             cancellationToken);
                         if (localeErrorsForAttempt.Count == 0)
                         {
@@ -124,71 +132,41 @@ namespace QbtMudTranslations
             return localeTranslations;
         }
 
-        private async Task<(Dictionary<string, string> LocaleTranslations, IReadOnlyList<string> ValidationErrors)> BuildValidatedLocaleTranslationsAsync(
-            string locale,
-            IReadOnlyList<KeyValuePair<string, string>> englishEntries,
-            IReadOnlyDictionary<string, string> englishTranslations,
-            IReadOnlyDictionary<string, string> existingLocaleTranslations,
-            CancellationToken cancellationToken)
-        {
-            Dictionary<string, string>? lastLocaleTranslations = null;
-            IReadOnlyList<string> lastValidationErrors = [];
-            IReadOnlyDictionary<string, string> seedLocaleTranslations = existingLocaleTranslations;
-
-            for (var attempt = 0; attempt <= _maxValidationRetries; attempt++)
-            {
-                var localeTranslations = await BuildLocaleTranslationsAsync(
-                    locale,
-                    englishEntries,
-                    seedLocaleTranslations,
-                    cancellationToken);
-                var validationErrors = _translationValidator.ValidateLocale(locale, englishTranslations, localeTranslations);
-                if (validationErrors.Count == 0)
-                {
-                    return (localeTranslations, validationErrors);
-                }
-
-                lastLocaleTranslations = localeTranslations;
-                lastValidationErrors = validationErrors;
-
-                var invalidKeys = _translationValidator.GetInvalidKeys(locale, englishTranslations, localeTranslations);
-                if (invalidKeys.Count == 0)
-                {
-                    break;
-                }
-
-                seedLocaleTranslations = localeTranslations
-                    .Where(entry => !invalidKeys.Contains(entry.Key))
-                    .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
-            }
-
-            return (lastLocaleTranslations ?? new Dictionary<string, string>(StringComparer.Ordinal), lastValidationErrors);
-        }
-
         private async Task<IReadOnlyList<string>> TryWriteLocaleFileAsync(
             string outputDirectoryPath,
             string locale,
             IReadOnlyList<KeyValuePair<string, string>> englishEntries,
             IReadOnlyDictionary<string, string> englishTranslations,
+            Dictionary<string, IReadOnlyDictionary<string, string>> localeTranslationCache,
             CancellationToken cancellationToken)
         {
             try
             {
                 var filePath = BuildOutputPath(outputDirectoryPath, locale);
-                var existingLocaleTranslations = File.Exists(filePath)
-                    ? JsonTranslationDocument.LoadDictionary(filePath)
-                    : new Dictionary<string, string>(StringComparer.Ordinal);
-                var (localeTranslations, validationErrors) = await BuildValidatedLocaleTranslationsAsync(
+                if (!localeTranslationCache.TryGetValue(locale, out var existingLocaleTranslations))
+                {
+                    existingLocaleTranslations = File.Exists(filePath)
+                        ? JsonTranslationDocument.LoadDictionary(filePath)
+                        : new Dictionary<string, string>(StringComparer.Ordinal);
+                    localeTranslationCache[locale] = existingLocaleTranslations;
+                }
+
+                var localeTranslations = await BuildLocaleTranslationsAsync(
                     locale,
                     englishEntries,
-                    englishTranslations,
                     existingLocaleTranslations,
                     cancellationToken);
+                var validationErrors = _translationValidator.ValidateLocale(locale, englishTranslations, localeTranslations);
                 if (validationErrors.Count > 0)
                 {
+                    var invalidKeys = _translationValidator.GetInvalidKeys(locale, englishTranslations, localeTranslations);
+                    localeTranslationCache[locale] = localeTranslations
+                        .Where(entry => !invalidKeys.Contains(entry.Key))
+                        .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
                     return validationErrors;
                 }
 
+                localeTranslationCache[locale] = localeTranslations;
                 JsonTranslationDocument.WriteOrdered(filePath, englishEntries, localeTranslations);
                 Console.WriteLine($"Wrote {filePath}");
                 return [];

@@ -94,9 +94,10 @@ namespace Lantean.QBTMud.Core.Test
         }
 
         [Fact]
-        public void GIVEN_TorrentWithEqualTotalSizeAndDownloaded_WHEN_IsFinished_THEN_ShouldReturnTrue()
+        public void GIVEN_CompleteProgress_WHEN_IsFinished_THEN_ShouldReturnTrue()
         {
             var torrent = CreateTorrent(totalSize: 100, downloaded: 100);
+            torrent.Progress = 1;
 
             var result = torrent.IsFinished();
 
@@ -111,6 +112,20 @@ namespace Lantean.QBTMud.Core.Test
             var result = torrent.IsFinished();
 
             result.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(100, 0, 1, true)]
+        [InlineData(100, 40, 1, true)]
+        [InlineData(100, 150, 0.5, false)]
+        [InlineData(0, 0, 0, false)]
+        [InlineData(100, 100, 0.5, false)]
+        public void GIVEN_TransferredBytesDifferFromVerifiedProgress_WHEN_IsFinished_THEN_ShouldUseProgress(long totalSize, long downloaded, double progress, bool expected)
+        {
+            var torrent = CreateTorrent(totalSize: totalSize, downloaded: downloaded);
+            torrent.Progress = progress;
+
+            torrent.IsFinished().Should().Be(expected);
         }
 
         [Fact]

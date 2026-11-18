@@ -55,7 +55,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString() == "Request towards 'https://example.com/path?q=1' failed after 12.3ms"),
+                    It.Is<It.IsAnyType>((state, _) => state != null && state.ToString() == "Request towards 'https://example.com/path?q=1' failed after 12.3ms"),
                     exception,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -73,7 +73,7 @@ namespace Lantean.QBTMud.Infrastructure.Test.Services
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString() == "Request towards '' failed after 0.0ms"),
+                    It.Is<It.IsAnyType>((state, _) => state != null && state.ToString() == "Request towards '' failed after 0.0ms"),
                     exception,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);

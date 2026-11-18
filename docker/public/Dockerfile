@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=lscr.io/linuxserver/qbittorrent:5.2.4_v2.0.15-ls480@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
+ARG BASE_IMAGE=lscr.io/linuxserver/qbittorrent:5.3.0_v2.1.2-ls484@sha256:e887804fa9de4c60f5f0fb1f3a7e4febe40a8f69fe736f70c4e8589b1f868dab
 FROM ${BASE_IMAGE}
 
 ARG QBTMUD_VERSION

@@ -26,6 +26,11 @@ namespace Lantean.QBTMud.Pages
 
         private bool _shortcutsRegistered;
 
+        private bool _piecesExpanded;
+        private readonly string?[] _displayedHashes = new string?[_tabCount];
+
+        private readonly PiecesProgressLayoutState _piecesLayoutState = new();
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -50,11 +55,24 @@ namespace Lantean.QBTMud.Pages
         [Parameter]
         public string? Hash { get; set; }
 
+        [Parameter]
+        public bool Embedded { get; set; }
+
+        [Parameter]
+        public EventCallback OnHide { get; set; }
+
+        [Parameter]
+        public RenderFragment? HeaderContent { get; set; }
+
         protected int ActiveTab { get; set; } = 0;
 
         protected int RefreshInterval => MainData?.ServerState.RefreshInterval ?? 1500;
 
         protected string Name => GetName();
+
+        protected string? DisplayedHash => _displayedHashes[ActiveTab] ?? Hash;
+
+        protected double? TorrentProgress => MainData?.Torrents.GetValueOrDefault(Hash ?? string.Empty)?.Progress;
 
         protected bool ShowTabs { get; set; } = true;
 
@@ -65,7 +83,10 @@ namespace Lantean.QBTMud.Pages
             if (!IsTorrentAvailable())
             {
                 ShowTabs = false;
-                NavigationManager.NavigateToHome(forceLoad: true);
+                if (!Embedded)
+                {
+                    NavigationManager.NavigateToHome(forceLoad: true);
+                }
                 return;
             }
 
@@ -74,20 +95,38 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            if (firstRender && !Embedded)
             {
                 await RegisterShortcutAsync();
             }
         }
 
+        private void OnPiecesExpandedChanged(bool expanded)
+        {
+            _piecesExpanded = expanded;
+        }
+
+        private void OnGeneralDisplayedHashChanged(string hash)
+        {
+            OnTabDisplayedHashChanged(0, hash);
+        }
+
+        private void OnTabDisplayedHashChanged(int index, string hash)
+        {
+            if (!_disposedValue && hash == Hash)
+            {
+                _displayedHashes[index] = hash;
+            }
+        }
+
         private string GetName()
         {
-            if (Hash is null || MainData is null)
+            if (DisplayedHash is null || MainData is null)
             {
                 return "";
             }
 
-            if (!MainData.Torrents.TryGetValue(Hash, out var torrent))
+            if (!MainData.Torrents.TryGetValue(DisplayedHash, out var torrent))
             {
                 return "";
             }
@@ -98,6 +137,11 @@ namespace Lantean.QBTMud.Pages
         protected void NavigateBack()
         {
             NavigationManager.NavigateToHome();
+        }
+
+        private void OpenFullPage()
+        {
+            NavigationManager.NavigateTo($"./details/{DisplayedHash}");
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

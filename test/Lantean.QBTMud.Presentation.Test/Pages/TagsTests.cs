@@ -34,6 +34,50 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             TestContext.Services.AddSingleton(_dialogWorkflow);
         }
 
+        [Theory]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
+        public async Task GIVEN_RefreshedSnapshot_WHEN_TagMutationCompletes_THEN_ShouldInvalidateOnlyAfterSuccess(bool add, bool succeeds)
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAllTagsAsync()).ReturnsSuccessAsync(new[] { "Snapshot" });
+            Mock.Get(_dialogWorkflow).Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null)).ReturnsAsync("Live");
+            if (succeeds)
+            {
+                Mock.Get(_apiClient).Setup(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>())).ReturnsSuccess(Task.CompletedTask);
+                Mock.Get(_apiClient).Setup(client => client.DeleteTagsAsync(It.IsAny<IEnumerable<string>>())).ReturnsSuccess(Task.CompletedTask);
+            }
+            else
+            {
+                Mock.Get(_apiClient).Setup(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+                Mock.Get(_apiClient).Setup(client => client.DeleteTagsAsync(It.IsAny<IEnumerable<string>>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            }
+            var target = RenderPage();
+            var refresh = FindIconButton(target, Icons.Material.Filled.Refresh);
+            await target.InvokeAsync(() => refresh.Instance.OnClick.InvokeAsync());
+            target.Instance.MainData!.Tags.Add("Live");
+            var action = FindIconButton(target, add ? Icons.Material.Filled.NewLabel : Icons.Material.Filled.Delete);
+
+            await target.InvokeAsync(() => action.Instance.OnClick.InvokeAsync());
+
+            target.FindComponent<DynamicTable<string>>().Instance.Items.Should().ContainSingle().Which.Should().Be(succeeds ? "Live" : "Snapshot");
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshedSnapshot_WHEN_SharedTagsUpdate_THEN_ShouldShowSharedData()
+        {
+            Mock.Get(_apiClient).Setup(client => client.GetAllTagsAsync()).ReturnsSuccessAsync(new[] { "Snapshot" });
+            var target = RenderPage();
+            var refresh = FindIconButton(target, Icons.Material.Filled.Refresh);
+            await target.InvokeAsync(() => refresh.Instance.OnClick.InvokeAsync());
+            target.Instance.MainData!.Tags.Add("Live");
+
+            target.Render();
+
+            target.FindComponent<DynamicTable<string>>().Instance.Items.Should().ContainSingle().Which.Should().Be("Live");
+        }
+
         [Fact]
         public async Task GIVEN_AddClicked_WHEN_DialogCanceled_THEN_SkipsApiCalls()
         {

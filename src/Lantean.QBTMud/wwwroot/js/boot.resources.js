@@ -230,7 +230,7 @@
         }
 
         // Matches ThemeFontCatalog's font family validation to prevent injection.
-        return /^[a-zA-Z0-9][a-zA-Z0-9\\s\\-]*$/.test(value);
+        return /^[a-zA-Z0-9][a-zA-Z0-9\s\-]*$/.test(value);
     }
 
     function buildFontId(fontFamily) {
@@ -354,7 +354,7 @@
                     .catch(error => {
                         logCdnFailure(`CDN fetch failed for ${cdnUrl}. Falling back to local assets.`, error);
                         state.cdnFailed = true;
-                        return appendAssetVersion(defaultUri);
+                        return fetch(appendAssetVersion(defaultUri), getFetchOptions(integrity));
                     });
             }
         });

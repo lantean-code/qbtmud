@@ -208,6 +208,86 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             _keyboardServiceMock.Verify(service => service.Focus(), Times.Once);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GIVEN_TorrentDetailsStepWithPersistedSetting_WHEN_Rendered_THEN_PreservesSelectionWithoutSaving(bool enabled)
+        {
+            var settings = AppSettingsModel.Default.Clone();
+            settings.TorrentSplitViewEnabled = enabled;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+
+            var dialog = await _target.RenderDialogAsync(pendingStepIds: [WelcomeWizardStepCatalog.TorrentDetailsStepId]);
+            var selection = FindSelect<bool>(dialog.Component, "WelcomeWizardTorrentDetailsSelection");
+
+            selection.Instance.GetState(select => select.Value).Should().Be(enabled);
+            dialog.Component.FindComponent<MudStepper>().Instance.CurrentStepColor.Should().Be(Color.Primary);
+            var separatePageDescription = FindComponentByTestId<MudText>(dialog.Component, "WelcomeWizardTorrentDetailsSeparatePageDescription");
+            var splitViewDescription = FindComponentByTestId<MudText>(dialog.Component, "WelcomeWizardTorrentDetailsSplitViewDescription");
+            GetChildContentText(separatePageDescription.Instance.ChildContent).Should().Be("Separate page is qbtmud's original design. Open a torrent's details on their own page.");
+            GetChildContentText(splitViewDescription.Instance.ChildContent).Should().Be("Below torrent list is the classic qBittorrent-style view. Select a torrent to show its details beneath the list.");
+
+            await dialog.Component.InvokeAsync(() => selection.Instance.ValueChanged.InvokeAsync(enabled));
+
+            Mock.Get(_appSettingsService).Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GIVEN_TorrentDetailsStep_WHEN_SelectionChangedAndFinished_THEN_SavesChoiceAndAcknowledgesOnlyNewSetting(bool enabled)
+        {
+            var settings = AppSettingsModel.Default.Clone();
+            settings.TorrentSplitViewEnabled = !enabled;
+            settings.SpeedHistoryEnabled = true;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: [WelcomeWizardStepCatalog.TorrentDetailsStepId],
+                showWelcomeBackIntro: true);
+
+            await FindButton(dialog.Component, "WelcomeWizardNext").Find("button").ClickAsync(new MouseEventArgs());
+            var selection = FindSelect<bool>(dialog.Component, "WelcomeWizardTorrentDetailsSelection");
+            await dialog.Component.InvokeAsync(() => selection.Instance.ValueChanged.InvokeAsync(enabled));
+
+            selection.Instance.GetState(select => select.Value).Should().Be(enabled);
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.Is<AppSettingsModel>(value => value.TorrentSplitViewEnabled == enabled && value.SpeedHistoryEnabled), It.IsAny<CancellationToken>()),
+                Times.Once);
+            dialog.Component.FindComponents<MudStep>().Select(component => component.Instance.GetState(step => step.Title))
+                .Should().Equal("Welcome back", "Torrent details", "Done");
+
+            await FindButton(dialog.Component, "WelcomeWizardNext").Find("button").ClickAsync(new MouseEventArgs());
+            var summary = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneTorrentDetailsChip");
+            GetChildContentText(summary.Instance.ChildContent).Should().Be(enabled ? "Torrent details: Below torrent list" : "Torrent details: Separate page");
+            summary.Instance.Color.Should().Be(Color.Primary);
+
+            await FindButton(dialog.Component, "WelcomeWizardFinish").Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+            Mock.Get(_welcomeWizardStateService).Verify(
+                service => service.AcknowledgeStepsAsync(It.Is<IEnumerable<string>>(ids => ids.SequenceEqual(new[] { WelcomeWizardStepCatalog.TorrentDetailsStepId })), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_AllPendingSteps_WHEN_TorrentDetailsReached_THEN_ShowsNewSettingBeforeCompletion()
+        {
+            var dialog = await _target.RenderDialogAsync(pendingStepIds: WelcomeWizardStepCatalog.KnownStepIds);
+
+            foreach (var step in WelcomeWizardStepCatalog.Steps.TakeWhile(step => step.Id != WelcomeWizardStepCatalog.TorrentDetailsStepId))
+            {
+                await FindButton(dialog.Component, "WelcomeWizardNext").Find("button").ClickAsync(new MouseEventArgs());
+            }
+
+            FindSelect<bool>(dialog.Component, "WelcomeWizardTorrentDetailsSelection").Should().NotBeNull();
+            dialog.Component.FindComponents<MudStep>().Should().HaveCount(WelcomeWizardStepCatalog.Steps.Count + 1);
+        }
+
         [Fact]
         public async Task GIVEN_ReturningUserWithPendingStep_WHEN_Rendered_THEN_ShowsWelcomeBackIntroBeforePendingStep()
         {
@@ -1799,7 +1879,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
 
             var stepTitles = dialog.Component
                 .FindComponents<MudStep>()
-                .Select(component => component.Instance.Title)
+                .Select(component => component.Instance.GetState(step => step.Title))
                 .ToList();
 
             stepTitles.Should().ContainInOrder(["Theme", "Notifications", "Done"]);

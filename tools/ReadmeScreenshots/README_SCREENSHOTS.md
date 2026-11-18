@@ -22,7 +22,7 @@ The script will:
 1. Publish qbtmud to a temporary output folder.
 2. Stage the published site into a temporary alternative WebUI root that contains `public/`, matching qBittorrent's expected layout.
 3. Generate deterministic `.torrent` fixtures.
-4. Create an isolated Linux qBittorrent profile with a disposable WebUI username and password.
+4. Create an isolated Linux qBittorrent profile with a disposable WebUI username and password, requiring authentication for localhost requests.
 5. Launch qBittorrent in WSL, using qbtmud as the alternative WebUI.
 6. Seed the sample torrents through the real qBittorrent Web API.
 7. Log in through qbtmud with Playwright and capture the README screenshots into [`docs/content/readme-assets`](../../docs/content/readme-assets).
@@ -33,4 +33,5 @@ The script will:
 - The runner does not use public torrents, public trackers, or mocked qBittorrent API responses.
 - The seeded library is intentionally static: completed, stopped, and missing-file states are stable and reproducible.
 - The default disposable credentials are `admin` / `adminadmin`. Override them with `QBITTORRENT_USERNAME` and `QBITTORRENT_PASSWORD` if needed.
+- The capture tool signs in through the production credential input IDs and submit button, so published builds do not need test-only attributes. Each new capture browser context exercises the authenticated login path.
 - If Chromium is not installed in the local Playwright cache yet, the script installs it from the package-local Playwright CLI before capturing.

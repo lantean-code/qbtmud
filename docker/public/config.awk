@@ -53,14 +53,15 @@ function record(value,    position, character, quoted) {
     return value
 }
 function missing() {
-    if (section == "Preferences" && mode == "write") {
+    if (section == managedSection && mode == "write") {
         if (!seenEnabled) printf "%s%s", enabled "=true", ending
         if (!seenRoot) printf "%s%s", root "=/opt/qbtmud", ending
     }
 }
 BEGIN {
-    enabled = "WebUI\\AlternativeUIEnabled"
-    root = "WebUI\\RootFolder"
+    managedSection = modern ? "WebUI" : "Preferences"
+    enabled = modern ? "AlternativeUIEnabled" : "WebUI\\AlternativeUIEnabled"
+    root = modern ? "RootFolder" : "WebUI\\RootFolder"
     ending = "\n"
 }
 {
@@ -82,8 +83,8 @@ BEGIN {
         if (tolower(sectionName) == "general") section = ""
         else if (tolower(sectionName) == "%general") section = substr(sectionName, 2)
         else section = settingsName(sectionName)
-        if (section == "Preferences") {
-            if (++preferences > 1) { invalid = 1; exit 1 }
+        if (section == "Preferences" || section == "WebUI") {
+            if (++sections[section] > 1) { invalid = 1; exit 1 }
         }
     } else if (line != "" && line !~ /^[;#]/) {
         separator = index(line, "=")
@@ -93,11 +94,16 @@ BEGIN {
         key = trim(substr(line, 1, separator - 1))
         value = trim(substr(line, separator + 1))
         path = (section == "" ? "" : section "/") settingsName(key)
-        if (path == "Preferences/WebUI/AlternativeUIEnabled" || path == "Preferences/WebUI/RootFolder") {
+        if (path == "Preferences/WebUI/AlternativeUIEnabled" || path == "Preferences/WebUI/RootFolder" ||
+            path == "WebUI/AlternativeUIEnabled" || path == "WebUI/RootFolder") {
             # Aliases outside the canonical section/key are ambiguous: reject without rewriting.
-            if (section != "Preferences" || (key != enabled && key != root)) {
+            if (!((section == "Preferences" && (key == "WebUI\\AlternativeUIEnabled" || key == "WebUI\\RootFolder")) ||
+                  (section == "WebUI" && (key == "AlternativeUIEnabled" || key == "RootFolder")))) {
                 invalid = 1; exit 1
             }
+            # Remove only managed keys from the other layout. Legacy values would
+            # otherwise overwrite the new values during qBittorrent's migration.
+            if (section != managedSection) { changed = 1; next }
             if (key == enabled) { count = ++seenEnabled; expected = "true" }
             else { count = ++seenRoot; expected = "/opt/qbtmud" }
             if (count > 1 || value != expected) changed = 1
@@ -112,9 +118,9 @@ BEGIN {
 END {
     if (invalid) exit 1
     missing()
-    if (!preferences && mode == "write") {
+    if (!sections[managedSection] && mode == "write") {
         if (NR) printf "%s", ending
-        printf "[Preferences]%s%s=true%s%s=/opt/qbtmud%s", ending, enabled, ending, root, ending
+        printf "[%s]%s%s=true%s%s=/opt/qbtmud%s", managedSection, ending, enabled, ending, root, ending
     }
-    if (mode != "write" && (changed || preferences != 1 || seenEnabled != 1 || seenRoot != 1)) exit 2
+    if (mode != "write" && (changed || sections[managedSection] != 1 || seenEnabled != 1 || seenRoot != 1)) exit 2
 }

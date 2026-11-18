@@ -24,8 +24,15 @@ playwright_version="$(awk -F'\"' '/Microsoft.Playwright/ { print $4; exit }' "$t
 playwright_node="$HOME/.nuget/packages/microsoft.playwright/$playwright_version/.playwright/node/linux-x64/node"
 playwright_cli="$HOME/.nuget/packages/microsoft.playwright/$playwright_version/.playwright/package/cli.js"
 
-rm -rf "$work_root" "$output_dir"
+rm -rf "$work_root"
 mkdir -p "$profile_config_root" "$output_dir" "$log_root" "$alternative_ui_root/public"
+rm -f -- \
+    "$output_dir/welcome-wizard.png" \
+    "$output_dir/welcome-wizard-debug.png" \
+    "$output_dir/dashboard.png" \
+    "$output_dir/torrent-details.png" \
+    "$output_dir/theme-manager.png" \
+    "$output_dir/app-settings.png"
 
 dotnet publish "$repo_root/src/Lantean.QBTMud/Lantean.QBTMud.csproj" -c Release -o "$publish_root" --artifacts-path=/tmp/artifacts/qbtmud
 cp -a "$publish_web_root/." "$alternative_ui_root/public/"
@@ -48,7 +55,7 @@ WebUI\\Address=127.0.0.1
 WebUI\\Port=$webui_port
 WebUI\\Username=$qbittorrent_username
 WebUI\\Password_PBKDF2="@ByteArray($password_hash)"
-WebUI\\LocalHostAuth=false
+WebUI\\LocalHostAuth=true
 WebUI\\AlternativeUIEnabled=true
 WebUI\\RootFolder=$alternative_ui_root
 WebUI\\HostHeaderValidation=false

@@ -755,8 +755,75 @@ window.qbt.scrollElementToEnd = (selector) => {
     });
 }
 
+window.qbt.updatePendingClientDataJournal = (storageKey, action, value) => new Promise((resolve, reject) => {
+    const opening = indexedDB.open("QbtMud.StorageCoordination", 1);
+    opening.onupgradeneeded = () => opening.result.createObjectStore("journal");
+    opening.onerror = () => reject(opening.error);
+    opening.onsuccess = () => {
+        const database = opening.result;
+        // Overlapping readwrite transactions serialise these localStorage mutations across tabs, including HTTP hosts.
+        let transaction;
+        try {
+            transaction = database.transaction("journal", "readwrite");
+        } catch (error) {
+            database.close();
+            reject(error);
+            return;
+        }
+        let pending;
+        let mutationError;
+        transaction.oncomplete = () => {
+            database.close();
+            resolve(pending);
+        };
+        transaction.onabort = () => {
+            database.close();
+            reject(mutationError || transaction.error);
+        };
+        transaction.objectStore("journal").get(0).onsuccess = () => {
+            try {
+                const journalKey = "QbtMud." + storageKey;
+                pending = JSON.parse(localStorage.getItem(journalKey) ?? localStorage.getItem(storageKey) ?? "{}");
+                if (pending === null || typeof pending !== "object" || Array.isArray(pending)) {
+                    throw new Error("The pending-change journal must contain an object.");
+                }
+                if (action === "set") {
+                    Object.assign(pending, value);
+                } else if (action === "complete") {
+                    for (const [key, expected] of Object.entries(value)) {
+                        if (Object.hasOwn(pending, key) && JSON.stringify(pending[key]) === JSON.stringify(expected)) {
+                            delete pending[key];
+                        }
+                    }
+                } else if (action === "remove") {
+                    delete pending[value];
+                } else if (action === "clear") {
+                    pending = {};
+                } else if (action === "removeLocalSource") {
+                    const sourceKey = value.startsWith("QbtMud.") ? value : "QbtMud." + value;
+                    if (!Object.hasOwn(pending, sourceKey)) {
+                        localStorage.removeItem(sourceKey);
+                        localStorage.removeItem(sourceKey.substring("QbtMud.".length));
+                    }
+                } else if (action !== "read") {
+                    throw new Error("Unknown pending-change journal operation.");
+                }
+                if (Object.keys(pending).length) {
+                    localStorage.setItem(journalKey, JSON.stringify(pending));
+                } else {
+                    localStorage.removeItem(journalKey);
+                }
+                localStorage.removeItem(storageKey);
+            } catch (error) {
+                mutationError = error;
+                transaction.abort();
+            }
+        };
+    };
+});
+
 let supportedEvents = new Map();
-let focusInstance = null;
+let focusInstances = [];
 
 document.addEventListener('keydown', event => {
     if (shouldIgnoreKeyPress(event)) {
@@ -769,6 +836,7 @@ document.addEventListener('keydown', event => {
         return;
     }
 
+    const focusInstance = focusInstances[focusInstances.length - 1];
     if (focusInstance && !references.has(focusInstance._id)) {
         return;
     }
@@ -790,6 +858,7 @@ document.addEventListener('keyup', event => {
     }
 
     references.forEach(dotNetObjectReference => {
+        const focusInstance = focusInstances[focusInstances.length - 1];
         if (focusInstance && dotNetObjectReference._id != focusInstance._id) {
             return;
         }
@@ -832,17 +901,24 @@ window.qbt.unregisterKeypressEvent = (keyboardEventArgs, dotNetObjectReference) 
 }
 
 window.qbt.keyPressFocusInstance = dotNetObjectReference => {
-    focusInstance = dotNetObjectReference;
+    focusInstances = focusInstances.filter(instance => instance._id !== dotNetObjectReference._id);
+    focusInstances.push(dotNetObjectReference);
 }
 
 window.qbt.keyPressUnFocusInstance = dotNetObjectReference => {
-    focusInstance = null;
+    focusInstances = focusInstances.filter(instance => instance._id !== dotNetObjectReference._id);
 }
 
 function shouldIgnoreKeyPress(event) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
         return false;
+    }
+
+    if ((event.key === 'Enter' || event.key === ' ')
+        && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey
+        && target.closest('button') !== null) {
+        return true;
     }
 
     const isEditable = target.isContentEditable

@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
@@ -19,12 +20,32 @@ namespace Lantean.QBTMud.Components
         private bool _piecesLoaded;
         private bool _piecesLoading = true;
         private bool _piecesFailed;
+        private string? _requestedHash;
+        private string? _displayedHash;
+        private double? _displayedProgress;
+        private int _requestVersion;
+        private bool _selectionLoading;
 
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
 
         [Parameter]
         public bool Active { get; set; }
+
+        [Parameter]
+        public double? TorrentProgress { get; set; }
+
+        [Parameter]
+        public bool? PiecesExpanded { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> PiecesExpandedChanged { get; set; }
+
+        [Parameter]
+        public EventCallback<string> DisplayedHashChanged { get; set; }
+
+        [CascadingParameter]
+        public PiecesProgressLayoutState? PiecesLayoutState { get; set; }
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
@@ -52,62 +73,23 @@ namespace Lantean.QBTMud.Components
 
         protected bool PiecesFailed => _piecesFailed;
 
+        protected string? DisplayedHash => _displayedHash ?? Hash;
+
+        protected double? DisplayedProgress => _displayedHash is null || _displayedHash == Hash ? TorrentProgress : _displayedProgress;
+
         protected override async Task OnParametersSetAsync()
         {
-            if (Hash is null)
+            if (_disposedValue || Hash is null)
             {
                 return;
             }
 
-            if (!Active)
+            if (!Active || _requestedHash == Hash)
             {
                 return;
             }
 
-            if (!_piecesLoaded)
-            {
-                _piecesLoading = true;
-                _piecesFailed = false;
-            }
-
-            var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
-            if (propertiesResult.IsFailure)
-            {
-                MarkPiecesFailed();
-                if (propertiesResult.Failure?.Kind == ApiFailureKind.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                }
-                else
-                {
-                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult);
-                }
-
-                await InvokeAsync(StateHasChanged);
-                return;
-            }
-
-            Properties = propertiesResult.Value;
-
-            var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
-            if (piecesResult.IsFailure)
-            {
-                if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
-                {
-                    MarkPiecesFailed();
-                }
-                else
-                {
-                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult);
-                }
-            }
-            else
-            {
-                Pieces = piecesResult.Value;
-                MarkPiecesLoaded();
-            }
-
-            await InvokeAsync(StateHasChanged);
+            await LoadSelectionAsync(Hash);
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -124,11 +106,115 @@ namespace Lantean.QBTMud.Components
             }
         }
 
+        private async Task LoadSelectionAsync(string hash)
+        {
+            _requestedHash = hash;
+            var version = ++_requestVersion;
+            var progress = TorrentProgress;
+            _selectionLoading = true;
+            try
+            {
+                if (!_piecesLoaded)
+                {
+                    _piecesLoading = true;
+                    _piecesFailed = false;
+                }
+
+                var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(hash);
+                if (!IsCurrentRequest(hash, version))
+                {
+                    return;
+                }
+                if (propertiesResult.IsFailure)
+                {
+                    if (_displayedHash is null)
+                    {
+                        MarkPiecesFailed();
+                    }
+                    if (propertiesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                    }
+                    else
+                    {
+                        await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult);
+                    }
+
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(hash);
+                if (!IsCurrentRequest(hash, version))
+                {
+                    return;
+                }
+                if (piecesResult.IsFailure)
+                {
+                    if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                    {
+                        if (_displayedHash is null)
+                        {
+                            MarkPiecesFailed();
+                        }
+                    }
+                    else
+                    {
+                        await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult);
+                    }
+                    if (_displayedHash is null)
+                    {
+                        Properties = propertiesResult.Value;
+                    }
+                }
+                else
+                {
+                    Properties = propertiesResult.Value;
+                    Pieces = piecesResult.Value;
+                    MarkPiecesLoaded();
+                    _displayedHash = hash;
+                    _displayedProgress = progress;
+                    await DisplayedHashChanged.InvokeAsync(hash);
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+            finally
+            {
+                if (version == _requestVersion)
+                {
+                    _selectionLoading = false;
+                }
+            }
+        }
+
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
+            if (_disposedValue || cancellationToken.IsCancellationRequested)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (_selectionLoading)
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
             if (Active && Hash is not null)
             {
-                var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
+                if (_displayedHash is not null && _displayedHash != Hash)
+                {
+                    await LoadSelectionAsync(Hash);
+                    return ManagedTimerTickResult.Continue;
+                }
+
+                var hash = Hash;
+                var version = _requestVersion;
+                var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(hash);
+                if (!IsCurrentRequest(hash, version))
+                {
+                    return ManagedTimerTickResult.Continue;
+                }
                 if (propertiesResult.IsFailure)
                 {
                     MarkPiecesFailed();
@@ -154,9 +240,11 @@ namespace Lantean.QBTMud.Components
                     return ManagedTimerTickResult.Continue;
                 }
 
-                Properties = propertiesResult.Value;
-
-                var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
+                var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(hash);
+                if (!IsCurrentRequest(hash, version))
+                {
+                    return ManagedTimerTickResult.Continue;
+                }
                 if (piecesResult.IsFailure)
                 {
                     var failureKind = piecesResult.Failure?.Kind;
@@ -179,8 +267,15 @@ namespace Lantean.QBTMud.Components
                 }
                 else
                 {
+                    Properties = propertiesResult.Value;
                     Pieces = piecesResult.Value;
                     MarkPiecesLoaded();
+                    if (_displayedHash != hash)
+                    {
+                        _displayedHash = hash;
+                        _displayedProgress = TorrentProgress;
+                        await DisplayedHashChanged.InvokeAsync(hash);
+                    }
                 }
 
                 await InvokeAsync(StateHasChanged);
@@ -226,6 +321,11 @@ namespace Lantean.QBTMud.Components
             _piecesLoaded = true;
             _piecesLoading = false;
             _piecesFailed = false;
+        }
+
+        private bool IsCurrentRequest(string hash, int version)
+        {
+            return !_disposedValue && Hash == hash && version == _requestVersion;
         }
 
         private void MarkPiecesFailed()

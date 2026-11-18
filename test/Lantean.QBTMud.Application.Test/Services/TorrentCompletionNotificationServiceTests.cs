@@ -38,6 +38,26 @@ namespace Lantean.QBTMud.Application.Test.Services
                 .Returns((string context, string source, object[] arguments) => $"{context}|{source}|{string.Join("|", arguments.Select(argument => argument?.ToString()))}");
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(40)]
+        public async Task GIVEN_ResumedOrSelectiveDownload_WHEN_VerifiedProgressCompletes_THEN_ShouldNotifyOnce(long downloaded)
+        {
+            var incomplete = CreateTorrent("Hash", "Name", false);
+            incomplete.Downloaded = downloaded;
+            await _target.InitializeAsync(new Dictionary<string, MudTorrent> { ["Hash"] = incomplete }, Xunit.TestContext.Current.CancellationToken);
+            var complete = CreateTorrent("Hash", "Name", true);
+            complete.Downloaded = downloaded;
+            var torrents = new Dictionary<string, MudTorrent> { ["Hash"] = complete };
+
+            await _target.ProcessAsync(torrents, Xunit.TestContext.Current.CancellationToken);
+            await _target.ProcessAsync(torrents, Xunit.TestContext.Current.CancellationToken);
+
+            Mock.Get(_browserNotificationService).Verify(service => service.ShowNotificationAsync(
+                "AppNotifications|Download completed|", "AppNotifications|'%1' has finished downloading.|Name",
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         [Fact]
         public async Task GIVEN_ServiceNotInitialized_WHEN_ProcessAsync_THEN_ShouldInitializeWithoutShowingNotifications()
         {

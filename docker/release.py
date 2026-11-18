@@ -88,9 +88,10 @@ def resolve_release(repo, tag, directory):
             raise ValueError("Release provenance does not match the stable asset and tag")
         run_id = provenance["runId"]
     else:
-        # Explicitly reviewed bootstrap evidence for the pre-manifest 3.0.0 release.
-        legacy = read(ROOT / "ui-release.json")
-        if (version != legacy["version"] or commit != legacy["commit"]
+        # Preserve the pre-manifest evidence from commit 99092cd3 independently of local-build pins.
+        legacy = read(ROOT / "bootstrap-ui-release-3.0.0.json")
+        if (version != "3.0.0" or version != legacy["version"] or commit != legacy["commit"]
+                or asset["name"] != legacy["archive"]
                 or asset["digest"] != "sha256:" + legacy["sha256"]):
             raise ValueError("Release has no verified build provenance")
         run_id = legacy["buildRun"].rsplit("/", 1)[1]

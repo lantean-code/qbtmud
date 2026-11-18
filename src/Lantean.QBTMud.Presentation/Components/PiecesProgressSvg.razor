@@ -6,28 +6,31 @@
 <MudPaper Class="@RootClass" Elevation="0">
     <MudStack Spacing="0">
         <Tooltip Text="@LinearTooltip" Placement="Placement.Top">
-            <div class="@LinearClass" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
-                <div class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
-                <div class="pieces-progress-svg__linear-overlay" style="@LinearOverlayStyle" data-test-id="@TestIdHelper.For("PiecesLinearOverlay")">
+            <button type="button" class="@LinearClass" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg">
+                <span class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></span>
+                <span class="pieces-progress-svg__linear-overlay" style="@LinearOverlayStyle" data-test-id="@TestIdHelper.For("PiecesLinearOverlay")">
                     <MudText Typo="Typo.body2"
+                             HtmlTag="span"
                              Class="pl-2"
                              data-test-id="@TestIdHelper.For("PiecesLinearSummary")">@LinearSummary</MudText>
                     <MudIcon Icon="@ToggleIcon" Class="pieces-progress-svg__icon" />
-                </div>
-            </div>
+                </span>
+            </button>
         </Tooltip>
 
         <MudCollapse Expanded="@_showSvg">
             <MudPaper Class="@SurfaceClass" Elevation="0">
                 @if (PiecesLoading)
                 {
-                    <MudText Typo="Typo.body2"
-                             Class="pieces-progress-svg__empty"
-                             data-test-id="@TestIdHelper.For("PiecesLoadingText")">@SvgLoadingText</MudText>
+                    <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Style="@LoadingPlaceholderStyle" data-test-id="@TestIdHelper.For("PiecesLoadingPlaceholder")">
+                        <MudText Typo="Typo.body2"
+                                 Class="pieces-progress-svg__empty"
+                                 data-test-id="@TestIdHelper.For("PiecesLoadingText")">@SvgLoadingText</MudText>
+                    </MudStack>
                 }
                 else if (_svgBuilding)
                 {
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pieces-progress-svg__empty" data-test-id="@TestIdHelper.For("PiecesSpinner")">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="@LoadingPlaceholderStyle" Class="pieces-progress-svg__empty" data-test-id="@TestIdHelper.For("PiecesSpinner")">
                         <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
                         <MudText Typo="Typo.body2" Class="ml-4">@TranslateApp("Rendering pieces...")</MudText>
                     </MudStack>

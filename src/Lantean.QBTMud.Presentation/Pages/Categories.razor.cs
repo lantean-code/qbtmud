@@ -66,6 +66,14 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
+        protected override void OnParametersSet()
+        {
+            if (MainData is not null)
+            {
+                _categories = null;
+            }
+        }
+
         protected async Task Reload()
         {
             if (_isBusy)
@@ -102,12 +110,18 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
             var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [name]);
-            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
+            if (await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
+            {
+                _categories = null;
+            }
         }
 
         protected async Task AddCategory()
         {
-            await DialogWorkflow.InvokeAddCategoryDialog();
+            if (await DialogWorkflow.InvokeAddCategoryDialog() is not null)
+            {
+                _categories = null;
+            }
         }
 
         protected async Task EditCategory(string? name)
@@ -116,7 +130,10 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await DialogWorkflow.InvokeEditCategoryDialog(name);
+            if (await DialogWorkflow.InvokeEditCategoryDialog(name) is not null)
+            {
+                _categories = null;
+            }
         }
 
         protected IEnumerable<ColumnDefinition<Category>> Columns => GetColumnDefinitions();

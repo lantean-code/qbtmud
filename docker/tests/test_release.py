@@ -308,6 +308,128 @@ class PolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "configuration differs"):
                 release.assemble(directory, self.inputs, release.ANNOTATION)
 
+    def test_bootstrap_evidence_matches_the_original_reviewed_release(self):
+        evidence = release.read(release.ROOT / "bootstrap-ui-release-3.0.0.json")
+        self.assertEqual(evidence, {
+            "version": "3.0.0",
+            "commit": "ec93ae97ed294d4730b414511a36ebc26aeb3037",
+            "archive": "qbt-mud-v3.0.0-intl.zip",
+            "sha256": "b3228420b8f66c9d5aa59ab0acdb6a6ff14321f4167a9a7e5b0f969c1973be58",
+            "url": "https://github.com/lantean-code/qbtmud/releases/download/3.0.0/qbt-mud-v3.0.0-intl.zip",
+            "buildRun": "https://github.com/lantean-code/qbtmud/actions/runs/34381649201"
+        })
+
+    def test_historical_bootstrap_resolves_after_the_local_build_pin_advances(self):
+        evidence, document, run = self.bootstrap_evidence()
+        data = b"historical archive download fixture"
+        for current_version in ("3.1.0", "4.0.0"):
+            with self.subTest(current_version=current_version), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                release.write(root / "bootstrap-ui-release-3.0.0.json", evidence)
+                release.write(root / "ui-release.json", dict(evidence, version=current_version,
+                                                             commit="c" * 40, sha256="d" * 64,
+                                                             buildRun="https://github.com/lantean-code/qbtmud/actions/runs/999"))
+                archive = root / evidence["archive"]
+                archive.write_bytes(data)
+                with patch.object(release, "ROOT", root), \
+                        patch.object(release, "gh", side_effect=[document, {"sha": evidence["commit"]}, run]) as api, \
+                        patch.object(release, "download", return_value=archive) as download, \
+                        patch.object(release.hashlib, "sha256") as checksum, \
+                        patch.object(release, "command", side_effect=AssertionError("External commands are not allowed")):
+                    checksum.return_value.hexdigest.return_value = evidence["sha256"]
+                    result = release.resolve_release("lantean-code/qbtmud", "3.0.0", root)
+                    self.assertEqual(result["version"], "3.0.0")
+                    self.assertEqual(result["uiCommit"], evidence["commit"])
+                    self.assertEqual(result["uiSha256"], evidence["sha256"])
+                    self.assertEqual(result["uiBuildRun"], "34381649201")
+                    api.assert_any_call("repos/lantean-code/qbtmud/actions/runs/34381649201")
+                    download.assert_called_once_with("lantean-code/qbtmud", "3.0.0", evidence["archive"], root)
+                    checksum.assert_called_once_with(data)
+
+    def test_bootstrap_rejects_mismatched_release_or_build_evidence(self):
+        cases = (("version", "3.1.0"), ("commit", "a" * 40), ("digest", "sha256:" + "b" * 64),
+                 ("conclusion", "failure"), ("head_sha", "a" * 40), ("head_branch", "develop"),
+                 ("event", "workflow_dispatch"), ("path", ".github/workflows/other.yml"))
+        for field, value in cases:
+            with self.subTest(field=field):
+                evidence, document, run = self.bootstrap_evidence()
+                version = "3.0.0"
+                commit = evidence["commit"]
+                if field == "version":
+                    version = value
+                    document["assets"][0]["name"] = f"qbt-mud-v{version}-intl.zip"
+                elif field == "commit":
+                    commit = value
+                elif field == "digest":
+                    document["assets"][0]["digest"] = value
+                else:
+                    run[field] = value
+                with patch.object(release, "gh", side_effect=[document, {"sha": commit}, run]), \
+                        patch.object(release, "download") as download, \
+                        patch.object(release, "command", side_effect=AssertionError("External commands are not allowed")):
+                    with self.assertRaisesRegex(ValueError, "provenance|successful stable master UI build"):
+                        release.resolve_release("lantean-code/qbtmud", version, "unused")
+                    download.assert_not_called()
+
+    def test_bootstrap_rejects_inconsistent_historical_metadata(self):
+        for field, value in (("version", "3.1.0"), ("archive", "different.zip")):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                evidence, document, run = self.bootstrap_evidence()
+                altered_evidence = dict(evidence, **{field: value})
+                root = Path(directory)
+                release.write(root / "bootstrap-ui-release-3.0.0.json", altered_evidence)
+                with patch.object(release, "ROOT", root), \
+                        patch.object(release, "gh", side_effect=[document, {"sha": evidence["commit"]}, run]), \
+                        patch.object(release, "download") as download, \
+                        patch.object(release, "command", side_effect=AssertionError("External commands are not allowed")):
+                    with self.assertRaisesRegex(ValueError, "no verified build provenance"):
+                        release.resolve_release("lantean-code/qbtmud", "3.0.0", root)
+                    download.assert_not_called()
+
+    def test_bootstrap_rejects_a_download_with_the_wrong_checksum(self):
+        evidence, document, run = self.bootstrap_evidence()
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / evidence["archive"]
+            archive.write_bytes(b"incorrect historical archive")
+            with patch.object(release, "gh", side_effect=[document, {"sha": evidence["commit"]}, run]), \
+                    patch.object(release, "download", return_value=archive), \
+                    patch.object(release, "command", side_effect=AssertionError("External commands are not allowed")):
+                with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                    release.resolve_release("lantean-code/qbtmud", "3.0.0", directory)
+
+    def test_manifest_release_does_not_require_bootstrap_evidence(self):
+        data = b"verified later release archive"
+        digest = hashlib.sha256(data).hexdigest()
+        asset = {"id": 2, "name": "qbt-mud-v3.1.0-intl.zip", "digest": "sha256:" + digest}
+        document = {"draft": False, "prerelease": False, "published_at": "2026-10-13", "id": 1,
+                    "assets": [asset, {"name": "qbt-mud-v3.1.0-provenance.json"}]}
+        provenance = {"channel": "stable", "tag": "3.1.0", "version": "3.1.0", "commit": "a" * 40,
+                      "archive": asset["name"], "sha256": digest, "runId": "123"}
+        run = {"conclusion": "success", "head_sha": "a" * 40, "head_branch": "master",
+               "event": "push", "path": ".github/workflows/dotnet.yml"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / asset["name"]
+            archive.write_bytes(data)
+            manifest = root / "qbt-mud-v3.1.0-provenance.json"
+            manifest.write_text(json.dumps(provenance), encoding="utf-8")
+            with patch.object(release, "ROOT", root), \
+                    patch.object(release, "gh", side_effect=[document, {"sha": "a" * 40}, run]), \
+                    patch.object(release, "download", side_effect=[manifest, archive]), \
+                    patch.object(release, "command", side_effect=AssertionError("External commands are not allowed")):
+                result = release.resolve_release("lantean-code/qbtmud", "3.1.0", root)
+                self.assertEqual(result["uiCommit"], provenance["commit"])
+                self.assertEqual(result["uiSha256"], digest)
+                self.assertEqual(result["uiBuildRun"], "123")
+
+    def bootstrap_evidence(self):
+        evidence = release.read(release.ROOT / "bootstrap-ui-release-3.0.0.json")
+        asset = {"id": 2, "name": evidence["archive"], "digest": "sha256:" + evidence["sha256"]}
+        document = {"draft": False, "prerelease": False, "published_at": "2026-10-13", "id": 1, "assets": [asset]}
+        run = {"conclusion": "success", "head_sha": evidence["commit"], "head_branch": "master",
+               "event": "push", "path": ".github/workflows/dotnet.yml"}
+        return evidence, document, run
+
     def test_release_requires_matching_stable_provenance_and_successful_run(self):
         data = b"verified zip fixture"
         digest = __import__("hashlib").sha256(data).hexdigest()

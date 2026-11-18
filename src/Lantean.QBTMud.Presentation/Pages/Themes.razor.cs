@@ -361,6 +361,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var theme = definition.Theme ?? new MudTheme();
+            definition.Theme = theme;
             var description = string.IsNullOrWhiteSpace(definition.Description) ? string.Empty : definition.Description.Trim();
             var fontFamily = string.IsNullOrWhiteSpace(definition.FontFamily) ? "Nunito Sans" : definition.FontFamily;
             if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))

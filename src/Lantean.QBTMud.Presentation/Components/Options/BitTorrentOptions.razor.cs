@@ -186,7 +186,7 @@ namespace Lantean.QBTMud.Components.Options
             if (Preferences.MaxInactiveSeedingTimeEnabled)
             {
                 MaxInactiveSeedingTimeEnabled = true;
-                MaxSeedingTime = Preferences.MaxInactiveSeedingTime;
+                MaxInactiveSeedingTime = Preferences.MaxInactiveSeedingTime;
             }
             else
             {

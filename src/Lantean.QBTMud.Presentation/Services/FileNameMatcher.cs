@@ -25,6 +25,21 @@ namespace Lantean.QBTMud.Services
         private const int _maxMatchesPerFile = 250;
         private static readonly TimeSpan _regexTimeout = TimeSpan.FromSeconds(2);
 
+        /// <summary>
+        /// Creates rename previews by expanding replacement tokens once for each match.
+        /// </summary>
+        /// <param name="files">The files and folders to preview.</param>
+        /// <param name="search">The search text or regular expression.</param>
+        /// <param name="useRegex">Whether the search is a regular expression.</param>
+        /// <param name="replacement">The replacement text and tokens.</param>
+        /// <param name="matchAllOccurrences">Whether every occurrence is replaced.</param>
+        /// <param name="caseSensitive">Whether matching is case-sensitive.</param>
+        /// <param name="appliesToOption">The part of each name to match.</param>
+        /// <param name="includeFiles">Whether to include files.</param>
+        /// <param name="includeFolders">Whether to include folders.</param>
+        /// <param name="replaceAll">The selected submission mode.</param>
+        /// <param name="fileEnumerationStart">The first enumeration value.</param>
+        /// <returns>The matching rows with their preview names.</returns>
         public static IReadOnlyList<FileRow> GetRenamedFiles(
             IEnumerable<FileRow> files,
             string search,
@@ -65,6 +80,9 @@ namespace Lantean.QBTMud.Services
             }
 
             var fileEnumeration = fileEnumerationStart;
+            var groupNames = regex.GetGroupNames();
+            var groupNumbers = regex.GetGroupNumbers();
+            var namedGroups = groupNames.Where(name => !int.TryParse(name, out _)).OrderByDescending(name => name.Length).ToArray();
 
             try
             {
@@ -138,43 +156,7 @@ namespace Lantean.QBTMud.Services
                     for (int i = matches.Count - 1; i >= 0; i--)
                     {
                         var match = matches[i];
-                        var replacementValue = replacement;
-
-                        // Replace numerical groups
-                        for (var g = 0; g < match.Groups.Count; g++)
-                        {
-                            var groupValue = match.Groups[g].Value;
-                            if (string.IsNullOrEmpty(groupValue))
-                            {
-                                continue;
-                            }
-
-                            replacementValue = ReplaceGroup(replacementValue, $"${g}", groupValue, "\\", false);
-                        }
-
-                        // Replace named groups
-                        foreach (var groupName in regex.GetGroupNames())
-                        {
-                            if (int.TryParse(groupName, out _))
-                            {
-                                continue; // Skip numerical group names
-                            }
-
-                            var groupValue = match.Groups[groupName].Value;
-                            replacementValue = ReplaceGroup(replacementValue, $"${groupName}", groupValue, "\\", false);
-                        }
-
-                        // Replace auxiliary variables (e.g., $d, $dd, $ddd, etc.)
-                        var v = new string('d', 8);
-                        while (v.Length > 0)
-                        {
-                            var fileCount = fileEnumeration.ToString().PadLeft(v.Length, '0');
-                            replacementValue = ReplaceGroup(replacementValue, $"${v}", fileCount, "\\", false);
-                            v = v.Substring(1);
-                        }
-
-                        // Remove empty $ variable
-                        replacementValue = ReplaceGroup(replacementValue, "$", string.Empty, "\\");
+                        var replacementValue = ExpandReplacement(replacement, match, groupNumbers, namedGroups, fileEnumeration);
 
                         var matchIndex = match.Index;
                         var matchLength = match.Length;
@@ -197,49 +179,54 @@ namespace Lantean.QBTMud.Services
             return matchedFiles;
         }
 
-        // Helper methods
-        private static string ReplaceGroup(string input, string search, string replacement, string escape, bool stripEscape = true)
+        private static string ExpandReplacement(string replacement, Match match, IReadOnlyCollection<int> groupNumbers, IReadOnlyList<string> namedGroups, int fileEnumeration)
         {
             var result = new StringBuilder();
-            var i = 0;
-            var inputLength = input.Length;
-            var escapeLength = escape.Length;
-            var searchLength = search.Length;
-
-            while (i < inputLength)
+            for (var index = 0; index < replacement.Length; index++)
             {
-                // Check if the current index contains the escape string
-                if (IsSubstringAt(input, i, escape))
+                if (replacement[index] == '\\' && index + 1 < replacement.Length && replacement[index + 1] == '$')
                 {
-                    // Check if the escape is followed by the search string
-                    if (IsSubstringAt(input, i + escapeLength, search))
-                    {
-                        if (stripEscape)
-                        {
-                            result.Append(search);
-                            i += escapeLength + searchLength;
-                        }
-                        else
-                        {
-                            result.Append(escape + search);
-                            i += escapeLength + searchLength;
-                        }
-                    }
-                    else
-                    {
-                        result.Append(escape);
-                        i += escapeLength;
-                    }
+                    result.Append('$');
+                    index++;
+                    continue;
                 }
-                else if (IsSubstringAt(input, i, search))
+
+                if (replacement[index] != '$')
                 {
-                    result.Append(replacement);
-                    i += searchLength;
+                    result.Append(replacement[index]);
+                    continue;
                 }
-                else
+
+                var tokenStart = index + 1;
+                var tokenEnd = tokenStart;
+                while (tokenEnd < replacement.Length && char.IsAsciiDigit(replacement[tokenEnd]))
                 {
-                    result.Append(input[i]);
-                    i++;
+                    tokenEnd++;
+                }
+                if (tokenEnd > tokenStart)
+                {
+                    var number = replacement[tokenStart..tokenEnd];
+                    result.Append(int.TryParse(number, out var groupNumber) && groupNumbers.Contains(groupNumber) ? match.Groups[groupNumber].Value : number);
+                    index = tokenEnd - 1;
+                    continue;
+                }
+
+                var namedGroup = namedGroups.FirstOrDefault(name => replacement.AsSpan(tokenStart).StartsWith(name, StringComparison.Ordinal));
+                if (namedGroup is not null)
+                {
+                    result.Append(match.Groups[namedGroup].Value);
+                    index += namedGroup.Length;
+                    continue;
+                }
+
+                while (tokenEnd < replacement.Length && tokenEnd - tokenStart < 8 && replacement[tokenEnd] == 'd')
+                {
+                    tokenEnd++;
+                }
+                if (tokenEnd > tokenStart)
+                {
+                    result.Append(fileEnumeration.ToString().PadLeft(tokenEnd - tokenStart, '0'));
+                    index = tokenEnd - 1;
                 }
             }
 
@@ -249,16 +236,6 @@ namespace Lantean.QBTMud.Services
         private static string ReplaceBetween(string input, int start, int end, string replacement)
         {
             return string.Concat(input.AsSpan(0, start), replacement, input.AsSpan(end));
-        }
-
-        private static bool IsSubstringAt(string input, int index, string substring)
-        {
-            if (index + substring.Length > input.Length)
-            {
-                return false;
-            }
-
-            return input.Substring(index, substring.Length) == substring;
         }
     }
 }

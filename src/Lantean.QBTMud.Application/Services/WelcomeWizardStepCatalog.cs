@@ -28,6 +28,11 @@ namespace Lantean.QBTMud.Application.Services
         public const string StorageStepId = "welcome.storage.v1";
 
         /// <summary>
+        /// Gets the torrent details step identifier.
+        /// </summary>
+        public const string TorrentDetailsStepId = "welcome.torrent-details.v1";
+
+        /// <summary>
         /// Gets all wizard steps in display order.
         /// </summary>
         public static IReadOnlyList<WelcomeWizardStepDefinition> Steps { get; } =
@@ -35,7 +40,8 @@ namespace Lantean.QBTMud.Application.Services
             new WelcomeWizardStepDefinition(LanguageStepId, 0),
             new WelcomeWizardStepDefinition(ThemeStepId, 1),
             new WelcomeWizardStepDefinition(NotificationsStepId, 2),
-            new WelcomeWizardStepDefinition(StorageStepId, 3)
+            new WelcomeWizardStepDefinition(StorageStepId, 3),
+            new WelcomeWizardStepDefinition(TorrentDetailsStepId, 4)
         ];
 
         /// <summary>
