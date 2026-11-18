@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '17 6 * * *'
   release:
-    types: [published]
+    types: [released]
   workflow_dispatch:
     inputs:
       release:
@@ -30,7 +30,17 @@ env:
 
 jobs:
   prepare:
-    if: github.repository == 'lantean-code/qbtmud' && (github.event_name == 'release' || github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch)
+    if: >-
+      github.repository == 'lantean-code/qbtmud' &&
+      (
+        (github.event_name == 'release' &&
+          !github.event.release.draft &&
+          !github.event.release.prerelease &&
+          !contains(github.event.release.tag_name, '-') &&
+          !contains(github.event.release.tag_name, '+')) ||
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch)
+      )
     runs-on: ubuntu-24.04
     permissions:
       contents: read
