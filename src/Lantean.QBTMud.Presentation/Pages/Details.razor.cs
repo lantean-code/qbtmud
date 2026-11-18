@@ -28,6 +28,8 @@ namespace Lantean.QBTMud.Pages
 
         private bool _piecesExpanded;
 
+        private readonly PiecesProgressLayoutState _piecesLayoutState = new();
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 

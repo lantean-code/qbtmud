@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Pages;
 using Microsoft.Extensions.DependencyInjection;
@@ -99,9 +100,13 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
         }
 
         [Theory]
-        [InlineData(0, 30)]
+        [InlineData(-10, 0)]
+        [InlineData(0, 0)]
+        [InlineData(10, 10)]
         [InlineData(45, 45)]
-        [InlineData(100, 60)]
+        [InlineData(90, 90)]
+        [InlineData(100, 100)]
+        [InlineData(110, 100)]
         public async Task GIVEN_ResizeRequest_WHEN_RatioSaved_THEN_ClampsAndPersistsRatio(int ratio, int expected)
         {
             var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
@@ -115,10 +120,15 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", expected, It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Fact]
-        public async Task GIVEN_SavedRatio_WHEN_ViewportShrinksAndGrows_THEN_RestoresPanelSize()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(10)]
+        [InlineData(55)]
+        [InlineData(90)]
+        [InlineData(100)]
+        public async Task GIVEN_SavedRatio_WHEN_ViewportShrinksAndGrows_THEN_RestoresPanelSize(int ratio)
         {
-            Mock.Get(_storage).Setup(service => service.GetItemAsync<int?>("TorrentList.DetailsRatio", It.IsAny<CancellationToken>())).ReturnsAsync(55);
+            Mock.Get(_storage).Setup(service => service.GetItemAsync<int?>("TorrentList.DetailsRatio", It.IsAny<CancellationToken>())).ReturnsAsync(ratio);
             var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
                 .Add(component => component.Enabled, true)
                 .Add(component => component.Hash, "Hash"));
@@ -130,7 +140,105 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
             await target.InvokeAsync(() => target.Instance.SetAvailability(true));
             await target.InvokeAsync(() => target.Instance.SetAvailability(true));
 
-            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(55);
+            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(ratio);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(17)]
+        [InlineData(83)]
+        [InlineData(100)]
+        public async Task GIVEN_CustomSizeDialog_WHEN_SliderSaved_THEN_PersistsPercentage(int ratio)
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var size = FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize");
+            var selection = target.InvokeAsync(() => size.Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+            var slider = FindComponentByTestId<MudSlider<int>>(dialog, "SliderFieldSlider");
+
+            slider.Instance.Min.Should().Be(0);
+            slider.Instance.Max.Should().Be(100);
+            slider.Instance.UserAttributes["aria-label"].Should().Be("Details size");
+            slider.Instance.GetState(component => component.Value).Should().Be(40);
+            await dialog.InvokeAsync(() => slider.Instance.ValueChanged.InvokeAsync(ratio));
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldSave").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.GetState(component => component.Value).Should().Be(ratio);
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", ratio, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_CustomSizeDialog_WHEN_Cancelled_THEN_RestoresSelectionWithoutSaving()
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var size = FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize");
+            var selection = target.InvokeAsync(() => size.Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+            await dialog.InvokeAsync(() => FindComponentByTestId<MudSlider<int>>(dialog, "SliderFieldSlider").Instance.ValueChanged.InvokeAsync(90));
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldCancel").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            size.Instance.GetState(component => component.Value).Should().Be(40);
+            Mock.Get(_storage).Verify(service => service.SetItemAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_CustomSizeDialog_WHEN_PanelDisposedBeforeSave_THEN_DoesNotPersistLateResult()
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var selection = target.InvokeAsync(() => FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+
+            await target.Instance.DisposeAsync();
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldSave").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            Mock.Get(_storage).Verify(service => service.SetItemAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("101")]
+        [InlineData("InvalidPercentage")]
+        public async Task GIVEN_CustomPercentageInput_WHEN_InvalidThenCorrected_THEN_SavesOnlyValidPercentage(string input)
+        {
+            var provider = TestContext.Render<MudDialogProvider>();
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters
+                .Add(component => component.Enabled, true)
+                .Add(component => component.Hash, "Hash"));
+            await target.InvokeAsync(() => target.Instance.SetAvailability(true));
+            var selection = target.InvokeAsync(() => FindComponentByTestId<MudSelect<int>>(target, "TorrentSplitSize").Instance.ValueChanged.InvokeAsync(-1));
+            provider.WaitForAssertion(() => provider.FindComponent<SliderFieldDialog<int>>().Should().NotBeNull());
+            var dialog = provider.FindComponent<SliderFieldDialog<int>>();
+            var field = FindComponentByTestId<MudTextField<string>>(dialog, "SliderFieldInput");
+
+            field.Instance.Immediate.Should().BeTrue();
+
+            await dialog.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(input));
+
+            FindButton(dialog, "SliderFieldSave").Instance.Disabled.Should().BeTrue();
+            field.Instance.GetState(component => component.Error).Should().BeTrue();
+            await dialog.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync("73"));
+            await dialog.InvokeAsync(() => FindButton(dialog, "SliderFieldSave").Instance.OnClick.InvokeAsync());
+            await selection;
+
+            Mock.Get(_storage).Verify(service => service.SetItemAsync("TorrentList.DetailsRatio", 73, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

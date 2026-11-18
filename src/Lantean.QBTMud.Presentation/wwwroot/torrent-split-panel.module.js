@@ -75,7 +75,7 @@ class TorrentSplitElement extends HTMLElement {
             this.scrollRestored = true;
         }
         const space = this.clientHeight - (this.querySelector(".torrent-split__divider")?.getBoundingClientRect().height || 6);
-        const height = Math.max(240, Math.min(space - 240, space * this.ratio / 100));
+        const height = 56 + Math.max(0, space - 112) * this.ratio / 100;
         this.style.setProperty("--torrent-details-height", `${height}px`);
         const grip = this.querySelector(".torrent-split__grip");
         if (grip) {
@@ -99,7 +99,8 @@ class TorrentSplitElement extends HTMLElement {
             return;
         }
         const space = this.clientHeight - (this.querySelector(".torrent-split__divider")?.getBoundingClientRect().height || 6);
-        this.ratio = Math.max(30, Math.min(60, this.dragging.ratio + (this.dragging.y - event.clientY) / space * 100));
+        const resizableSpace = Math.max(1, space - 112);
+        this.ratio = Math.max(0, Math.min(100, this.dragging.ratio + (this.dragging.y - event.clientY) / resizableSpace * 100));
         this.layout();
     }
 
@@ -126,13 +127,15 @@ class TorrentSplitElement extends HTMLElement {
         } else if (event.key === "ArrowDown") {
             ratio = this.ratio - 5;
         } else if (event.key === "Home") {
-            ratio = 40;
+            ratio = 0;
+        } else if (event.key === "End") {
+            ratio = 100;
         } else {
             return;
         }
         event.preventDefault();
         event.stopPropagation();
-        this.ratio = Math.max(30, Math.min(60, ratio));
+        this.ratio = Math.max(0, Math.min(100, ratio));
         this.layout();
         this.notify("ChangeRatio", Math.round(this.ratio));
     }
@@ -144,11 +147,11 @@ if (!customElements.get("qbt-torrent-split")) {
 
 export function initialize(element, reference, ratio) {
     element.reference = reference;
-    element.ratio = ratio;
+    element.ratio = Math.max(0, Math.min(100, ratio));
     element.measure();
 }
 
 export function setRatio(element, ratio) {
-    element.ratio = ratio;
+    element.ratio = Math.max(0, Math.min(100, ratio));
     element.layout();
 }

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Utilities;
@@ -60,6 +61,9 @@ namespace Lantean.QBTMud.Components
         [Parameter]
         public EventCallback<bool> ExpandedChanged { get; set; }
 
+        [Parameter]
+        public PiecesProgressLayoutState? LayoutState { get; set; }
+
         [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
 
@@ -105,6 +109,21 @@ namespace Lantean.QBTMud.Components
             .Build();
 
         protected string GridStyle => $"background-color: {GridBackgroundColor};";
+
+        private string? LoadingPlaceholderStyle
+        {
+            get
+            {
+                var columns = DetermineColumnCount();
+                if (columns == 0 || LayoutState is not { PieceCount: > 0 })
+                {
+                    return null;
+                }
+
+                var rows = (int)Math.Ceiling((double)LayoutState.PieceCount / columns);
+                return FormattableString.Invariant($"aspect-ratio: {columns} / {rows};");
+            }
+        }
 
         protected string ToggleIcon => _showSvg ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore;
 
@@ -354,6 +373,10 @@ namespace Lantean.QBTMud.Components
             }
 
             _cells = cells;
+            if (LayoutState is not null)
+            {
+                LayoutState.PieceCount = Pieces.Count;
+            }
             _viewBox = $"0 0 {columns} {Math.Max(1, rows)}";
             _svgEmptyText = string.Empty;
             _svgAriaLabel = TranslateApp(

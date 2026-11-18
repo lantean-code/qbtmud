@@ -166,6 +166,9 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .AddCascadingValue(Breakpoint.Lg));
             var progress = target.FindComponent<PiecesProgressSvg>();
             await FindComponentByTestId<MudTooltip>(progress, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+            var layout = progress.Instance.LayoutState;
+            layout.Should().NotBeNull();
+            target.WaitForAssertion(() => layout!.PieceCount.Should().Be(1));
             if (!expanded)
             {
                 await FindComponentByTestId<MudTooltip>(progress, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
@@ -174,6 +177,8 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
 
             progress = target.FindComponent<PiecesProgressSvg>();
+            progress.Instance.LayoutState.Should().BeSameAs(layout);
+            progress.FindComponents<MudStack>().Single(component => component.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PiecesLoadingPlaceholder")).Instance.Style.Should().Be("aspect-ratio: 96 / 1;");
             progress.FindComponent<MudCollapse>().Instance.Expanded.Should().Be(expanded);
             progress.Instance.Pieces.Should().BeEmpty();
             progress.Instance.PiecesLoading.Should().BeTrue();

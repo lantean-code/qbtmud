@@ -1,7 +1,10 @@
 using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
+using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
 {
@@ -16,6 +19,7 @@ namespace Lantean.QBTMud.Components.UI
         private bool _disposed;
         private bool _initializing;
         private int _ratio = 40;
+        private int _sizeSelection = 40;
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
@@ -25,6 +29,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IDialogService DialogService { get; set; } = default!;
 
         [Parameter]
         public bool Enabled { get; set; }
@@ -47,7 +54,8 @@ namespace Lantean.QBTMud.Components.UI
             _initializing = true;
             try
             {
-                _ratio = Math.Clamp(await LocalStorage.GetItemAsync<int?>(_sizeStorageKey) ?? 40, 30, 60);
+                _ratio = Math.Clamp(await LocalStorage.GetItemAsync<int?>(_sizeStorageKey) ?? 40, 0, 100);
+                _sizeSelection = _ratio;
                 if (_disposed || !Enabled)
                 {
                     return;
@@ -100,7 +108,8 @@ namespace Lantean.QBTMud.Components.UI
                 return;
             }
 
-            _ratio = Math.Clamp(ratio, 30, 60);
+            _ratio = Math.Clamp(ratio, 0, 100);
+            _sizeSelection = _ratio;
             await LocalStorage.SetItemAsync(_sizeStorageKey, _ratio);
             if (_module is not null)
             {
@@ -135,9 +144,60 @@ namespace Lantean.QBTMud.Components.UI
             }
         }
 
+        private async Task OnSizeChanged(int ratio)
+        {
+            if (ratio != -1)
+            {
+                await ChangeRatio(ratio);
+                return;
+            }
+
+            _sizeSelection = -1;
+            await InvokeAsync(StateHasChanged);
+            try
+            {
+                var parameters = new DialogParameters<SliderFieldDialog<int>>
+                {
+                    { dialog => dialog.Label, Translate("Details size") },
+                    { dialog => dialog.Min, 0 },
+                    { dialog => dialog.Max, 100 },
+                    { dialog => dialog.Value, _ratio },
+                    { dialog => dialog.ValueTryGetFunc, TryParseRatio },
+                    { dialog => dialog.InputErrorText, Translate("Enter a percentage from 0 to 100.") },
+                    { dialog => dialog.Adornment, Adornment.End },
+                    { dialog => dialog.AdornmentText, "%" }
+                };
+                var reference = await DialogService.ShowAsync<SliderFieldDialog<int>>(
+                    Translate("Details size"), parameters, DialogWorkflow.FormDialogOptions with { MaxWidth = MaxWidth.Small });
+                var result = await reference.Result;
+                if (result is { Canceled: false, Data: int value })
+                {
+                    await ChangeRatio(value);
+                }
+            }
+            finally
+            {
+                _sizeSelection = _ratio;
+                if (!_disposed)
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+
         private string Translate(string source)
         {
             return LanguageLocalizer.Translate("AppTorrentSplit", source);
+        }
+
+        private static int? TryParseRatio(string value)
+        {
+            if (int.TryParse(value, out var ratio) && ratio >= 0 && ratio <= 100)
+            {
+                return ratio;
+            }
+
+            return null;
         }
     }
 }

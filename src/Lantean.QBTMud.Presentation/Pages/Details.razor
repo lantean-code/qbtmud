@@ -30,23 +30,25 @@
         @if (ShowTabs)
         {
             <CascadingValue Value="RefreshInterval" Name="RefreshInterval">
-                <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
-                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "General")">
-                        <GeneralTab @key="Hash" Hash="@Hash" TorrentProgress="@TorrentProgress" Active="@(ActiveTab == 0)" PiecesExpanded="_piecesExpanded" PiecesExpandedChanged="OnPiecesExpandedChanged" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Trackers")">
-                        <TrackersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 1)" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Peers")">
-                        <PeersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 2)" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "HTTP Sources")">
-                        <WebSeedsTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 3)" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Content")">
-                        <FilesTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 4)" />
-                    </MudTabPanel>
-                </MudTabs>
+                <CascadingValue Value="_piecesLayoutState" IsFixed="true">
+                    <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
+                        <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "General")">
+                            <GeneralTab @key="Hash" Hash="@Hash" TorrentProgress="@TorrentProgress" Active="@(ActiveTab == 0)" PiecesExpanded="_piecesExpanded" PiecesExpandedChanged="OnPiecesExpandedChanged" />
+                        </MudTabPanel>
+                        <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Trackers")">
+                            <TrackersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 1)" />
+                        </MudTabPanel>
+                        <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Peers")">
+                            <PeersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 2)" />
+                        </MudTabPanel>
+                        <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "HTTP Sources")">
+                            <WebSeedsTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 3)" />
+                        </MudTabPanel>
+                        <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Content")">
+                            <FilesTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 4)" />
+                        </MudTabPanel>
+                    </MudTabs>
+                </CascadingValue>
             </CascadingValue>
         }
     </ChildContent>

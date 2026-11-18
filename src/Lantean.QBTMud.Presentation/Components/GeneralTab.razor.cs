@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Application.Services.Localization;
 using Lantean.QBTMud.Core;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
@@ -34,6 +35,9 @@ namespace Lantean.QBTMud.Components
 
         [Parameter]
         public EventCallback<bool> PiecesExpandedChanged { get; set; }
+
+        [CascadingParameter]
+        public PiecesProgressLayoutState? PiecesLayoutState { get; set; }
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
