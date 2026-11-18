@@ -26,6 +26,13 @@ class WorkflowTriggerTests(unittest.TestCase):
         self.assertLess(workflow.index("--base '3.2.0^'"), workflow.index("release_verification.py record"))
         self.assertLess(workflow.index("release_verification.py record"), workflow.index("name: release-3.2.0-verification\n"))
 
+    def test_supplemental_workload_install_uses_the_same_sdk_context_as_the_build(self):
+        workflow = (ROOT / ".github/workflows/verify-release-3.2.0.yml").read_text(encoding="utf-8")
+        for step_name in ("Install WASM workload", "Build the unchanged release with supplementary tests", "Test the tagged source"):
+            with self.subTest(step=step_name):
+                step = workflow.split("      - name: " + step_name + "\n", 1)[1].split("      - ", 1)[0]
+                self.assertIn("working-directory: source", step)
+
     def test_container_publication_subscribes_only_to_stable_release_activity(self):
         workflow = (ROOT / ".github/workflows/container-publish.yml").read_text(encoding="utf-8")
         trigger = re.search(r"^  release:\s*\n    types: \[([^\]]+)\]", workflow, re.MULTILINE)
