@@ -131,11 +131,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ -n "${GITHUB_BASE_REF:-}" ]; then
-            coverage_base=$(git merge-base HEAD "origin/$GITHUB_BASE_REF")
-          else
-            coverage_base=$(git rev-parse HEAD^)
-          fi
+          coverage_base=$(python3 tools/JavaScriptCoverage/coverage_base.py --repo-root . --output javascript-coverage-report/base.json)
           python3 tools/JavaScriptCoverage/report.py --input TestResults/javascript-coverage --output javascript-coverage-report --base "$coverage_base" --repo-root .
 
       - name: Upload JavaScript Coverage
