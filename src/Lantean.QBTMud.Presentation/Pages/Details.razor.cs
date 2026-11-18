@@ -26,6 +26,11 @@ namespace Lantean.QBTMud.Pages
 
         private bool _shortcutsRegistered;
 
+        private bool _piecesExpanded;
+        private readonly string?[] _displayedHashes = new string?[_tabCount];
+
+        private readonly PiecesProgressLayoutState _piecesLayoutState = new();
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -65,6 +70,10 @@ namespace Lantean.QBTMud.Pages
 
         protected string Name => GetName();
 
+        protected string? DisplayedHash => _displayedHashes[ActiveTab] ?? Hash;
+
+        protected double? TorrentProgress => MainData?.Torrents.GetValueOrDefault(Hash ?? string.Empty)?.Progress;
+
         protected bool ShowTabs { get; set; } = true;
 
         protected override void OnParametersSet()
@@ -92,14 +101,32 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
+        private void OnPiecesExpandedChanged(bool expanded)
+        {
+            _piecesExpanded = expanded;
+        }
+
+        private void OnGeneralDisplayedHashChanged(string hash)
+        {
+            OnTabDisplayedHashChanged(0, hash);
+        }
+
+        private void OnTabDisplayedHashChanged(int index, string hash)
+        {
+            if (!_disposedValue && hash == Hash)
+            {
+                _displayedHashes[index] = hash;
+            }
+        }
+
         private string GetName()
         {
-            if (Hash is null || MainData is null)
+            if (DisplayedHash is null || MainData is null)
             {
                 return "";
             }
 
-            if (!MainData.Torrents.TryGetValue(Hash, out var torrent))
+            if (!MainData.Torrents.TryGetValue(DisplayedHash, out var torrent))
             {
                 return "";
             }
@@ -114,7 +141,7 @@ namespace Lantean.QBTMud.Pages
 
         private void OpenFullPage()
         {
-            NavigationManager.NavigateTo($"./details/{Hash}");
+            NavigationManager.NavigateTo($"./details/{DisplayedHash}");
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

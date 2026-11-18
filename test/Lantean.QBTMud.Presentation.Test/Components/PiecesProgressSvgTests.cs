@@ -2,6 +2,7 @@ using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Core.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient.Models;
@@ -44,6 +45,67 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 HasGridSvg(target).Should().BeTrue();
                 target.FindAll("[data-test-id=\"PiecesSpinner\"]").Count.Should().Be(0);
             });
+        }
+
+        [Theory]
+        [InlineData(1058, Breakpoint.Lg, "aspect-ratio: 96 / 12;")]
+        [InlineData(1096, Breakpoint.Md, "aspect-ratio: 64 / 18;")]
+        [InlineData(1058, Breakpoint.Xs, null)]
+        [InlineData(0, Breakpoint.Lg, null)]
+        public void GIVEN_PreviousMapLayout_WHEN_PiecesAreLoading_THEN_ReservesResponsiveMapSpace(int pieceCount, Breakpoint breakpoint, string? style)
+        {
+            var target = RenderComponent([], loading: true, breakpoint: breakpoint,
+                layoutState: new PiecesProgressLayoutState { PieceCount = pieceCount }, expanded: true);
+
+            target.FindComponents<MudStack>().Single(component => component.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PiecesLoadingPlaceholder")).Instance.Style.Should().Be(style);
+            target.Instance.Pieces.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_LoadedMap_WHEN_ComponentIsReplaced_THEN_RetainsLayoutWithoutRetainingOldPieces()
+        {
+            var layout = new PiecesProgressLayoutState();
+            var target = RenderComponent(Enumerable.Repeat(PieceState.Downloaded, 1058).ToArray(), layoutState: layout, expanded: true);
+            target.WaitForAssertion(() => layout.PieceCount.Should().Be(1058));
+            target.Dispose();
+
+            target = RenderComponent([], loading: true, layoutState: layout, expanded: true);
+
+            target.FindComponents<MudStack>().Single(component => component.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PiecesLoadingPlaceholder")).Instance.Style.Should().Be("aspect-ratio: 96 / 12;");
+            target.Instance.Pieces.Should().BeEmpty();
+            target.Dispose();
+            target = RenderComponent([PieceState.NotDownloaded], layoutState: layout, expanded: true);
+            target.WaitForAssertion(() => layout.PieceCount.Should().Be(1));
+        }
+
+        [Theory]
+        [InlineData(0, "0% complete")]
+        [InlineData(0.683, "68.3% complete")]
+        [InlineData(1, "100% complete")]
+        [InlineData(-1, "0% complete")]
+        [InlineData(2, "100% complete")]
+        public void GIVEN_KnownTorrentProgress_WHEN_PiecesAreLoading_THEN_ShowsProgressImmediately(double progress, string summary)
+        {
+            var target = RenderComponent([], loading: true);
+
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, progress));
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be(summary);
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, 0.25));
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("25% complete");
+        }
+
+        [Theory]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(double.NegativeInfinity)]
+        public void GIVEN_InvalidTorrentProgress_WHEN_PiecesAreLoading_THEN_ShowsLoadingSummary(double progress)
+        {
+            var target = RenderComponent([], loading: true);
+
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, progress));
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Loading pieces...");
         }
 
         [Fact]
@@ -105,6 +167,25 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesHiddenText").Instance.ChildContent).Should().Be("Pieces SVG hidden on small screens.");
                 HasGridSvg(target).Should().BeFalse();
             });
+        }
+
+        [Fact]
+        public async Task GIVEN_ControlledExpansion_WHEN_Toggled_THEN_ReportsChoiceAndAcceptsParameterChanges()
+        {
+            bool? selectedExpansion = null;
+            var target = RenderComponent([PieceState.Downloaded]);
+            target.Render(parameters => parameters
+                .Add(component => component.Expanded, true)
+                .Add(component => component.ExpandedChanged, value => selectedExpansion = value));
+
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeTrue();
+            await FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+
+            selectedExpansion.Should().BeFalse();
+            target.Render(parameters => parameters.Add(component => component.Expanded, false));
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeFalse();
+            target.Render(parameters => parameters.Add(component => component.Expanded, true));
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeTrue();
         }
 
         [Fact]
@@ -508,7 +589,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             return grid.GetAttribute("viewBox");
         }
 
-        private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg, bool isDarkMode = false, MudTheme? theme = null)
+        private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg, bool isDarkMode = false, MudTheme? theme = null, PiecesProgressLayoutState? layoutState = null, bool? expanded = null)
         {
             return TestContext.Render<PiecesProgressSvg>(parameters =>
             {
@@ -516,6 +597,8 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 parameters.Add(p => p.Pieces, pieces);
                 parameters.Add(p => p.PiecesLoading, loading);
                 parameters.Add(p => p.PiecesFailed, failed);
+                parameters.Add(p => p.LayoutState, layoutState);
+                parameters.Add(p => p.Expanded, expanded);
                 parameters.AddCascadingValue(theme ?? new MudTheme());
                 parameters.AddCascadingValue("IsDarkMode", isDarkMode);
                 parameters.AddCascadingValue(breakpoint);

@@ -15,6 +15,10 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
+        private bool _initializingSelection;
+        private string? _reportedHash;
+        private string? _requestedHash;
+        private int _selectionVersion;
         private IReadOnlyList<ColumnDefinition<WebSeed>>? _columnDefinitions;
 
         [Parameter]
@@ -22,6 +26,9 @@ namespace Lantean.QBTMud.Components
 
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
+
+        [Parameter]
+        public EventCallback<string> DisplayedHashChanged { get; set; }
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
@@ -81,9 +88,31 @@ namespace Lantean.QBTMud.Components
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
-            if (Active && Hash is not null)
+            if (_disposedValue)
             {
-                var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (_initializingSelection)
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
+            if (DisplayedHashChanged.HasDelegate && _reportedHash != Hash)
+            {
+                await OnParametersSetAsync();
+                return ManagedTimerTickResult.Continue;
+            }
+
+            var hash = Hash;
+            var version = _selectionVersion;
+            if (Active && hash is not null)
+            {
+                var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(hash);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return _disposedValue ? ManagedTimerTickResult.Stop : ManagedTimerTickResult.Continue;
+                }
                 if (webSeedsResult.IsFailure)
                 {
                     var failureKind = webSeedsResult.Failure?.Kind;
@@ -121,7 +150,7 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnParametersSetAsync()
         {
-            if (Hash is null)
+            if (_disposedValue || Hash is null)
             {
                 return;
             }
@@ -131,18 +160,50 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
-            if (webSeedsResult.IsFailure)
+            if (DisplayedHashChanged.HasDelegate && _requestedHash == Hash)
             {
-                WebSeeds = [];
-                await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
-            }
-            else
-            {
-                WebSeeds = webSeedsResult.Value;
+                return;
             }
 
-            await InvokeAsync(StateHasChanged);
+            var hash = Hash;
+            var version = ++_selectionVersion;
+            _requestedHash = hash;
+            _initializingSelection = true;
+            try
+            {
+                var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(hash);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return;
+                }
+                if (webSeedsResult.IsFailure)
+                {
+                    if (_reportedHash is null)
+                    {
+                        WebSeeds = [];
+                    }
+                    await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
+                }
+                else
+                {
+                    WebSeeds = webSeedsResult.Value;
+                    _reportedHash = hash;
+                    await DisplayedHashChanged.InvokeAsync(hash);
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+            finally
+            {
+                if (version == _selectionVersion)
+                {
+                    _initializingSelection = false;
+                    if (_reportedHash != hash)
+                    {
+                        _requestedHash = null;
+                    }
+                }
+            }
         }
 
         protected IEnumerable<ColumnDefinition<WebSeed>> Columns => GetColumnDefinitions();

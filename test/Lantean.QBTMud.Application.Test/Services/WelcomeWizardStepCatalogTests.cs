@@ -11,7 +11,8 @@ namespace Lantean.QBTMud.Application.Test.Services
                 WelcomeWizardStepCatalog.LanguageStepId,
                 WelcomeWizardStepCatalog.ThemeStepId,
                 WelcomeWizardStepCatalog.NotificationsStepId,
-                WelcomeWizardStepCatalog.StorageStepId);
+                WelcomeWizardStepCatalog.StorageStepId,
+                WelcomeWizardStepCatalog.TorrentDetailsStepId);
         }
 
         [Fact]
@@ -21,6 +22,7 @@ namespace Lantean.QBTMud.Application.Test.Services
                 WelcomeWizardStepCatalog.LanguageStepId,
                 WelcomeWizardStepCatalog.ThemeStepId);
             WelcomeWizardStepCatalog.LegacyAcknowledgedStepIds.Should().NotContain(WelcomeWizardStepCatalog.NotificationsStepId);
+            WelcomeWizardStepCatalog.LegacyAcknowledgedStepIds.Should().NotContain(WelcomeWizardStepCatalog.TorrentDetailsStepId);
         }
 
         [Theory]
@@ -49,6 +51,7 @@ namespace Lantean.QBTMud.Application.Test.Services
             var result = WelcomeWizardStepCatalog.GetSteps(includeStorageStep: false);
 
             result.Select(step => step.Id).Should().NotContain(WelcomeWizardStepCatalog.StorageStepId);
+            result.Select(step => step.Id).Should().Contain(WelcomeWizardStepCatalog.TorrentDetailsStepId);
         }
     }
 }

@@ -23,6 +23,10 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
+        private bool _initializingSelection;
+        private string? _reportedHash;
+        private string? _requestedHash;
+        private int _selectionVersion;
 
         private string? _sortColumn;
         private SortDirection _sortDirection;
@@ -36,6 +40,11 @@ namespace Lantean.QBTMud.Components
 
         [Parameter]
         public bool Active { get; set; }
+
+        [Parameter]
+        public EventCallback<string> DisplayedHashChanged { get; set; }
+
+        protected string? DisplayedHash => _reportedHash ?? Hash;
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
@@ -75,7 +84,7 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnParametersSetAsync()
         {
-            if (Hash is null)
+            if (_disposedValue || Hash is null)
             {
                 return;
             }
@@ -85,18 +94,55 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
-            if (trackersResult.IsFailure)
+            if (DisplayedHashChanged.HasDelegate && _requestedHash == Hash)
             {
-                TrackerList = [];
-                await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult);
-            }
-            else
-            {
-                TrackerList = trackersResult.Value;
+                return;
             }
 
-            await InvokeAsync(StateHasChanged);
+            var hash = Hash;
+            var version = ++_selectionVersion;
+            _requestedHash = hash;
+            _initializingSelection = true;
+            try
+            {
+                var trackersResult = await ApiClient.GetTorrentTrackersAsync(hash);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return;
+                }
+                if (trackersResult.IsFailure)
+                {
+                    if (_reportedHash is null)
+                    {
+                        TrackerList = [];
+                    }
+                    await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult);
+                }
+                else
+                {
+                    TrackerList = trackersResult.Value;
+                    if (_reportedHash != hash)
+                    {
+                        SelectedItem = null;
+                        ContextMenuItem = null;
+                    }
+                    _reportedHash = hash;
+                    await DisplayedHashChanged.InvokeAsync(hash);
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+            finally
+            {
+                if (version == _selectionVersion)
+                {
+                    _initializingSelection = false;
+                    if (_reportedHash != hash)
+                    {
+                        _requestedHash = null;
+                    }
+                }
+            }
         }
 
         protected IEnumerable<TorrentTracker>? GetTrackers()
@@ -186,7 +232,8 @@ namespace Lantean.QBTMud.Components
 
         protected async Task AddTracker()
         {
-            if (Hash is null)
+            var hash = DisplayedHash;
+            if (hash is null)
             {
                 return;
             }
@@ -197,7 +244,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var addResult = await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(Hash), trackers);
+            var addResult = await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(hash), trackers);
             await ApiFeedbackWorkflow.ProcessResultAsync(addResult);
         }
 
@@ -213,7 +260,8 @@ namespace Lantean.QBTMud.Components
 
         protected async Task EditTracker(TorrentTracker? tracker)
         {
-            if (Hash is null || tracker is null)
+            var hash = DisplayedHash;
+            if (hash is null || tracker is null)
             {
                 return;
             }
@@ -224,7 +272,7 @@ namespace Lantean.QBTMud.Components
                 tracker.Url,
                 async value =>
                 {
-                    var editResult = await ApiClient.EditTrackerAsync(Hash, tracker.Url, value);
+                    var editResult = await ApiClient.EditTrackerAsync(hash, tracker.Url, value);
                     await ApiFeedbackWorkflow.ProcessResultAsync(editResult);
                 });
         }
@@ -241,12 +289,13 @@ namespace Lantean.QBTMud.Components
 
         protected async Task RemoveTracker(TorrentTracker? tracker)
         {
-            if (Hash is null || tracker is null)
+            var hash = DisplayedHash;
+            if (hash is null || tracker is null)
             {
                 return;
             }
 
-            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(Hash), [tracker.Url]);
+            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(hash), [tracker.Url]);
             await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
@@ -262,7 +311,8 @@ namespace Lantean.QBTMud.Components
 
         protected async Task CopyTrackerUrl(TorrentTracker? tracker)
         {
-            if (Hash is null)
+            var hash = DisplayedHash;
+            if (hash is null)
             {
                 return;
             }
@@ -286,9 +336,31 @@ namespace Lantean.QBTMud.Components
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
-            if (Active && Hash is not null)
+            if (_disposedValue)
             {
-                var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (_initializingSelection)
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
+            if (DisplayedHashChanged.HasDelegate && _reportedHash != Hash)
+            {
+                await OnParametersSetAsync();
+                return ManagedTimerTickResult.Continue;
+            }
+
+            var hash = Hash;
+            var version = _selectionVersion;
+            if (Active && hash is not null)
+            {
+                var trackersResult = await ApiClient.GetTorrentTrackersAsync(hash);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return _disposedValue ? ManagedTimerTickResult.Stop : ManagedTimerTickResult.Continue;
+                }
                 if (trackersResult.IsFailure)
                 {
                     var failureKind = trackersResult.Failure?.Kind;

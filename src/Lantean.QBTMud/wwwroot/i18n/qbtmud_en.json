@@ -1,4 +1,11 @@
 {
+  "AppTorrentSplit|Custom size...": "Custom size...",
+  "AppTorrentSplit|Enter a percentage from 0 to 100.": "Enter a percentage from 0 to 100.",
+  "AppPiecesProgressSvg|%1% complete": "%1% complete",
+  "AppWelcomeWizard|Separate page is qbtmud's original design. Open a torrent's details on their own page.": "Separate page is qbtmud's original design. Open a torrent's details on their own page.",
+  "AppWelcomeWizard|Below torrent list is the classic qBittorrent-style view. Select a torrent to show its details beneath the list.": "Below torrent list is the classic qBittorrent-style view. Select a torrent to show its details beneath the list.",
+  "AppWelcomeWizard|Choose how to view torrent details.": "Choose how to view torrent details.",
+  "AppWelcomeWizard|Torrent details: %1": "Torrent details: %1",
   "AppSettings|Torrent details": "Torrent details",
   "AppSettings|Separate page": "Separate page",
   "AppSettings|Below torrent list": "Below torrent list",

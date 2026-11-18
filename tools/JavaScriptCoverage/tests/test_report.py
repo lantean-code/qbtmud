@@ -79,6 +79,19 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(script["lines"], {1: 1, 2: 3})
             self.assertEqual(sorted(script["ranges"].values()), [1, 3])
 
+    def test_given_split_panel_module_in_separate_report_when_collected_then_includes_module_coverage(self):
+        name = "torrent-split-panel.module.js"
+        self.write_report("host.json", [self.entry(script) for script in report.SCRIPT_PATHS if script != name])
+        entry = self.entry(name)
+        entry["url"] = f"https://qbtmud.test/_content/Lantean.QBTMud.Presentation/{name}"
+        self.write_report("split-panel.json", [entry])
+
+        scripts, count = report.collect_coverage(self.inputs, self.root)
+
+        self.assertEqual(count, 2)
+        self.assertEqual(scripts[name]["path"], "src/Lantean.QBTMud.Presentation/wwwroot/torrent-split-panel.module.js")
+        self.assertEqual(scripts[name]["lines"], {1: 1, 2: 1})
+
     def test_given_astral_unicode_and_crlf_when_offsets_are_utf16_then_maps_hole_to_correct_line(self):
         source = 'const face = "😀";\r\nmissed();\r\n'
         start = report.utf16_length(source[:source.index("missed")])

@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 SCRIPT_PATHS = {
     "boot.resources.js": "src/Lantean.QBTMud/wwwroot/js/boot.resources.js",
     "interop.js": "src/Lantean.QBTMud/wwwroot/js/interop.js",
+    "torrent-split-panel.module.js": "src/Lantean.QBTMud.Presentation/wwwroot/torrent-split-panel.module.js",
 }
 
 

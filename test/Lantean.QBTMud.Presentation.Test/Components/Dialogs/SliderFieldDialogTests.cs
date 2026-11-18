@@ -66,7 +66,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("Rate", 1, null, value => 42);
 
             var input = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SliderFieldInput");
-            input.Find("input").Change("99");
+            input.Find("input").Input("99");
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "SliderFieldSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -82,7 +82,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("Rate", 1);
 
             var input = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SliderFieldInput");
-            input.Find("input").Change("12");
+            input.Find("input").Input("12");
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "SliderFieldSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Presentation.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("Rate", 1, null, null, 5);
 
             var input = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SliderFieldInput");
-            input.Find("input").Change("invalid");
+            input.Find("input").Input("invalid");
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "SliderFieldSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());

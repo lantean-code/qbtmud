@@ -8,7 +8,7 @@
     {
         <div class="torrent-split__divider">
             <button type="button" class="torrent-split__grip" role="separator" aria-orientation="horizontal"
-                    aria-label="@Translate("Resize torrent details")" aria-valuemin="30" aria-valuemax="60" aria-valuenow="@_ratio"
+                    aria-label="@Translate("Resize torrent details")" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@_ratio"
                     data-test-id="@TestIdHelper.For("TorrentSplitResize")">
                 <span aria-hidden="true"></span>
             </button>
@@ -17,8 +17,8 @@
             <Details Hash="@Hash" Embedded="true" OnHide="ToggleDetails">
                 <HeaderContent>
                     <div class="torrent-split__sizes">
-                        <MudSelect T="int" Value="_ratio" ValueChanged="ChangeRatio" Dense="false" Margin="Margin.Dense"
-                                   Label="@Translate("Details size")" data-test-id="@TestIdHelper.For("TorrentSplitSize")">
+                        <MudSelect T="int" Value="_sizeSelection" ValueChanged="OnSizeChanged" Dense="false" Margin="Margin.Dense"
+                                   aria-label="@Translate("Details size")" data-test-id="@TestIdHelper.For("TorrentSplitSize")">
                             <MudSelectItem Value="30">@LanguageLocalizer.Translate("OptionsDialog", "Compact")</MudSelectItem>
                             <MudSelectItem Value="40">@Translate("Balanced")</MudSelectItem>
                             <MudSelectItem Value="55">@Translate("Expanded")</MudSelectItem>
@@ -26,6 +26,7 @@
                             {
                                 <MudSelectItem Value="_ratio">@(_ratio)%</MudSelectItem>
                             }
+                            <MudSelectItem Value="-1">@Translate("Custom size...")</MudSelectItem>
                         </MudSelect>
                     </div>
                 </HeaderContent>

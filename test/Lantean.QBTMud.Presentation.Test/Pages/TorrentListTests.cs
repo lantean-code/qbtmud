@@ -31,6 +31,9 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
         public TorrentListTests()
         {
+            var buildInfo = Mock.Of<IAppBuildInfoService>();
+            Mock.Get(buildInfo).Setup(service => service.GetCurrentBuildInfo()).Returns(new AppBuildInfo("Version", "Source"));
+            TestContext.Services.AddSingleton(buildInfo);
             var keyboardServiceMock = Mock.Get(_keyboardService);
             keyboardServiceMock.Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>())).Returns(Task.CompletedTask);
             keyboardServiceMock.Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>())).Returns(Task.CompletedTask);
@@ -85,7 +88,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var settings = Core.Models.AppSettings.Default;
             settings.TorrentSplitViewEnabled = true;
             TestContext.Services.GetRequiredService<IAppSettingsStateService>().SetSettings(settings);
-            TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js");
+            TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v=Version");
             TestContext.ComponentFactories.AddStub<Details>();
             var first = CreateTorrent("FirstHash", "FirstName");
             var second = CreateTorrent("SecondHash", "SecondName");
@@ -153,7 +156,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var settings = Core.Models.AppSettings.Default;
             settings.TorrentSplitViewEnabled = true;
             TestContext.Services.GetRequiredService<IAppSettingsStateService>().SetSettings(settings);
-            TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js");
+            TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v=Version");
             TestContext.ComponentFactories.AddStub<Details>();
             var torrent = CreateTorrent("Hash", "Name");
             await TestContext.Services.GetRequiredService<ISessionStorageService>().SetItemAsync("TorrentList.SelectedHash", torrent.Hash, Xunit.TestContext.Current.CancellationToken);

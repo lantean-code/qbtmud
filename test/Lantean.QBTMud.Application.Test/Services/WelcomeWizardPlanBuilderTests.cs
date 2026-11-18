@@ -53,9 +53,46 @@ namespace Lantean.QBTMud.Application.Test.Services
             var plan = await _target.BuildPlanAsync(TestContext.Current.CancellationToken);
 
             plan.IsReturningUser.Should().BeTrue();
-            plan.PendingSteps.Should().HaveCount(2);
+            plan.PendingSteps.Should().HaveCount(3);
             plan.PendingSteps[0].Id.Should().Be(WelcomeWizardStepCatalog.NotificationsStepId);
             plan.PendingSteps[1].Id.Should().Be(WelcomeWizardStepCatalog.StorageStepId);
+            plan.PendingSteps[2].Id.Should().Be(WelcomeWizardStepCatalog.TorrentDetailsStepId);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GIVEN_PreviousSetupCompleted_WHEN_BuildPlanInvoked_THEN_OnlyTorrentDetailsIsPendingUntilAcknowledged(bool supportsClientData)
+        {
+            var state = new WelcomeWizardState
+            {
+                AcknowledgedStepIds = new HashSet<string>(StringComparer.Ordinal)
+                {
+                    WelcomeWizardStepCatalog.LanguageStepId,
+                    WelcomeWizardStepCatalog.ThemeStepId,
+                    WelcomeWizardStepCatalog.NotificationsStepId,
+                    WelcomeWizardStepCatalog.StorageStepId
+                }
+            };
+            Mock.Get(_welcomeWizardStateService)
+                .Setup(service => service.GetStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(state);
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState(new Version(2, 13, 1), supportsClientData));
+
+            var plan = await _target.BuildPlanAsync(TestContext.Current.CancellationToken);
+
+            plan.IsReturningUser.Should().BeTrue();
+            plan.ShouldShowWizard.Should().BeTrue();
+            plan.PendingSteps.Select(step => step.Id).Should().Equal(WelcomeWizardStepCatalog.TorrentDetailsStepId);
+
+            state.AcknowledgedStepIds.Add(WelcomeWizardStepCatalog.TorrentDetailsStepId);
+
+            var completedPlan = await _target.BuildPlanAsync(TestContext.Current.CancellationToken);
+
+            completedPlan.ShouldShowWizard.Should().BeFalse();
+            completedPlan.PendingSteps.Should().BeEmpty();
         }
 
         [Fact]
