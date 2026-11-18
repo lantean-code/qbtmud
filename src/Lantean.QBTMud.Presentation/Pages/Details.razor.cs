@@ -26,6 +26,8 @@ namespace Lantean.QBTMud.Pages
 
         private bool _shortcutsRegistered;
 
+        private bool _piecesExpanded;
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -65,6 +67,8 @@ namespace Lantean.QBTMud.Pages
 
         protected string Name => GetName();
 
+        protected double? TorrentProgress => MainData?.Torrents.GetValueOrDefault(Hash ?? string.Empty)?.Progress;
+
         protected bool ShowTabs { get; set; } = true;
 
         protected override void OnParametersSet()
@@ -90,6 +94,11 @@ namespace Lantean.QBTMud.Pages
             {
                 await RegisterShortcutAsync();
             }
+        }
+
+        private void OnPiecesExpandedChanged(bool expanded)
+        {
+            _piecesExpanded = expanded;
         }
 
         private string GetName()

@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Microsoft.AspNetCore.Components;
@@ -139,8 +140,89 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
 
             target.FindComponent<MudTabs>().Instance.GetState(component => component.ActivePanelIndex).Should().Be(1);
+            target.FindComponent<MudTabs>().Instance.Should().BeSameAs(tabs.Instance);
             target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Should().NotBeSameAs(previous);
             target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Hash.Should().Be("OtherHash");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GIVEN_ProgressExpansionChoice_WHEN_SwitchingTorrents_THEN_PreservesChoiceWhileReplacingPieces(bool expanded)
+        {
+            var pending = new TaskCompletionSource<ApiResult<IReadOnlyList<ClientModels.PieceState>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            api.Setup(client => client.GetTorrentPieceStatesAsync(_hashValue)).ReturnsSuccessAsync(new[] { ClientModels.PieceState.Downloaded });
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).ReturnsSuccessAsync(CreateTorrentProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).Returns(pending.Task);
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            var target = TestContext.Render<Details>(parameters => parameters
+                .Add(component => component.Hash, _hashValue)
+                .Add(component => component.Embedded, true)
+                .AddCascadingValue(mainData)
+                .AddCascadingValue(CreatePreferences())
+                .AddCascadingValue(new MudTheme())
+                .AddCascadingValue(Breakpoint.Lg));
+            var progress = target.FindComponent<PiecesProgressSvg>();
+            await FindComponentByTestId<MudTooltip>(progress, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+            if (!expanded)
+            {
+                await FindComponentByTestId<MudTooltip>(progress, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+            }
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            progress = target.FindComponent<PiecesProgressSvg>();
+            progress.FindComponent<MudCollapse>().Instance.Expanded.Should().Be(expanded);
+            progress.Instance.Pieces.Should().BeEmpty();
+            progress.Instance.PiecesLoading.Should().BeTrue();
+            await target.InvokeAsync(() => pending.SetResult(ApiResult.CreateSuccess<IReadOnlyList<ClientModels.PieceState>>(new[] { ClientModels.PieceState.NotDownloaded })));
+            target.WaitForAssertion(() =>
+            {
+                progress.Instance.Pieces.Should().Equal(ClientModels.PieceState.NotDownloaded);
+                progress.FindComponent<MudCollapse>().Instance.Expanded.Should().Be(expanded);
+            });
+
+            target.Render(parameters => parameters.Add(component => component.Hash, _hashValue));
+
+            target.FindComponent<PiecesProgressSvg>().FindComponent<MudCollapse>().Instance.Expanded.Should().Be(expanded);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingTorrentDetails_WHEN_SelectionChanges_THEN_ShowsSelectedProgressWithoutResettingTabsOrAcceptingStaleData()
+        {
+            var pending = new TaskCompletionSource<ApiResult<ClientModels.TorrentProperties>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            api.Setup(client => client.GetTorrentPropertiesAsync(_hashValue)).Returns(pending.Task);
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).ReturnsSuccessAsync(CreateTorrentProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).ReturnsSuccessAsync(new[] { ClientModels.PieceState.Downloaded });
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents[_hashValue].Progress = 0.68;
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            mainData.Torrents["OtherHash"].Progress = 1;
+            var target = TestContext.Render<Details>(parameters => parameters
+                .Add(component => component.Hash, _hashValue)
+                .Add(component => component.Embedded, true)
+                .AddCascadingValue(mainData)
+                .AddCascadingValue(CreatePreferences())
+                .AddCascadingValue(new MudTheme()));
+            var tabs = target.FindComponent<MudTabs>().Instance;
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("68% complete");
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 1 downloaded, 0 in progress");
+            });
+            await target.InvokeAsync(() => pending.SetResult(ApiResult.CreateSuccess(CreateTorrentProperties())));
+
+            target.WaitForAssertion(() => api.Verify(client => client.GetTorrentPieceStatesAsync(_hashValue), Times.Once));
+            target.FindComponent<MudTabs>().Instance.Should().BeSameAs(tabs);
+            target.FindComponent<Lantean.QBTMud.Components.GeneralTab>().Instance.Hash.Should().Be("OtherHash");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 1 downloaded, 0 in progress");
         }
 
         [Fact]

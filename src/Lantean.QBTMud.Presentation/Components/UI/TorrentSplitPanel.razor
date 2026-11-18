@@ -18,7 +18,7 @@
                 <HeaderContent>
                     <div class="torrent-split__sizes">
                         <MudSelect T="int" Value="_ratio" ValueChanged="ChangeRatio" Dense="false" Margin="Margin.Dense"
-                                   Label="@Translate("Details size")" data-test-id="@TestIdHelper.For("TorrentSplitSize")">
+                                   aria-label="@Translate("Details size")" data-test-id="@TestIdHelper.For("TorrentSplitSize")">
                             <MudSelectItem Value="30">@LanguageLocalizer.Translate("OptionsDialog", "Compact")</MudSelectItem>
                             <MudSelectItem Value="40">@Translate("Balanced")</MudSelectItem>
                             <MudSelectItem Value="55">@Translate("Expanded")</MudSelectItem>

@@ -26,6 +26,15 @@ namespace Lantean.QBTMud.Components
         [Parameter]
         public bool Active { get; set; }
 
+        [Parameter]
+        public double? TorrentProgress { get; set; }
+
+        [Parameter]
+        public bool? PiecesExpanded { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> PiecesExpandedChanged { get; set; }
+
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
 

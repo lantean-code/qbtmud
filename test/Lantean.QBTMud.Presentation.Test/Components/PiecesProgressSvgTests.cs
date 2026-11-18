@@ -46,6 +46,36 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             });
         }
 
+        [Theory]
+        [InlineData(0, "0% complete")]
+        [InlineData(0.683, "68.3% complete")]
+        [InlineData(1, "100% complete")]
+        [InlineData(-1, "0% complete")]
+        [InlineData(2, "100% complete")]
+        public void GIVEN_KnownTorrentProgress_WHEN_PiecesAreLoading_THEN_ShowsProgressImmediately(double progress, string summary)
+        {
+            var target = RenderComponent([], loading: true);
+
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, progress));
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be(summary);
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, 0.25));
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("25% complete");
+        }
+
+        [Theory]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(double.NegativeInfinity)]
+        public void GIVEN_InvalidTorrentProgress_WHEN_PiecesAreLoading_THEN_ShowsLoadingSummary(double progress)
+        {
+            var target = RenderComponent([], loading: true);
+
+            target.Render(parameters => parameters.Add(component => component.TorrentProgress, progress));
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Loading pieces...");
+        }
+
         [Fact]
         public void GIVEN_LoadingState_WHEN_Rendered_THEN_ShowsLoadingSummary()
         {
@@ -105,6 +135,25 @@ namespace Lantean.QBTMud.Presentation.Test.Components
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesHiddenText").Instance.ChildContent).Should().Be("Pieces SVG hidden on small screens.");
                 HasGridSvg(target).Should().BeFalse();
             });
+        }
+
+        [Fact]
+        public async Task GIVEN_ControlledExpansion_WHEN_Toggled_THEN_ReportsChoiceAndAcceptsParameterChanges()
+        {
+            bool? selectedExpansion = null;
+            var target = RenderComponent([PieceState.Downloaded]);
+            target.Render(parameters => parameters
+                .Add(component => component.Expanded, true)
+                .Add(component => component.ExpandedChanged, value => selectedExpansion = value));
+
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeTrue();
+            await FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+
+            selectedExpansion.Should().BeFalse();
+            target.Render(parameters => parameters.Add(component => component.Expanded, false));
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeFalse();
+            target.Render(parameters => parameters.Add(component => component.Expanded, true));
+            target.FindComponent<MudCollapse>().Instance.Expanded.Should().BeTrue();
         }
 
         [Fact]

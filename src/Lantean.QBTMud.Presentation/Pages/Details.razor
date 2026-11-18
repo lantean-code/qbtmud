@@ -29,22 +29,22 @@
     <ChildContent>
         @if (ShowTabs)
         {
-            <CascadingValue @key="Hash" Value="RefreshInterval" Name="RefreshInterval">
+            <CascadingValue Value="RefreshInterval" Name="RefreshInterval">
                 <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
                     <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "General")">
-                        <GeneralTab Hash="@Hash" Active="@(ActiveTab == 0)" />
+                        <GeneralTab @key="Hash" Hash="@Hash" TorrentProgress="@TorrentProgress" Active="@(ActiveTab == 0)" PiecesExpanded="_piecesExpanded" PiecesExpandedChanged="OnPiecesExpandedChanged" />
                     </MudTabPanel>
                     <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Trackers")">
-                        <TrackersTab Hash="@Hash" Active="@(ActiveTab == 1)" />
+                        <TrackersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 1)" />
                     </MudTabPanel>
                     <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Peers")">
-                        <PeersTab Hash="@Hash" Active="@(ActiveTab == 2)" />
+                        <PeersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 2)" />
                     </MudTabPanel>
                     <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "HTTP Sources")">
-                        <WebSeedsTab Hash="@Hash" Active="@(ActiveTab == 3)" />
+                        <WebSeedsTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 3)" />
                     </MudTabPanel>
                     <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Content")">
-                        <FilesTab Hash="@Hash" Active="@(ActiveTab == 4)" />
+                        <FilesTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 4)" />
                     </MudTabPanel>
                 </MudTabs>
             </CascadingValue>

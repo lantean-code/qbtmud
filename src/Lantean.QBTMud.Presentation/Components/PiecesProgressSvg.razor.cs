@@ -51,6 +51,15 @@ namespace Lantean.QBTMud.Components
         [Parameter]
         public bool PiecesFailed { get; set; }
 
+        [Parameter]
+        public double? TorrentProgress { get; set; }
+
+        [Parameter]
+        public bool? Expanded { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> ExpandedChanged { get; set; }
+
         [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
 
@@ -119,6 +128,7 @@ namespace Lantean.QBTMud.Components
         {
             base.OnParametersSet();
 
+            _showSvg = Expanded ?? _showSvg;
             UpdateHeldDownloadingIndexes();
             var presentationChanged = UpdateRenderSignature();
 
@@ -159,6 +169,7 @@ namespace Lantean.QBTMud.Components
                 QueueBuildSvgCells();
             }
 
+            await ExpandedChanged.InvokeAsync(_showSvg);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -177,6 +188,13 @@ namespace Lantean.QBTMud.Components
                 _linearSummary = _svgLoadingText;
                 _linearTooltip = TranslateApp("Loading pieces data...");
                 _linearAriaLabel = TranslateApp("Loading pieces progress for torrent %1.", Hash);
+                if (TorrentProgress is double progress && double.IsFinite(progress))
+                {
+                    var percent = (Math.Clamp(progress, 0, 1) * 100).ToString("0.#", CultureInfo.InvariantCulture);
+                    _linearBarStyle = $"background: linear-gradient(to right, {DownloadedColor} {percent}%, {PendingColor} {percent}%);";
+                    _linearSummary = TranslateApp("%1% complete", percent);
+                    _linearAriaLabel = $"{_linearAriaLabel} {_linearSummary}";
+                }
                 return;
             }
 
@@ -569,6 +587,9 @@ namespace Lantean.QBTMud.Components
             signatureBuilder.Add(CurrentBreakpoint);
             signatureBuilder.Add(PiecesLoading);
             signatureBuilder.Add(PiecesFailed);
+            signatureBuilder.Add(_showSvg);
+            signatureBuilder.Add(TorrentProgress.HasValue);
+            signatureBuilder.Add(TorrentProgress);
             signatureBuilder.Add(DownloadedColor);
             signatureBuilder.Add(DownloadingColor);
             signatureBuilder.Add(PendingColor);
