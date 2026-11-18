@@ -27,6 +27,10 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
+        private bool _initializingSelection;
+        private string? _reportedHash;
+        private string? _requestedHash;
+        private int _selectionVersion;
         private static readonly ReadOnlyCollection<ContentItem> _emptyContentItems = [];
         private ReadOnlyCollection<ContentItem> _visibleFiles = _emptyContentItems;
         private bool _filesDirty = true;
@@ -54,6 +58,11 @@ namespace Lantean.QBTMud.Components
 
         [Parameter, EditorRequired]
         public string Hash { get; set; } = "";
+
+        [Parameter]
+        public EventCallback<string> DisplayedHashChanged { get; set; }
+
+        protected string DisplayedHash => _reportedHash ?? Hash;
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
@@ -104,12 +113,13 @@ namespace Lantean.QBTMud.Components
 
         protected async Task DownloadFile(ContentItem? item)
         {
+            var hash = DisplayedHash;
             if (!_supportsFileDownload || item is null || item.IsFolder || item.Progress < 1)
             {
                 return;
             }
 
-            var url = ApiUrlResolver.BuildAbsoluteUrl($"torrents/downloadFile?hash={Uri.EscapeDataString(Hash)}&file={Uri.EscapeDataString(item.Name)}");
+            var url = ApiUrlResolver.BuildAbsoluteUrl($"torrents/downloadFile?hash={Uri.EscapeDataString(hash)}&file={Uri.EscapeDataString(item.Name)}");
             await JSRuntime.FileDownload(url, item.DisplayName);
         }
 
@@ -222,10 +232,32 @@ namespace Lantean.QBTMud.Components
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
+            if (_disposedValue)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (_initializingSelection)
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
+            if (DisplayedHashChanged.HasDelegate && _reportedHash != Hash)
+            {
+                await OnParametersSetAsync();
+                return ManagedTimerTickResult.Continue;
+            }
+
             var hasUpdates = false;
+            var hash = Hash;
+            var version = _selectionVersion;
             if (Active && Hash is not null)
             {
-                var filesResult = await ApiClient.GetTorrentContentsAsync(Hash);
+                var filesResult = await ApiClient.GetTorrentContentsAsync(hash);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return _disposedValue ? ManagedTimerTickResult.Stop : ManagedTimerTickResult.Continue;
+                }
                 if (filesResult.IsFailure)
                 {
                     var failureKind = filesResult.Failure?.Kind;
@@ -282,7 +314,7 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnParametersSetAsync()
         {
-            if (string.IsNullOrEmpty(Hash))
+            if (_disposedValue || string.IsNullOrEmpty(Hash))
             {
                 return;
             }
@@ -292,41 +324,78 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (Hash == _previousHash)
+            if (DisplayedHashChanged.HasDelegate && _requestedHash == Hash)
             {
                 return;
             }
 
-            _previousHash = Hash;
-
-            var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
-            if (contentsResult.IsFailure)
+            var hash = Hash;
+            var version = ++_selectionVersion;
+            _requestedHash = hash;
+            _initializingSelection = true;
+            try
             {
-                FileList = null;
+                if (Hash == _previousHash)
+                {
+                    return;
+                }
+
+                var contentsResult = await ApiClient.GetTorrentContentsAsync(hash);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return;
+                }
+                if (contentsResult.IsFailure)
+                {
+                    if (_reportedHash is null)
+                    {
+                        FileList = null;
+                        MarkFilesDirty();
+                    }
+                    await ApiFeedbackWorkflow.HandleFailureAsync(contentsResult);
+                    return;
+                }
+
+                var fileList = DataManager.CreateContentsList(contentsResult.Value);
+
+                var expandedNodes = await SessionStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{hash}");
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return;
+                }
+                FileList = fileList;
+                SelectedItem = null;
+                ContextMenuItem = null;
+                if (expandedNodes is not null)
+                {
+                    ExpandedNodes = expandedNodes;
+                }
+                else
+                {
+                    ExpandedNodes.Clear();
+                }
+
                 MarkFilesDirty();
-                await ApiFeedbackWorkflow.HandleFailureAsync(contentsResult);
-                return;
+                _previousHash = hash;
+                _reportedHash = hash;
+                await DisplayedHashChanged.InvokeAsync(hash);
             }
-
-            FileList = DataManager.CreateContentsList(contentsResult.Value);
-            MarkFilesDirty();
-            PruneSelectionIfMissing();
-
-            var expandedNodes = await SessionStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{Hash}");
-            if (expandedNodes is not null)
+            finally
             {
-                ExpandedNodes = expandedNodes;
+                if (version == _selectionVersion)
+                {
+                    _initializingSelection = false;
+                    if (_reportedHash != hash)
+                    {
+                        _requestedHash = null;
+                    }
+                }
             }
-            else
-            {
-                ExpandedNodes.Clear();
-            }
-
-            MarkFilesDirty();
         }
 
         protected async Task PriorityValueChanged(ContentItem contentItem, MudPriority priority)
         {
+            var hash = DisplayedHash;
             IEnumerable<int> fileIndexes;
             if (contentItem.IsFolder)
             {
@@ -337,7 +406,7 @@ namespace Lantean.QBTMud.Components
                 fileIndexes = [contentItem.Index];
             }
 
-            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, fileIndexes, MapPriority(priority));
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(hash, fileIndexes, MapPriority(priority));
             await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
         }
 
@@ -363,6 +432,7 @@ namespace Lantean.QBTMud.Components
 
         private async Task RenameFiles(params ContentItem[] contentItems)
         {
+            var hash = DisplayedHash;
             if (contentItems.Length == 1)
             {
                 var contentItem = contentItems[0];
@@ -376,14 +446,14 @@ namespace Lantean.QBTMud.Components
                         var parentPath = contentItem.Name.GetDirectoryPath();
                         var destination = string.IsNullOrEmpty(parentPath) ? value : string.Concat(parentPath, "/", value);
                         var renameResult = contentItem.IsFolder
-                            ? await ApiClient.RenameFolderAsync(Hash, contentItem.Name, destination)
-                            : await ApiClient.RenameFileAsync(Hash, contentItem.Name, destination);
+                            ? await ApiClient.RenameFolderAsync(hash, contentItem.Name, destination)
+                            : await ApiClient.RenameFileAsync(hash, contentItem.Name, destination);
                         await ApiFeedbackWorkflow.ProcessResultAsync(renameResult);
                     });
             }
             else
             {
-                await DialogWorkflow.InvokeRenameFilesDialog(Hash);
+                await DialogWorkflow.InvokeRenameFilesDialog(hash);
             }
         }
 
@@ -406,6 +476,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ToggleNode(ContentItem contentItem)
         {
+            var hash = DisplayedHash;
             if (ExpandedNodes.Contains(contentItem.Name))
             {
                 ExpandedNodes.Remove(contentItem.Name);
@@ -416,7 +487,7 @@ namespace Lantean.QBTMud.Components
             }
 
             MarkFilesDirty();
-            await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
+            await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{hash}", ExpandedNodes);
         }
 
         private static ClientPriority MapPriority(MudPriority priority)
@@ -651,7 +722,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(DisplayedHash, files, priority);
             await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
         }
 
@@ -669,7 +740,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(DisplayedHash, files, priority);
             await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
         }
 

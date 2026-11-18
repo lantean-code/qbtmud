@@ -19,6 +19,10 @@ namespace Lantean.QBTMud.Components
     public partial class PeersTab : IAsyncDisposable
     {
         private bool _disposedValue;
+        private bool _initializingSelection;
+        private string? _reportedHash;
+        private string? _requestedHash;
+        private int _selectionVersion;
         protected string? _oldHash;
         private int _requestId = 0;
         private readonly CancellationTokenSource _timerCancellationToken = new();
@@ -38,6 +42,11 @@ namespace Lantean.QBTMud.Components
 
         [Parameter]
         public bool Active { get; set; }
+
+        [Parameter]
+        public EventCallback<string> DisplayedHashChanged { get; set; }
+
+        protected string DisplayedHash => _reportedHash ?? Hash;
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
@@ -85,7 +94,7 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnParametersSetAsync()
         {
-            if (string.IsNullOrWhiteSpace(Hash))
+            if (_disposedValue || string.IsNullOrWhiteSpace(Hash))
             {
                 return;
             }
@@ -95,50 +104,82 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (Hash != _oldHash)
+            if (DisplayedHashChanged.HasDelegate && _requestedHash == Hash)
             {
-                _oldHash = Hash;
-                _requestId = 0;
-                PeerList = null;
-                _showFlags = null;
-                _showFlagsFromPeerData = false;
-            }
-
-            var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
-            if (peersResult.IsFailure)
-            {
-                await ApiFeedbackWorkflow.HandleFailureAsync(peersResult);
                 return;
             }
 
-            var peers = peersResult.Value;
-            if (PeerList is null || peers.FullUpdate)
+            var hash = Hash;
+            var version = ++_selectionVersion;
+            _requestedHash = hash;
+            _initializingSelection = true;
+            try
             {
-                PeerList = PeerDataManager.CreatePeerList(peers);
-            }
-            else
-            {
-                PeerDataManager.MergeTorrentPeers(peers, PeerList);
-            }
-            _requestId = peers.RequestId;
+                var peersResult = await ApiClient.GetTorrentPeersDataAsync(hash, hash == _oldHash ? _requestId : 0);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return;
+                }
+                if (peersResult.IsFailure)
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(peersResult);
+                    return;
+                }
 
-            if (Preferences is not null && !_showFlagsFromPeerData)
-            {
-                _showFlags = Preferences.ResolvePeerCountries;
-            }
+                if (Hash != _oldHash)
+                {
+                    _oldHash = Hash;
+                    _requestId = 0;
+                    PeerList = null;
+                    SelectedItem = null;
+                    ContextMenuItem = null;
+                    _showFlags = null;
+                    _showFlagsFromPeerData = false;
+                }
 
-            if (peers.ShowFlags.HasValue)
-            {
-                _showFlagsFromPeerData = true;
-                _showFlags = peers.ShowFlags.Value;
-            }
+                var peers = peersResult.Value;
+                if (PeerList is null || peers.FullUpdate)
+                {
+                    PeerList = PeerDataManager.CreatePeerList(peers);
+                }
+                else
+                {
+                    PeerDataManager.MergeTorrentPeers(peers, PeerList);
+                }
+                _requestId = peers.RequestId;
 
-            await InvokeAsync(StateHasChanged);
+                if (Preferences is not null && !_showFlagsFromPeerData)
+                {
+                    _showFlags = Preferences.ResolvePeerCountries;
+                }
+
+                if (peers.ShowFlags.HasValue)
+                {
+                    _showFlagsFromPeerData = true;
+                    _showFlags = peers.ShowFlags.Value;
+                }
+
+                _reportedHash = hash;
+                await DisplayedHashChanged.InvokeAsync(hash);
+                await InvokeAsync(StateHasChanged);
+            }
+            finally
+            {
+                if (version == _selectionVersion)
+                {
+                    _initializingSelection = false;
+                    if (_reportedHash != hash)
+                    {
+                        _requestedHash = null;
+                    }
+                }
+            }
         }
 
         protected async Task AddPeer()
         {
-            if (Hash is null)
+            var hash = DisplayedHash;
+            if (hash is null)
             {
                 return;
             }
@@ -149,7 +190,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var addResult = await ApiClient.AddPeersAsync(TorrentSelector.FromHash(Hash), peers);
+            var addResult = await ApiClient.AddPeersAsync(TorrentSelector.FromHash(hash), peers);
             await ApiFeedbackWorkflow.ProcessResultAsync(addResult);
         }
 
@@ -170,7 +211,8 @@ namespace Lantean.QBTMud.Components
 
         private async Task BanPeer(MudPeer? peer)
         {
-            if (Hash is null || peer is null)
+            var hash = DisplayedHash;
+            if (hash is null || peer is null)
             {
                 return;
             }
@@ -239,6 +281,24 @@ namespace Lantean.QBTMud.Components
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
+            if (_disposedValue)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (_initializingSelection)
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
+            if (DisplayedHashChanged.HasDelegate && _reportedHash != Hash)
+            {
+                await OnParametersSetAsync();
+                return ManagedTimerTickResult.Continue;
+            }
+
+            var hash = Hash;
+            var version = _selectionVersion;
             if (string.IsNullOrWhiteSpace(Hash))
             {
                 return ManagedTimerTickResult.Stop;
@@ -246,7 +306,11 @@ namespace Lantean.QBTMud.Components
 
             if (Active)
             {
-                var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
+                var peersResult = await ApiClient.GetTorrentPeersDataAsync(hash, _requestId);
+                if (_disposedValue || hash != Hash || version != _selectionVersion)
+                {
+                    return _disposedValue ? ManagedTimerTickResult.Stop : ManagedTimerTickResult.Continue;
+                }
                 if (peersResult.IsFailure)
                 {
                     var failureKind = peersResult.Failure?.Kind;

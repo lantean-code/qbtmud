@@ -36,16 +36,16 @@
                             <GeneralTab Hash="@Hash" TorrentProgress="@TorrentProgress" Active="@(ActiveTab == 0)" PiecesExpanded="_piecesExpanded" PiecesExpandedChanged="OnPiecesExpandedChanged" DisplayedHashChanged="OnGeneralDisplayedHashChanged" />
                         </MudTabPanel>
                         <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Trackers")">
-                            <TrackersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 1)" />
+                            <TrackersTab Hash="@Hash" Active="@(ActiveTab == 1)" DisplayedHashChanged="@(hash => OnTabDisplayedHashChanged(1, hash))" />
                         </MudTabPanel>
                         <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Peers")">
-                            <PeersTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 2)" />
+                            <PeersTab Hash="@Hash" Active="@(ActiveTab == 2)" DisplayedHashChanged="@(hash => OnTabDisplayedHashChanged(2, hash))" />
                         </MudTabPanel>
                         <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "HTTP Sources")">
-                            <WebSeedsTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 3)" />
+                            <WebSeedsTab Hash="@Hash" Active="@(ActiveTab == 3)" DisplayedHashChanged="@(hash => OnTabDisplayedHashChanged(3, hash))" />
                         </MudTabPanel>
                         <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Content")">
-                            <FilesTab @key="Hash" Hash="@Hash" Active="@(ActiveTab == 4)" />
+                            <FilesTab Hash="@Hash" Active="@(ActiveTab == 4)" DisplayedHashChanged="@(hash => OnTabDisplayedHashChanged(4, hash))" />
                         </MudTabPanel>
                     </MudTabs>
                 </CascadingValue>

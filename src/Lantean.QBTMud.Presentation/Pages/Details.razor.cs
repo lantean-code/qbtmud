@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Pages
         private bool _shortcutsRegistered;
 
         private bool _piecesExpanded;
-        private string? _generalDisplayedHash;
+        private readonly string?[] _displayedHashes = new string?[_tabCount];
 
         private readonly PiecesProgressLayoutState _piecesLayoutState = new();
 
@@ -70,7 +70,7 @@ namespace Lantean.QBTMud.Pages
 
         protected string Name => GetName();
 
-        protected string? DisplayedHash => ActiveTab == 0 ? _generalDisplayedHash ?? Hash : Hash;
+        protected string? DisplayedHash => _displayedHashes[ActiveTab] ?? Hash;
 
         protected double? TorrentProgress => MainData?.Torrents.GetValueOrDefault(Hash ?? string.Empty)?.Progress;
 
@@ -108,9 +108,14 @@ namespace Lantean.QBTMud.Pages
 
         private void OnGeneralDisplayedHashChanged(string hash)
         {
-            if (hash == Hash)
+            OnTabDisplayedHashChanged(0, hash);
+        }
+
+        private void OnTabDisplayedHashChanged(int index, string hash)
+        {
+            if (!_disposedValue && hash == Hash)
             {
-                _generalDisplayedHash = hash;
+                _displayedHashes[index] = hash;
             }
         }
 

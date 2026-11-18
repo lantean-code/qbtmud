@@ -141,7 +141,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             target.FindComponent<MudTabs>().Instance.GetState(component => component.ActivePanelIndex).Should().Be(1);
             target.FindComponent<MudTabs>().Instance.Should().BeSameAs(tabs.Instance);
-            target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Should().NotBeSameAs(previous);
+            target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Should().BeSameAs(previous);
             target.FindComponent<Lantean.QBTMud.Components.TrackersTab>().Instance.Hash.Should().Be("OtherHash");
         }
 
@@ -214,20 +214,20 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 .AddCascadingValue(new MudTheme()));
             var tabs = target.FindComponent<MudTabs>().Instance;
 
-            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("68% complete");
+            string.Concat(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Nodes.Select(node => node.TextContent)).Trim().Should().Be("68% complete");
 
             target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
 
             target.WaitForAssertion(() =>
             {
-                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 1 downloaded, 0 in progress");
+                string.Concat(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Nodes.Select(node => node.TextContent)).Trim().Should().Be("100% complete — 1 downloaded, 0 in progress");
             });
             await target.InvokeAsync(() => pending.SetResult(ApiResult.CreateSuccess(CreateTorrentProperties())));
 
             api.Verify(client => client.GetTorrentPieceStatesAsync(_hashValue), Times.Never);
             target.FindComponent<MudTabs>().Instance.Should().BeSameAs(tabs);
             target.FindComponent<Lantean.QBTMud.Components.GeneralTab>().Instance.Hash.Should().Be("OtherHash");
-            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 1 downloaded, 0 in progress");
+            string.Concat(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Nodes.Select(node => node.TextContent)).Trim().Should().Be("100% complete — 1 downloaded, 0 in progress");
         }
 
         [Fact]
@@ -255,8 +255,8 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             progress.Instance.Hash.Should().Be(_hashValue);
             progress.Instance.Pieces.Should().Equal(ClientModels.PieceState.Downloaded);
-            GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("Comment");
-            GetChildContentText(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Instance.ChildContent).Should().Be(mainData.Torrents[_hashValue].Name);
+            string.Concat(FindComponentByTestId<MudField>(target, "GeneralComment").Nodes.Select(node => node.TextContent)).Should().NotContain("OtherComment");
+            string.Concat(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Nodes.Select(node => node.TextContent)).Trim().Should().Be(mainData.Torrents[_hashValue].Name);
             var open = FindComponentByTestId<MudIconButton>(target, "TorrentDetailsOpenFullPage");
             await target.InvokeAsync(() => open.Instance.OnClick.InvokeAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
             _navigationManager.Uri.Should().EndWith("/details/Hash");
@@ -264,7 +264,7 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             await target.InvokeAsync(() => properties.SetResult(ApiResult.CreateSuccess(CreateTorrentProperties("OtherComment"))));
 
             progress.Instance.Hash.Should().Be(_hashValue);
-            GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("Comment");
+            string.Concat(FindComponentByTestId<MudField>(target, "GeneralComment").Nodes.Select(node => node.TextContent)).Should().NotContain("OtherComment");
             await target.InvokeAsync(() => pieces.SetResult(ApiResult.CreateSuccess<IReadOnlyList<ClientModels.PieceState>>(new[] { ClientModels.PieceState.NotDownloaded })));
 
             target.WaitForAssertion(() =>
@@ -272,8 +272,8 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
                 progress.Instance.Hash.Should().Be("OtherHash");
                 progress.Instance.Pieces.Should().Equal(ClientModels.PieceState.NotDownloaded);
                 progress.Instance.PiecesLoading.Should().BeFalse();
-                GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("OtherComment");
-                GetChildContentText(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Instance.ChildContent).Should().Be("OtherName");
+                string.Concat(FindComponentByTestId<MudField>(target, "GeneralComment").Nodes.Select(node => node.TextContent)).Should().Contain("OtherComment");
+                string.Concat(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Nodes.Select(node => node.TextContent)).Trim().Should().Be("OtherName");
             });
             target.FindComponent<GeneralTab>().Instance.Should().BeSameAs(original);
             api.Verify(client => client.GetTorrentPropertiesAsync("OtherHash"), Times.Once);
@@ -306,8 +306,135 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             {
                 target.FindComponent<PiecesProgressSvg>().Instance.Hash.Should().Be("LatestHash");
                 target.FindComponent<PiecesProgressSvg>().Instance.Pieces.Should().Equal(ClientModels.PieceState.Downloading);
-                GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("LatestComment");
+                string.Concat(FindComponentByTestId<MudField>(target, "GeneralComment").Nodes.Select(node => node.TextContent)).Should().Contain("LatestComment");
             });
+        }
+
+        [Theory]
+        [InlineData(1, false)]
+        [InlineData(2, false)]
+        [InlineData(3, false)]
+        [InlineData(4, false)]
+        [InlineData(1, true)]
+        [InlineData(2, true)]
+        [InlineData(3, true)]
+        [InlineData(4, true)]
+        public async Task GIVEN_LoadedTableTab_WHEN_NextTorrentLoads_THEN_KeepsOldTableAndSwapsTitleWithReadyContent(int tabIndex, bool empty)
+        {
+            var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            SetUpTabResponse(tabIndex, _hashValue, Task.CompletedTask);
+            SetUpTabResponse(tabIndex, "OtherHash", pending.Task, empty);
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            mainData.Torrents["OtherHash"].Name = "OtherName";
+            var target = RenderDetails(_hashValue, mainData);
+            await target.InvokeAsync(() => target.FindComponent<MudTabs>().Instance.ActivePanelIndexChanged.InvokeAsync(tabIndex));
+            var original = FindTableTab(target, tabIndex);
+            GetTabItemCount(original, tabIndex).Should().Be(1);
+            var initialRows = GetTabItemSummary(original, tabIndex);
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            GetTabItemCount(original, tabIndex).Should().Be(1);
+            GetTabItemSummary(original, tabIndex).Should().Be(initialRows);
+            FindTableTab(target, tabIndex).Instance.Should().BeSameAs(original.Instance);
+            string.Concat(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Nodes.Select(node => node.TextContent)).Trim().Should().Be(mainData.Torrents[_hashValue].Name);
+            await target.InvokeAsync(() => pending.SetResult());
+
+            target.WaitForAssertion(() =>
+            {
+                var replacement = FindTableTab(target, tabIndex);
+                GetTabItemCount(replacement, tabIndex).Should().Be(empty ? 0 : 1);
+                if (!empty)
+                {
+                    GetTabItemSummary(replacement, tabIndex).Should().Contain("OtherHash");
+                }
+                string.Concat(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Nodes.Select(node => node.TextContent)).Trim().Should().Be("OtherName");
+                GetTableTabCount(target, tabIndex).Should().Be(1);
+            }, TimeSpan.FromSeconds(3));
+        }
+
+        [Theory]
+        [InlineData(1, false)]
+        [InlineData(2, false)]
+        [InlineData(3, false)]
+        [InlineData(4, false)]
+        [InlineData(1, true)]
+        [InlineData(2, true)]
+        [InlineData(3, true)]
+        [InlineData(4, true)]
+        public async Task GIVEN_PendingTableSelection_WHEN_NewerSelectionLoads_THEN_IgnoresDisposedTabsLateResponse(int tabIndex, bool failure)
+        {
+            var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            SetUpTabResponse(tabIndex, _hashValue, Task.CompletedTask);
+            SetUpTabResponse(tabIndex, "OtherHash", pending.Task, failure: failure);
+            SetUpTabResponse(tabIndex, "LatestHash", Task.CompletedTask);
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            mainData.Torrents.Add("LatestHash", CreateMainData("LatestHash").Torrents["LatestHash"]);
+            mainData.Torrents["LatestHash"].Name = "LatestName";
+            var target = RenderDetails(_hashValue, mainData);
+            await target.InvokeAsync(() => target.FindComponent<MudTabs>().Instance.ActivePanelIndexChanged.InvokeAsync(tabIndex));
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+            target.Render(parameters => parameters.Add(component => component.Hash, "LatestHash"));
+            await target.InvokeAsync(() => pending.SetResult());
+
+            target.WaitForAssertion(() =>
+            {
+                GetTableTabCount(target, tabIndex).Should().Be(1);
+                GetTabItemSummary(FindTableTab(target, tabIndex), tabIndex).Should().Contain("LatestHash");
+                string.Concat(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Nodes.Select(node => node.TextContent)).Trim().Should().Be("LatestName");
+            }, TimeSpan.FromSeconds(3));
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(3)]
+        [InlineData(4)]
+        public async Task GIVEN_LoadedTableTab_WHEN_ReplacementFails_THEN_KeepsCurrentTitleAndRows(int tabIndex)
+        {
+            var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            SetUpTabResponse(tabIndex, _hashValue, Task.CompletedTask);
+            SetUpTabResponse(tabIndex, "OtherHash", pending.Task, failure: true);
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            mainData.Torrents["OtherHash"].Name = "OtherName";
+            var target = RenderDetails(_hashValue, mainData);
+            await target.InvokeAsync(() => target.FindComponent<MudTabs>().Instance.ActivePanelIndexChanged.InvokeAsync(tabIndex));
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+            await target.InvokeAsync(() => pending.SetResult());
+
+            target.WaitForAssertion(() =>
+            {
+                GetTabItemCount(FindTableTab(target, tabIndex), tabIndex).Should().Be(1);
+                GetTabItemSummary(FindTableTab(target, tabIndex), tabIndex).Should().Contain(_hashValue);
+                string.Concat(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Nodes.Select(node => node.TextContent)).Trim().Should().Be(mainData.Torrents[_hashValue].Name);
+            }, TimeSpan.FromSeconds(3));
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingFileSelection_WHEN_PriorityChanged_THEN_UpdatesTheDisplayedTorrent()
+        {
+            var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            SetUpTabResponse(4, _hashValue, Task.CompletedTask);
+            SetUpTabResponse(4, "OtherHash", pending.Task);
+            var api = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            api.Setup(client => client.SetFilePriorityAsync(_hashValue, It.IsAny<IEnumerable<int>>(), ClientModels.Priority.High)).ReturnsSuccess(Task.CompletedTask);
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            var target = RenderDetails(_hashValue, mainData);
+            await target.InvokeAsync(() => target.FindComponent<MudTabs>().Instance.ActivePanelIndexChanged.InvokeAsync(4));
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+            var priority = target.FindComponent<FilesTab>().FindComponent<MudSelect<Lantean.QBTMud.Core.Models.Priority>>();
+            await target.InvokeAsync(() => priority.Instance.ValueChanged.InvokeAsync(Lantean.QBTMud.Core.Models.Priority.High));
+
+            api.Verify(client => client.SetFilePriorityAsync(_hashValue, It.Is<IEnumerable<int>>(indexes => indexes.SequenceEqual(new[] { 0 })), ClientModels.Priority.High), Times.Once);
+            api.Verify(client => client.SetFilePriorityAsync("OtherHash", It.IsAny<IEnumerable<int>>(), It.IsAny<ClientModels.Priority>()), Times.Never);
+            await target.InvokeAsync(() => pending.SetResult());
         }
 
         [Fact]
@@ -412,6 +539,88 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             var target = new Details();
 
             await target.DisposeAsync();
+        }
+
+        private void SetUpTabResponse(int tabIndex, string hash, Task gate, bool empty = false, bool failure = false)
+        {
+            var api = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            switch (tabIndex)
+            {
+                case 1:
+                    IReadOnlyList<ClientModels.TorrentTracker> trackers = empty ? [] : [new ClientModels.TorrentTracker($"https://{hash}.test/announce", false, ClientModels.TrackerStatus.Working, 1, 2, 3, 4, 5, "Message", null, null, null)];
+                    api.Setup(client => client.GetTorrentTrackersAsync(hash)).Returns(AwaitTabResult(gate, trackers, failure));
+                    break;
+                case 2:
+                    var peers = new Dictionary<string, ClientModels.Peer>();
+                    if (!empty)
+                    {
+                        peers.Add(hash, new ClientModels.Peer(hash, ClientModels.PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", null, "127.0.0.1", "I2pDestination", "ClientId", 6881, 0.5f, 0.4f, 3, 4));
+                    }
+                    api.Setup(client => client.GetTorrentPeersDataAsync(hash, It.IsAny<int>())).Returns(AwaitTabResult(gate, new ClientModels.TorrentPeers(true, peers, null, 1, true), failure));
+                    break;
+                case 3:
+                    IReadOnlyList<ClientModels.WebSeed> seeds = empty ? [] : [new ClientModels.WebSeed($"https://{hash}.test/seed")];
+                    api.Setup(client => client.GetTorrentWebSeedsAsync(hash)).Returns(AwaitTabResult(gate, seeds, failure));
+                    break;
+                case 4:
+                    IReadOnlyList<ClientModels.FileData> files = empty ? [] : [new ClientModels.FileData(0, $"{hash}.txt", 100, 1, ClientModels.Priority.Normal, false, [0], 1)];
+                    api.Setup(client => client.GetTorrentContentsAsync(hash, It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).Returns(AwaitTabResult(gate, files, failure));
+                    break;
+            }
+        }
+
+        private static async Task<ApiResult<T>> AwaitTabResult<T>(Task gate, T value, bool failure) where T : notnull
+        {
+            await gate;
+            if (failure)
+            {
+                return ApiResult.CreateFailure<T>(new ApiFailure { Kind = ApiFailureKind.ServerError, Operation = "Operation", UserMessage = "UserMessage" });
+            }
+            return ApiResult.CreateSuccess(value);
+        }
+
+        private static IRenderedComponent<IComponent> FindTableTab(IRenderedComponent<Details> target, int tabIndex)
+        {
+            return tabIndex switch
+            {
+                1 => target.FindComponents<TrackersTab>().Single(),
+                2 => target.FindComponents<PeersTab>().Single(),
+                3 => target.FindComponents<WebSeedsTab>().Single(),
+                _ => target.FindComponents<FilesTab>().Single()
+            };
+        }
+
+        private static int GetTableTabCount(IRenderedComponent<Details> target, int tabIndex)
+        {
+            return tabIndex switch
+            {
+                1 => target.FindComponents<TrackersTab>().Count,
+                2 => target.FindComponents<PeersTab>().Count,
+                3 => target.FindComponents<WebSeedsTab>().Count,
+                _ => target.FindComponents<FilesTab>().Count
+            };
+        }
+
+        private static int GetTabItemCount(IRenderedComponent<IComponent> tab, int tabIndex)
+        {
+            return tabIndex switch
+            {
+                1 => tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<ClientModels.TorrentTracker>>().Instance.Items?.Count() ?? 0,
+                2 => tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<Lantean.QBTMud.Core.Models.Peer>>().Instance.Items?.Count() ?? 0,
+                3 => tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<ClientModels.WebSeed>>().Instance.Items?.Count() ?? 0,
+                _ => tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<ContentItem>>().Instance.Items?.Count() ?? 0
+            };
+        }
+
+        private static string GetTabItemSummary(IRenderedComponent<IComponent> tab, int tabIndex)
+        {
+            return tabIndex switch
+            {
+                1 => string.Join(",", tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<ClientModels.TorrentTracker>>().Instance.Items!.Select(item => item.Url)),
+                2 => string.Join(",", tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<Lantean.QBTMud.Core.Models.Peer>>().Instance.Items!.Select(item => item.Client)),
+                3 => string.Join(",", tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<ClientModels.WebSeed>>().Instance.Items!.Select(item => item.Url)),
+                _ => string.Join(",", tab.FindComponent<Lantean.QBTMud.Components.UI.DynamicTable<ContentItem>>().Instance.Items!.Select(item => item.Name))
+            };
         }
 
         private IRenderedComponent<Details> RenderDetails(string? hash, MudMainData mainData)
