@@ -27,6 +27,7 @@ namespace Lantean.QBTMud.Pages
         private bool _shortcutsRegistered;
 
         private bool _piecesExpanded;
+        private string? _generalDisplayedHash;
 
         private readonly PiecesProgressLayoutState _piecesLayoutState = new();
 
@@ -69,6 +70,8 @@ namespace Lantean.QBTMud.Pages
 
         protected string Name => GetName();
 
+        protected string? DisplayedHash => ActiveTab == 0 ? _generalDisplayedHash ?? Hash : Hash;
+
         protected double? TorrentProgress => MainData?.Torrents.GetValueOrDefault(Hash ?? string.Empty)?.Progress;
 
         protected bool ShowTabs { get; set; } = true;
@@ -103,14 +106,22 @@ namespace Lantean.QBTMud.Pages
             _piecesExpanded = expanded;
         }
 
+        private void OnGeneralDisplayedHashChanged(string hash)
+        {
+            if (hash == Hash)
+            {
+                _generalDisplayedHash = hash;
+            }
+        }
+
         private string GetName()
         {
-            if (Hash is null || MainData is null)
+            if (DisplayedHash is null || MainData is null)
             {
                 return "";
             }
 
-            if (!MainData.Torrents.TryGetValue(Hash, out var torrent))
+            if (!MainData.Torrents.TryGetValue(DisplayedHash, out var torrent))
             {
                 return "";
             }
@@ -125,7 +136,7 @@ namespace Lantean.QBTMud.Pages
 
         private void OpenFullPage()
         {
-            NavigationManager.NavigateTo($"./details/{Hash}");
+            NavigationManager.NavigateTo($"./details/{DisplayedHash}");
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

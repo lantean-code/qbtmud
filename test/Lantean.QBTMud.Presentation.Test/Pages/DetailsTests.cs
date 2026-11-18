@@ -178,10 +178,10 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
 
             progress = target.FindComponent<PiecesProgressSvg>();
             progress.Instance.LayoutState.Should().BeSameAs(layout);
-            progress.FindComponents<MudStack>().Single(component => component.Instance.UserAttributes.TryGetValue("data-test-id", out var testId) && Equals(testId, "PiecesLoadingPlaceholder")).Instance.Style.Should().Be("aspect-ratio: 96 / 1;");
             progress.FindComponent<MudCollapse>().Instance.Expanded.Should().Be(expanded);
-            progress.Instance.Pieces.Should().BeEmpty();
-            progress.Instance.PiecesLoading.Should().BeTrue();
+            progress.Instance.Hash.Should().Be(_hashValue);
+            progress.Instance.Pieces.Should().Equal(ClientModels.PieceState.Downloaded);
+            progress.Instance.PiecesLoading.Should().BeFalse();
             await target.InvokeAsync(() => pending.SetResult(ApiResult.CreateSuccess<IReadOnlyList<ClientModels.PieceState>>(new[] { ClientModels.PieceState.NotDownloaded })));
             target.WaitForAssertion(() =>
             {
@@ -224,10 +224,90 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             });
             await target.InvokeAsync(() => pending.SetResult(ApiResult.CreateSuccess(CreateTorrentProperties())));
 
-            target.WaitForAssertion(() => api.Verify(client => client.GetTorrentPieceStatesAsync(_hashValue), Times.Once));
+            api.Verify(client => client.GetTorrentPieceStatesAsync(_hashValue), Times.Never);
             target.FindComponent<MudTabs>().Instance.Should().BeSameAs(tabs);
             target.FindComponent<Lantean.QBTMud.Components.GeneralTab>().Instance.Hash.Should().Be("OtherHash");
             GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 1 downloaded, 0 in progress");
+        }
+
+        [Fact]
+        public async Task GIVEN_LoadedDetails_WHEN_NextTorrentIsLoading_THEN_SwapsTitlePropertiesAndPiecesTogether()
+        {
+            var properties = new TaskCompletionSource<ApiResult<ClientModels.TorrentProperties>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pieces = new TaskCompletionSource<ApiResult<IReadOnlyList<ClientModels.PieceState>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            api.Setup(client => client.GetTorrentPieceStatesAsync(_hashValue)).ReturnsSuccessAsync(new[] { ClientModels.PieceState.Downloaded });
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).Returns(properties.Task);
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).Returns(pieces.Task);
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            mainData.Torrents["OtherHash"].Name = "OtherName";
+            var target = TestContext.Render<Details>(parameters => parameters
+                .Add(component => component.Hash, _hashValue)
+                .Add(component => component.Embedded, true)
+                .AddCascadingValue(mainData)
+                .AddCascadingValue(CreatePreferences())
+                .AddCascadingValue(new MudTheme()));
+            var original = target.FindComponent<GeneralTab>().Instance;
+            var progress = target.FindComponent<PiecesProgressSvg>();
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            progress.Instance.Hash.Should().Be(_hashValue);
+            progress.Instance.Pieces.Should().Equal(ClientModels.PieceState.Downloaded);
+            GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("Comment");
+            GetChildContentText(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Instance.ChildContent).Should().Be(mainData.Torrents[_hashValue].Name);
+            var open = FindComponentByTestId<MudIconButton>(target, "TorrentDetailsOpenFullPage");
+            await target.InvokeAsync(() => open.Instance.OnClick.InvokeAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
+            _navigationManager.Uri.Should().EndWith("/details/Hash");
+
+            await target.InvokeAsync(() => properties.SetResult(ApiResult.CreateSuccess(CreateTorrentProperties("OtherComment"))));
+
+            progress.Instance.Hash.Should().Be(_hashValue);
+            GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("Comment");
+            await target.InvokeAsync(() => pieces.SetResult(ApiResult.CreateSuccess<IReadOnlyList<ClientModels.PieceState>>(new[] { ClientModels.PieceState.NotDownloaded })));
+
+            target.WaitForAssertion(() =>
+            {
+                progress.Instance.Hash.Should().Be("OtherHash");
+                progress.Instance.Pieces.Should().Equal(ClientModels.PieceState.NotDownloaded);
+                progress.Instance.PiecesLoading.Should().BeFalse();
+                GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("OtherComment");
+                GetChildContentText(target.FindComponent<Lantean.QBTMud.Components.UI.ToolbarTitle>().Instance.ChildContent).Should().Be("OtherName");
+            });
+            target.FindComponent<GeneralTab>().Instance.Should().BeSameAs(original);
+            api.Verify(client => client.GetTorrentPropertiesAsync("OtherHash"), Times.Once);
+            api.Verify(client => client.GetTorrentPieceStatesAsync("OtherHash"), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_RapidTorrentSwitches_WHEN_AnOlderRequestCompletes_THEN_KeepsLatestDetails(bool delayPieces)
+        {
+            var properties = new TaskCompletionSource<ApiResult<ClientModels.TorrentProperties>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pieces = new TaskCompletionSource<ApiResult<IReadOnlyList<ClientModels.PieceState>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = Mock.Get(TestContext.Services.GetRequiredService<IApiClient>());
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).Returns(delayPieces ? Task.FromResult(ApiResult.CreateSuccess(CreateTorrentProperties("OtherComment"))) : properties.Task);
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).Returns(pieces.Task);
+            api.Setup(client => client.GetTorrentPropertiesAsync("LatestHash")).ReturnsSuccessAsync(CreateTorrentProperties("LatestComment"));
+            api.Setup(client => client.GetTorrentPieceStatesAsync("LatestHash")).ReturnsSuccessAsync(new[] { ClientModels.PieceState.Downloading });
+            var mainData = CreateMainData(_hashValue);
+            mainData.Torrents.Add("OtherHash", CreateMainData("OtherHash").Torrents["OtherHash"]);
+            mainData.Torrents.Add("LatestHash", CreateMainData("LatestHash").Torrents["LatestHash"]);
+            var target = RenderDetails(_hashValue, mainData);
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+            target.Render(parameters => parameters.Add(component => component.Hash, "LatestHash"));
+            await target.InvokeAsync(() => properties.SetResult(ApiResult.CreateSuccess(CreateTorrentProperties("OtherComment"))));
+            await target.InvokeAsync(() => pieces.SetResult(ApiResult.CreateSuccess<IReadOnlyList<ClientModels.PieceState>>(new[] { ClientModels.PieceState.NotDownloaded })));
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<PiecesProgressSvg>().Instance.Hash.Should().Be("LatestHash");
+                target.FindComponent<PiecesProgressSvg>().Instance.Pieces.Should().Equal(ClientModels.PieceState.Downloading);
+                GetChildContentText(FindComponentByTestId<MudField>(target, "GeneralComment").Instance.ChildContent).Should().Be("LatestComment");
+            });
         }
 
         [Fact]
@@ -378,11 +458,11 @@ namespace Lantean.QBTMud.Presentation.Test.Pages
             });
         }
 
-        private static ClientModels.TorrentProperties CreateTorrentProperties()
+        private static ClientModels.TorrentProperties CreateTorrentProperties(string comment = "Comment")
         {
             return new ClientModels.TorrentProperties(
                 additionDate: 0,
-                comment: "Comment",
+                comment: comment,
                 completionDate: 0,
                 createdBy: "CreatedBy",
                 creationDate: 0,

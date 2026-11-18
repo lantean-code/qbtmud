@@ -282,6 +282,126 @@ namespace Lantean.QBTMud.Presentation.Test.Components
             await target.Instance.DisposeAsync();
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_LoadedTorrent_WHEN_NextSelectionFails_THEN_KeepsPreviousDisplayAndRetriesOnTick(bool failPieces)
+        {
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetTorrentPropertiesAsync("Hash")).ReturnsSuccessAsync(CreateProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("Hash")).ReturnsSuccessAsync(new[] { PieceState.Downloaded });
+            if (failPieces)
+            {
+                api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).ReturnsSuccessAsync(CreateProperties());
+                api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
+            }
+            else
+            {
+                api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
+            }
+            var target = RenderGeneralTab(true, "Hash");
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+
+            var progress = target.FindComponent<PiecesProgressSvg>();
+            progress.Instance.Hash.Should().Be("Hash");
+            progress.Instance.Pieces.Should().Equal(PieceState.Downloaded);
+            progress.Instance.PiecesLoading.Should().BeFalse();
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).ReturnsSuccessAsync(CreateProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).ReturnsSuccessAsync(new[] { PieceState.NotDownloaded });
+
+            await TriggerTimerTickAsync(target);
+
+            progress.Instance.Hash.Should().Be("OtherHash");
+            progress.Instance.Pieces.Should().Equal(PieceState.NotDownloaded);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_PendingSelection_WHEN_Disposed_THEN_IgnoresLateResponse(bool delayPieces)
+        {
+            var properties = new TaskCompletionSource<ApiResult<TorrentProperties>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pieces = new TaskCompletionSource<ApiResult<IReadOnlyList<PieceState>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetTorrentPropertiesAsync("Hash")).Returns(delayPieces ? Task.FromResult(ApiResult.CreateSuccess(CreateProperties())) : properties.Task);
+            api.Setup(client => client.GetTorrentPieceStatesAsync("Hash")).Returns(pieces.Task);
+            var displayed = new Mock<Func<string, Task>>();
+            displayed.Setup(callback => callback(It.IsAny<string>())).Returns(Task.CompletedTask);
+            var target = TestContext.Render<GeneralTab>(parameters => parameters
+                .Add(component => component.Hash, "Hash")
+                .Add(component => component.Active, true)
+                .Add(component => component.DisplayedHashChanged, displayed.Object)
+                .AddCascadingValue(new MudTheme()));
+
+            await target.Instance.DisposeAsync();
+            await target.InvokeAsync(() => properties.SetResult(ApiResult.CreateSuccess(CreateProperties())));
+            await target.InvokeAsync(() => pieces.SetResult(ApiResult.CreateSuccess<IReadOnlyList<PieceState>>(new[] { PieceState.Downloaded })));
+
+            displayed.Verify(callback => callback(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingSelection_WHEN_RenderedAgainOrTimerTicks_THEN_KeepsDisplayWithoutDuplicateRequests()
+        {
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetTorrentPropertiesAsync("Hash")).ReturnsSuccessAsync(CreateProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("Hash")).ReturnsSuccessAsync(new[] { PieceState.Downloaded });
+            var pending = new TaskCompletionSource<ApiResult<TorrentProperties>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).Returns(pending.Task);
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).ReturnsSuccessAsync(new[] { PieceState.NotDownloaded });
+            var target = RenderGeneralTab(true, "Hash");
+
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+            target.Render(parameters => parameters.Add(component => component.PiecesExpanded, true));
+            var result = await TriggerTimerTickAsync(target);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
+            target.FindComponent<PiecesProgressSvg>().Instance.Hash.Should().Be("Hash");
+            api.Verify(client => client.GetTorrentPropertiesAsync("OtherHash"), Times.Once);
+            await target.InvokeAsync(() => pending.SetResult(ApiResult.CreateSuccess(CreateProperties())));
+            target.WaitForAssertion(() => target.FindComponent<PiecesProgressSvg>().Instance.Hash.Should().Be("OtherHash"));
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposedTab_WHEN_RenderedOrTimerTicks_THEN_DoesNotLoadAgain()
+        {
+            var target = RenderGeneralTab(false, "Hash");
+            await target.Instance.DisposeAsync();
+
+            target.Render(parameters => parameters.Add(component => component.Active, true));
+            var result = await TriggerTimerTickAsync(target);
+
+            result.Should().Be(ManagedTimerTickResult.Stop);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentPropertiesAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GIVEN_RefreshInFlight_WHEN_TorrentChanges_THEN_RefreshCannotReplaceNewDetails(bool delayPieces)
+        {
+            var api = Mock.Get(_apiClient);
+            api.Setup(client => client.GetTorrentPropertiesAsync("Hash")).ReturnsSuccessAsync(CreateProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("Hash")).ReturnsSuccessAsync(new[] { PieceState.Downloaded });
+            api.Setup(client => client.GetTorrentPropertiesAsync("OtherHash")).ReturnsSuccessAsync(CreateProperties());
+            api.Setup(client => client.GetTorrentPieceStatesAsync("OtherHash")).ReturnsSuccessAsync(new[] { PieceState.Downloading });
+            var target = RenderGeneralTab(true, "Hash");
+            var properties = new TaskCompletionSource<ApiResult<TorrentProperties>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pieces = new TaskCompletionSource<ApiResult<IReadOnlyList<PieceState>>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            api.Setup(client => client.GetTorrentPropertiesAsync("Hash")).Returns(delayPieces ? Task.FromResult(ApiResult.CreateSuccess(CreateProperties())) : properties.Task);
+            api.Setup(client => client.GetTorrentPieceStatesAsync("Hash")).Returns(pieces.Task);
+
+            var tick = TriggerTimerTickAsync(target);
+            target.Render(parameters => parameters.Add(component => component.Hash, "OtherHash"));
+            await target.InvokeAsync(() => properties.SetResult(ApiResult.CreateSuccess(CreateProperties())));
+            await target.InvokeAsync(() => pieces.SetResult(ApiResult.CreateSuccess<IReadOnlyList<PieceState>>(new[] { PieceState.NotDownloaded })));
+            await tick;
+
+            target.FindComponent<PiecesProgressSvg>().Instance.Hash.Should().Be("OtherHash");
+            target.FindComponent<PiecesProgressSvg>().Instance.Pieces.Should().Equal(PieceState.Downloading);
+        }
+
         [Fact]
         public async Task GIVEN_CancelledTickToken_WHEN_TimerHandlerRuns_THEN_ReturnsStop()
         {
