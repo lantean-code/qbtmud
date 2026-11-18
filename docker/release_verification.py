@@ -72,9 +72,9 @@ def record(source, output):
     check_source(source)
     expected = policy()
     repo = os.environ["GITHUB_REPOSITORY"]
-    document = gh(f"repos/{repo}/releases/tags/{expected['tag']}")
+    document = gh(f"repos/{repo}/releases/{expected['releaseId']}")
     commit = gh(f"repos/{repo}/commits/{expected['tag']}")["sha"]
-    if document["prerelease"]:
+    if document["prerelease"] or document["tag_name"] != expected["tag"] or document["id"] != expected["releaseId"]:
         raise ValueError("Verification requires the stable 3.2.0 release")
     assets = check_identity(repo, expected["tag"], commit, document["assets"])
     with tempfile.TemporaryDirectory() as directory:
@@ -92,6 +92,8 @@ def record(source, output):
 
 def resolve(repo, tag, commit, document):
     assets = check_identity(repo, tag, commit, document["assets"])
+    if document["id"] != policy()["releaseId"]:
+        raise ValueError("Supplemental verification requires the original 3.2.0 release identity")
     branch = gh(f"repos/{repo}")["default_branch"]
     runs = gh(f"repos/{repo}/actions/workflows/verify-release-3.2.0.yml/runs"
               f"?event=workflow_dispatch&status=success&branch={quote(branch, safe='')}&per_page=1")["workflow_runs"]

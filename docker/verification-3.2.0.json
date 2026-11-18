@@ -1,5 +1,6 @@
 {
   "tag": "3.2.0",
+  "releaseId": 450241126,
   "commit": "c0bcb42dd2c1272b7903b50a3d761a7394f7848b",
   "testsCommit": "a5cd97aad3d124b845d9bd6338b7020964dc15a6",
   "testFile": "test/Lantean.QBTMud.Test/JavaScript/TorrentSplitPanelInteropTests.cs",

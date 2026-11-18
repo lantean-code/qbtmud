@@ -18,14 +18,14 @@ class VerificationTests(unittest.TestCase):
         self.policy = verification.policy()
         self.assets = [{"id": index, "name": name, "digest": "sha256:" + checksum}
                        for index, (name, checksum) in enumerate(self.policy["archives"].items(), 10)]
-        self.document = {"id": 123, "draft": False, "prerelease": False, "published_at": "today",
+        self.document = {"id": self.policy["releaseId"], "tag_name": "3.2.0", "draft": False, "prerelease": False, "published_at": "today",
                          "assets": self.assets}
         self.run = {"id": 456, "run_attempt": 2, "head_sha": "a" * 40, "conclusion": "success",
                     "head_branch": "develop", "event": "workflow_dispatch", "path": verification.WORKFLOW,
                     "repository": {"full_name": verification.REPOSITORY},
                     "head_repository": {"full_name": verification.REPOSITORY}}
         self.artifacts = {"artifacts": [{"id": 789, "expired": False}]}
-        self.evidence = dict(self.policy, kind="supplemental-verification", releaseId=123,
+        self.evidence = dict(self.policy, kind="supplemental-verification",
                              assets={asset["name"]: {"id": asset["id"], "sha256": asset["digest"][7:]}
                                      for asset in self.assets}, runId="456", runAttempt="2", verificationCommit="a" * 40)
 
@@ -36,7 +36,7 @@ class VerificationTests(unittest.TestCase):
         with patch.object(verification, "gh", side_effect=[{"default_branch": "develop"},
                           {"workflow_runs": [self.run]}, self.artifacts]), \
                 patch.object(verification, "command") as download, \
-                patch.object(verification, "read", side_effect=[self.policy, self.evidence, self.policy]):
+                patch.object(verification, "read", side_effect=[self.policy, self.policy, self.evidence, self.policy]):
             result = self.resolve()
         self.assertEqual(result, {"uiVerificationRun": "456", "uiVerificationCommit": "a" * 40,
                                   "uiVerificationTestsCommit": self.policy["testsCommit"]})
@@ -93,7 +93,7 @@ class VerificationTests(unittest.TestCase):
                 with patch.object(verification, "gh", side_effect=[{"default_branch": "develop"},
                                   {"workflow_runs": [self.run]}, self.artifacts]), \
                         patch.object(verification, "command"), \
-                        patch.object(verification, "read", side_effect=[self.policy, altered, self.policy]), \
+                        patch.object(verification, "read", side_effect=[self.policy, self.policy, altered, self.policy]), \
                         self.assertRaisesRegex(ValueError, "does not match"):
                     self.resolve()
 
@@ -183,6 +183,11 @@ class VerificationTests(unittest.TestCase):
                     patch.object(release, "resolve_verification") as resolve, self.assertRaisesRegex(ValueError, "published"):
                 release.resolve_release(verification.REPOSITORY, "3.2.0", "unused")
             resolve.assert_not_called()
+
+    def test_replaced_release_identity_is_rejected(self):
+        self.document["id"] = 999
+        with self.assertRaisesRegex(ValueError, "original 3.2.0 release identity"):
+            self.resolve()
 
     def test_publisher_records_verification_and_still_checks_downloaded_zip(self):
         asset = self.assets[1]
