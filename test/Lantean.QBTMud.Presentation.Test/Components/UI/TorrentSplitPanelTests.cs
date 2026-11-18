@@ -1,7 +1,9 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Application.Services;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Core.Models;
 using Lantean.QBTMud.Pages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -15,14 +17,31 @@ namespace Lantean.QBTMud.Presentation.Test.Components.UI
     public sealed class TorrentSplitPanelTests : RazorComponentTestBase<TorrentSplitPanel>
     {
         private readonly ILocalStorageService _storage = Mock.Of<ILocalStorageService>();
+        private readonly IAppBuildInfoService _buildInfo = Mock.Of<IAppBuildInfoService>();
         private readonly BunitJSModuleInterop _module;
 
         public TorrentSplitPanelTests()
         {
             TestContext.Services.AddSingleton(_storage);
-            _module = TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js");
+            Mock.Get(_buildInfo).Setup(service => service.GetCurrentBuildInfo()).Returns(new AppBuildInfo("Version", "Source"));
+            TestContext.Services.AddSingleton(_buildInfo);
+            _module = TestContext.JSInterop.SetupModule("./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v=Version");
             _module.SetupVoid("initialize", _ => true).SetVoidResult();
             _module.SetupVoid("setRatio", _ => true).SetVoidResult();
+        }
+
+        [Theory]
+        [InlineData("3.2.0-rc.2+3", "3.2.0-rc.2%2B3")]
+        [InlineData("3.2.0-rc.3+1", "3.2.0-rc.3%2B1")]
+        public void GIVEN_CurrentBuild_WHEN_Initialised_THEN_ImportsModuleWithEncodedBuildVersion(string version, string encodedVersion)
+        {
+            Mock.Get(_buildInfo).Setup(service => service.GetCurrentBuildInfo()).Returns(new AppBuildInfo(version, "Source"));
+            var import = TestContext.JSInterop.SetupModule($"./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v={encodedVersion}");
+            import.SetupVoid("initialize", _ => true).SetVoidResult();
+
+            var target = TestContext.Render<TorrentSplitPanel>(parameters => parameters.Add(component => component.Enabled, true));
+
+            target.WaitForAssertion(() => import.Invocations["initialize"].Should().ContainSingle());
         }
 
         [Theory]

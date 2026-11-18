@@ -33,6 +33,9 @@ namespace Lantean.QBTMud.Components.UI
         [Inject]
         protected IDialogService DialogService { get; set; } = default!;
 
+        [Inject]
+        protected IAppBuildInfoService AppBuildInfoService { get; set; } = default!;
+
         [Parameter]
         public bool Enabled { get; set; }
 
@@ -61,7 +64,8 @@ namespace Lantean.QBTMud.Components.UI
                     return;
                 }
 
-                var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js");
+                var version = Uri.EscapeDataString(AppBuildInfoService.GetCurrentBuildInfo().Version);
+                var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", $"./_content/Lantean.QBTMud.Presentation/torrent-split-panel.module.js?v={version}");
                 if (_disposed || !Enabled)
                 {
                     await module.DisposeAsync();
